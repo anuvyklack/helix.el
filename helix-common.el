@@ -65,7 +65,7 @@ Else returns t.
 \(fn (DIRECTION COUNT) BODY...)"
   (declare (indent defun)
            (debug ((symbolp form) body)))
-  (cl-destructuring-bind (direction count) spec
+  (pcase-let ((`(,direction ,count) spec))
     `(let* ((,count (or ,count 1))
             (,direction (if (< ,count 0) -1 1))
             (n (abs ,count)))
