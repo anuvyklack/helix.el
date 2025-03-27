@@ -71,5 +71,31 @@ list of categories."
           :value-type (choice character (const nil)))
   :group 'helix-cjk)
 
+;;; Variables
+
+(defmacro helix-defvar-local (symbol &optional initvalue docstring)
+  "The same as `defvar-local' but additionaly marks SYMBOL as permanent
+buffer local variable."
+  (declare (indent defun)
+           (doc-string 3)
+           (debug (symbolp &optional form stringp)))
+  `(progn
+     (defvar ,symbol ,initvalue ,docstring)
+     (make-variable-buffer-local ',symbol)
+     (put ',symbol 'permanent-local t)))
+
+(defvar helix-global-keymaps-alist nil
+  "Association list of keymap variables.
+Entries have the form (MODE . KEYMAP), where KEYMAP
+is the variable containing the keymap for MODE.")
+
+(helix-defvar-local helix-mode-map-alist nil
+  "Association list of keymaps to use for Helix modes.
+Elements have the form (MODE . KEYMAP), with the first keymaps
+having higher priority.")
+
+(helix-defvar-local helix-state nil
+  "The current Helix state.")
+
 (provide 'helix-vars)
 ;;; helix-vars.el ends here

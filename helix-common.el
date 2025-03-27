@@ -92,5 +92,16 @@ Else returns t.
     (or (memq (helix-get-next-char dir) '(?\r ?\n))
         (helix-forward-chars "^\n\r\t\f " dir))))
 
+;;; Utils
+
+(defun helix--ensure-list (x)
+  "Return X unchanged if it is a list, or wrap it in list."
+  (if (listp x) x (list x)))
+
+(defun helix-sign (&optional num)
+  (cond ((< num 0) -1)
+        ((zerop num) 0)
+        (t 1)))
+
 (provide 'helix-common)
 ;;; helix-common.el ends here
