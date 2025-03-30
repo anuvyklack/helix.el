@@ -102,8 +102,7 @@ Else returns t.
   (declare (indent defun)
            (debug ((symbolp form) body)))
   (pcase-let ((`(,direction ,count) spec))
-    `(let* ((,count (or ,count 1))
-            (,direction (if (< ,count 0) -1 1))
+    `(let* ((,direction (if (< ,count 0) -1 1))
             (n (abs ,count)))
        (if (zerop n) t
          (while (and (not (zerop n))
@@ -112,7 +111,7 @@ Else returns t.
          (zerop n)))))
 
 (defun forward-helix-word (&optional count)
-  (helix-motion-loop (dir count)
+  (helix-motion-loop (dir (or count 1))
     (helix-forward-chars "\r\n" dir)
     (helix-forward-chars " \t" dir)
     (or (memq (helix-get-next-char dir) '(?\r ?\n))
@@ -122,7 +121,7 @@ Else returns t.
           (forward-word dir)))))
 
 (defun forward-helix-WORD (&optional count)
-  (helix-motion-loop (dir count)
+  (helix-motion-loop (dir (or count 1))
     (helix-forward-chars "\r\n" dir)
     (helix-forward-chars " \t" dir)
     (or (memq (helix-get-next-char dir) '(?\r ?\n))

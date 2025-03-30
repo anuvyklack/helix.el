@@ -89,29 +89,8 @@
     (goto-char (car (bounds-of-thing-at-point 'line))) ; left end
     (exchange-point-and-mark)
     (goto-char (cdr (bounds-of-thing-at-point 'line)))) ; right end
-  ;; (dotimes (_ (1- count))
-  ;;   (goto-char (cdr (bounds-of-thing-at-point 'line))))
   (helix-motion-loop (_ (1- count))
-    (goto-char (cdr (bounds-of-thing-at-point 'line))))
-  )
-
-;; (defun helix-select-or-extend-line (count)
-;;   (interactive "p")
-;;   (if (not (region-active-p))
-;;       (let ((bounds (bounds-of-thing-at-point 'line)))
-;;         (set-mark (car bounds))
-;;         (goto-char (cdr bounds)))
-;;     ;; else
-;;     (if (< (point) (mark))
-;;         (progn
-;;           (goto-char (car (bounds-of-thing-at-point 'line))) ; left end
-;;           (exchange-point-and-mark)
-;;           (goto-char (cdr (bounds-of-thing-at-point 'line)))) ; right end
-;;       (progn
-;;         (goto-char (cdr (bounds-of-thing-at-point 'line))) ; right end
-;;         (exchange-point-and-mark)
-;;         (goto-char (car (bounds-of-thing-at-point 'line))) ; left end
-;;         (exchange-point-and-mark)))))
+    (goto-char (cdr (bounds-of-thing-at-point 'line)))))
 
 (defun helix-forward-selection-p ()
   "Return t if mark precedes point."
