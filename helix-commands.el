@@ -18,6 +18,40 @@
 (require 'thingatpt)
 (require 'helix-common)
 
+;; h
+(defun helix-backward-char (count)
+  (interactive "p")
+  (if helix-extend-selection
+      (or (region-active-p) (set-mark (point)))
+    (deactivate-mark))
+  (backward-char count))
+
+;; l
+(defun helix-forward-char (count)
+  (interactive "p")
+  (if helix-extend-selection
+      (or (region-active-p) (set-mark (point)))
+    (deactivate-mark))
+  (forward-char count))
+
+;; j
+(defun helix-next-line (count)
+  "Move to the next line."
+  (interactive "p")
+  (if helix-extend-selection
+      (or (region-active-p) (set-mark (point)))
+    (deactivate-mark))
+  (next-line count))
+
+;; k
+(defun helix-previous-line (count)
+  "Move to the previous line."
+  (interactive "p")
+  (if helix-extend-selection
+      (or (region-active-p) (set-mark (point)))
+    (deactivate-mark))
+  (previous-line count))
+
 ;; w
 (defun helix-forward-word-start (count &optional bigword)
   "Move next word start."
@@ -91,14 +125,6 @@
     (goto-char (cdr (bounds-of-thing-at-point 'line)))) ; right end
   (helix-motion-loop (_ (1- count))
     (goto-char (cdr (bounds-of-thing-at-point 'line)))))
-
-(defun helix-forward-selection-p ()
-  "Return t if mark precedes point."
-  (< (mark) (point)))
-
-(defun helix-selection-direction ()
-
-  )
 
 (provide 'helix-commands)
 ;;; helix-commands.el ends here

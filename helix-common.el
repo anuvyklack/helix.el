@@ -138,5 +138,9 @@ Else returns t.
         ((zerop num) 0)
         (t 1)))
 
+(defun helix-forward-selection-p ()
+  "Return t if mark precedes point."
+  (< (mark) (point)))
+
 (provide 'helix-common)
 ;;; helix-common.el ends here
