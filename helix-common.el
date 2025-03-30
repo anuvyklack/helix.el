@@ -130,7 +130,7 @@ Else returns t.
 
 ;;; Utils
 
-(defun helix--ensure-list (x)
+(defun helix-ensure-list (x)
   "Return X unchanged if it is a list, or wrap it in list."
   (if (listp x) x (list x)))
 
