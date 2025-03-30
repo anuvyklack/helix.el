@@ -19,6 +19,11 @@
   :group 'emulations
   :prefix 'helix-)
 
+(defcustom helix-select-on-insert t
+  "Select inserted text on exiting insert state."
+  :type 'boolean
+  :group 'helix)
+
 (defgroup helix-cjk nil
   "CJK support."
   :prefix "helix-cjk-"
@@ -96,6 +101,15 @@ having higher priority.")
 
 (helix-defvar-local helix-state nil
   "The current Helix state.")
+
+(defvar helix-state-properties nil
+  "Specifications made by `helix-define-state'.
+Entries have the form (STATE . PLIST), where PLIST is a property
+list specifying various aspects of the state. To access a property,
+use `helix-state-property'.")
+
+(helix-defvar-local helix-selection-history nil
+  "The history of selections")
 
 (provide 'helix-vars)
 ;;; helix-vars.el ends here

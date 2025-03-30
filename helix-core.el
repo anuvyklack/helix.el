@@ -26,6 +26,8 @@
         )
     (progn)))
 
+;;; Helix states
+
 ;; Every state has general globaly shared keymap, and auxiliary per buffer
 ;; keymap pined to major mode.
 (defmacro helix-define-state (state doc &rest body)
@@ -55,8 +57,9 @@ Optional keyword arguments:
                      ""
                    (format "\n%s" d))))
          (state-id   (intern (format "helix-%s-state" state)))
-         (state-predicate (intern (format "%s-p" state-id)))
+         (predicate  (intern (format "%s-p" state-id)))
          (cursor     (intern (format "%s-cursor" state-id)))
+         (keymap     (intern (format "%s-map" state-id)))
          (entry-hook (intern (format "%s-entry-hook" state-id)))
          (exit-hook  (intern (format "%s-exit-hook" state-id)))
          key arg cursor-value entry-hook-value exit-hook-value)
@@ -75,11 +78,28 @@ Optional keyword arguments:
              (unless (listp exit-hook-value)
                (setq exit-hook-value (list exit-hook-value))))))
     `(progn
+       ;; Save the state's properties in `helix-state-properties' for
+       ;; runtime lookup.
+       (helix--add-to-alist helix-state-properties ',state
+                            (list
+                             :name ',name
+                             :cursor (defvar ,cursor ',cursor-value
+                                       ,(format "Cursor for %s.
+May be a cursor type as per `cursor-type', a color string as passed
+to `set-cursor-color', a zero-argument function for changing the
+cursor, or a list of the above." name))
+                             :keymap (defvar ,keymap (make-sparse-keymap)
+                                       ,(format "Keymap for %s." name))
+                             :entry-hook (defvar ,entry-hook nil
+                                           ,(format "Hooks to run when entering %s." name))
+                             :exit-hook (defvar ,exit-hook nil
+                                          ,(format "Hooks to run when exiting %s." name))
+                             :predicate ',predicate))
        ;; hooks
        (dolist (func ',entry-hook-value) (add-hook ',entry-hook func))
        (dolist (func ',exit-hook-value) (add-hook ',exit-hook func))
        ;; state predicate
-       (defun ,state-predicate ()
+       (defun ,predicate ()
          ,(format "Whether the current Helix state is %s." name)
          (and helix-local-mode
               (eq helix-state ',state)))
@@ -88,44 +108,54 @@ Optional keyword arguments:
          ,(format "Enable Helix %s. Disable with negative ARG.%s" name doc)
          (interactive)
          (cond ((and (numberp arg) (< arg 0))
-                (setq helix-state nil)
-                (helix-deactivate-keymaps))
+                (run-hooks ',exit-hook)
+                ,@body
+                (helix-deactivate-keymaps)
+                (setq helix-state nil))
                (t
                 (unless helix-local-mode (helix-local-mode))
-                (helix-setup-keymaps ',state)
-                ))
-         )
+                (setq helix-state ',state)
+                (helix-activate-keymaps ',state)
+                (when (eq (window-buffer) (current-buffer))
+                  (helix-setup-cursor ',state))
+                ,@body
+                (run-hooks ',entry-hook))))
+       ;; keymap
+       ;; (helix-define-keymap ,keymap)
        )))
 
-(helix-define-state normal
-  "Normal state"
-  (lol))
+(defun helix-state-p (sym)
+  "Whether SYM is the name of a state."
+  (assq sym helix-state-properties))
 
-;; (progn ; normal state
-;;   (defun helix-normal-state-p ()
-;;     (and helix-local-mode (eq helix-state 'normal)))
-;;
-;;   (defun helix-normal-state ()
-;;     (setq helix-state 'normal)
-;;     (helix-switch-keymaps 'select)
-;;     ))
+(defun helix-state-property (state prop &optional value)
+  "Return the value of property PROP for STATE.
+PROP is a keyword as used by `helix-define-state'. STATE is the state's
+symbolic name. If VALUE is non-nil and the value is a variable, return
+the value of that variable.
 
-;; (helix-define-state select
-;;   "Select/extend state"
-;;   (cond ((helix-select-state-p)
-;;          ())
-;;         (t
-;;          ())))
-;; (progn ; select state
-;;   (defun helix-select-state-p ()
-;;     (and helix-local-mode (eq helix-state 'select)))
-;;
-;;   (defun helix-select-state ()
-;;     (setq helix-state 'select)
-;;     (helix-switch-keymaps 'select)
-;;     ))
+If STATE is t, return an association list of states and their PROP
+values instead."
+  ;; (if (eq state t)
+  ;;     (cl-loop for (key . plist) in helix-state-properties with result do
+  ;;              (let ((p (plist-member plist prop)))
+  ;;                (when p (push (cons key (cadr p)) result)))
+  ;;              finally return result)
+  ;;   (let ((val (plist-get (cdr (assq state helix-state-properties))
+  ;;                         prop)))
+  ;;     (if (and value (symbolp val) (boundp val))
+  ;;         (symbol-value val)
+  ;;       val)))
+  (let ((val (plist-get (cdr (assq state helix-state-properties))
+                        prop)))
+    (if (and value (symbolp val) (boundp val))
+        (symbol-value val)
+      val))
+  )
 
-(defun helix-setup-keymaps (&optional state)
+;;; Keymaps
+
+(defun helix-activate-keymaps (&optional state)
   "Set the value of the `helix-mode-map-alist' in the current buffer
 according to Helix STATE."
   (setq state (or state (helix-state)))
@@ -161,7 +191,6 @@ or t if none is found."
             (car (rassq map minor-mode-map-alist))))
       t))
 
-;;; Keymaps
 ;;;; Auxiliary keymaps
 
 (defun helix-get-helix-keymap (keymap state)
@@ -172,7 +201,7 @@ or t if none is found."
       (if (helix-keymap-p hxmap) hxmap))))
 
 (defun helix-create-helix-keymap (keymap state)
-  "Create in KYEMAP a nested keymap for Helix STATE."
+  "Create a nested keymap in KYEMAP for Helix STATE."
   (let ((hxmap (make-sparse-keymap)))
     (helix-set-keymap-prompt
      hxmap (format "Helix keymap for %s"
@@ -187,6 +216,18 @@ or t if none is found."
     (when prompt (string-prefix-p "Helix keymap" prompt))))
 
 ;;; Utils
+
+(defmacro helix--add-to-alist (alist &rest elements)
+  "Add the association of KEY and VAL to the value of ALIST.
+If the list already contains an entry for KEY, update that entry;
+otherwise prepend it to the list.
+
+\(fn ALIST [KEY VAL]...)"
+  `(progn
+     ,@(cl-loop
+        for (key val) on elements by #'cddr collect
+        `(setf (alist-get ,key ,alist nil nil #'equal) ,val))
+     ,alist))
 
 (defun helix-set-keymap-prompt (map prompt)
   "Set the prompt-string of MAP to PROMPT."

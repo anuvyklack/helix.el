@@ -18,6 +18,7 @@
 (require 'helix-common)
 (require 'helix-commands)
 (require 'helix-core)
+(require 'helix-states)
 
 (provide 'helix)
 ;;; helix.el ends here

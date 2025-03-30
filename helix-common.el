@@ -17,7 +17,43 @@
 (require 'helix-vars)
 (require 'thingatpt)
 
-(defvar helix-select-state-minor-mode nil)
+;;; Cursor
+
+(defun helix-set-cursor-type (type)
+  (if (display-graphic-p)
+      (setq cursor-type type)
+    (let* ((type (or (car-safe type) type))
+           (code (pcase type
+                   ('bar "6")
+                   ('hbar "4")
+                   (_ "2"))))
+      (send-string-to-terminal (concat "\e[" code " q")))))
+
+(defun helix-set-cursor-color (color)
+  "Set the cursor color to COLOR."
+  (unless (equal (frame-parameter nil 'cursor-color) color)
+    ;; `set-cursor-color' forces a redisplay, so only
+    ;; call it when the color actually changes
+    (set-cursor-color color)))
+
+(defun helix-refresh-cursor (&optional state buffer)
+  "Refresh the cursor for STATE in BUFFER.
+BUFFER defaults to the current buffer.
+If STATE is nil use the buffer current state."
+  (let* ((state (or state helix-state 'normal))
+         (cursor (helix-state-property state :cursor t))
+         (color (or (and (stringp cursor) cursor)
+                    (and (listp cursor) (evil-member-if #'stringp cursor))
+                    (frame-parameter nil 'cursor-color))))
+    (with-current-buffer (or buffer (current-buffer))
+      ;; if both STATE and `evil-default-cursor'
+      ;; specify a color, don't set it twice
+      (evil-set-cursor (if (and color (listp default))
+                           (cl-remove-if #'stringp default)
+                         default))
+      (evil-set-cursor cursor))))
+
+;;; Motions
 
 (defun helix-forward-beginning (thing &optional count)
   "Move to the beginning of the COUNT THING."
@@ -42,18 +78,18 @@ If DIR is positive number get following char, negative — preceding char."
                   (skip-chars-forward chars)
                 (skip-chars-backward chars)))))
 
-(defun helix-skip-empty-lines (&optional dir)
-  "Skip all empty lines toward direction.
-If DIR is positive number move forward, else — backward."
-  ;; (prog1
-  ;;     (helix-forward-chars "\r\n" (or dir 1))
-  ;;   (when (not helix-select-state-minor-mode)
-  ;;     (set-mark (point))))
-  (let ((point-moved (helix-forward-chars "\r\n" (or dir 1))))
-    (when (and point-moved
-               (not helix-select-state-minor-mode))
-      (set-mark (point)))
-    point-moved))
+;; (defun helix-skip-empty-lines (&optional dir)
+;;   "Skip all empty lines toward direction.
+;; If DIR is positive number move forward, else — backward."
+;;   ;; (prog1
+;;   ;;     (helix-forward-chars "\r\n" (or dir 1))
+;;   ;;   (when (not helix-select-state-minor-mode)
+;;   ;;     (set-mark (point))))
+;;   (let ((point-moved (helix-forward-chars "\r\n" (or dir 1))))
+;;     (when (and point-moved
+;;                (not helix-select-state-minor-mode))
+;;       (set-mark (point)))
+;;     point-moved))
 
 (defmacro helix-motion-loop (spec &rest body)
   "Loop a certain number of times.
