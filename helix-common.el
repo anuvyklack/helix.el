@@ -142,5 +142,10 @@ Else returns t.
   "Return t if mark precedes point."
   (< (mark) (point)))
 
+;; (defmacro helix-expand-selection-or (body)
+;;   `(if helix-extend-selection
+;;        (or (region-active-p) (set-mark (point)))
+;;      ,@body))
+
 (provide 'helix-common)
 ;;; helix-common.el ends here
