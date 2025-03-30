@@ -90,14 +90,15 @@ buffer local variable."
      (put ',symbol 'permanent-local t)))
 
 (defvar helix-global-keymaps-alist nil
-  "Association list of keymap variables.
-Entries have the form (MODE . KEYMAP), where KEYMAP
-is the variable containing the keymap for MODE.")
+  "Association list of global Helix keymaps.
+Entries have the form (STATE . KEYMAP), where STATE is a Helix state.")
 
 (helix-defvar-local helix-mode-map-alist nil
-  "Association list of keymaps to use for Helix modes.
-Elements have the form (MODE . KEYMAP), with the first keymaps
-having higher priority.")
+  "Association list of keymaps for current Helix state.
+
+This symbol lies in `emulation-mode-map-alists' and its contents are updated
+every time the Helix state changes.  Elements have the form (MODE . KEYMAP),
+with the first keymaps having higher priority.")
 
 (helix-defvar-local helix-state nil
   "The current Helix state.")

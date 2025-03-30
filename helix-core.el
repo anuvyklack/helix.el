@@ -9,7 +9,15 @@
 ;;
 ;;; Commentary:
 ;;
-;;  Core functionality
+;; Helix states are similar to Emacs minor modes, but they are not minor modes
+;; in the sense that they are not created with `define-minor-mode'.
+;;
+;; Every state has general globally shared keymap, and auxiliary keymaps stored
+;; in other keymaps under special keys like "<normal-state>" or "<insert-state>",
+;; that are associated with particular Helix states and can not be produced by
+;; a keyboard. On every Helix state change, the algorithm traverse all currently
+;; active keymaps looking for these keys, and activates keymaps associated with
+;; them.
 ;;
 ;;; Code:
 
@@ -18,18 +26,15 @@
 (define-minor-mode helix-local-mode
   "Minor mode for setting up Helix in a current buffer."
   :global nil
-  (if helix-local-mode
-      (progn
-        ;; Just push symbol here.
-        ;; Later we will update its contents on every helix state change.
-        (cl-pushnew 'helix-mode-map-alist emulation-mode-map-alists)
-        )
-    (progn)))
+  (cond (helix-local-mode
+         ;; Just push the symbol here. We will update its content
+         ;; on every Helix state change.
+         (cl-pushnew 'helix-mode-map-alist emulation-mode-map-alists))
+        (t
+         (helix-deactivate-keymaps))))
 
 ;;; Helix states
 
-;; Every state has general globaly shared keymap, and auxiliary per buffer
-;; keymap pined to major mode.
 (defmacro helix-define-state (state doc &rest body)
   "Define Helix state STATE.
 DOC is a general description and shows up in all docstrings.
@@ -154,6 +159,11 @@ values instead."
   )
 
 ;;; Keymaps
+
+(defmacro helix-define-keymap (state)
+  "Define a keymap KEYMAP listed in `helix-mode-map-alist'."
+
+  )
 
 (defun helix-activate-keymaps (&optional state)
   "Set the value of the `helix-mode-map-alist' in the current buffer
