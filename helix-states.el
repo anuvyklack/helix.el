@@ -19,25 +19,16 @@
   "Normal state"
   :cursor 'bar)
 
-;; (helix-define-state select
-;;   "Select/extend state"
-;;   :cursor 'bar
-;;   ;; (cond ((helix-select-state-p)
-;;   ;;        ())
-;;   ;;       (t
-;;   ;;        ()))
-;;   )
-
 (helix-define-state insert
   "Insert state"
   :cursor 'box
-  (cond ((helix-insert-state-p)
+  (cond ((helix-insert-state)
+         ())
+        (t
          (when (and helix-select-on-insert
                     (/= (point) helix-insert-pos))
            ;; activate region
-           ))
-        (t
-         ())))
+           ))))
 
 (helix-define-state motion
   "Motion state")

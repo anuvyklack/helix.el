@@ -62,7 +62,6 @@ Optional keyword arguments:
                      ""
                    (format "\n%s" d))))
          (symbol   (intern (format "helix-%s-state" state)))
-         ;; (predicate  (intern (format "%s-p" symbol)))
          (cursor     (intern (format "%s-cursor" symbol)))
          (keymap     (intern (format "%s-map" symbol)))
          (entry-hook (intern (format "%s-entry-hook" symbol)))
@@ -99,15 +98,13 @@ cursor, or a list of the above." name))
                              :entry-hook (defvar ,entry-hook nil
                                            ,(format "Hooks to run when entering %s." name))
                              :exit-hook (defvar ,exit-hook nil
-                                          ,(format "Hooks to run when exiting %s." name))
-                             ;; :predicate ',predicate
-                             ))
+                                          ,(format "Hooks to run when exiting %s." name))))
        ;; hooks
        (dolist (func ',entry-hook-value) (add-hook ',entry-hook func))
        (dolist (func ',exit-hook-value) (add-hook ',exit-hook func))
        ;; state variable
        (helix-defvar-local ,symbol nil
-         ,(format "Non nil if Helix is in %s." ,name))
+         ,(format "Non nil if Helix is in %s." name))
        ;; state function
        (defun ,symbol (&optional arg)
          ,(format "Enable Helix %s. Disable with negative ARG.%s" name doc)
@@ -127,11 +124,6 @@ cursor, or a list of the above." name))
                   (helix-setup-cursor ',state))
                 ,@body
                 (run-hooks ',entry-hook))))
-       ;; ;; state predicate
-       ;; (defun ,predicate ()
-       ;;   ,(format "Whether the current Helix state is %s." name)
-       ;;   (and helix-local-mode
-       ;;        (eq helix-state ',state)))
        ;; keymap
        ;; (helix-define-keymap ,keymap)
        )))
@@ -172,12 +164,12 @@ values instead."
 according to Helix STATE."
   (setq state (or state (helix-state)))
   ;; (setq helix-mode-map-alist (helix-get-state-keymaps state))
-  (setq helix-mode-map-alist 
-        (let (result
-              (global-keymap (cons (helix-state-property state :symbol)
+  (setq helix-mode-map-alist
+        (let ((global-keymap (cons (helix-state-property state :symbol)
                                    (thread-first
                                      (helix-state-property state :keymap)
-                                     (symbol-value)))))
+                                     (symbol-value))))
+              result)
           (dolist (keymap (current-active-maps) (nreverse result))
             (when-let* ((helix-map (helix-get-nested-helix-keymap keymap state))
                         (mode      (helix-get-minor-mode-for-keymap keymap)))
@@ -190,10 +182,10 @@ according to Helix STATE."
 
 ;; (defun helix-get-state-keymaps (state)
 ;;   "Get the keymap alist of Helix keymaps to activate for STATE."
-;;   (let (result
-;;         (global-keymap (cons (helix-state-property state :symbol)
+;;   (let ((global-keymap (cons (helix-state-property state :symbol)
 ;;                              (thread-first (helix-state-property state :keymap)
-;;                                            (symbol-value)))))
+;;                                            (symbol-value))))
+;;         result)
 ;;     (dolist (keymap (current-active-maps) (nreverse result))
 ;;       (when-let* ((helix-map (helix-get-nested-helix-keymap keymap state))
 ;;                   (mode      (helix-get-minor-mode-for-keymap keymap)))
@@ -210,15 +202,13 @@ or t if none is found."
       (let ((map (if (keymapp keymap) keymap
                    (symbol-value keymap))))
         (or (car (rassq map (mapcar #'(lambda (e)
-                                        ;; from (MODE-SYMBOL . MAP-SYMBOL)
-                                        ;; to (MODE-SYMBOL . MAP)
+                                        ;; from (MODE-SYMBOL . KEYMAP-SYMBOL)
+                                        ;; to   (MODE-SYMBOL . KEYMAP)
                                         (cons (car-safe e)
                                               (symbol-value (cdr-safe e))))
                                     helix-global-keymaps-alist)))
             (car (rassq map minor-mode-map-alist))))
       t))
-
-;;;; Auxiliary keymaps
 
 (defun helix-get-nested-helix-keymap (keymap state)
   "Get from KEYMAP the nested keymap for Helix STATE."
