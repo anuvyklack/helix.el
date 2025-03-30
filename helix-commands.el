@@ -24,10 +24,13 @@
   (interactive "p")
   (let ((thing (if bigword 'helix-WORD 'helix-word)))
     (when (forward-thing thing (1- count))
-      (skip-chars-forward "\r\n")
-      (set-mark (point))
-      (when (not (memq (following-char) '(?\s ?\t)))
-        (forward-thing thing))
+      (if helix-extend-selection
+          (or (region-active-p)
+              (set-mark (point)))
+        (skip-chars-forward "\r\n")
+        (set-mark (point)))
+      (or (memq (following-char) '(?\s ?\t))
+          (forward-thing thing))
       (skip-chars-forward " \t"))))
 
 ;; W
@@ -43,8 +46,11 @@
   (setq count (- count))
   (let ((thing (if bigword 'helix-WORD 'helix-word)))
     (when (forward-thing thing (1+ count))
-      (skip-chars-backward "\r\n")
-      (set-mark (point))
+      (if helix-extend-selection
+          (or (region-active-p)
+              (set-mark (point)))
+        (skip-chars-backward "\r\n")
+        (set-mark (point)))
       (forward-thing thing -1))))
 
 ;; B
@@ -59,8 +65,11 @@
   (interactive "p")
   (let ((thing (if bigword 'helix-WORD 'helix-word)))
     (when (forward-thing thing (1- count))
-      (skip-chars-forward "\r\n")
-      (set-mark (point))
+      (if helix-extend-selection
+          (or (region-active-p)
+              (set-mark (point)))
+        (skip-chars-forward "\r\n")
+        (set-mark (point)))
       (forward-thing thing))))
 
 ;; E

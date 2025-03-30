@@ -19,14 +19,14 @@
   "Normal state"
   :cursor 'bar)
 
-(helix-define-state select
-  "Select/extend state"
-  :cursor 'bar
-  ;; (cond ((helix-select-state-p)
-  ;;        ())
-  ;;       (t
-  ;;        ()))
-  )
+;; (helix-define-state select
+;;   "Select/extend state"
+;;   :cursor 'bar
+;;   ;; (cond ((helix-select-state-p)
+;;   ;;        ())
+;;   ;;       (t
+;;   ;;        ()))
+;;   )
 
 (helix-define-state insert
   "Insert state"

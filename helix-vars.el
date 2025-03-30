@@ -108,6 +108,9 @@ Entries have the form (STATE . PLIST), where PLIST is a property
 list specifying various aspects of the state. To access a property,
 use `helix-state-property'.")
 
+(helix-defvar-local helix-extend-selection nil
+  "Extend selection")
+
 (helix-defvar-local helix-selection-history nil
   "The history of selections")
 
