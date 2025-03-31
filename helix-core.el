@@ -44,8 +44,8 @@ BODY is executed each time the state is enabled or disabled.
 
 Optional keyword arguments:
 - `:cursor' - default cursor specification.
-- `:entry-hook' - list of functions to run when entering this state.
-- `:exit-hook' - list of functions to run when exiting this state.
+- `:hook' - list of functions to run on each entry/exit of this state.
+- `:after-hook' - list of functions to evaluate after state hooks have been run.
 
 \(fn STATE DOC [[KEY VAL]...] BODY...)"
   (declare (indent defun)
@@ -55,69 +55,56 @@ Optional keyword arguments:
                            [&rest [keywordp sexp]]
                            def-body)))
   (string-match "^\\(.+\\)\\(\\(?:.\\|\n\\)*\\)" doc)
-  (let* ((name (let ((n (match-string 1 doc)))
-                 (string-match "^\\(.+?\\)\\.?$" n)
-                 (match-string 1 n)))
-         (doc  (let ((d (match-string 2 doc)))
-                 (if (or (null d) (string= d ""))
-                     ""
-                   (format "\n%s" d))))
-         (symbol     (intern (format "helix-%s-state" state)))
-         (cursor     (intern (format "%s-cursor" symbol)))
-         (entry-hook (intern (format "%s-entry-hook" symbol)))
-         (exit-hook  (intern (format "%s-exit-hook" symbol)))
-         (keymap     (intern (format "%s-map" symbol)))
-         key arg cursor-value entry-hook-value exit-hook-value)
+  (let* ((state-name (concat (capitalize (symbol-name state))
+                             " state"))
+         (symbol (intern (format "helix-%s-state" state)))
+         (cursor (intern (format "%s-cursor" symbol)))
+         (hook   (intern (format "%s-hook" symbol)))
+         (keymap (intern (format "%s-map" symbol)))
+         key arg cursor-value hook-value after-hook-value)
     ;; collect keywords
     (while (keywordp (car-safe body))
       (setq key (pop body)
             arg (pop body))
       (pcase key
-        (:cursor     (setq cursor-value arg))
-        (:entry-hook (setq entry-hook-value arg)
-                     (unless (listp entry-hook-value)
-                       (setq entry-hook-value (list entry-hook-value))))
-        (:exit-hook  (setq exit-hook-value arg)
-                     (unless (listp exit-hook-value)
-                       (setq exit-hook-value (list exit-hook-value))))))
+        (:cursor (setq cursor-value arg))
+        (:hook (setq hook-value arg)
+               (unless (listp hook-value)
+                 (setq hook-value (list hook-value))))
+        (:after-hook (setq after-hook-value arg))))
     `(progn
        ;; Save the state's properties in `helix-state-properties' for
        ;; runtime lookup.
        (helix--add-to-alist helix-state-properties ',state
-                            (list :symbol ',symbol
-                                  :name ',name
-                                  :cursor ',cursor
-                                  :keymap ',keymap
-                                  :entry-hook ',entry-hook
-                                  :exit-hook ',exit-hook))
+                            (list :name     ',state-name
+                                  :variable ',symbol
+                                  :fun      ',symbol
+                                  :cursor   ',cursor
+                                  :keymap   ',keymap
+                                  :hook     ',hook))
        (defvar ,cursor ',cursor-value
          ,(format "Cursor for %s.
 May be a cursor type as per `cursor-type', a color string as passed
 to `set-cursor-color', a zero-argument function for changing the
-cursor, or a list of the above." name))
-       ;; entry-hook
-       (defvar ,entry-hook nil
-         ,(format "Hooks to run when entering %s." name))
-       (dolist (func ',entry-hook-value)
-         (add-hook ',entry-hook func))
-       ;; exit-hook
-       (defvar ,exit-hook nil
-         ,(format "Hooks to run when exiting %s." name))
-       (dolist (func ',exit-hook-value)
-         (add-hook ',exit-hook func))
+cursor, or a list of the above." state-name))
+       ;; hook
+       (defvar ,hook nil
+         ,(format "Hooks to run on entry/exit %s." state-name))
+       (dolist (func ',hook-value)
+         (add-hook ',hook func))
        ;; keymap
        (defvar ,keymap (make-sparse-keymap)
-         ,(format "Keymap for %s." name))
+         ,(format "Keymap for %s." state-name))
        (helix--add-to-alist helix-global-keymaps-alist ,symbol ,keymap)
        ;; state variable
        (helix-defvar-local ,symbol nil
-         ,(format "Non nil if Helix state is %s." name))
+         ,(format "Non nil if Helix state is %s." state-name))
        ;; state function
        (defun ,symbol (&optional arg)
-         ,(format "Enable Helix %s. Disable with negative ARG.%s" name doc)
+         ,(format "Enable Helix %s. Disable with negative ARG.%s" state-name doc)
          (interactive)
          (cond ((and (numberp arg) (< arg 0)) ; deactivate
-                (run-hooks ',exit-hook)
+                (run-hooks ',after-hook)
                 ,@body
                 (helix-deactivate-keymaps)
                 (setq helix-state nil
@@ -130,7 +117,7 @@ cursor, or a list of the above." name))
                 (when (eq (window-buffer) (current-buffer))
                   (helix-setup-cursor ',state))
                 ,@body
-                (run-hooks ',entry-hook))))
+                (run-hooks ',hook))))
        )))
 
 (defun helix-state-p (sym)
