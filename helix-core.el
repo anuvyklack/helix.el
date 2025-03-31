@@ -22,6 +22,7 @@
 ;;; Code:
 
 (require 'cl-lib)
+(require 'dash)
 
 (define-minor-mode helix-local-mode
   "Minor mode for setting up Helix in a current buffer."
@@ -72,37 +73,41 @@ Optional keyword arguments:
       (setq key (pop body)
             arg (pop body))
       (pcase key
-        (:cursor (setq cursor-value arg))
+        (:cursor     (setq cursor-value arg))
         (:entry-hook (setq entry-hook-value arg)
                      (unless (listp entry-hook-value)
                        (setq entry-hook-value (list entry-hook-value))))
-        (:exit-hook (setq exit-hook-value arg)
-                    (unless (listp exit-hook-value)
-                      (setq exit-hook-value (list exit-hook-value))))))
+        (:exit-hook  (setq exit-hook-value arg)
+                     (unless (listp exit-hook-value)
+                       (setq exit-hook-value (list exit-hook-value))))))
     `(progn
        ;; Save the state's properties in `helix-state-properties' for
        ;; runtime lookup.
        (helix--add-to-alist helix-state-properties ',state
-                            (list
-                             :symbol ',symbol
-                             :name ',name
-                             :cursor (defvar ,cursor ',cursor-value
-                                       ,(format "Cursor for %s.
+                            (list :symbol ',symbol
+                                  :name ',name
+                                  :cursor ',cursor
+                                  :keymap ',keymap
+                                  :entry-hook ',entry-hook
+                                  :exit-hook ',exit-hook))
+       ;; state variables
+       (helix-defvar-local ,symbol nil
+         ,(format "Non nil if Helix state is %s." name))
+       (defvar ,cursor ',cursor-value
+         ,(format "Cursor for %s.
 May be a cursor type as per `cursor-type', a color string as passed
 to `set-cursor-color', a zero-argument function for changing the
 cursor, or a list of the above." name))
-                             :keymap (defvar ,keymap (make-sparse-keymap)
-                                       ,(format "Keymap for %s." name))
-                             :entry-hook (defvar ,entry-hook nil
-                                           ,(format "Hooks to run when entering %s." name))
-                             :exit-hook (defvar ,exit-hook nil
-                                          ,(format "Hooks to run when exiting %s." name))))
+       (defvar ,keymap (make-sparse-keymap)
+         ,(format "Keymap for %s." name))
        ;; hooks
+       (defvar ,entry-hook nil
+         ,(format "Hooks to run when entering %s." name))
+       (defvar ,exit-hook nil
+         ,(format "Hooks to run when exiting %s." name))
        (dolist (func ',entry-hook-value) (add-hook ',entry-hook func))
        (dolist (func ',exit-hook-value) (add-hook ',exit-hook func))
-       ;; state variable
-       (helix-defvar-local ,symbol nil
-         ,(format "Non nil if Helix is in %s." name))
+
        ;; state function
        (defun ,symbol (&optional arg)
          ,(format "Enable Helix %s. Disable with negative ARG.%s" name doc)
@@ -165,9 +170,8 @@ according to Helix STATE."
   ;; (setq helix-mode-map-alist (helix-get-state-keymaps state))
   (setq helix-mode-map-alist
         (let ((global-keymap (cons (helix-state-property state :symbol)
-                                   (thread-first
-                                     (helix-state-property state :keymap)
-                                     (symbol-value))))
+                                   (-> (helix-state-property state :keymap)
+                                       (symbol-value))))
               result)
           (dolist (keymap (current-active-maps) (nreverse result))
             (when-let* ((helix-map (helix-get-nested-helix-keymap keymap state))

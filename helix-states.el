@@ -14,10 +14,13 @@
 ;;; Code:
 
 (require 'helix-core)
+(require 'helix-vars)
 
 (helix-define-state normal
   "Normal state"
   :cursor 'bar)
+
+;;;
 
 (helix-define-state insert
   "Insert state"
@@ -30,8 +33,12 @@
            ;; activate region
            ))))
 
+;;;
+
 (helix-define-state motion
   "Motion state")
+
+;;;
 
 (provide 'helix-states)
 ;;; helix-states.el ends here
