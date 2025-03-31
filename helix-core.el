@@ -61,26 +61,24 @@ Optional keyword arguments:
                  (if (or (null d) (string= d ""))
                      ""
                    (format "\n%s" d))))
-         (symbol   (intern (format "helix-%s-state" state)))
+         (symbol     (intern (format "helix-%s-state" state)))
          (cursor     (intern (format "%s-cursor" symbol)))
-         (keymap     (intern (format "%s-map" symbol)))
          (entry-hook (intern (format "%s-entry-hook" symbol)))
          (exit-hook  (intern (format "%s-exit-hook" symbol)))
+         (keymap     (intern (format "%s-map" symbol)))
          key arg cursor-value entry-hook-value exit-hook-value)
     ;; collect keywords
     (while (keywordp (car-safe body))
       (setq key (pop body)
             arg (pop body))
-      (cond ((eq key :cursor)
-             (setq cursor-value arg))
-            ((eq key :entry-hook)
-             (setq entry-hook-value arg)
-             (unless (listp entry-hook-value)
-               (setq entry-hook-value (list entry-hook-value))))
-            ((eq key :exit-hook)
-             (setq exit-hook-value arg)
-             (unless (listp exit-hook-value)
-               (setq exit-hook-value (list exit-hook-value))))))
+      (pcase key
+        (:cursor (setq cursor-value arg))
+        (:entry-hook (setq entry-hook-value arg)
+                     (unless (listp entry-hook-value)
+                       (setq entry-hook-value (list entry-hook-value))))
+        (:exit-hook (setq exit-hook-value arg)
+                    (unless (listp exit-hook-value)
+                      (setq exit-hook-value (list exit-hook-value))))))
     `(progn
        ;; Save the state's properties in `helix-state-properties' for
        ;; runtime lookup.
@@ -126,6 +124,7 @@ cursor, or a list of the above." name))
                 (run-hooks ',entry-hook))))
        ;; keymap
        ;; (helix-define-keymap ,keymap)
+       ;; (helix-global-keymaps-alist)
        )))
 
 (defun helix-state-p (sym)
