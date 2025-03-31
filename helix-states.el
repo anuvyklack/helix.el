@@ -25,13 +25,11 @@
 (helix-define-state insert
   "Insert state"
   :cursor 'box
-  (cond ((helix-insert-state)
-         ())
-        (t
-         (when (and helix-select-on-insert
-                    (/= (point) helix-insert-pos))
-           ;; activate region
-           ))))
+  (unless helix-insert-state
+    (when (and helix-select-on-insert
+               (/= (point) helix-insert-pos))
+      ;; activate region
+      )))
 
 ;;;
 

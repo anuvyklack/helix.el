@@ -27,12 +27,14 @@
 (define-minor-mode helix-local-mode
   "Minor mode for setting up Helix in a current buffer."
   :global nil
-  (cond (helix-local-mode
-         ;; Just push the symbol here. We will update its content
-         ;; on every Helix state change.
-         (cl-pushnew 'helix-mode-map-alist emulation-mode-map-alists))
-        (t
-         (helix-deactivate-keymaps))))
+  (if helix-local-mode
+      (progn
+        ;; Just push the symbol here. We will update its content
+        ;; on every Helix state change.
+        (cl-pushnew 'helix-mode-map-alist emulation-mode-map-alists)
+        (helix-normal-state 1))
+    ;; else
+    (helix-disable-current-state)))
 
 ;;; Helix state
 
@@ -45,7 +47,7 @@ BODY is executed each time the state is enabled or disabled.
 Optional keyword arguments:
 - `:cursor' - default cursor specification.
 - `:hook' - list of functions to run on each entry/exit of this state.
-- `:after-hook' - list of functions to evaluate after state hooks have been run.
+- `:after-hook' - Lisp form to evaluate after state hooks have been run.
 
 \(fn STATE DOC [[KEY VAL]...] BODY...)"
   (declare (indent defun)
@@ -54,14 +56,15 @@ Optional keyword arguments:
                            [&optional stringp]
                            [&rest [keywordp sexp]]
                            def-body)))
-  (string-match "^\\(.+\\)\\(\\(?:.\\|\n\\)*\\)" doc)
   (let* ((state-name (concat (capitalize (symbol-name state))
                              " state"))
          (symbol (intern (format "helix-%s-state" state)))
+         (variable symbol)
+         (statefun symbol)
          (cursor (intern (format "%s-cursor" symbol)))
          (hook   (intern (format "%s-hook" symbol)))
          (keymap (intern (format "%s-map" symbol)))
-         key arg cursor-value hook-value after-hook-value)
+         key arg cursor-value hook-value after-hook)
     ;; collect keywords
     (while (keywordp (car-safe body))
       (setq key (pop body)
@@ -71,14 +74,14 @@ Optional keyword arguments:
         (:hook (setq hook-value arg)
                (unless (listp hook-value)
                  (setq hook-value (list hook-value))))
-        (:after-hook (setq after-hook-value arg))))
+        (:after-hook (setq after-hook arg))))
     `(progn
        ;; Save the state's properties in `helix-state-properties' for
        ;; runtime lookup.
        (helix--add-to-alist helix-state-properties ',state
                             (list :name     ',state-name
-                                  :variable ',symbol
-                                  :fun      ',symbol
+                                  :variable ',variable
+                                  :fun      ',statefun
                                   :cursor   ',cursor
                                   :keymap   ',keymap
                                   :hook     ',hook))
@@ -94,31 +97,29 @@ cursor, or a list of the above." state-name))
          (add-hook ',hook func))
        ;; keymap
        (defvar ,keymap (make-sparse-keymap)
-         ,(format "Keymap for %s." state-name))
-       (helix--add-to-alist helix-global-keymaps-alist ,symbol ,keymap)
+         ,(format "Global keymap for Helix %s." state-name))
+       (helix--add-to-alist helix-global-keymaps-alist ',symbol ',keymap)
        ;; state variable
-       (helix-defvar-local ,symbol nil
-         ,(format "Non nil if Helix state is %s." state-name))
+       (helix-defvar-local ,variable nil
+         ,(format "Non nil if current Helix state is %s." state-name))
        ;; state function
-       (defun ,symbol (&optional arg)
-         ,(format "Enable Helix %s. Disable with negative ARG.%s" state-name doc)
+       (defun ,statefun (&optional arg)
+         ,(format "Enable Helix %s. Disable when ARG is non-positive integer.\n\n%s"
+                  state-name doc)
          (interactive)
-         (cond ((and (numberp arg) (< arg 0)) ; deactivate
-                (run-hooks ',after-hook)
-                ,@body
-                (helix-deactivate-keymaps)
-                (setq helix-state nil
-                      ,symbol nil))
-               (t ; activate
-                (unless helix-local-mode (helix-local-mode))
-                (setq helix-state ',state
-                      ,symbol t)
-                (helix-activate-keymaps ',state)
-                (when (eq (window-buffer) (current-buffer))
-                  (helix-setup-cursor ',state))
-                ,@body
-                (run-hooks ',hook))))
-       )))
+         (setq ,variable (cond ((and (numberp arg) (< arg 1)) nil)
+                               (t t)))
+         (helix-disable-current-state)
+         (setq helix-state (if ,variable ',state))
+         (when ,variable
+           (unless helix-local-mode (helix-local-mode))
+           (when (eq (window-buffer) (current-buffer))
+             (helix-setup-cursor ',state)))
+         (helix-update-active-keymaps)
+         ,@body
+         (run-hooks ',hook)
+         ,@(when after-hook `(,after-hook))
+         (force-mode-line-update)))))
 
 (defun helix-state-p (sym)
   "Whether SYM is the name of a state."
@@ -144,44 +145,29 @@ values instead."
   (plist-get (cdr (assq state helix-state-properties))
              prop))
 
+(defun helix-disable-current-state ()
+  "Disable current Helix state."
+  (when-let* ((state helix-state)
+              (func (helix-state-property state :fun)))
+    (when (functionp func)
+      (funcall func -1))))
+
 ;;; Keymaps
 
-(defmacro helix-define-keymap (state)
-  "Define a keymap KEYMAP listed in `helix-mode-map-alist'."
-
-  )
-
-(defun helix-activate-keymaps (&optional state)
+(defun helix-update-active-keymaps ()
   "Set the value of the `helix-mode-map-alist' in the current buffer
-according to Helix STATE."
-  (setq state (or state (helix-state)))
-  ;; (setq helix-mode-map-alist (helix-get-state-keymaps state))
+according to current Helix STATE."
   (setq helix-mode-map-alist
-        (let ((global-keymap (cons (helix-state-property state :symbol)
-                                   (-> (helix-state-property state :keymap)
-                                       (symbol-value))))
-              result)
-          (dolist (keymap (current-active-maps) (nreverse result))
-            (when-let* ((helix-map (helix-get-nested-helix-keymap keymap state))
-                        (mode      (helix-get-minor-mode-for-keymap keymap)))
-              (push (cons mode helix-map) result)))
-          (list result global-keymap))))
-
-(defun helix-deactivate-keymaps ()
-  "Deactivate all Helix keymaps."
-  (setq helix-mode-map-alist nil))
-
-;; (defun helix-get-state-keymaps (state)
-;;   "Get the keymap alist of Helix keymaps to activate for STATE."
-;;   (let ((global-keymap (cons (helix-state-property state :symbol)
-;;                              (thread-first (helix-state-property state :keymap)
-;;                                            (symbol-value))))
-;;         result)
-;;     (dolist (keymap (current-active-maps) (nreverse result))
-;;       (when-let* ((helix-map (helix-get-nested-helix-keymap keymap state))
-;;                   (mode      (helix-get-minor-mode-for-keymap keymap)))
-;;         (push (cons mode helix-map) result)))
-;;     (list result global-keymap)))
+        (when-let* ((state helix-state))
+          (let ((global-keymap (cons (helix-state-property state :symbol)
+                                     (-> (helix-state-property state :keymap)
+                                         (symbol-value))))
+                result)
+            (dolist (keymap (current-active-maps) (nreverse result))
+              (when-let* ((helix-map (helix-get-nested-helix-keymap keymap state))
+                          (mode      (helix-get-minor-mode-for-keymap keymap)))
+                (push (cons mode helix-map) result)))
+            (list result global-keymap)))))
 
 (defun helix-get-minor-mode-for-keymap (keymap)
   "Return either Helix state or the minor mode associated with KEYMAP
