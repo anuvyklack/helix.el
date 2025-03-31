@@ -34,7 +34,7 @@
         (t
          (helix-deactivate-keymaps))))
 
-;;; Helix states
+;;; Helix state
 
 (defmacro helix-define-state (state doc &rest body)
   "Define Helix state STATE.
@@ -90,24 +90,28 @@ Optional keyword arguments:
                                   :keymap ',keymap
                                   :entry-hook ',entry-hook
                                   :exit-hook ',exit-hook))
-       ;; state variables
-       (helix-defvar-local ,symbol nil
-         ,(format "Non nil if Helix state is %s." name))
        (defvar ,cursor ',cursor-value
          ,(format "Cursor for %s.
 May be a cursor type as per `cursor-type', a color string as passed
 to `set-cursor-color', a zero-argument function for changing the
 cursor, or a list of the above." name))
-       (defvar ,keymap (make-sparse-keymap)
-         ,(format "Keymap for %s." name))
-       ;; hooks
+       ;; entry-hook
        (defvar ,entry-hook nil
          ,(format "Hooks to run when entering %s." name))
+       (dolist (func ',entry-hook-value)
+         (add-hook ',entry-hook func))
+       ;; exit-hook
        (defvar ,exit-hook nil
          ,(format "Hooks to run when exiting %s." name))
-       (dolist (func ',entry-hook-value) (add-hook ',entry-hook func))
-       (dolist (func ',exit-hook-value) (add-hook ',exit-hook func))
-
+       (dolist (func ',exit-hook-value)
+         (add-hook ',exit-hook func))
+       ;; keymap
+       (defvar ,keymap (make-sparse-keymap)
+         ,(format "Keymap for %s." name))
+       (helix--add-to-alist helix-global-keymaps-alist ,symbol ,keymap)
+       ;; state variable
+       (helix-defvar-local ,symbol nil
+         ,(format "Non nil if Helix state is %s." name))
        ;; state function
        (defun ,symbol (&optional arg)
          ,(format "Enable Helix %s. Disable with negative ARG.%s" name doc)
@@ -127,9 +131,6 @@ cursor, or a list of the above." name))
                   (helix-setup-cursor ',state))
                 ,@body
                 (run-hooks ',entry-hook))))
-       ;; keymap
-       ;; (helix-define-keymap ,keymap)
-       ;; (helix-global-keymaps-alist)
        )))
 
 (defun helix-state-p (sym)
@@ -235,6 +236,26 @@ or t if none is found."
   "Whether KEYMAP is an Helix keymap."
   (let ((prompt (keymap-prompt keymap)))
     (when prompt (string-prefix-p "Helix keymap" prompt))))
+
+;;; Cursor
+
+(defun helix-refresh-cursor (&optional state buffer)
+  "Refresh the cursor for STATE in BUFFER.
+BUFFER defaults to the current buffer.
+If STATE is nil use the buffer current state."
+  (let* ((state (or state helix-state 'normal))
+         (cursor (-> (helix-state-property state :cursor)
+                     (symbol-value)))
+         (color (or (and (stringp cursor) cursor)
+                    (and (listp cursor) (evil-member-if #'stringp cursor))
+                    (frame-parameter nil 'cursor-color))))
+    (with-current-buffer (or buffer (current-buffer))
+      ;; if both STATE and `evil-default-cursor'
+      ;; specify a color, don't set it twice
+      (evil-set-cursor (if (and color (listp default))
+                           (cl-remove-if #'stringp default)
+                         default))
+      (evil-set-cursor cursor))))
 
 ;;; Utils
 

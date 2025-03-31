@@ -36,23 +36,6 @@
     ;; call it when the color actually changes
     (set-cursor-color color)))
 
-(defun helix-refresh-cursor (&optional state buffer)
-  "Refresh the cursor for STATE in BUFFER.
-BUFFER defaults to the current buffer.
-If STATE is nil use the buffer current state."
-  (let* ((state (or state helix-state 'normal))
-         (cursor (helix-state-property state :cursor t))
-         (color (or (and (stringp cursor) cursor)
-                    (and (listp cursor) (evil-member-if #'stringp cursor))
-                    (frame-parameter nil 'cursor-color))))
-    (with-current-buffer (or buffer (current-buffer))
-      ;; if both STATE and `evil-default-cursor'
-      ;; specify a color, don't set it twice
-      (evil-set-cursor (if (and color (listp default))
-                           (cl-remove-if #'stringp default)
-                         default))
-      (evil-set-cursor cursor))))
-
 ;;; Motions
 
 (defun helix-forward-beginning (thing &optional count)
