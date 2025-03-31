@@ -14,11 +14,19 @@
 ;;; Code:
 
 (require 'helix-core)
-(require 'helix-vars)
+(require 'helix-commands)
 
 (helix-define-state normal
   "Normal state"
   :cursor 'bar)
+
+(define-key helix-normal-state-map "w" #'helix-forward-word-start)
+(define-key helix-normal-state-map "b" #'helix-backward-word-start)
+(define-key helix-normal-state-map "e" #'helix-forward-word-end)
+(define-key helix-normal-state-map "W" #'helix-forward-WORD-start)
+(define-key helix-normal-state-map "B" #'helix-backward-WORD-start)
+(define-key helix-normal-state-map "e" #'helix-forward-WORD-end)
+(define-key helix-normal-state-map "x" #'helix-select-or-extend-line)
 
 ;;;
 

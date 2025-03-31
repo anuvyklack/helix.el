@@ -23,6 +23,7 @@
 
 (require 'cl-lib)
 (require 'dash)
+(require 'helix-vars)
 
 (define-minor-mode helix-local-mode
   "Minor mode for setting up Helix in a current buffer."
@@ -32,7 +33,8 @@
         ;; Just push the symbol here. We will update its content
         ;; on every Helix state change.
         (cl-pushnew 'helix-mode-map-alist emulation-mode-map-alists)
-        (helix-normal-state 1))
+        ;; (helix-normal-state 1)
+        )
     ;; else
     (helix-disable-current-state)))
 
