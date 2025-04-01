@@ -22,6 +22,14 @@
 
 ;;;
 
+(define-key helix-normal-state-map "h" #'helix-backward-char)
+(define-key helix-normal-state-map "j" #'helix-next-line)
+(define-key helix-normal-state-map "k" #'helix-previous-line)
+(define-key helix-normal-state-map "l" #'helix-forward-char)
+
+(define-key helix-normal-state-map "i" #'helix-insert)
+(define-key helix-normal-state-map "a" #'helix-append)
+
 (define-key helix-normal-state-map "w" #'helix-forward-word-start)
 (define-key helix-normal-state-map "b" #'helix-backward-word-start)
 (define-key helix-normal-state-map "e" #'helix-forward-word-end)
@@ -36,10 +44,13 @@
   "Insert state"
   :cursor 'box
   (unless helix-insert-state
-    (when (and helix-select-on-insert
-               (/= (point) helix-insert-pos))
-      ;; activate region
-      )))
+    ;; (when (and helix-select-on-insert
+    ;;            (/= (point) helix-insert-pos))
+    ;;   ;; activate region
+    ;;   )
+    ))
+
+(define-key helix-insert-state-map [escape] #'helix-normal-state)
 
 ;;;
 

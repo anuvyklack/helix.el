@@ -126,5 +126,21 @@
   (helix-motion-loop (_ (1- count))
     (goto-char (cdr (bounds-of-thing-at-point 'line)))))
 
+;; i
+(defun helix-insert ()
+  "Switch to Insert state before selection."
+  (interactive)
+  (when (< (mark) (point))
+    (exchange-point-and-mark))
+  (helix-insert-state 1))
+
+;; a
+(defun helix-append ()
+  "Switch to Insert state after selection."
+  (interactive)
+  (when (< (point) (mark))
+    (exchange-point-and-mark))
+  (helix-insert-state 1))
+
 (provide 'helix-commands)
 ;;; helix-commands.el ends here
