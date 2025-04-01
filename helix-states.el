@@ -17,7 +17,7 @@
 (require 'helix-commands)
 
 (helix-define-state normal
-  "Normal state"
+  "Default state for editable buffers."
   :cursor 'bar)
 
 ;;;
@@ -38,17 +38,20 @@
 (define-key helix-normal-state-map "e" #'helix-forward-WORD-end)
 (define-key helix-normal-state-map "x" #'helix-select-or-extend-line)
 
+(define-key helix-normal-state-map ";" #'helix-collapse-selection)
+(define-key helix-normal-state-map [escape] #'helix-collapse-selection)
+
 ;;;
 
 (helix-define-state insert
   "Insert state"
   :cursor 'box
-  (unless helix-insert-state
-    ;; (when (and helix-select-on-insert
-    ;;            (/= (point) helix-insert-pos))
-    ;;   ;; activate region
-    ;;   )
-    ))
+  (cond ((helix-state 'insert)
+         (setq helix--region-was-active-on-insert (region-active-p))
+         (deactivate-mark))
+        (t
+         (when helix--region-was-active-on-insert
+           (activate-mark 'no-tmm)))))
 
 (define-key helix-insert-state-map [escape] #'helix-normal-state)
 

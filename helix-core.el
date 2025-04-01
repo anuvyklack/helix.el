@@ -20,6 +20,7 @@
 ;; them.
 ;;
 ;;; Code:
+
 (require 'cl-lib)
 (require 'dash)
 (require 'helix-vars)
@@ -152,7 +153,7 @@ values instead."
   (plist-get (cdr (assq state helix-state-properties))
              prop))
 
-(defun helix-state? (&optional state)
+(defun helix-state (&optional state)
   "Return t if Helix current state is STATE.
 If STATE is nil — return current Helix state."
   (if state
@@ -255,7 +256,18 @@ function for changing the cursor, or a list of the above."
           ((stringp spec)
            (helix-set-cursor-color spec))
           (t
-           (setq cursor-type spec)))))
+           (helix-set-cursor-type spec)))))
+
+(defun helix-set-cursor-type (type)
+  "Set cursor TYPE."
+  (if (display-graphic-p)
+      (setq cursor-type type)
+    (let* ((type (or (car-safe type) type))
+           (code (pcase type
+                   ('bar "6")
+                   ('hbar "4")
+                   (_ "2"))))
+      (send-string-to-terminal (concat "\e[" code " q")))))
 
 (defun helix-set-cursor-color (color)
   "Set the cursor color to COLOR."

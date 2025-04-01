@@ -6,10 +6,6 @@
 ;;
 ;; This file is not part of GNU Emacs.
 ;;
-;;; Commentary:
-;;
-;;  Settings and variables
-;;
 ;;; Code:
 
 ;;; Customization group
@@ -20,7 +16,7 @@
   :prefix 'helix-)
 
 (defcustom helix-select-on-insert t
-  "Select inserted text on exiting insert state."
+  "Select inserted text on exiting Insert state."
   :type 'boolean
   :group 'helix)
 
@@ -109,11 +105,17 @@ Entries have the form (STATE . PLIST), where PLIST is a property
 list specifying various aspects of the state. To access a property,
 use `helix-state-property'.")
 
-(helix-defvar-local helix-extend-selection nil
+(helix-defvar-local helix--extend-selection nil
   "Extend selection")
 
 (helix-defvar-local helix-selection-history nil
   "The history of selections")
+
+(helix-defvar-local helix--insert-pos nil
+  "The location of the point where we last time switched to Insert state.")
+
+(helix-defvar-local helix--region-was-active-on-insert nil
+  "Whether region was active when we last time switched to Insert state.")
 
 (provide 'helix-vars)
 ;;; helix-vars.el ends here

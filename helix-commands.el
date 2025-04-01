@@ -21,7 +21,7 @@
 ;; h
 (defun helix-backward-char (count)
   (interactive "p")
-  (if helix-extend-selection
+  (if helix--extend-selection
       (or (region-active-p) (set-mark (point)))
     (deactivate-mark))
   (backward-char count))
@@ -29,7 +29,7 @@
 ;; l
 (defun helix-forward-char (count)
   (interactive "p")
-  (if helix-extend-selection
+  (if helix--extend-selection
       (or (region-active-p) (set-mark (point)))
     (deactivate-mark))
   (forward-char count))
@@ -38,27 +38,28 @@
 (defun helix-next-line (count)
   "Move to the next line."
   (interactive "p")
-  (if helix-extend-selection
+  (if helix--extend-selection
       (or (region-active-p) (set-mark (point)))
     (deactivate-mark))
   (next-line count))
 
 ;; k
 (defun helix-previous-line (count)
-  "Move to the previous line."
+  "Move to the COUNT-th previous line."
   (interactive "p")
-  (if helix-extend-selection
+  (if helix--extend-selection
       (or (region-active-p) (set-mark (point)))
     (deactivate-mark))
   (previous-line count))
 
 ;; w
 (defun helix-forward-word-start (count &optional bigword)
-  "Move next word start."
+  "Move to the COUNT-th next word start.
+If BIGWORD move over WORD-s."
   (interactive "p")
   (let ((thing (if bigword 'helix-WORD 'helix-word)))
     (when (forward-thing thing (1- count))
-      (if helix-extend-selection
+      (if helix--extend-selection
           (or (region-active-p) (set-mark (point)))
         (skip-chars-forward "\r\n")
         (set-mark (point)))
@@ -68,18 +69,19 @@
 
 ;; W
 (defun helix-forward-WORD-start (count)
-  "Move next WORD start."
+  "Move to the COUNT-th next WORD start."
   (interactive "p")
   (helix-forward-word-start count :bigword))
 
 ;; b
 (defun helix-backward-word-start (count &optional bigword)
-  "Move previous word start."
+  "Move to the COUNT-th previous word start.
+If BIGWORD move over WORD-s."
   (interactive "p")
   (setq count (- count))
   (let ((thing (if bigword 'helix-WORD 'helix-word)))
     (when (forward-thing thing (1+ count))
-      (if helix-extend-selection
+      (if helix--extend-selection
           (or (region-active-p) (set-mark (point)))
         (skip-chars-backward "\r\n")
         (set-mark (point)))
@@ -87,17 +89,18 @@
 
 ;; B
 (defun helix-backward-WORD-start (count)
-  "Move previous WORD start."
+  "Move to the COUNT-th previous WORD start."
   (interactive "p")
   (helix-backward-word-start count :bigword))
 
 ;; e
 (defun helix-forward-word-end (count &optional bigword)
-  "Move next word end."
+  "Move to the COUNT-th next word end.
+If BIGWORD move over WORD-s."
   (interactive "p")
   (let ((thing (if bigword 'helix-WORD 'helix-word)))
     (when (forward-thing thing (1- count))
-      (if helix-extend-selection
+      (if helix--extend-selection
           (or (region-active-p) (set-mark (point)))
         (skip-chars-forward "\r\n")
         (set-mark (point)))
@@ -105,7 +108,7 @@
 
 ;; E
 (defun helix-forward-WORD-end (count)
-  "Move next WORD end."
+  "Move COUNT-th next WORD end."
   (interactive "p")
   (helix-forward-word-end count :bigword))
 
@@ -130,7 +133,8 @@
 (defun helix-insert ()
   "Switch to Insert state before selection."
   (interactive)
-  (when (< (mark) (point))
+  (when (and (region-active-p)
+             (< (mark) (point)))
     (exchange-point-and-mark))
   (helix-insert-state 1))
 
@@ -138,9 +142,15 @@
 (defun helix-append ()
   "Switch to Insert state after selection."
   (interactive)
-  (when (< (point) (mark))
+  (when (and (region-active-p)
+             (< (point) (mark)))
     (exchange-point-and-mark))
   (helix-insert-state 1))
+
+(defun helix-collapse-selection ()
+  "Collapse selection onto a single cursor."
+  (interactive)
+  (deactivate-mark))
 
 (provide 'helix-commands)
 ;;; helix-commands.el ends here

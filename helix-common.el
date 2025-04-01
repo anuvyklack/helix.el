@@ -17,25 +17,6 @@
 (require 'helix-vars)
 (require 'thingatpt)
 
-;;; Cursor
-
-(defun helix-set-cursor-type (type)
-  (if (display-graphic-p)
-      (setq cursor-type type)
-    (let* ((type (or (car-safe type) type))
-           (code (pcase type
-                   ('bar "6")
-                   ('hbar "4")
-                   (_ "2"))))
-      (send-string-to-terminal (concat "\e[" code " q")))))
-
-(defun helix-set-cursor-color (color)
-  "Set the cursor color to COLOR."
-  (unless (equal (frame-parameter nil 'cursor-color) color)
-    ;; `set-cursor-color' forces a redisplay, so only
-    ;; call it when the color actually changes
-    (set-cursor-color color)))
-
 ;;; Motions
 
 (defun helix-forward-beginning (thing &optional count)
@@ -46,8 +27,7 @@
       (goto-char (cdr bounds)))
     (ignore-errors
       (when (forward-thing thing count)
-        (beginning-of-thing thing))
-      )))
+        (beginning-of-thing thing)))))
 
 (defun helix-get-next-char (&optional dir)
   "Get the next char toward the direction.
