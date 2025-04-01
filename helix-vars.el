@@ -100,7 +100,7 @@ This symbol lies in `emulation-mode-map-alists' and its contents are updated
 every time the Helix state changes.  Elements have the form (MODE . KEYMAP),
 with the first keymaps having higher priority.")
 
-(helix-defvar-local helix-state nil
+(helix-defvar-local helix--state nil
   "The current Helix state.")
 
 (defvar helix-state-properties nil

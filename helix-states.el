@@ -20,6 +20,8 @@
   "Normal state"
   :cursor 'bar)
 
+;;;
+
 (define-key helix-normal-state-map "w" #'helix-forward-word-start)
 (define-key helix-normal-state-map "b" #'helix-backward-word-start)
 (define-key helix-normal-state-map "e" #'helix-forward-word-end)

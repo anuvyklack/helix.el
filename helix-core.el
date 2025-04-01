@@ -20,10 +20,11 @@
 ;; them.
 ;;
 ;;; Code:
-
 (require 'cl-lib)
 (require 'dash)
 (require 'helix-vars)
+
+;;; helix-mode
 
 (define-minor-mode helix-local-mode
   "Minor mode for setting up Helix in a current buffer."
@@ -33,8 +34,7 @@
         ;; Just push the symbol here. We will update its content
         ;; on every Helix state change.
         (cl-pushnew 'helix-mode-map-alist emulation-mode-map-alists)
-        ;; (helix-normal-state 1)
-        )
+        (helix-normal-state 1))
     ;; else
     (helix-disable-current-state)))
 
@@ -109,23 +109,27 @@ cursor, or a list of the above." state-name))
          ,(format "Enable Helix %s. Disable when ARG is non-positive integer.\n\n%s"
                   state-name doc)
          (interactive)
-         (setq ,variable (cond ((and (numberp arg) (< arg 1)) nil)
-                               (t t)))
-         (helix-disable-current-state)
-         (setq helix-state (if ,variable ',state))
-         (when ,variable
-           (unless helix-local-mode (helix-local-mode))
-           (when (eq (window-buffer) (current-buffer))
-             (helix-setup-cursor ',state)))
+         (setq ,variable (not (and (numberp arg) (< arg 1))))
+         (if ,variable
+             (progn (unless helix-local-mode (helix-local-mode))
+                    (helix-disable-current-state)
+                    (setq helix--state ',state)
+                    (helix-update-cursor))
+           ;; else
+           (when (eq helix--state ',state)
+             (setq helix--state nil)))
          (helix-update-active-keymaps)
          ,@body
          (run-hooks ',hook)
          ,@(when after-hook `(,after-hook))
          (force-mode-line-update)))))
 
-(defun helix-state-p (sym)
-  "Whether SYM is the name of a state."
-  (assq sym helix-state-properties))
+(defun helix-disable-current-state ()
+  "Disable current Helix state."
+  (when-let* ((state helix--state)
+              (func (helix-state-property state :fun)))
+    (when (functionp func)
+      (funcall func -1))))
 
 (defun helix-state-property (state prop)
   "Return the value of property PROP for STATE.
@@ -147,29 +151,30 @@ values instead."
   (plist-get (cdr (assq state helix-state-properties))
              prop))
 
-(defun helix-disable-current-state ()
-  "Disable current Helix state."
-  (when-let* ((state helix-state)
-              (func (helix-state-property state :fun)))
-    (when (functionp func)
-      (funcall func -1))))
+(defun helix-state-p (sym)
+  "Whether SYM is the name of a state."
+  (assq sym helix-state-properties))
 
 ;;; Keymaps
 
 (defun helix-update-active-keymaps ()
+  "Reset keymaps for current Helix state."
+  (helix-activate-state-keymaps helix--state))
+
+(defun helix-activate-state-keymaps (state)
   "Set the value of the `helix-mode-map-alist' in the current buffer
-according to current Helix STATE."
+according to the Helix STATE."
   (setq helix-mode-map-alist
-        (when-let* ((state helix-state))
-          (let ((global-keymap (cons (helix-state-property state :symbol)
-                                     (-> (helix-state-property state :keymap)
-                                         (symbol-value))))
-                result)
-            (dolist (keymap (current-active-maps) (nreverse result))
-              (when-let* ((helix-map (helix-get-nested-helix-keymap keymap state))
-                          (mode      (helix-get-minor-mode-for-keymap keymap)))
-                (push (cons mode helix-map) result)))
-            (list result global-keymap)))))
+        (if state
+            (let ((global-keymap (cons (helix-state-property state :variable)
+                                       (-> (helix-state-property state :keymap)
+                                           (symbol-value))))
+                  result)
+              (dolist (keymap (current-active-maps) (nreverse result))
+                (when-let* ((helix-map (helix-get-nested-helix-keymap keymap state))
+                            (mode      (helix-get-minor-mode-for-keymap keymap)))
+                  (push (cons mode helix-map) result)))
+              `(,@result ,global-keymap)))))
 
 (defun helix-get-minor-mode-for-keymap (keymap)
   "Return either Helix state or the minor mode associated with KEYMAP
@@ -193,7 +198,7 @@ or t if none is found."
   "Get from KEYMAP the nested keymap for Helix STATE."
   (when state
     (let* ((key (vector (intern (format "%s-state" state))))
-           (hx  (keymap-lookup keymap key)))
+           (hx  (lookup-key keymap key)))
       (if (helix-keymap-p hx) hx))))
 
 (defun helix-create-nested-helix-keymap (keymap state)
@@ -214,23 +219,37 @@ or t if none is found."
 
 ;;; Cursor
 
-(defun helix-refresh-cursor (&optional state buffer)
-  "Refresh the cursor for STATE in BUFFER.
-BUFFER defaults to the current buffer.
-If STATE is nil use the buffer current state."
-  (let* ((state (or state helix-state 'normal))
-         (cursor (-> (helix-state-property state :cursor)
-                     (symbol-value)))
-         (color (or (and (stringp cursor) cursor)
-                    (and (listp cursor) (evil-member-if #'stringp cursor))
-                    (frame-parameter nil 'cursor-color))))
-    (with-current-buffer (or buffer (current-buffer))
-      ;; if both STATE and `evil-default-cursor'
-      ;; specify a color, don't set it twice
-      (evil-set-cursor (if (and color (listp default))
-                           (cl-remove-if #'stringp default)
-                         default))
-      (evil-set-cursor cursor))))
+(defun helix-update-cursor ()
+  "Update the cursor for current Helix STATE in current buffer."
+  (when (eq (window-buffer) (current-buffer))
+    (let* ((state (or helix--state 'normal))
+           (cursor (-> (helix-state-property state :cursor)
+                       (symbol-value))))
+      (helix-set-cursor cursor))))
+
+(defun helix-set-cursor (specs)
+  "Change the cursor's apperance according to SPECS.
+SPECS may be a cursor type as per `cursor-type', a color
+string as passed to `set-cursor-color', a zero-argument
+function for changing the cursor, or a list of the above."
+  (unless (and (not (functionp specs))
+               (listp specs)
+               (null (cdr-safe (last specs))))
+    (setq specs (list specs)))
+  (dolist (spec specs)
+    (cond ((functionp spec)
+           (ignore-errors (funcall spec)))
+          ((stringp spec)
+           (helix-set-cursor-color spec))
+          (t
+           (setq cursor-type spec)))))
+
+(defun helix-set-cursor-color (color)
+  "Set the cursor color to COLOR."
+  ;; `set-cursor-color' forces a redisplay, so only
+  ;; call it when the color actually changes
+  (unless (equal (frame-parameter nil 'cursor-color) color)
+    (set-cursor-color color)))
 
 ;;; Utils
 
