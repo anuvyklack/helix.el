@@ -182,5 +182,12 @@ With no selection delete char before point with next conditions:
          )
         (t (delete-char (- 1)))))
 
+;; u
+(defun helix-undo ()
+  "Cancel current selection then undo."
+  (interactive)
+  (deactivate-mark)
+  (undo))
+
 (provide 'helix-commands)
 ;;; helix-commands.el ends here

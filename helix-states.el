@@ -41,8 +41,10 @@
 (define-key helix-normal-state-map "d" #'helix-delete-selection)
 (define-key helix-normal-state-map "v" #'helix-extend-selection)
 (define-key helix-normal-state-map ";" #'helix-collapse-selection)
-
 (define-key helix-normal-state-map [escape] #'helix-normal-state-escape)
+
+(define-key helix-normal-state-map "u" #'helix-undo)
+(define-key helix-normal-state-map "U" #'undo-redo)
 
 ;;;
 
