@@ -164,5 +164,23 @@ If BIGWORD move over WORD-s."
   (interactive)
   (setq helix--extend-selection (not helix--extend-selection)))
 
+;; d
+(defun helix-delete-selection ()
+  "Delete text in selection.
+With no selection delete char before point with next conditions:
+- If point is surrounded by (balanced) whitespace and a brace delimiter
+  ({} [] ()), delete a space on either side of the cursor.
+- If point is at BOL and surrounded by braces on adjacent lines,
+  collapse newlines:
+  {
+  |
+  } => {|} "
+  (interactive)
+  (cond ((use-region-p)
+         (kill-region (region-beginning) (region-end) 'region)
+         ;; (funcall region-extract-function 'delete-only)
+         )
+        (t (delete-char (- 1)))))
+
 (provide 'helix-commands)
 ;;; helix-commands.el ends here
