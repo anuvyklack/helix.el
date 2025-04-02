@@ -120,12 +120,12 @@ If BIGWORD move over WORD-s."
         (set-mark (car bounds))
         (goto-char (cdr bounds)))
     ;; else
-    (when (< (point) (mark))
-      (exchange-point-and-mark))
-    (exchange-point-and-mark)
-    (goto-char (car (bounds-of-thing-at-point 'line))) ; left end
-    (exchange-point-and-mark)
-    (goto-char (cdr (bounds-of-thing-at-point 'line)))) ; right end
+    (let ((b (region-beginning))
+          (e (region-end)))
+      (goto-char b)
+      (set-mark (car (bounds-of-thing-at-point 'line))) ; left end
+      (goto-char e)
+      (goto-char (cdr (bounds-of-thing-at-point 'line)))))  ; right end
   (helix-motion-loop (_ (1- count))
     (goto-char (cdr (bounds-of-thing-at-point 'line)))))
 
