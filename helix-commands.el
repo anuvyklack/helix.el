@@ -152,5 +152,17 @@ If BIGWORD move over WORD-s."
   (interactive)
   (deactivate-mark))
 
+(defun helix-normal-state-escape ()
+  (interactive)
+  (cond (helix--extend-selection
+         (helix-extend-selection))
+        (t
+         (helix-collapse-selection))))
+
+;; v
+(defun helix-extend-selection ()
+  (interactive)
+  (setq helix--extend-selection (not helix--extend-selection)))
+
 (provide 'helix-commands)
 ;;; helix-commands.el ends here

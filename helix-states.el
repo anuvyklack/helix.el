@@ -39,7 +39,9 @@
 (define-key helix-normal-state-map "x" #'helix-select-or-extend-line)
 
 (define-key helix-normal-state-map ";" #'helix-collapse-selection)
-(define-key helix-normal-state-map [escape] #'helix-collapse-selection)
+(define-key helix-normal-state-map [escape] #'helix-normal-state-escape)
+
+(define-key helix-normal-state-map "v" #'helix-extend-selection)
 
 ;;;
 
