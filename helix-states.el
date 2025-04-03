@@ -15,12 +15,14 @@
 
 (require 'helix-core)
 (require 'helix-commands)
+(require 'keypad)
 
 (helix-define-state normal
   "Default state for editable buffers."
   :cursor 'bar)
 
 ;;;
+(keymap-set helix-normal-state-map "SPC" #'keypad)
 
 (define-key helix-normal-state-map "h" #'helix-backward-char)
 (define-key helix-normal-state-map "j" #'helix-next-line)
