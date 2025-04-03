@@ -114,7 +114,8 @@ When ARG is non-positive integer and Helix is in %s — disable it.\n\n%s"
          (interactive)
          (if (and (numberp arg) (< arg 1))
              (when (eq helix--state ',state)
-               (setq helix--state nil))
+               (setq helix--state nil
+                     helix--previous-state ',state))
            ;; else
            (unless helix-local-mode (helix-local-mode))
            (helix-disable-current-state)

@@ -1,8 +1,8 @@
 ;;; helix-vars.el --- Settings and variables -*- lexical-binding: t; -*-
 ;;
 ;; Author: Yuriy Artemyev <anuvyklack@gmail.com>
-;; Maintainer: Yuriy Artemyev <anuvyklack@gmail.com>
 ;; Version: 0.0.1
+;; Package-Requires: ((emacs "29.1"))
 ;;
 ;; This file is not part of GNU Emacs.
 ;;
@@ -98,6 +98,9 @@ with the first keymaps having higher priority.")
 
 (helix-defvar-local helix--state nil
   "The current Helix state.")
+
+(helix-defvar-local helix--previous-state nil
+  "The previous Helix state.")
 
 (defvar helix-state-properties nil
   "Specifications made by `helix-define-state'.
