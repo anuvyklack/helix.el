@@ -92,16 +92,12 @@ Else returns t.
 
 ;;; Utils
 
-(defun helix-ensure-list (x)
-  "Return X unchanged if it is a list, or wrap it in list."
-  (if (listp x) x (list x)))
-
-(defun helix-sign (&optional num)
+(defsubst helix-sign (&optional num)
   (cond ((< num 0) -1)
         ((zerop num) 0)
         (t 1)))
 
-(defun helix-forward-selection-p ()
+(defsubst helix-forward-selection-p ()
   "Return t if mark precedes point."
   (< (mark) (point)))
 

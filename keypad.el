@@ -8,11 +8,6 @@
   "Custom group for keypad."
   :group 'keypad-module)
 
-(defcustom keypad-message-prefix "Keypad: "
-  "The prefix string for keypad messages."
-  :group 'keypad
-  :type 'string)
-
 (defcustom keypad-meta-prefix "m"
   "The key coresponding to M- modifier."
   :group 'keypad
@@ -54,14 +49,23 @@ Nil stands for taking leader keymap from `meow-keymap-alist'."
   :group 'keypad
   :type 'variable)
 
+(defcustom keypad-message t
+  "Whether to show keypad messages in the echo area."
+  :group 'meow
+  :type 'boolean)
+
+(defcustom keypad-message-prefix "Keypad: "
+  "The prefix string for keypad messages."
+  :group 'keypad
+  :type 'string)
+
 (defvar-keymap keypad-map
   :doc "Keypad keymap."
   :suppress 'nodigits
-  ;; "DEL" #'keypad-undo
-  ;; "<backspace>" #'keypad-undo
-  ;; "<escape>" #'keypad-quit
-  ;; "<remap> <keyboard-quit>" #'keypad-quit
-  )
+  "DEL" #'keypad-undo
+  "<backspace>" #'keypad-undo
+  "<escape>" #'keypad-quit
+  "<remap> <keyboard-quit>" #'keypad-quit)
 
 ;;; Code
 
@@ -162,7 +166,7 @@ command when there's one available on current key sequence."
   ;; Try execute if the input is valid.
   (if keypad--modifier
       (progn
-        (when meow-keypad-message (keypad--show-message))
+        (when keypad-message (keypad--show-message))
         (keypad--display-message))
     (keypad--try-execute)))
 
@@ -182,7 +186,7 @@ This function supports a fallback behavior, where it allows to use
              (call-interactively cmd)
              :quit)
             ((keymapp cmd)
-             (when meow-keypad-message (keypad--show-message))
+             (when keypad-message (keypad--show-message))
              (keypad--display-message))
             ((equal 'control (caar keypad--keys))
              (setcar keypad--keys (cons 'literal (cdar keypad--keys)))
@@ -208,7 +212,7 @@ This function supports a fallback behavior, where it allows to use
                 remapped-cmd)))
     (call-interactively cmd)))
 
-(defun meow-keypad-undo ()
+(defun keypad-undo ()
   "Pop the last input."
   (interactive)
   (setq this-command last-command)
@@ -220,16 +224,14 @@ This function supports a fallback behavior, where it allows to use
         ;; (meow--update-indicator)
         (keypad--display-message))
     ;; else
-    (when meow-keypad-message
-      (message "KEYPAD exit"))
+    (when keypad-message (message "KEYPAD exit"))
     (keypad--quit)))
 
-(defun meow-keypad-quit ()
+(defun keypad-quit ()
   "Quit keypad state."
   (interactive)
   (setq this-command last-command)
-  (when meow-keypad-message
-    (message "KEYPAD exit"))
+  (when keypad-message (message "KEYPAD exit"))
   (keypad--quit))
 
 (defun keypad--quit ()
