@@ -1,6 +1,10 @@
 ;;; keypad.el -*- lexical-binding: t; -*-
+;;; Code:
 
 (require 'dash)
+
+(declare-function which-key--create-buffer-and-show "which-key")
+(declare-function which-key--hide-popup "which-key")
 
 ;;; Custom
 
@@ -49,7 +53,7 @@ Nil stands for taking leader keymap from `meow-keymap-alist'."
   :group 'keypad
   :type 'variable)
 
-(defcustom keypad-message t
+(defcustom keypad-echo t
   "Whether to show keypad messages in the echo area."
   :group 'meow
   :type 'boolean)
@@ -67,7 +71,7 @@ Nil stands for taking leader keymap from `meow-keymap-alist'."
   "<escape>" #'keypad-quit
   "<remap> <keyboard-quit>" #'keypad-quit)
 
-;;; Code
+;;; Internal vars
 
 (defvar keypad--keys nil
   "Stores keys entered in Keypad state in the form (MODIFIER . KEY)
@@ -97,6 +101,10 @@ Other way seek in top level.")
 (defvar keypad-keymaps-transparent-leader-should-ignore
   (list helix-motion-state-map))
 
+(defvar keypad--preview-is-active nil)
+
+;;; Core
+
 (defun keypad ()
   "Enter keypad state."
   (interactive)
@@ -110,37 +118,35 @@ Other way seek in top level.")
         keypad-prefix-arg current-prefix-arg
         keypad--use-leader-map nil)
   (keypad--show-message)
-  (keypad--display-message)
+  (keypad--open-preview)
   (while (not (eq (keypad--handle-input-event (read-key))
                   :quit)))
   ;; (unwind-protect
   ;;     (progn
   ;;       (keypad--show-message)
-  ;;       (keypad--display-message)
+  ;;       (keypad--open-preview)
   ;;       (while (not (eq (keypad--handle-input-event (read-key))
   ;;                       :quit))))
   ;;   (when (bound-and-true-p meow-keypad-mode)
   ;;     (keypad--quit)))
   )
 
-(defun keypad--handle-input-event (input-event)
-  "Handle INPUT-EVENT.
-Return `:finish' if handling is completed."
+(defun keypad--handle-input-event (event)
+  "Handle input EVENT. Return `:quit' if handling is completed."
   (if (equal 'escape last-input-event)
       (keypad--quit)
     (setq last-command-event last-input-event)
-    (if-let* ((cmd (lookup-key keypad-map
-                               (-> (single-key-description input-event)
-                                   (read-kbd-macro)))))
+    (if-let* ((cmd (lookup-key keypad-map (-> (single-key-description event)
+                                              (read-kbd-macro)))))
         (call-interactively cmd)
-      (keypad--handle-input-event-2 input-event))))
+      (keypad--handle-input-event-1 event))))
 
-(defun keypad--handle-input-event-2 (input-event)
-  "Handle the INPUT-EVENT.
-Add a parsed key and its modifier to current key sequence. Then invoke a
-command when there's one available on current key sequence."
-  (keypad--clear-message)
-  (when-let* ((key (single-key-description input-event)))
+(defun keypad--handle-input-event-1 (event)
+  "Handle the input EVENT.
+Add a parsed key and its modifier to current key sequence. Then invoke
+a command when there's one available on current key sequence."
+  (keypad--close-preview)
+  (when-let* ((key (single-key-description event)))
     (let ((meta? (keypad--meta-keybindings-available-p)))
       (cond (keypad--modifier
              (push (cons keypad--modifier key) keypad--keys)
@@ -156,8 +162,8 @@ command when there's one available on current key sequence."
              (setq keypad--modifier 'literal))
             (keypad--keys
              (push (cons 'control key) keypad--keys))
-            ((when-let* ((input (alist-get key keypad-start-keys nil nil 'equal)))
-               (push (cons 'control (keypad--parse-input-event input))
+            ((when-let* ((k (alist-get key keypad-start-keys nil nil 'equal)))
+               (push (cons 'control k) ;; (keypad--parse-input-event k)
                      keypad--keys)
                t)) ; exit cond
             (t
@@ -166,8 +172,8 @@ command when there's one available on current key sequence."
   ;; Try execute if the input is valid.
   (if keypad--modifier
       (progn
-        (when keypad-message (keypad--show-message))
-        (keypad--display-message))
+        (when keypad-echo (keypad--show-message))
+        (keypad--open-preview))
     (keypad--try-execute)))
 
 (defun keypad--try-execute ()
@@ -175,20 +181,20 @@ command when there's one available on current key sequence."
 This function supports a fallback behavior, where it allows to use
 `SPC x f' to execute `C-x C-f' or `C-x f' when `C-x C-f' is not bound."
   (unless keypad--modifier
-    (let* ((keys (keypad--get-entered-keys-as-string))
+    (let* ((keys (keypad--entered-keys-as-string))
            (cmd  (keypad--lookup-key (kbd keys))))
       (cond ((commandp cmd t)
              (setq current-prefix-arg keypad-prefix-arg
                    keypad-prefix-arg nil)
-             (keypad--clear-message)
+             (keypad--close-preview)
              (setq real-this-command cmd
                    this-command cmd)
              (call-interactively cmd)
              :quit)
             ((keymapp cmd)
-             (when keypad-message (keypad--show-message))
-             (keypad--display-message))
-            ((equal 'control (caar keypad--keys))
+             (when keypad-echo (keypad--show-message))
+             (keypad--open-preview))
+            ((eq 'control (caar keypad--keys))
              (setcar keypad--keys (cons 'literal (cdar keypad--keys)))
              (keypad--try-execute))
             (t
@@ -207,7 +213,7 @@ This function supports a fallback behavior, where it allows to use
                          (lookup-key keymap key)))
                    (current-active-maps)))
          (remapped-cmd (command-remapping origin-cmd))
-         (cmd (if (member remapped-cmd '(undefined nil))
+         (cmd (if (memq remapped-cmd '(undefined nil))
                   (or origin-cmd 'undefined)
                 remapped-cmd)))
     (call-interactively cmd)))
@@ -222,16 +228,15 @@ This function supports a fallback behavior, where it allows to use
   (if keypad--keys
       (progn
         ;; (meow--update-indicator)
-        (keypad--display-message))
-    ;; else
-    (when keypad-message (message "KEYPAD exit"))
+        (keypad--open-preview))
+    (when keypad-echo (message "KEYPAD exit"))
     (keypad--quit)))
 
 (defun keypad-quit ()
   "Quit keypad state."
   (interactive)
   (setq this-command last-command)
-  (when keypad-message (message "KEYPAD exit"))
+  (when keypad-echo (message "KEYPAD exit"))
   (keypad--quit))
 
 (defun keypad--quit ()
@@ -239,13 +244,13 @@ This function supports a fallback behavior, where it allows to use
   (setq keypad--keys nil
         keypad--modifier nil
         keypad--use-leader-map nil)
-  (keypad--clear-message)
+  (keypad--close-preview)
   :quit) ; Indicate that keypad loop should be stopped
 
 (defun keypad--meta-keybindings-available-p ()
   "Return t if there are keybindins that starts with Meta prefix."
   (or (not keypad--keys)
-      (let* ((keys (keypad--get-entered-keys-as-string))
+      (let* ((keys (keypad--entered-keys-as-string))
              (keymap (keypad--lookup-key (kbd keys))))
         (if (keymapp keymap)
             ;; A key sequences starts with ESC is accessible via Meta key.
@@ -268,7 +273,7 @@ This function supports a fallback behavior, where it allows to use
       (lookup-key keypad-leader-map keys)
     (key-binding keys)))
 
-(defun keypad--get-entered-keys-as-string ()
+(defun keypad--entered-keys-as-string ()
   "Return entered keys as a string."
   (-> (mapcar #'keypad--format-key-1 keypad--keys)
       (nreverse)
@@ -276,7 +281,7 @@ This function supports a fallback behavior, where it allows to use
 
 (defun keypad--format-keys ()
   "Return a display format for current input keys."
-  (let ((result (keypad--get-entered-keys-as-string)))
+  (let ((result (keypad--entered-keys-as-string)))
     (concat result
             (if (not (string-empty-p result)) " ")
             (pcase keypad--modifier
@@ -308,41 +313,36 @@ This function supports a fallback behavior, where it allows to use
          (format "%s " keypad-prefix-arg))
         (t "")))
 
-;;; which-key
+;;; Which-key integration
 
-(defvar keypad--describe-keymap-function nil
-  "The function used to describe (KEYMAP) during keypad execution.
-To integrate WhichKey-like features with keypad.
-Currently, keypad is not working well with which-key,
-so Meow ships a default `meow-describe-keymap'.
-Use (setq keypad--describe-keymap-function \\='nil) to disable popup.")
+(defun keypad-show-preview (keymap)
+  "Show the KEYMAP content in a popup preview.
+Inside it calls Which-Key API, and if you want to redefine this,
+you should redefine this particular function."
+  (when (and which-key-mode keymap)
+    (which-key--create-buffer-and-show
+     nil keymap nil (concat keypad-message-prefix (keypad--format-keys)))))
 
-(defvar keypad--clear-describe-keymap-function nil
-  "The function used to clear the effect of `keypad--describe-keymap-function'.")
+(defun keypad--open-preview ()
+  "Show preview with possible continuations for the keys
+that were entered in the Keypad state."
+  (when (or keypad--preview-is-active
+            (sit-for which-key-idle-delay t))
+    (keypad-show-preview (keypad--keymap-for-preview))
+    (setq keypad--preview-is-active t)))
 
-(setq keypad--describe-keymap-function
-      #'(lambda (keymap)
-          (which-key--create-buffer-and-show nil keymap nil
-                                             (concat keypad-message-prefix
-                                                     (keypad--format-keys))))
-      keypad--clear-describe-keymap-function #'which-key--hide-popup)
+(defun keypad--close-preview ()
+  (when which-key-mode
+    (which-key--hide-popup)
+    (setq keypad--preview-is-active nil)))
 
 (defun keypad--show-message ()
-  "Show message for current keypad input."
+  "Show message in echo area for current keypad input."
   (let ((message-log-max)) ; disable message logging
     (message "%s%s%s"
              keypad-message-prefix
              (propertize (keypad--format-prefix) 'face 'font-lock-comment-face)
              (propertize (keypad--format-keys) 'face 'font-lock-string-face))))
-
-(defun keypad--display-message ()
-  "Display a message for current input state."
-  (when (and keypad--describe-keymap-function
-             (or meow--keypad-keymap-description-activated
-                 (setq meow--keypad-keymap-description-activated
-                       (sit-for meow-keypad-describe-delay t))))
-    (let ((keymap (keypad--get-keymap-for-describe)))
-      (funcall keypad--describe-keymap-function keymap))))
 
 ;; (read-kbd-macro "M-j")
 ;; (read-kbd-macro "ESC j")
@@ -356,16 +356,18 @@ Use (setq keypad--describe-keymap-function \\='nil) to disable popup.")
 
 ;; (kbd (string meow-keypad-meta-prefix))
 
+;; (listify-key-sequence "ESC")
+
 ;; (single-key-description 120)
 ;; (single-key-description 'tab)
 ;; (kbd "<tab>")
 ;; (seq-first (kbd "ESC"))
 ;; (seq-first (read-kbd-macro "ESC"))
 
-(defun keypad--get-keymap-for-describe ()
-  "Get a keymap for describe."
+(defun keypad--keymap-for-preview ()
+  "Get a keymap for Which-key preview."
   (cond (keypad--modifier
-         (keypad--keymap-to-describe-entered-keys-with-modifier))
+         (keypad--preview-keymap-for-entered-keys-with-modifier))
         (keypad--keys
          (keypad--keymap-to-describe-entered-keys))
         (t
@@ -397,11 +399,11 @@ When CONTROL is non-nil leave only Ctrl-... events instead."
                   keymap)
       result)))
 
-(defun keypad--keymap-to-describe-entered-keys-with-modifier ()
+(defun keypad--preview-keymap-for-entered-keys-with-modifier ()
   "Return a keymap with continuations for prefix keys + modifiers
 entered in Keypad. This keymap is intended to be passed further
 to Which-key API."
-  (let* ((input (keypad--get-entered-keys-as-string))
+  (let* ((input (keypad--entered-keys-as-string))
          (ctrl-predicate (lambda (event)
                            (let ((key (single-key-description event))
                                  (modifiers (event-modifiers event)))
@@ -441,7 +443,7 @@ This keymap is intended to be passed further to Which-key API."
 (defun keypad--keymap-to-describe-entered-keys ()
   "Return a keymap with continuations for prefix keys entered in Keypad.
 This keymap is intended to be passed further to Which-key API."
-  (let ((keymap (-> (keypad--get-entered-keys-as-string)
+  (let ((keymap (-> (keypad--entered-keys-as-string)
                     (read-kbd-macro)
                     (keypad--lookup-key))))
     (when (and keymap (keymapp keymap))
@@ -503,11 +505,6 @@ Return vector suitable to pass to `define-key'."
                    (member 'shift (event-modifiers key-event)))
               (upcase (event-basic-type key-event))
             (event-basic-type key-event))))
-
-(defun keypad--clear-message ()
-  "Clear displayed message by calling `keypad--clear-describe-keymap-function'."
-  (when keypad--clear-describe-keymap-function
-    (funcall keypad--clear-describe-keymap-function)))
 
 (defun keypad--describe-key ()
   "Describe key via KEYPAD input."
