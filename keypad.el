@@ -55,7 +55,7 @@ Nil stands for taking leader keymap from `meow-keymap-alist'."
 
 (defcustom keypad-echo t
   "Whether to show keypad messages in the echo area."
-  :group 'meow
+  :group 'keypad
   :type 'boolean)
 
 (defcustom keypad-message-prefix "Keypad: "
@@ -281,13 +281,23 @@ This function supports a fallback behavior, where it allows to use
 
 (defun keypad--format-keys ()
   "Return a display format for current input keys."
-  (let ((result (keypad--entered-keys-as-string)))
-    (concat result
-            (if (not (string-empty-p result)) " ")
+  (let ((keys (keypad--entered-keys-as-string)))
+    (concat keys
+            (if (not (string-empty-p keys)) " ")
             (pcase keypad--modifier
               ('meta "M-")
               ('control-meta "C-M-")
-              ('literal "○")))))
+              ('literal nil)
+              (_ (if (not (string-empty-p keys)) "C-"))
+              )))
+  ;; (let ((keys (keypad--entered-keys-as-string)))
+  ;;   (concat keys
+  ;;           (if (not (string-empty-p keys)) " ")
+  ;;           (pcase keypad--modifier
+  ;;             ('meta "M-")
+  ;;             ('control-meta "C-M-")
+  ;;             ('literal "○"))))
+  )
 
 (defun keypad--format-key-1 (key)
   "Convert cons cell (MODIFIER . KEY) to string representation."
@@ -353,8 +363,6 @@ that were entered in the Keypad state."
 ;; (key-binding (kbd "ESC j"))
 ;; (key-binding (read-kbd-macro "M-j"))
 ;; (key-binding (read-kbd-macro "ESC j"))
-
-;; (kbd (string meow-keypad-meta-prefix))
 
 ;; (listify-key-sequence "ESC")
 
