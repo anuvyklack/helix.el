@@ -181,7 +181,7 @@ a command when there's one available on current key sequence."
 This function supports a fallback behavior, where it allows to use
 `SPC x f' to execute `C-x C-f' or `C-x f' when `C-x C-f' is not bound."
   (unless keypad--modifier
-    (let* ((keys (keypad--entered-keys-as-string))
+    (let* ((keys (keypad--entered-keys))
            (cmd  (keypad--lookup-key (kbd keys))))
       (cond ((commandp cmd t)
              (setq current-prefix-arg keypad-prefix-arg
@@ -250,8 +250,7 @@ This function supports a fallback behavior, where it allows to use
 (defun keypad--meta-keybindings-available-p ()
   "Return t if there are keybindins that starts with Meta prefix."
   (or (not keypad--keys)
-      (let* ((keys (keypad--entered-keys-as-string))
-             (keymap (keypad--lookup-key (kbd keys))))
+      (let* ((keymap (keypad--lookup-key (kbd (keypad--entered-keys)))))
         (if (keymapp keymap)
             ;; A key sequences starts with ESC is accessible via Meta key.
             (lookup-key keymap (kbd "ESC"))))))
@@ -273,7 +272,11 @@ This function supports a fallback behavior, where it allows to use
       (lookup-key keypad-leader-map keys)
     (key-binding keys)))
 
-(defun keypad--entered-keys-as-string ()
+;; (key-binding "K")
+;; (key-binding "S-k")
+;; (key-binding "C-c C-S-l")
+
+(defun keypad--entered-keys ()
   "Return entered keys as a string."
   (-> (mapcar #'keypad--format-key-1 keypad--keys)
       (nreverse)
@@ -281,7 +284,7 @@ This function supports a fallback behavior, where it allows to use
 
 (defun keypad--format-keys ()
   "Return a display format for current input keys."
-  (let ((keys (keypad--entered-keys-as-string)))
+  (let ((keys (keypad--entered-keys)))
     (concat keys
             (if (not (string-empty-p keys)) " ")
             (pcase keypad--modifier
@@ -291,6 +294,17 @@ This function supports a fallback behavior, where it allows to use
               (_ (if (not (string-empty-p keys)) "C-"))))))
 
 (defun keypad--format-key-1 (key)
+  "Convert cons cell (MODIFIER . KEY) to string representation."
+  (concat (pcase (car key)
+            ('control "C-")
+            ('meta    "M-")
+            ('control-meta "C-M-"))
+          (cdr key)))
+
+;; (keypad--format-key-1 '(control . "k"))
+;; (keypad--format-key-2 '(control . "K"))
+
+(defun keypad--format-key-2 (key)
   "Convert cons cell (MODIFIER . KEY) to string representation."
   (pcase (car key)
     ('control (format "C-%s" (keypad--format-upcase (cdr key))))
@@ -395,7 +409,7 @@ When CONTROL is non-nil leave only Ctrl-... events instead."
   "Return a keymap with continuations for prefix keys + modifiers
 entered in Keypad. This keymap is intended to be passed further
 to Which-key API."
-  (let* ((input (keypad--entered-keys-as-string))
+  (let* ((input (keypad--entered-keys))
          (ctrl-predicate (lambda (key modifiers)
                            (and (not (equal key "DEL"))
                                 (member 'control modifiers))))
@@ -429,7 +443,7 @@ This keymap is intended to be passed further to Which-key API."
 (defun keypad--keymap-to-describe-entered-keys ()
   "Return a keymap with continuations for prefix keys entered in Keypad.
 This keymap is intended to be passed further to Which-key API."
-  (let ((keymap (-> (keypad--entered-keys-as-string)
+  (let ((keymap (-> (keypad--entered-keys)
                     (read-kbd-macro)
                     (keypad--lookup-key))))
     (when (keymapp keymap)
