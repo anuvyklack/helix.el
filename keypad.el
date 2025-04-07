@@ -394,8 +394,7 @@ that were entered in the Keypad state."
   "Return a copy of KEYMAP with only literal — non Ctrl events.
 When CONTROL is non-nil leave only Ctrl-... events instead."
   (when (keymapp keymap)
-    (let ((result (make-sparse-keymap))) ;; make-keymap
-      (suppress-keymap result t)
+    (let ((result (define-keymap :suppress 'nodigits)))
       (map-keymap (lambda (event command)
                     (let ((key (single-key-description event))
                           (modifiers (event-modifiers event)))
@@ -409,7 +408,7 @@ When CONTROL is non-nil leave only Ctrl-... events instead."
   "Return a keymap with continuations for prefix keys + modifiers
 entered in Keypad. This keymap is intended to be passed further
 to Which-key API."
-  (let* ((input (keypad--entered-keys))
+  (let* ((keys (keypad--entered-keys))
          (ctrl-predicate (lambda (key modifiers)
                            (and (not (equal key "DEL"))
                                 (member 'control modifiers))))
@@ -418,13 +417,13 @@ to Which-key API."
                                        (member 'control modifiers))))))
     (pcase keypad--modifier
       ('meta         (keypad--filter-keymap
-                      (keypad--lookup-key (kbd (concat input " ESC")))
+                      (keypad--lookup-key (kbd (concat keys " ESC")))
                       literal-predicate))
       ('control-meta (keypad--filter-keymap
-                      (keypad--lookup-key (kbd (concat input " ESC"))) ;; (read-kbd-macro)
+                      (keypad--lookup-key (kbd (concat keys " ESC"))) ;; (read-kbd-macro)
                       ctrl-predicate))
       ('literal      (keypad--filter-keymap
-                      (keypad--lookup-key (kbd input)) ;; (read-kbd-macro)
+                      (keypad--lookup-key (kbd keys)) ;; (read-kbd-macro)
                       literal-predicate)))))
 
 (defun keypad--keymap-to-describe-leader-key ()
@@ -443,17 +442,15 @@ This keymap is intended to be passed further to Which-key API."
 (defun keypad--keymap-to-describe-entered-keys ()
   "Return a keymap with continuations for prefix keys entered in Keypad.
 This keymap is intended to be passed further to Which-key API."
-  (let ((keymap (-> (keypad--entered-keys)
-                    (read-kbd-macro)
-                    (keypad--lookup-key))))
+  (let ((keymap (keypad--lookup-key
+                 (kbd (keypad--entered-keys)))))
     (when (keymapp keymap)
-      (let* ((ignored (append (list keypad-literal-prefix "DEL")
+      (let* ((result (define-keymap :suppress 'nodigits))
+             (ignored (append (list keypad-literal-prefix "DEL")
                               (if (keypad--meta-keybindings-available-p)
                                   (list keypad-meta-prefix
                                         keypad-ctrl-meta-prefix))))
-             (result (make-sparse-keymap)) ;; make-keymap
-             set)
-        (suppress-keymap result t)
+             occupied-keys)
         (map-keymap (lambda (event command)
                       (let ((key (single-key-description event))
                             (modifiers (event-modifiers event)))
@@ -461,7 +458,7 @@ This keymap is intended to be passed further to Which-key API."
                                    (not (member key ignored)))
                           (push (cons (event-basic-type event)
                                       (delq 'control modifiers))
-                                set)
+                                occupied-keys)
                           (define-key result (vector event) command))))
                     keymap)
         (map-keymap (lambda (event command)
@@ -469,12 +466,8 @@ This keymap is intended to be passed further to Which-key API."
                             (modifiers (event-modifiers event)))
                         (when (not (or (memq 'control modifiers)
                                        (member key ignored)
-                                       (member (cons (event-basic-type event)
-                                                     modifiers)
-                                               set)))
-                          ;; (let ((e (keypad--strip-ctrl-meta-from-event event)))
-                          ;;   (unless (lookup-key result e)
-                          ;;     (define-key result e command)))
+                                       (member (cons (event-basic-type event) modifiers)
+                                               occupied-keys)))
                           (define-key result (vector event) command))))
                     keymap)
         result))))
