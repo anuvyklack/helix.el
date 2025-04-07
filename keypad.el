@@ -278,9 +278,17 @@ This function supports a fallback behavior, where it allows to use
 
 (defun keypad--entered-keys ()
   "Return entered keys as a string."
-  (-> (mapcar #'keypad--format-key-1 keypad--keys)
+  (-> (mapcar #'keypad--format-key keypad--keys)
       (nreverse)
       (string-join " ")))
+
+(defun keypad--format-key (key)
+  "Convert cons cell (MODIFIER . KEY) to string representation."
+  (pcase (car key)
+    ('control (format "C-%s" (keypad--format-upcase (cdr key))))
+    ('meta    (format "M-%s" (cdr key)))
+    ('control-meta (format "C-M-%s" (keypad--format-upcase (cdr key))))
+    ('literal (cdr key))))
 
 (defun keypad--format-keys ()
   "Return a display format for current input keys."
@@ -292,25 +300,6 @@ This function supports a fallback behavior, where it allows to use
               ('control-meta "C-M-")
               ('literal "○")
               (_ (if (not (string-empty-p keys)) "C-"))))))
-
-(defun keypad--format-key-1 (key)
-  "Convert cons cell (MODIFIER . KEY) to string representation."
-  (concat (pcase (car key)
-            ('control "C-")
-            ('meta    "M-")
-            ('control-meta "C-M-"))
-          (cdr key)))
-
-;; (keypad--format-key-1 '(control . "k"))
-;; (keypad--format-key-2 '(control . "K"))
-
-(defun keypad--format-key-2 (key)
-  "Convert cons cell (MODIFIER . KEY) to string representation."
-  (pcase (car key)
-    ('control (format "C-%s" (keypad--format-upcase (cdr key))))
-    ('meta    (format "M-%s" (cdr key)))
-    ('control-meta (format "C-M-%s" (keypad--format-upcase (cdr key))))
-    ('literal (cdr key))))
 
 (defun keypad--format-upcase (k)
   "Return \"S-k\" for upcase \"K\"."
@@ -412,10 +401,10 @@ entered in Keypad. This keymap is intended to be passed further
 to Which-key API."
   (let* ((keys (keypad--entered-keys))
          (ctrl-predicate (lambda (key modifiers)
-                           (and (not (equal key "DEL"))
+                           (and (not (equal key "ESC"))
                                 (memq 'control modifiers))))
          (literal-predicate (lambda (key modifiers)
-                              (not (or (equal key "DEL")
+                              (not (or (equal key "ESC")
                                        (memq 'control modifiers))))))
     (pcase keypad--modifier
       ('meta (define-keymap
@@ -432,23 +421,8 @@ to Which-key API."
                       (keypad--lookup-key (kbd keys))
                       literal-predicate)))))
 
-;; (defun my-test ()
-;;   (map-keymap (lambda (event command)
-;;                 (push (list event
-;;                             (event-basic-type event)
-;;                             (event-modifiers event)
-;;                             command)
-;;                       my-test-meta-keybindings)
-;;                 ;; (when (member 'meta (event-modifiers event))
-;;                 ;;   (push event my-test-meta-keybindings))
-;;                 )
-;;               ;; (key-binding (kbd ""))
-;;               mode-specific-map))
-;; (my-test)
-;; (defvar my-test-meta-keybindings nil)
-;; (single-key-description 27)
-;; (single-key-description 91)
-;; (single-key-description 103)
+;; (single-key-description 76)
+;; (event-modifiers 76)
 
 ;; (keypad-show-preview mode-specific-map)
 
