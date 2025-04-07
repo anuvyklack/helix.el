@@ -404,27 +404,53 @@ When CONTROL is non-nil leave only Ctrl-... events instead."
                   keymap)
       result)))
 
+;; (event-modifiers (seq-first (read-kbd-macro "M-g")))
+
 (defun keypad--preview-keymap-for-entered-keys-with-modifier ()
-  "Return a keymap with continuations for prefix keys + modifiers
+  "Return a keymap with continuations for prefix keys and modifiers
 entered in Keypad. This keymap is intended to be passed further
 to Which-key API."
   (let* ((keys (keypad--entered-keys))
          (ctrl-predicate (lambda (key modifiers)
                            (and (not (equal key "DEL"))
-                                (member 'control modifiers))))
+                                (memq 'control modifiers))))
          (literal-predicate (lambda (key modifiers)
                               (not (or (equal key "DEL")
-                                       (member 'control modifiers))))))
+                                       (memq 'control modifiers))))))
     (pcase keypad--modifier
-      ('meta         (keypad--filter-keymap
+      ('meta (define-keymap
+               :suppress 'nodigits
+               "ESC" (keypad--filter-keymap
                       (keypad--lookup-key (kbd (concat keys " ESC")))
-                      literal-predicate))
-      ('control-meta (keypad--filter-keymap
-                      (keypad--lookup-key (kbd (concat keys " ESC"))) ;; (read-kbd-macro)
-                      ctrl-predicate))
+                      literal-predicate)))
+      ('control-meta (define-keymap
+                       :suppress 'nodigits
+                       "ESC" (keypad--filter-keymap
+                              (keypad--lookup-key (kbd (concat keys " ESC")))
+                              ctrl-predicate)))
       ('literal      (keypad--filter-keymap
-                      (keypad--lookup-key (kbd keys)) ;; (read-kbd-macro)
+                      (keypad--lookup-key (kbd keys))
                       literal-predicate)))))
+
+;; (defun my-test ()
+;;   (map-keymap (lambda (event command)
+;;                 (push (list event
+;;                             (event-basic-type event)
+;;                             (event-modifiers event)
+;;                             command)
+;;                       my-test-meta-keybindings)
+;;                 ;; (when (member 'meta (event-modifiers event))
+;;                 ;;   (push event my-test-meta-keybindings))
+;;                 )
+;;               ;; (key-binding (kbd ""))
+;;               mode-specific-map))
+;; (my-test)
+;; (defvar my-test-meta-keybindings nil)
+;; (single-key-description 27)
+;; (single-key-description 91)
+;; (single-key-description 103)
+
+;; (keypad-show-preview mode-specific-map)
 
 (defun keypad--keymap-to-describe-leader-key ()
   "Return a keymap with the content of the `keypad-leader-map'.
