@@ -121,15 +121,13 @@ Other way seek in top level.")
   (keypad--open-preview)
   (while (not (eq (keypad--handle-input-event (read-key))
                   :quit)))
-  ;; (unwind-protect
-  ;;     (progn
-  ;;       (keypad--show-message)
-  ;;       (keypad--open-preview)
-  ;;       (while (not (eq (keypad--handle-input-event (read-key))
-  ;;                       :quit))))
-  ;;   (when (bound-and-true-p meow-keypad-mode)
-  ;;     (keypad--quit)))
-  )
+  (unwind-protect
+      (progn
+        (keypad--show-message)
+        (keypad--open-preview)
+        (while (not (eq (keypad--handle-input-event (read-key))
+                        :quit))))
+    (keypad--quit)))
 
 (defun keypad--handle-input-event (event)
   "Handle input EVENT. Return `:quit' if handling is completed."
@@ -149,7 +147,7 @@ Other way seek in top level.")
   "Handle the input EVENT.
 Add a parsed key and its modifier to current key sequence. Then invoke
 a command when there's one available on current key sequence."
-  (keypad--close-preview)
+  ;; (keypad--close-preview)
   (when-let* ((key (single-key-description event)))
     (let ((meta? (keypad--meta-keybindings-available-p)))
       (cond (keypad--modifier
@@ -213,7 +211,7 @@ This function supports a fallback behavior, where it allows to use
   (let* ((key (keypad--parse-input-event last-input-event))
          (origin-cmd
           (cl-some #'(lambda (keymap)
-                       (when (not (memq keymap keypad-keymaps-transparent-leader-should-ignore))
+                       (unless (memq keymap keypad-keymaps-transparent-leader-should-ignore)
                          (lookup-key keymap key)))
                    (current-active-maps)))
          (remapped-cmd (command-remapping origin-cmd))
@@ -352,24 +350,6 @@ that were entered in the Keypad state."
              (propertize (keypad--format-prefix) 'face 'font-lock-comment-face)
              (propertize (keypad--format-keys) 'face 'font-lock-string-face))))
 
-;; (read-kbd-macro "M-j")
-;; (read-kbd-macro "ESC j")
-;; (kbd "M-j")
-;; (kbd "ESC j")
-;;
-;; (key-binding (kbd "M-j"))
-;; (key-binding (kbd "ESC j"))
-;; (key-binding (read-kbd-macro "M-j"))
-;; (key-binding (read-kbd-macro "ESC j"))
-
-;; (listify-key-sequence "ESC")
-
-;; (single-key-description 120)
-;; (single-key-description 'tab)
-;; (kbd "<tab>")
-;; (seq-first (kbd "ESC"))
-;; (seq-first (read-kbd-macro "ESC"))
-
 (defun keypad--keymap-for-preview ()
   "Get a keymap for Which-key preview."
   (cond (keypad--modifier
@@ -378,10 +358,6 @@ that were entered in the Keypad state."
          (keypad--keymap-to-describe-entered-keys))
         (t
          (keypad--keymap-to-describe-leader-key))))
-
-;; (single-key-description 'lol)
-;; (event-basic-type 'C-del)
-;; (event-basic-type 'C-tab)
 
 (defun keypad--filter-keymap (keymap predicate)
   "Return a copy of KEYMAP with only literal — non Ctrl events.
@@ -425,29 +401,6 @@ to Which-key API."
                       (keypad--lookup-key (kbd keys))
                       literal-p)))))
 
-;; (keypad--filter-keymap
-;;  (keypad--lookup-key (kbd "ESC"))
-;;  (lambda (key modifiers)
-;;    (and (not (equal key "DEL"))
-;;         (memq 'control modifiers))))
-
-;; (33554445 . org-insert-todo-heading)
-
-;; (single-key-description 33554445)
-;; (single-key-description (event-basic-type 33554445))
-;; (event-modifiers 33554445)
-
-;; (single-key-description 'C-return)
-;; (single-key-description (event-basic-type 'C-return))
-;; (event-modifiers 'return)
-
-;; (single-key-description (event-basic-type (seq-first (kbd "M-:"))))
-;; (event-modifiers (seq-first (kbd "M-:")))
-;; (27 keymap (58 . eval-expression) (27 . keyboard-escape-quit))
-;; (single-key-description 27)
-
-;; (keypad-show-preview mode-specific-map)
-
 (defun keypad--keymap-to-describe-leader-key ()
   "Return a keymap with the content of the `keypad-leader-map'.
 This keymap is intended to be passed further to Which-key API."
@@ -458,8 +411,6 @@ This keymap is intended to be passed further to Which-key API."
                                                       keypad-ctrl-meta-prefix
                                                       keypad-literal-prefix))
                                     (alist-get key keypad-start-keys nil nil 'equal))))))
-
-;; (keypad--strip-ctrl-meta-from-event (seq-first (read-kbd-macro "C-<tab>")))
 
 (defun keypad--keymap-to-describe-entered-keys ()
   "Return a keymap with continuations for prefix keys entered in Keypad.
@@ -494,12 +445,6 @@ This keymap is intended to be passed further to Which-key API."
                     keymap)
         result))))
 
-;; (let ((keymap (make-sparse-keymap)))
-;;   (define-key keymap [33554444] #'+org/remove-link)
-;;   keymap)
-;; (read-kbd-macro [33554444])
-;; (kbd "C-S-l")
-
 ;; (single-key-description 33554444)
 ;; (single-key-description (seq-first (read-kbd-macro "C-E")))
 ;; (kbd "C-S-e")
@@ -510,12 +455,6 @@ This keymap is intended to be passed further to Which-key API."
 ;; (event-basic-type (seq-first (read-kbd-macro "E")))
 ;; (event-modifiers (seq-first (read-kbd-macro "S-e")))
 ;; (event-modifiers (seq-first (read-kbd-macro "E")))
-
-;; (->> (event-basic-type 'C-S-iso-lefttab)
-;;      (single-key-description)
-;;      (concat "C-")
-;;      (kbd))
-;; (event-modifiers 'C-S-tab)
 
 ;; 'C-S-iso-lefttab
 ;; (upcase 'iso-lefttab)
@@ -531,15 +470,6 @@ This keymap is intended to be passed further to Which-key API."
 ;; (get 'C-tab 'event-symbol-elements)
 ;; (symbol-plist 'C-tab)
 
-;; (let ((l (list keypad-literal-prefix "DEL")))
-;;   (cons l (list keypad-meta-prefix
-;;                 keypad-ctrl-meta-prefix)))
-;; (read-kbd-macro "DEL")
-
-;; (append (list keypad-literal-prefix "DEL")
-;;         (list keypad-meta-prefix
-;;               keypad-ctrl-meta-prefix))
-
 ;; (event-basic-type (read-kbd-macro "DEL"))
 ;; (seq-first (read-kbd-macro "DEL"))
 
@@ -550,13 +480,14 @@ This keymap is intended to be passed further to Which-key API."
 ;; (upcase (event-basic-type (seq-first (read-kbd-macro "k"))))
 ;; (event-basic-type (seq-first (read-kbd-macro "K")))
 
-(defun keypad--strip-ctrl-meta-from-event (key-event)
-  "Strip `control' and `meta' modifiers from KEY-EVENT.
+(defun keypad--strip-ctrl-meta-from-event (event)
+  "Strip `control' and `meta' modifiers from EVENT.
 Return vector suitable to pass to `define-key'."
-  (vector (if (and (integerp (event-basic-type key-event))
-                   (member 'shift (event-modifiers key-event)))
-              (upcase (event-basic-type key-event))
-            (event-basic-type key-event))))
+  (let ((e (event-basic-type event)))
+    (vector (if (and (integerp e)
+                     (member 'shift (event-modifiers event)))
+                (upcase e)
+              e))))
 
 (defun keypad--describe-key ()
   "Describe key via KEYPAD input."
