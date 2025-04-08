@@ -274,10 +274,6 @@ This function supports a fallback behavior, where it allows to use
       (lookup-key keypad-leader-map keys)
     (key-binding keys)))
 
-;; (key-binding "K")
-;; (key-binding "S-k")
-;; (key-binding "C-c C-S-l")
-
 (defun keypad--entered-keys ()
   "Return entered keys as a string."
   (-> (mapcar #'keypad--format-key keypad--keys)
@@ -373,8 +369,6 @@ When CONTROL is non-nil leave only Ctrl-... events instead."
                   keymap)
       result)))
 
-;; (event-modifiers (seq-first (read-kbd-macro "M-g")))
-
 (defun keypad--preview-keymap-for-entered-keys-with-modifier ()
   "Return a keymap with continuations for prefix keys and modifiers
 entered in Keypad. This keymap is intended to be passed further
@@ -444,41 +438,6 @@ This keymap is intended to be passed further to Which-key API."
                           (define-key result (vector event) command))))
                     keymap)
         result))))
-
-;; (single-key-description 33554444)
-;; (single-key-description (seq-first (read-kbd-macro "C-E")))
-;; (kbd "C-S-e")
-;; (kbd "S-e")
-;; (single-key-description (seq-first (read-kbd-macro "E")))
-;; (single-key-description (seq-first (read-kbd-macro "S-e")))
-;; (event-basic-type (seq-first (read-kbd-macro "S-e")))
-;; (event-basic-type (seq-first (read-kbd-macro "E")))
-;; (event-modifiers (seq-first (read-kbd-macro "S-e")))
-;; (event-modifiers (seq-first (read-kbd-macro "E")))
-
-;; 'C-S-iso-lefttab
-;; (upcase 'iso-lefttab)
-
-;; (char-or-string-p 127)
-;; (integerp 127)
-;; (integer-or-null-p 127)
-
-;; (single-key-description 127)
-
-;; (event-basic-type 'C-tab)
-;; (event-basic-type "C-<tab>")
-;; (get 'C-tab 'event-symbol-elements)
-;; (symbol-plist 'C-tab)
-
-;; (event-basic-type (read-kbd-macro "DEL"))
-;; (seq-first (read-kbd-macro "DEL"))
-
-;; (read-kbd-macro "C-<tab>")
-;; (event-basic-type 'C-tab)
-;; (event-modifiers 'C-tab)
-
-;; (upcase (event-basic-type (seq-first (read-kbd-macro "k"))))
-;; (event-basic-type (seq-first (read-kbd-macro "K")))
 
 (defun keypad--strip-ctrl-meta-from-event (event)
   "Strip `control' and `meta' modifiers from EVENT.
