@@ -136,10 +136,14 @@ Other way seek in top level.")
   (if (equal 'escape last-input-event)
       (keypad--quit)
     (setq last-command-event last-input-event)
-    (if-let* ((cmd (lookup-key keypad-map (-> (single-key-description event)
-                                              (read-kbd-macro)))))
+    (if-let* ((cmd (lookup-key keypad-map (vector event))))
         (call-interactively cmd)
-      (keypad--handle-input-event-1 event))))
+      (keypad--handle-input-event-1 event))
+    ;; (if-let* ((cmd (lookup-key keypad-map (read-kbd-macro
+    ;;                                        (single-key-description event)))))
+    ;;     (call-interactively cmd)
+    ;;   (keypad--handle-input-event-1 event))
+    ))
 
 (defun keypad--handle-input-event-1 (event)
   "Handle the input EVENT.
@@ -400,26 +404,26 @@ When CONTROL is non-nil leave only Ctrl-... events instead."
 entered in Keypad. This keymap is intended to be passed further
 to Which-key API."
   (let* ((keys (keypad--entered-keys))
-         (control-predicate (lambda (key modifiers)
-                              (and (not (member key '("ESC")))
-                                   (memq 'control modifiers))))
-         (literal-predicate (lambda (key modifiers)
-                              (not (or (member key '("ESC"))
-                                       (memq 'control modifiers))))))
+         (control-p (lambda (key modifiers)
+                      (and (not (member key '("ESC")))
+                           (memq 'control modifiers))))
+         (literal-p (lambda (key modifiers)
+                      (not (or (member key '("ESC"))
+                               (memq 'control modifiers))))))
     (pcase keypad--modifier
       ('meta         (define-keymap
                        :suppress 'nodigits
                        "ESC" (keypad--filter-keymap
                               (keypad--lookup-key (kbd (concat keys " ESC")))
-                              literal-predicate)))
+                              literal-p)))
       ('control-meta (define-keymap
                        :suppress 'nodigits
                        "ESC" (keypad--filter-keymap
                               (keypad--lookup-key (kbd (concat keys " ESC")))
-                              control-predicate)))
+                              control-p)))
       ('literal      (keypad--filter-keymap
                       (keypad--lookup-key (kbd keys))
-                      literal-predicate)))))
+                      literal-p)))))
 
 ;; (keypad--filter-keymap
 ;;  (keypad--lookup-key (kbd "ESC"))
@@ -429,16 +433,16 @@ to Which-key API."
 
 ;; (33554445 . org-insert-todo-heading)
 
-(single-key-description 33554445)
-(single-key-description (event-basic-type 33554445))
-(event-modifiers 33554445)
+;; (single-key-description 33554445)
+;; (single-key-description (event-basic-type 33554445))
+;; (event-modifiers 33554445)
 
-(single-key-description 'C-return)
-(single-key-description (event-basic-type 'C-return))
-(event-modifiers 'return)
+;; (single-key-description 'C-return)
+;; (single-key-description (event-basic-type 'C-return))
+;; (event-modifiers 'return)
 
-(single-key-description (event-basic-type (seq-first (kbd "M-:"))))
-(event-modifiers (seq-first (kbd "M-:")))
+;; (single-key-description (event-basic-type (seq-first (kbd "M-:"))))
+;; (event-modifiers (seq-first (kbd "M-:")))
 ;; (27 keymap (58 . eval-expression) (27 . keyboard-escape-quit))
 ;; (single-key-description 27)
 
