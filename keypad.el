@@ -341,28 +341,13 @@ When CONTROL is non-nil leave only Ctrl-... events instead."
                   keymap)
       result)))
 
-;; (single-key-description 'C-backspace)
-;; (single-key-description(event-basic-type 'C-backspace))
-
-;; (keypad--keypad-key-p "ESC")
-;; (key-valid-p "ESC")
-;; (read-kbd-macro "ESC")
-;; (event-basic-type (seq-first (read-kbd-macro "ESC")))
-
 (defsubst keypad--keypad-key-p (key-or-event)
   (when key-or-event
-    (let ((event (if (key-valid-p key-or-event)
-                     (seq-first (key-parse key-or-event))
-                   key-or-event)))
-      ;; (lookup-key keypad-map (vector (event-basic-type event)))
-      (keymap-lookup keypad-map (single-key-description (event-basic-type event)))
-      )))
-
-;; (read-key-sequence "lol")
-;; (keymap-set)
-;; (key-parse "C-<backspace>")
-;; (single-key-description (event-basic-type (seq-first (key-parse "DEL"))))
-;; (single-key-description 'C-backspace)
+    (let* ((event (if (key-valid-p key-or-event)
+                      (seq-first (key-parse key-or-event))
+                    key-or-event))
+           (basic-key (single-key-description (event-basic-type event))))
+      (keymap-lookup keypad-map basic-key))))
 
 (defun keypad--preview-keymap-for-entered-keys-with-modifier ()
   "Return a keymap with continuations for prefix keys and modifiers
@@ -401,11 +386,6 @@ This keymap is intended to be passed further to Which-key API."
                                                       keypad-ctrl-meta-prefix
                                                       keypad-literal-prefix))
                                     (alist-get key keypad-start-keys nil nil 'equal))))))
-
-;; (single-key-description 127)
-;; (single-key-description 'C-M-backspace)
-;; (event-basic-type 'C-M-backspace)
-;; (event-modifiers 'C-M-backspace)
 
 (defun keypad--keymap-to-describe-entered-keys ()
   "Return a keymap with continuations for prefix keys entered in Keypad.
