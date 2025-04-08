@@ -68,8 +68,10 @@ Nil stands for taking leader keymap from `meow-keymap-alist'."
   :suppress 'nodigits
   "DEL" #'keypad-undo
   "<backspace>" #'keypad-undo
+  "ESC" #'keypad-quit
   "<escape>" #'keypad-quit
-  "<remap> <keyboard-quit>" #'keypad-quit)
+  ;; "<remap> <keyboard-quit>" #'keypad-quit
+  )
 
 ;;; Internal vars
 
@@ -117,10 +119,6 @@ Other way seek in top level.")
   (setq keypad--keys nil
         keypad-prefix-arg current-prefix-arg
         keypad--use-leader-map nil)
-  (keypad--show-message)
-  (keypad--open-preview)
-  (while (not (eq (keypad--handle-input-event (read-key))
-                  :quit)))
   (unwind-protect
       (progn
         (keypad--show-message)
@@ -220,6 +218,13 @@ This function supports a fallback behavior, where it allows to use
                 remapped-cmd)))
     (call-interactively cmd)))
 
+(defun keypad-quit ()
+  "Quit keypad state."
+  (interactive)
+  (setq this-command last-command)
+  (when keypad-echo (message "KEYPAD exit"))
+  (keypad--quit))
+
 (defun keypad-undo ()
   "Pop the last input."
   (interactive)
@@ -233,13 +238,6 @@ This function supports a fallback behavior, where it allows to use
         (keypad--open-preview))
     (when keypad-echo (message "KEYPAD exit"))
     (keypad--quit)))
-
-(defun keypad-quit ()
-  "Quit keypad state."
-  (interactive)
-  (setq this-command last-command)
-  (when keypad-echo (message "KEYPAD exit"))
-  (keypad--quit))
 
 (defun keypad--quit ()
   "Quit keypad state."
