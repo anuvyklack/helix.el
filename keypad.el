@@ -400,29 +400,47 @@ When CONTROL is non-nil leave only Ctrl-... events instead."
 entered in Keypad. This keymap is intended to be passed further
 to Which-key API."
   (let* ((keys (keypad--entered-keys))
-         (ctrl-predicate (lambda (key modifiers)
-                           (and (not (equal key "ESC"))
-                                (memq 'control modifiers))))
+         (control-predicate (lambda (key modifiers)
+                              (and (not (member key '("ESC")))
+                                   (memq 'control modifiers))))
          (literal-predicate (lambda (key modifiers)
-                              (not (or (equal key "ESC")
+                              (not (or (member key '("ESC"))
                                        (memq 'control modifiers))))))
     (pcase keypad--modifier
-      ('meta (define-keymap
-               :suppress 'nodigits
-               "ESC" (keypad--filter-keymap
-                      (keypad--lookup-key (kbd (concat keys " ESC")))
-                      literal-predicate)))
+      ('meta         (define-keymap
+                       :suppress 'nodigits
+                       "ESC" (keypad--filter-keymap
+                              (keypad--lookup-key (kbd (concat keys " ESC")))
+                              literal-predicate)))
       ('control-meta (define-keymap
                        :suppress 'nodigits
                        "ESC" (keypad--filter-keymap
                               (keypad--lookup-key (kbd (concat keys " ESC")))
-                              ctrl-predicate)))
+                              control-predicate)))
       ('literal      (keypad--filter-keymap
                       (keypad--lookup-key (kbd keys))
                       literal-predicate)))))
 
-;; (single-key-description 76)
-;; (event-modifiers 76)
+;; (keypad--filter-keymap
+;;  (keypad--lookup-key (kbd "ESC"))
+;;  (lambda (key modifiers)
+;;    (and (not (equal key "DEL"))
+;;         (memq 'control modifiers))))
+
+;; (33554445 . org-insert-todo-heading)
+
+(single-key-description 33554445)
+(single-key-description (event-basic-type 33554445))
+(event-modifiers 33554445)
+
+(single-key-description 'C-return)
+(single-key-description (event-basic-type 'C-return))
+(event-modifiers 'return)
+
+(single-key-description (event-basic-type (seq-first (kbd "M-:"))))
+(event-modifiers (seq-first (kbd "M-:")))
+;; (27 keymap (58 . eval-expression) (27 . keyboard-escape-quit))
+;; (single-key-description 27)
 
 ;; (keypad-show-preview mode-specific-map)
 
