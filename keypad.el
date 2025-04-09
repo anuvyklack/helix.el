@@ -2,6 +2,7 @@
 ;;; Code:
 
 (require 'dash)
+(require 's)
 
 (declare-function which-key--create-buffer-and-show "which-key")
 (declare-function which-key--hide-popup "which-key")
@@ -51,14 +52,14 @@ Nil stands for taking leader keymap from `meow-keymap-alist'."
   :group 'keypad
   :type 'boolean)
 
-(defcustom keypad-message-prefix " Keypad: "
+(defcustom keypad-message-prefix "Keypad: "
   "The prefix string for keypad messages."
   :group 'keypad
   :type 'string)
 
 (defvar-keymap keypad-map
   :doc "Keypad keymap."
-  :suppress 'nodigits
+  ;; :suppress 'nodigits
   "DEL" #'keypad-undo
   "<backspace>" #'keypad-undo
   "ESC" #'keypad-quit
@@ -127,57 +128,51 @@ Other way seek in top level.")
     (setq last-command-event last-input-event)
     (if-let* ((cmd (keymap-lookup keypad-map (single-key-description event))))
         (call-interactively cmd)
-      (keypad--handle-input-event-1 event))))
+      (keypad--handle-input-key (single-key-description event)))))
 
-;; ((meta . "M-g"))
-;; (single-key-description 'C-M-return) ;; "C-M-<return>"
-;; (key-parse "C-M-<return>")
+(defsubst keypad--add-control (key)
+  (concat "C-" (s-replace "C-" "" key)))
 
-(defun keypad--handle-input-event-1 (event)
-  "Handle the input EVENT.
-Add a parsed key and its modifier to current key sequence. Then invoke
-a command when there's one available on current key sequence."
-  (let ((key (single-key-description event)))
-    (cond (keypad--modifier
-           ;; (pcase keypad--modifier
-           ;;   ;; ('control-meta (let ((key (single-key-description (event-basic-type event))))
-           ;;   ;;                  (push (cons keypad--modifier key) keypad--keys)))
-           ;;   ('control-meta (push (cons keypad--modifier
-           ;;                              (single-key-description (event-basic-type event)))
-           ;;                        keypad--keys))
-           ;;   ('meta (when (memq 'meta (event-modifiers event))
-           ;;            (setq keypad--modifier 'literal)
-           ;;            ))
-           ;;   )
-           (pcase keypad--modifier
-             ;; Collapse C-M- + C-k -> C-M-k
-             ('control-meta (setq key (single-key-description (event-basic-type event))))
-             ;; Collapse M-M-k -> M-k
-             ('meta (when (memq 'meta (event-modifiers event))
-                      (setq keypad--modifier 'literal))))
-           (push (cons keypad--modifier key) keypad--keys)
-           (setq keypad--modifier nil))
-          ((and (equal key keypad-meta-prefix)
-                (keypad--meta-keybindings-available-p))
-           (setq keypad--modifier 'meta))
-          ((and (equal key keypad-ctrl-meta-prefix)
-                (keypad--meta-keybindings-available-p))
-           (setq keypad--modifier 'control-meta))
-          ((and keypad--keys
-                (equal key keypad-literal-prefix))
-           (setq keypad--modifier 'literal))
-          (keypad--keys
-           (push (cons 'control key) keypad--keys))
-          ((when-let* ((k (alist-get key keypad-start-keys nil nil 'equal)))
-             (push (cons 'control k) keypad--keys)
-             t)) ; exit cond
-          (t
-           (setq keypad--use-leader-map t)
-           (push (cons 'literal key) keypad--keys))))
+(defsubst keypad--add-control-meta (key)
+  (concat "C-M-" (s-with key
+                   (s-replace "C-" "")
+                   (s-replace "M-" ""))))
+
+(defsubst keypad--add-meta (key)
+  (if (s-contains? "C-" key)
+      (concat "C-M-" (s-replace "C-" "" key))
+    (concat "M-" key)))
+
+(defun keypad--handle-input-key (key)
+  (cond (keypad--modifier
+         (let ((k (pcase keypad--modifier
+                    ('control      (keypad--add-control key))
+                    ('meta         (keypad--add-meta key))
+                    ('control-meta (keypad--add-control-meta key))
+                    ('literal key))))
+           (push k keypad--keys)
+           (setq keypad--modifier nil)))
+        ((and (equal key keypad-meta-prefix)
+              (keypad--meta-keybindings-available-p))
+         (setq keypad--modifier 'meta))
+        ((and (equal key keypad-ctrl-meta-prefix)
+              (keypad--meta-keybindings-available-p))
+         (setq keypad--modifier 'control-meta))
+        ((and keypad--keys
+              (equal key keypad-literal-prefix))
+         (setq keypad--modifier 'literal))
+        (keypad--keys
+         (push (keypad--add-control key) keypad--keys))
+        ((when-let* ((k (alist-get key keypad-start-keys nil nil 'equal)))
+           (push (keypad--add-control k) keypad--keys)
+           t)) ; exit cond
+        (t
+         (setq keypad--use-leader-map t)
+         (push key keypad--keys)))
   ;; Try execute if the input is valid.
   (if keypad--modifier
       (progn
-        (when keypad-echo (keypad--show-message))
+        (keypad--show-message)
         (keypad--open-preview))
     (keypad--try-execute)))
 
@@ -197,11 +192,11 @@ This function supports a fallback behavior, where it allows to use
              (call-interactively cmd)
              :quit)
             ((keymapp cmd)
-             (when keypad-echo (keypad--show-message))
+             (keypad--show-message)
              (keypad--open-preview))
-            ((eq 'control (caar keypad--keys))
-             (setcar keypad--keys (cons 'literal (cdar keypad--keys)))
-             (keypad--try-execute))
+            ((when (s-contains? "C-" (car keypad--keys))
+               (setcar keypad--keys (s-replace "C-" "" (car keypad--keys)))
+               (keypad--try-execute)))
             (t
              (setq keypad-prefix-arg nil)
              (keypad--quit)
@@ -245,19 +240,19 @@ This function supports a fallback behavior, where it allows to use
 
 (defun keypad--quit ()
   "Quit keypad state."
-  ;; (setq keypad--keys nil
-  ;;       keypad--modifier nil
-  ;;       keypad--use-leader-map nil)
+  (setq keypad--keys nil
+        keypad--modifier nil
+        keypad--use-leader-map nil)
   (keypad--close-preview)
   :quit) ; Indicate that keypad loop should be stopped
 
 (defun keypad--meta-keybindings-available-p ()
   "Return t if there are keybindins that starts with Meta prefix."
   (or (not keypad--keys)
-      (let* ((keymap (keypad--lookup-key (keypad--entered-keys))))
-        (if (keymapp keymap)
-            ;; A key sequences starts with ESC is accessible via Meta key.
-            (keymap-lookup keymap "ESC")))))
+      (if-let* ((keymap (keypad--lookup-key (keypad--entered-keys)))
+                (keymapp keymap))
+          ;; Key sequences starts with ESC are accessible via Meta key.
+          (keymap-lookup keymap "ESC"))))
 
 (defun keypad--lookup-key (keys)
   "Lookup the command which is bound at KEYS."
@@ -267,45 +262,8 @@ This function supports a fallback behavior, where it allows to use
 
 (defun keypad--entered-keys ()
   "Return entered keys as a string."
-  (-> (mapcar #'keypad--format-key keypad--keys)
-      (nreverse)
+  (-> (reverse keypad--keys)
       (string-join " ")))
-
-(defun keypad--format-key (key)
-  "Convert cons cell (MODIFIER . KEY) to string representation."
-  (pcase (car key)
-    ('control (format "C-%s" (keypad--format-upcase (cdr key))))
-    ('meta    (format "M-%s" (cdr key)))
-    ('control-meta (format "C-M-%s" (keypad--format-upcase (cdr key))))
-    ('literal (cdr key))))
-
-(defun keypad--format-keys ()
-  "Return a display format for current input keys."
-  (let ((keys (keypad--entered-keys)))
-    (concat keys
-            (if (not (string-empty-p keys)) " ")
-            (pcase keypad--modifier
-              ('meta         "M-")
-              ('control-meta "C-M-")
-              ('literal      "○")
-              ;; (_ (if (not (string-empty-p keys)) "C-"))
-              ))))
-
-(defun keypad--format-upcase (k)
-  "Return \"S-k\" for upcase \"K\"."
-  (let ((case-fold-search nil))
-    (if (and (stringp k)
-             (string-match-p "^[A-Z]$" k))
-        (format "S-%s" (downcase k))
-      k)))
-
-(defun keypad--format-prefix ()
-  "Return a display format for current prefix."
-  (cond ((equal '(4) keypad-prefix-arg)
-         "C-u ")
-        (keypad-prefix-arg
-         (format "%s " keypad-prefix-arg))
-        (t "")))
 
 ;;; Which-key integration
 
@@ -352,22 +310,27 @@ that were entered in the Keypad."
   "Return a copy of KEYMAP with only literal — non Ctrl events.
 When CONTROL is non-nil leave only Ctrl-... events instead."
   (when (keymapp keymap)
-    (let ((result (define-keymap :suppress 'nodigits)))
+    (let (;; (result (define-keymap :suppress 'nodigits))
+          (result (define-keymap)))
       (map-keymap (lambda (event command)
                     (let ((key (single-key-description event))
                           (modifiers (event-modifiers event)))
-                      (when (funcall predicate key modifiers)
+                      (when (and (key-valid-p key)
+                                 (funcall predicate key modifiers))
                         (keymap-set result key command))))
                   keymap)
       result)))
 
-(defsubst keypad--keypad-key-p (key-or-event)
+(defsubst keypad--service-key-p (key-or-event)
   (when key-or-event
     (let* ((event (if (key-valid-p key-or-event)
                       (seq-first (key-parse key-or-event))
                     key-or-event))
+           (key (single-key-description event))
            (basic-key (single-key-description (event-basic-type event))))
-      (keymap-lookup keypad-map basic-key))))
+      (keymap-lookup keypad-map basic-key)
+      ;; (keymap-lookup keypad-map key)
+      )))
 
 (defun keypad--preview-keymap-for-entered-keys-with-modifier ()
   "Return a keymap with continuations for prefix keys and modifiers
@@ -375,19 +338,19 @@ entered in Keypad. This keymap is intended to be passed further
 to Which-key API."
   (let* ((keys (keypad--entered-keys))
          (control-p (lambda (key modifiers)
-                      (and (not (keypad--keypad-key-p key))
+                      (and (not (keypad--service-key-p key))
                            (memq 'control modifiers))))
          (literal-p (lambda (key modifiers)
-                      (not (or (not (keypad--keypad-key-p key))
+                      (not (or (keypad--service-key-p key)
                                (memq 'control modifiers))))))
     (pcase keypad--modifier
       ('meta         (define-keymap
-                       :suppress 'nodigits
+                       ;; :suppress 'nodigits
                        "ESC" (keypad--filter-keymap
                               (keypad--lookup-key (concat keys " ESC"))
                               literal-p)))
       ('control-meta (define-keymap
-                       :suppress 'nodigits
+                       ;; :suppress 'nodigits
                        "ESC" (keypad--filter-keymap
                               (keypad--lookup-key (concat keys " ESC"))
                               control-p)))
@@ -400,7 +363,7 @@ to Which-key API."
 This keymap is intended to be passed further to Which-key API."
   (keypad--filter-keymap keypad-leader-map
                          (lambda (key modifiers)
-                           (not (or (keypad--keypad-key-p key)
+                           (not (or (keypad--service-key-p key)
                                     (member 'control modifiers)
                                     (member key (list keypad-meta-prefix
                                                       keypad-ctrl-meta-prefix
@@ -412,7 +375,8 @@ This keymap is intended to be passed further to Which-key API."
 This keymap is intended to be passed further to Which-key API."
   (when-let* ((keymap (keypad--lookup-key (keypad--entered-keys)))
               (keymapp keymap))
-    (let ((result (define-keymap :suppress 'nodigits))
+    (let (;; (result (define-keymap :suppress 'nodigits))
+          (result (define-keymap))
           (ignored `(,keypad-literal-prefix
                      ,@(if (keypad--meta-keybindings-available-p)
                            (list keypad-meta-prefix
@@ -421,7 +385,8 @@ This keymap is intended to be passed further to Which-key API."
       (map-keymap (lambda (event command)
                     (let ((key (single-key-description event))
                           (modifiers (event-modifiers event)))
-                      (when (and (not (keypad--keypad-key-p event))
+                      (when (and (key-valid-p key)
+                                 (not (keypad--service-key-p event))
                                  (memq 'control modifiers)
                                  (not (member key ignored)))
                         (push (cons (event-basic-type event)
@@ -432,7 +397,8 @@ This keymap is intended to be passed further to Which-key API."
       (map-keymap (lambda (event command)
                     (let ((key (single-key-description event))
                           (modifiers (event-modifiers event)))
-                      (unless (or (keypad--keypad-key-p event)
+                      (unless (or (key-valid-p key)
+                                  (keypad--service-key-p event)
                                   (memq 'control modifiers)
                                   (member key ignored)
                                   (member (cons (event-basic-type event) modifiers)
@@ -440,6 +406,42 @@ This keymap is intended to be passed further to Which-key API."
                         (keymap-set result key command))))
                   keymap)
       result)))
+
+(defun keypad--format-key (key)
+  "Convert cons cell (MODIFIER . KEY) to string representation."
+  (pcase (car key)
+    ('control (format "C-%s" (keypad--format-upcase (cdr key))))
+    ('meta    (format "M-%s" (cdr key)))
+    ('control-meta (format "C-M-%s" (keypad--format-upcase (cdr key))))
+    ('literal (cdr key))))
+
+(defun keypad--format-keys ()
+  "Return a display format for current input keys."
+  (let ((keys (keypad--entered-keys)))
+    (concat keys
+            (if (not (string-empty-p keys)) " ")
+            (pcase keypad--modifier
+              ('meta         "M-")
+              ('control-meta "C-M-")
+              ('literal      "○")
+              ;; (_ (if (not (string-empty-p keys)) "C-"))
+              ))))
+
+(defun keypad--format-upcase (k)
+  "Return \"S-k\" for upcase \"K\"."
+  (let ((case-fold-search nil))
+    (if (and (stringp k)
+             (string-match-p "^[A-Z]$" k))
+        (format "S-%s" (downcase k))
+      k)))
+
+(defun keypad--format-prefix ()
+  "Return a display format for current prefix."
+  (cond ((equal '(4) keypad-prefix-arg)
+         "C-u ")
+        (keypad-prefix-arg
+         (format "%s " keypad-prefix-arg))
+        (t "")))
 
 (defun keypad--strip-ctrl-meta-from-event (event)
   "Strip `control' and `meta' modifiers from EVENT.
