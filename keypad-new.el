@@ -59,7 +59,7 @@ Nil stands for taking leader keymap from `meow-keymap-alist'."
 
 (defvar-keymap keypad-map
   :doc "Keypad keymap."
-  :suppress 'nodigits
+  ;; :suppress 'nodigits
   "DEL" #'keypad-undo
   "<backspace>" #'keypad-undo
   "ESC" #'keypad-quit
@@ -129,23 +129,6 @@ Other way seek in top level.")
     (if-let* ((cmd (keymap-lookup keypad-map (single-key-description event))))
         (call-interactively cmd)
       (keypad--handle-input-key (single-key-description event)))))
-
-;; ((meta . "M-g"))
-;; (single-key-description 'C-M-return) ;; "C-M-<return>"
-;; (key-parse "C-M-<return>")
-;; (s-contains? "C-" "C-M-<return>")
-;; (s-contains? "M-" "C-M-<return>")
-;; (s-replace "M-" "" "C-<return>")
-;; (s-slice-at "C-" "C-<return>")
-
-;; (event-modifiers (seq-first (key-parse "<return>")))
-;; (event-modifiers (seq-first (key-parse "RET")))
-
-;; ESC-prefix
-
-;; (keypad--lookup-key "ESC")
-;; (key-description (key-parse "0..9"))
-;; (single-key-description 67108912)
 
 (defsubst keypad--add-control (key)
   (concat "C-" (s-replace "C-" "" key)))
@@ -327,7 +310,8 @@ that were entered in the Keypad."
   "Return a copy of KEYMAP with only literal — non Ctrl events.
 When CONTROL is non-nil leave only Ctrl-... events instead."
   (when (keymapp keymap)
-    (let ((result (define-keymap :suppress 'nodigits)))
+    (let (;; (result (define-keymap :suppress 'nodigits))
+          (result (define-keymap)))
       (map-keymap (lambda (event command)
                     (let ((key (single-key-description event))
                           (modifiers (event-modifiers event)))
@@ -344,17 +328,9 @@ When CONTROL is non-nil leave only Ctrl-... events instead."
                     key-or-event))
            (key (single-key-description event))
            (basic-key (single-key-description (event-basic-type event))))
-      ;; (keymap-lookup keypad-map basic-key)
-      (keymap-lookup keypad-map key)
+      (keymap-lookup keypad-map basic-key)
+      ;; (keymap-lookup keypad-map key)
       )))
-
-;; (define-keymap :suppress 'nodigits)
-;; (key-parse "0..9")
-;; (kbd "0..9")
-;; (single-key-description '(48 . 57))
-;; (key-valid-p (single-key-description '(48 . 57)))
-;; (event-basic-type '(48 . 57))
-;; (event-modifiers '(48 . 57))
 
 (defun keypad--preview-keymap-for-entered-keys-with-modifier ()
   "Return a keymap with continuations for prefix keys and modifiers
@@ -365,16 +341,16 @@ to Which-key API."
                       (and (not (keypad--service-key-p key))
                            (memq 'control modifiers))))
          (literal-p (lambda (key modifiers)
-                      (not (or (not (keypad--service-key-p key))
+                      (not (or (keypad--service-key-p key)
                                (memq 'control modifiers))))))
     (pcase keypad--modifier
       ('meta         (define-keymap
-                       :suppress 'nodigits
+                       ;; :suppress 'nodigits
                        "ESC" (keypad--filter-keymap
                               (keypad--lookup-key (concat keys " ESC"))
                               literal-p)))
       ('control-meta (define-keymap
-                       :suppress 'nodigits
+                       ;; :suppress 'nodigits
                        "ESC" (keypad--filter-keymap
                               (keypad--lookup-key (concat keys " ESC"))
                               control-p)))
@@ -399,7 +375,8 @@ This keymap is intended to be passed further to Which-key API."
 This keymap is intended to be passed further to Which-key API."
   (when-let* ((keymap (keypad--lookup-key (keypad--entered-keys)))
               (keymapp keymap))
-    (let ((result (define-keymap :suppress 'nodigits))
+    (let (;; (result (define-keymap :suppress 'nodigits))
+          (result (define-keymap))
           (ignored `(,keypad-literal-prefix
                      ,@(if (keypad--meta-keybindings-available-p)
                            (list keypad-meta-prefix

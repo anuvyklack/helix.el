@@ -332,11 +332,12 @@ that were entered in the Keypad."
 
 (defun keypad--show-message ()
   "Show message in echo area for current keypad input."
-  (let ((message-log-max)) ; disable message logging
-    (message "%s%s%s"
-             keypad-message-prefix
-             (propertize (keypad--format-prefix) 'face 'font-lock-comment-face)
-             (propertize (keypad--format-keys) 'face 'font-lock-string-face))))
+  (when keypad-echo
+    (let ((message-log-max)) ; disable message logging
+      (message "%s%s%s"
+               keypad-message-prefix
+               (propertize (keypad--format-prefix) 'face 'font-lock-comment-face)
+               (propertize (keypad--format-keys) 'face 'font-lock-string-face)))))
 
 (defun keypad--keymap-for-preview ()
   "Get a keymap for Which-key preview."
