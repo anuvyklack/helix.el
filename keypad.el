@@ -125,35 +125,38 @@ Other way seek in top level.")
   (if (equal 'escape last-input-event)
       (keypad--quit)
     (setq last-command-event last-input-event)
-    (if-let* ((key (single-key-description event))
-              (cmd (keymap-lookup keypad-map key)))
+    (if-let* ((cmd (keymap-lookup keypad-map (single-key-description event))))
         (call-interactively cmd)
-      (keypad--handle-input-key key))))
+      (keypad--handle-input-event-1 event))))
 
-(defun keypad--handle-input-key (key)
-  "Handle the input KEY.
+(defun keypad--handle-input-event-1 (event)
+  "Handle the input EVENT.
 Add a parsed key and its modifier to current key sequence. Then invoke
 a command when there's one available on current key sequence."
-  (cond (keypad--modifier
-         (push (cons keypad--modifier key) keypad--keys)
-         (setq keypad--modifier nil))
-        ((and (equal key keypad-meta-prefix)
-              (keypad--meta-keybindings-available-p))
-         (setq keypad--modifier 'meta))
-        ((and (equal key keypad-ctrl-meta-prefix)
-              (keypad--meta-keybindings-available-p))
-         (setq keypad--modifier 'control-meta))
-        ((and keypad--keys
-              (equal key keypad-literal-prefix))
-         (setq keypad--modifier 'literal))
-        (keypad--keys
-         (push (cons 'control key) keypad--keys))
-        ((when-let* ((k (alist-get key keypad-start-keys nil nil 'equal)))
-           (push (cons 'control k) keypad--keys)
-           t)) ; exit cond
-        (t
-         (setq keypad--use-leader-map t)
-         (push (cons 'literal key) keypad--keys)))
+  (let ((key (single-key-description event)))
+    (cond (keypad--modifier
+           (pcase keypad--modifier
+             ('control-meta
+              (setq key (single-key-description (event-basic-type event)))))
+           (push (cons keypad--modifier key) keypad--keys)
+           (setq keypad--modifier nil))
+          ((and (equal key keypad-meta-prefix)
+                (keypad--meta-keybindings-available-p))
+           (setq keypad--modifier 'meta))
+          ((and (equal key keypad-ctrl-meta-prefix)
+                (keypad--meta-keybindings-available-p))
+           (setq keypad--modifier 'control-meta))
+          ((and keypad--keys
+                (equal key keypad-literal-prefix))
+           (setq keypad--modifier 'literal))
+          (keypad--keys
+           (push (cons 'control key) keypad--keys))
+          ((when-let* ((k (alist-get key keypad-start-keys nil nil 'equal)))
+             (push (cons 'control k) keypad--keys)
+             t)) ; exit cond
+          (t
+           (setq keypad--use-leader-map t)
+           (push (cons 'literal key) keypad--keys))))
   ;; Try execute if the input is valid.
   (if keypad--modifier
       (progn
@@ -192,11 +195,10 @@ This function supports a fallback behavior, where it allows to use
 
 (defun keypad-transparent-leader ()
   (let* ((key (single-key-description last-input-event))
-         (origin-cmd (cl-some
-                      #'(lambda (keymap)
-                          (unless (memq keymap keypad-keymaps-transparent-leader-should-ignore)
-                            (keymap-lookup keymap key)))
-                      (current-active-maps)))
+         (origin-cmd (cl-some (lambda (keymap)
+                                (unless (memq keymap keypad-keymaps-transparent-leader-should-ignore)
+                                  (keymap-lookup keymap key)))
+                              (current-active-maps)))
          (remapped-cmd (command-remapping origin-cmd))
          (cmd (if (memq remapped-cmd '(undefined nil))
                   (or origin-cmd 'undefined)
