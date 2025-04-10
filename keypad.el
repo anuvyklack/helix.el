@@ -245,18 +245,14 @@ Shift with Ctrl, you must write \"C-S-k\"."
   (let ((keys (keypad--entered-keys)))
     (or (not keys)
         (if-let* ((keymap (keypad--lookup-key keys))
-                  (keymapp keymap))
+                  ((keymapp keymap)))
             ;; Key sequences starts with ESC are accessible via Meta key.
             (keymap-lookup keymap "ESC")))))
 
 (defun keypad--lookup-key (keys)
   "Lookup the command which is bound at KEYS."
-  ;; (if keypad--use-leader-map
-  ;;     (keymap-lookup keypad-leader-map keys)
-  ;;   (key-binding (key-parse keys)))
-  ;; (let ((keymap (if keypad--use-leader-map keypad-leader-map)))
-  ;;   (keymap-lookup keymap keys))
-  (keymap-lookup (if keypad--use-leader-map keypad-leader-map)
+  (keymap-lookup (if keypad--use-leader-map
+                     keypad-leader-map)
                  keys))
 
 (defun keypad--entered-keys ()
@@ -299,12 +295,12 @@ that were entered in the Keypad."
 (defun keypad--keymap-for-preview ()
   "Get a keymap for Which-key preview."
   (let ((keys (keypad--entered-keys))
-        (control-p (lambda (key modifiers)
-                     (and (not (keypad--service-key-p key))
-                          (memq 'control modifiers))))
-        (literal-p (lambda (key modifiers)
-                     (not (or (keypad--service-key-p key)
-                              (memq 'control modifiers))))))
+        (control-p (lambda (key)
+                     (and (s-contains? "C-" key)
+                          (not (keypad--service-key-p key)))))
+        (literal-p (lambda (key)
+                     (not (or (s-contains? "C-" key)
+                              (keypad--service-key-p key))))))
     (cond (keypad--modifier
            (pcase keypad--modifier
              ('control (keypad--filter-keymap
@@ -322,13 +318,13 @@ that were entered in the Keypad."
                   (if (keymapp keymap) keymap)))
           (t (keypad--filter-keymap
               keypad-leader-map
-              (lambda (key modifiers)
-                (not (or (keypad--service-key-p key)
-                         (member 'control modifiers)
+              (lambda (key)
+                (not (or (s-contains? "C-" key)
                          (member key (list "x" "c"
                                            keypad-ctrl-prefix
                                            keypad-meta-prefix
-                                           keypad-ctrl-meta-prefix))))))))))
+                                           keypad-ctrl-meta-prefix))
+                         (keypad--service-key-p key)))))))))
 
 (defun keypad--filter-keymap (keymap predicate)
   "Return new keymap that contains only elements from KEYMAP
@@ -336,24 +332,18 @@ for which PREDICATE is non-nil."
   (when (keymapp keymap)
     (let ((result (define-keymap)))
       (map-keymap (lambda (event command)
-                    (let ((key (single-key-description event))
-                          (modifiers (event-modifiers event)))
-                      (when (and (key-valid-p key)
-                                 (funcall predicate key modifiers))
-                        (keymap-set result key command))))
+                    (when-let* ((key (single-key-description event))
+                                ((key-valid-p key))
+                                ((funcall predicate key)))
+                      (keymap-set result key command)))
                   keymap)
       result)))
 
-(defun keypad--service-key-p (key-or-event)
-  (when key-or-event
-    (let* ((event (if (key-valid-p key-or-event)
-                      (seq-first (key-parse key-or-event))
-                    key-or-event))
-           (key (single-key-description event))
-           (basic-key (single-key-description (event-basic-type event))))
-      (keymap-lookup keypad-map basic-key)
-      ;; (keymap-lookup keypad-map key)
-      )))
+(defun keypad--service-key-p (key)
+  (keymap-lookup keypad-map (s-with key
+                              (s-replace "C-" "")
+                              (s-replace "M-" "")
+                              (s-replace "S-" ""))))
 
 (defun keypad--format-keys ()
   "Return a display format for current input keys."
@@ -371,15 +361,6 @@ for which PREDICATE is non-nil."
         (keypad--prefix-arg
          (concat keypad--prefix-arg " "))
         (t "")))
-
-(defun keypad--strip-ctrl-meta-from-event (event)
-  "Strip `control' and `meta' modifiers from EVENT.
-Return vector suitable to pass to `define-key'."
-  (let ((e (event-basic-type event)))
-    (vector (if (and (integerp e)
-                     (memq 'shift (event-modifiers event)))
-                (upcase e)
-              e))))
 
 (defun keypad--describe-key ()
   "Describe key via KEYPAD input."
