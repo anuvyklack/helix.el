@@ -122,13 +122,11 @@ Other way seek in top level.")
 
 (defun keypad--handle-input-key (key)
   (cond (keypad--modifier
-         (let ((k (pcase keypad--modifier
-                    ('control      (keypad--add-control key))
-                    ('meta         (keypad--add-meta key))
-                    ('control-meta (keypad--add-control-meta key))
-                    ;; ('literal key)
-                    )))
-           (push k keypad--keys))
+         (push (pcase keypad--modifier
+                 ('control      (keypad--add-control key))
+                 ('meta         (keypad--add-meta key))
+                 ('control-meta (keypad--add-control-meta key)))
+               keypad--keys)
          (setq keypad--modifier nil))
         ((equal keypad-ctrl-prefix key)
          (setq keypad--modifier 'control))
@@ -143,6 +141,8 @@ Other way seek in top level.")
          (setq keypad--modifier 'control))
         ((equal "x" key)
          (push "C-x" keypad--keys))
+        (keypad--keys
+         (push key keypad--keys))
         (t
          (setq keypad--use-leader-map t)
          (push key keypad--keys)))
@@ -153,27 +153,28 @@ Other way seek in top level.")
         (keypad--open-preview))
     (keypad--try-execute)))
 
+;; (keypad--lookup-key "C-x s")
+
 (defun keypad--try-execute ()
   "Try execute command, return t when the translation progress can be ended.
 This function supports a fallback behavior, where it allows to use
 `SPC x f' to execute `C-x C-f' or `C-x f' when `C-x C-f' is not bound."
-  (unless keypad--modifier
-    (let* ((keys (keypad--entered-keys))
-           (cmd  (keypad--lookup-key keys)))
-      (cond ((commandp cmd t)
-             (setq current-prefix-arg keypad--prefix-arg)
-             (keypad--quit)
-             (setq real-this-command cmd
-                   this-command cmd)
-             (call-interactively cmd)
-             :quit)
-            ((keymapp cmd)
-             (keypad--show-message)
-             (keypad--open-preview))
-            (t
-             (keypad--quit)
-             (message "%s is undefined" keys)
-             :quit)))))
+  (let* ((keys (keypad--entered-keys))
+         (cmd  (keypad--lookup-key keys)))
+    (cond ((commandp cmd t)
+           (setq current-prefix-arg keypad--prefix-arg)
+           (keypad--quit)
+           (setq real-this-command cmd
+                 this-command cmd)
+           (call-interactively cmd)
+           :quit)
+          ((keymapp cmd)
+           (keypad--show-message)
+           (keypad--open-preview))
+          (t
+           (keypad--quit)
+           (message "%s is undefined" keys)
+           :quit))))
 
 (defun keypad-undo ()
   "Pop the last input."
@@ -203,37 +204,129 @@ This function supports a fallback behavior, where it allows to use
   (keypad--close-preview)
   :quit) ; Indicate that keypad loop should be stopped
 
+;; (read-key)
+;; (key-parse "C-L") ; 12
+;; (key-parse "C-l") ; 12
+;; (single-key-description 76) ; L
+;; (single-key-description 33554444) ; C-S-l
+;; (event-modifiers 76)
+;; (event-modifiers 33554444)
+
+;; (mapcar (lambda (key)
+;;           (let ((event (seq-first (key-parse key))))
+;;             (list key
+;;                   (single-key-description event)
+;;                   (single-key-description (event-basic-type event))
+;;                   (event-modifiers event))))
+;;         '("M-<f10>")
+;;         ;; '("А" "Я" "а" "я")
+;;         ;; '("<escape>")
+;;         ;; '("<backtab>" "C-S-<iso-lefttab>")
+;;         ;; '("C-RET" "<return>" "C-<return>")
+;;         ;; '("C-RET" "TAB" "DEL" "ESC" "S-SPC")
+;;         )
+
+;; (keymap-lookup nil "TAB")
+;; (keymap-lookup nil "<tab>")
+;; (read-key)
+;; (single-key-description 27) ; "ESC"
+;; (single-key-description 9) ; "TAB"
+;; (single-key-description 'C-S-iso-lefttab)
+;; (single-key-description 'S-escape)
+;; (single-key-description 'C-S-escape)
+
+;; (-> (seq-first (key-parse "А"))
+;;     (upcase)
+;;     (single-key-description))
+;; (equal '(shift) (-> (seq-first (key-parse "Я"))
+;;                     (event-modifiers)))
+
+;; (seq-first (key-parse "а"))
+;; (seq-first (key-parse "я"))
+
+(defun keypad--handle-shift (key)
+  "Convert capical letters: \"K\" -> \"S-k\".
+It is needed when Shift is used along with Ctrl.
+For Emacs, \"C-K\" and \"C-k\" are the same event, and to use
+Shift with Ctrl, you must write \"C-S-k\"."
+  (let ((event (seq-first (key-parse key))))
+    (if (equal '(shift) (event-modifiers event))
+        (concat "S-" (single-key-description
+                      (event-basic-type event)))
+      key)))
+
+;; (defun keypad--format-upcase (k)
+;;   "Return \"S-k\" for upcase \"K\"."
+;;   (let ((case-fold-search nil))
+;;     (if (and (stringp k)
+;;              (string-match-p "^[A-Z]$" k))
+;;         (format "S-%s" (downcase k))
+;;       k)))
+
+;; (read-key)
+;; (single-key-description 125)
+;; (key-parse "S-}") ; 33554557
+;; (single-key-description 33554557)
+
 (defun keypad--add-control (key)
-  (concat "C-" (s-replace "C-" "" key)))
+  (pcase key
+    ("TAB" "C-<tab>")
+    ("RET" "C-<return>")
+    ("ESC" "ESC")
+    (_ (if (s-contains? "C-" key) key
+         (concat "C-" (keypad--handle-shift key))))))
 
 (defun keypad--add-meta (key)
   (if (s-contains? "C-" key)
-      (concat "C-M-" (s-replace "C-" "" key))
-    (concat "M-" key)))
+      (keypad--add-control-meta key)
+    (pcase key
+      ("TAB" "M-<tab>")
+      ("RET" "M-<return>")
+      ("ESC" "ESC")
+      (_ (concat "M-" key)))))
 
 (defun keypad--add-control-meta (key)
-  (concat "C-M-" (s-with key
-                   (s-replace "C-" "")
-                   (s-replace "M-" ""))))
+  (pcase key
+    ("TAB" "C-M-<tab>")
+    ("RET" "C-M-<return>")
+    ("ESC" "ESC")
+    (_ (concat "C-M-" (->> key
+                           (s-replace "C-" "")
+                           (s-replace "M-" "")
+                           (keypad--handle-shift))))))
+
+;; (read-key)
+;; (single-key-description 'f10)
+;; (single-key-description 167772169)
+;; (single-key-description (seq-first (key-parse "C-S-i"))) ; S-TAB
+;; (single-key-description 33554457) ; "C-S-y"
+;; (single-key-description 33554441) ; "S-TAB" == "C-S-i"
+;; (single-key-description 134217833) ; M-i
+;; (single-key-description 134217801) ; M-I
 
 (defun keypad--meta-keybindings-available-p ()
-  "Return non-nil if there are keybindins that starts with Meta prefix."
-  (or (not keypad--keys)
-      (if-let* ((keymap (keypad--lookup-key (keypad--entered-keys)))
-                (keymapp keymap))
-          ;; Key sequences starts with ESC are accessible via Meta key.
-          (keymap-lookup keymap "ESC"))))
+  "Return t if there are keybindins that starts with Meta prefix."
+  (let ((keys (keypad--entered-keys)))
+    (or (not keys)
+        (if-let* ((keymap (keypad--lookup-key keys))
+                  (keymapp keymap))
+            ;; Key sequences starts with ESC are accessible via Meta key.
+            (keymap-lookup keymap "ESC")))))
 
 (defun keypad--lookup-key (keys)
   "Lookup the command which is bound at KEYS."
-  (if keypad--use-leader-map
-      (keymap-lookup keypad-leader-map keys)
-    (key-binding (key-parse keys))))
+  ;; (if keypad--use-leader-map
+  ;;     (keymap-lookup keypad-leader-map keys)
+  ;;   (key-binding (key-parse keys)))
+  ;; (let ((keymap (if keypad--use-leader-map keypad-leader-map)))
+  ;;   (keymap-lookup keymap keys))
+  (keymap-lookup (if keypad--use-leader-map keypad-leader-map)
+                 keys))
 
 (defun keypad--entered-keys ()
   "Return entered keys as a string."
-  (-> (reverse keypad--keys)
-      (string-join " ")))
+  (if keypad--keys
+      (string-join (reverse keypad--keys) " ")))
 
 ;;; Which-key integration
 
@@ -283,14 +376,14 @@ that were entered in the Keypad."
                         control-p))
              ('meta    (define-keymap
                          "ESC" (keypad--filter-keymap
-                                (keypad--lookup-key (concat keys " ESC"))
+                                (keypad--lookup-key (concat keys (if keys " ") "ESC"))
                                 literal-p)))
              ('control-meta (define-keymap
                               "ESC" (keypad--filter-keymap
-                                     (keypad--lookup-key (concat keys " ESC"))
+                                     (keypad--lookup-key (concat keys (if keys " ") "ESC"))
                                      control-p)))))
-          (keypad--keys (let ((keymap (keypad--lookup-key keys)))
-                          (if (keymapp keymap) keymap)))
+          (keys (let ((keymap (keypad--lookup-key keys)))
+                  (if (keymapp keymap) keymap)))
           (t (keypad--filter-keymap
               keypad-leader-map
               (lambda (key modifiers)
@@ -326,31 +419,14 @@ for which PREDICATE is non-nil."
       ;; (keymap-lookup keypad-map key)
       )))
 
-(defun keypad--format-key (key)
-  "Convert cons cell (MODIFIER . KEY) to string representation."
-  (pcase (car key)
-    ('control (format "C-%s" (keypad--format-upcase (cdr key))))
-    ('meta    (format "M-%s" (cdr key)))
-    ('control-meta (format "C-M-%s" (keypad--format-upcase (cdr key))))
-    ('literal (cdr key))))
-
 (defun keypad--format-keys ()
   "Return a display format for current input keys."
   (let ((keys (keypad--entered-keys)))
-    (concat keys
-            (if (not (string-empty-p keys)) " ")
+    (concat keys (if keys " ")
             (pcase keypad--modifier
               ('control      "C-")
               ('meta         "M-")
               ('control-meta "C-M-")))))
-
-(defun keypad--format-upcase (k)
-  "Return \"S-k\" for upcase \"K\"."
-  (let ((case-fold-search nil))
-    (if (and (stringp k)
-             (string-match-p "^[A-Z]$" k))
-        (format "S-%s" (downcase k))
-      k)))
 
 (defun keypad--format-prefix ()
   "Return a display format for current prefix."
