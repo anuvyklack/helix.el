@@ -28,11 +28,6 @@
   :group 'keypad
   :type 'string)
 
-(defcustom keypad-literal-prefix "SPC"
-  "The key disables all other modifiers."
-  :group 'keypad
-  :type 'string)
-
 ;; (defcustom keypad-start-keys '(("c" . "C-c")
 ;;                                ("x" . "C-x"))
 ;;   "Alist of keys to begin keypad translation.
@@ -64,7 +59,6 @@ Nil stands for taking leader keymap from `meow-keymap-alist'."
 
 (defvar-keymap keypad-map
   :doc "Keypad keymap."
-  ;; :suppress 'nodigits
   "DEL" #'keypad-undo
   "<backspace>" #'keypad-undo
   "ESC" #'keypad-quit
@@ -75,12 +69,10 @@ Nil stands for taking leader keymap from `meow-keymap-alist'."
 ;;; Internal vars
 
 (defvar keypad--keys nil
-  "Stores keys entered in Keypad state in the form (MODIFIER . KEY)
-in reverse order.
+  "Stores keys entered in Keypad state in reverse order.
 
-For example, key sequence \"C-f M-t h\" coresponds to
-
-  (('literal . \"h\") ('meta . \"t\") ('control . \"f\"))")
+For example, key sequence \"C-f M-t h\" will be stored like
+(\"h\" \"M-t\" \"C-f\")")
 
 (defvar keypad--use-literal nil)
 (defvar keypad--use-meta nil)
@@ -93,14 +85,6 @@ For example, key sequence \"C-f M-t h\" coresponds to
 (defvar keypad--use-leader-map nil
   "When non-nil seek for key bindings in `keypad-leader-map'.
 Other way seek in top level.")
-
-;; (defvar keypad-transparent-leader nil)
-
-(defvar keypad-keymaps-to-ingnore-for-transparent-leader
-  (list helix-motion-state-map))
-
-(defvar keypad-keymaps-transparent-leader-should-ignore
-  (list helix-motion-state-map))
 
 (defvar keypad--preview-is-active nil)
 
@@ -191,18 +175,6 @@ This function supports a fallback behavior, where it allows to use
              (message "%s is undefined" keys)
              :quit)))))
 
-;; (defun keypad-transparent-leader ()
-;;   (let* ((key (single-key-description last-input-event))
-;;          (origin-cmd (cl-some (lambda (keymap)
-;;                                 (unless (memq keymap keypad-keymaps-transparent-leader-should-ignore)
-;;                                   (keymap-lookup keymap key)))
-;;                               (current-active-maps)))
-;;          (remapped-cmd (command-remapping origin-cmd))
-;;          (cmd (if (memq remapped-cmd '(undefined nil))
-;;                   (or origin-cmd 'undefined)
-;;                 remapped-cmd)))
-;;     (call-interactively cmd)))
-
 (defun keypad-undo ()
   "Pop the last input."
   (interactive)
@@ -231,15 +203,15 @@ This function supports a fallback behavior, where it allows to use
   (keypad--close-preview)
   :quit) ; Indicate that keypad loop should be stopped
 
-(defsubst keypad--add-control (key)
+(defun keypad--add-control (key)
   (concat "C-" (s-replace "C-" "" key)))
 
-(defsubst keypad--add-meta (key)
+(defun keypad--add-meta (key)
   (if (s-contains? "C-" key)
       (concat "C-M-" (s-replace "C-" "" key))
     (concat "M-" key)))
 
-(defsubst keypad--add-control-meta (key)
+(defun keypad--add-control-meta (key)
   (concat "C-M-" (s-with key
                    (s-replace "C-" "")
                    (s-replace "M-" ""))))
@@ -297,19 +269,43 @@ that were entered in the Keypad."
 
 (defun keypad--keymap-for-preview ()
   "Get a keymap for Which-key preview."
-  (cond (keypad--modifier
-         (keypad--preview-keymap-for-entered-keys-with-modifier))
-        (keypad--keys
-         (keypad--keymap-to-describe-entered-keys))
-        (t
-         (keypad--keymap-to-describe-leader-key))))
+  (let ((keys (keypad--entered-keys))
+        (control-p (lambda (key modifiers)
+                     (and (not (keypad--service-key-p key))
+                          (memq 'control modifiers))))
+        (literal-p (lambda (key modifiers)
+                     (not (or (keypad--service-key-p key)
+                              (memq 'control modifiers))))))
+    (cond (keypad--modifier
+           (pcase keypad--modifier
+             ('control (keypad--filter-keymap
+                        (keypad--lookup-key keys)
+                        control-p))
+             ('meta    (define-keymap
+                         "ESC" (keypad--filter-keymap
+                                (keypad--lookup-key (concat keys " ESC"))
+                                literal-p)))
+             ('control-meta (define-keymap
+                              "ESC" (keypad--filter-keymap
+                                     (keypad--lookup-key (concat keys " ESC"))
+                                     control-p)))))
+          (keypad--keys (let ((keymap (keypad--lookup-key keys)))
+                          (if (keymapp keymap) keymap)))
+          (t (keypad--filter-keymap
+              keypad-leader-map
+              (lambda (key modifiers)
+                (not (or (keypad--service-key-p key)
+                         (member 'control modifiers)
+                         (member key (list "x" "c"
+                                           keypad-ctrl-prefix
+                                           keypad-meta-prefix
+                                           keypad-ctrl-meta-prefix))))))))))
 
 (defun keypad--filter-keymap (keymap predicate)
-  "Return a copy of KEYMAP with only literal — non Ctrl events.
-When CONTROL is non-nil leave only Ctrl-... events instead."
+  "Return new keymap that contains only elements from KEYMAP
+for which PREDICATE is non-nil."
   (when (keymapp keymap)
-    (let (;; (result (define-keymap :suppress 'nodigits))
-          (result (define-keymap)))
+    (let ((result (define-keymap)))
       (map-keymap (lambda (event command)
                     (let ((key (single-key-description event))
                           (modifiers (event-modifiers event)))
@@ -319,7 +315,7 @@ When CONTROL is non-nil leave only Ctrl-... events instead."
                   keymap)
       result)))
 
-(defsubst keypad--service-key-p (key-or-event)
+(defun keypad--service-key-p (key-or-event)
   (when key-or-event
     (let* ((event (if (key-valid-p key-or-event)
                       (seq-first (key-parse key-or-event))
@@ -329,81 +325,6 @@ When CONTROL is non-nil leave only Ctrl-... events instead."
       (keymap-lookup keypad-map basic-key)
       ;; (keymap-lookup keypad-map key)
       )))
-
-(defun keypad--preview-keymap-for-entered-keys-with-modifier ()
-  "Return a keymap with continuations for prefix keys and modifiers
-entered in Keypad. This keymap is intended to be passed further
-to Which-key API."
-  (let* ((keys (keypad--entered-keys))
-         (control-p (lambda (key modifiers)
-                      (and (not (keypad--service-key-p key))
-                           (memq 'control modifiers))))
-         (literal-p (lambda (key modifiers)
-                      (not (or (keypad--service-key-p key)
-                               (memq 'control modifiers))))))
-    (pcase keypad--modifier
-      ('meta         (define-keymap
-                       ;; :suppress 'nodigits
-                       "ESC" (keypad--filter-keymap
-                              (keypad--lookup-key (concat keys " ESC"))
-                              literal-p)))
-      ('control-meta (define-keymap
-                       ;; :suppress 'nodigits
-                       "ESC" (keypad--filter-keymap
-                              (keypad--lookup-key (concat keys " ESC"))
-                              control-p)))
-      ('literal      (keypad--filter-keymap
-                      (keypad--lookup-key keys)
-                      literal-p)))))
-
-(defun keypad--keymap-to-describe-leader-key ()
-  "Return a keymap with the content of the `keypad-leader-map'.
-This keymap is intended to be passed further to Which-key API."
-  (keypad--filter-keymap keypad-leader-map
-                         (lambda (key modifiers)
-                           (not (or (keypad--service-key-p key)
-                                    (member 'control modifiers)
-                                    (member key (list keypad-meta-prefix
-                                                      keypad-ctrl-meta-prefix
-                                                      keypad-literal-prefix))
-                                    (alist-get key keypad-start-keys nil nil 'equal))))))
-
-(defun keypad--keymap-to-describe-entered-keys ()
-  "Return a keymap with continuations for prefix keys entered in Keypad.
-This keymap is intended to be passed further to Which-key API."
-  (when-let* ((keymap (keypad--lookup-key (keypad--entered-keys)))
-              (keymapp keymap))
-    (let (;; (result (define-keymap :suppress 'nodigits))
-          (result (define-keymap))
-          (ignored `(,keypad-literal-prefix
-                     ,@(if (keypad--meta-keybindings-available-p)
-                           (list keypad-meta-prefix
-                                 keypad-ctrl-meta-prefix))))
-          occupied-keys)
-      (map-keymap (lambda (event command)
-                    (let ((key (single-key-description event))
-                          (modifiers (event-modifiers event)))
-                      (when (and (key-valid-p key)
-                                 (not (keypad--service-key-p event))
-                                 (memq 'control modifiers)
-                                 (not (member key ignored)))
-                        (push (cons (event-basic-type event)
-                                    (delq 'control modifiers))
-                              occupied-keys)
-                        (keymap-set result key command))))
-                  keymap)
-      (map-keymap (lambda (event command)
-                    (let ((key (single-key-description event))
-                          (modifiers (event-modifiers event)))
-                      (unless (or (key-valid-p key)
-                                  (keypad--service-key-p event)
-                                  (memq 'control modifiers)
-                                  (member key ignored)
-                                  (member (cons (event-basic-type event) modifiers)
-                                          occupied-keys))
-                        (keymap-set result key command))))
-                  keymap)
-      result)))
 
 (defun keypad--format-key (key)
   "Convert cons cell (MODIFIER . KEY) to string representation."
@@ -419,11 +340,9 @@ This keymap is intended to be passed further to Which-key API."
     (concat keys
             (if (not (string-empty-p keys)) " ")
             (pcase keypad--modifier
+              ('control      "C-")
               ('meta         "M-")
-              ('control-meta "C-M-")
-              ('literal      "○")
-              ;; (_ (if (not (string-empty-p keys)) "C-"))
-              ))))
+              ('control-meta "C-M-")))))
 
 (defun keypad--format-upcase (k)
   "Return \"S-k\" for upcase \"K\"."
@@ -438,7 +357,6 @@ This keymap is intended to be passed further to Which-key API."
   (cond ((equal '(4) keypad--prefix-arg)
          "C-u ")
         (keypad--prefix-arg
-         ;; (format "%s " keypad--prefix-arg)
          (concat keypad--prefix-arg " "))
         (t "")))
 
