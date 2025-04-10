@@ -1,4 +1,4 @@
-;;; keypad.el -*- lexical-binding: t; -*-
+;;; keypad-meow.el -*- lexical-binding: t; -*-
 ;;; Code:
 
 (require 'dash)
@@ -13,17 +13,12 @@
   "Custom group for keypad."
   :group 'keypad-module)
 
-(defcustom keypad-ctrl-prefix "SPC"
-  "The key disables all other modifiers."
-  :group 'keypad
-  :type 'string)
-
 (defcustom keypad-meta-prefix "m"
   "The key coresponding to M- modifier."
   :group 'keypad
   :type 'string)
 
-(defcustom keypad-ctrl-meta-prefix "M"
+(defcustom keypad-ctrl-meta-prefix "g"
   "The key coresponding to C-M- modifier."
   :group 'keypad
   :type 'string)
@@ -33,15 +28,15 @@
   :group 'keypad
   :type 'string)
 
-;; (defcustom keypad-start-keys '(("c" . "C-c")
-;;                                ("x" . "C-x"))
-;;   "Alist of keys to begin keypad translation.
-;; When a key char is pressed,it's corresponding value is appended
-;; to C- and the user is prompted to finish the command."
-;;   :group 'keypad
-;;   :type '(alist
-;;           :key-type (string :tag "From")
-;;           :value-type (string :tag "To")))
+(defcustom keypad-start-keys '(("c" . "c")
+                               ("x" . "x"))
+  "Alist of keys to begin keypad translation.
+When a key char is pressed,it's corresponding value is appended
+to C- and the user is prompted to finish the command."
+  :group 'keypad
+  :type '(alist
+          :key-type (string :tag "From")
+          :value-type (string :tag "To")))
 
 (defcustom keypad-leader-map mode-specific-map
   "The fallback dispatching in KEYPAD when there's no translation.
@@ -86,7 +81,7 @@ For example, key sequence \"C-f M-t h\" coresponds to
 (defvar keypad--use-meta nil)
 (defvar keypad--use-both nil)
 
-(defvar keypad--prefix-arg nil)
+(defvar keypad-prefix-arg nil)
 (defvar keypad--modifier nil)
 (defvar keypad--keypad-help nil "If keypad in help mode.")
 
@@ -94,7 +89,7 @@ For example, key sequence \"C-f M-t h\" coresponds to
   "When non-nil seek for key bindings in `keypad-leader-map'.
 Other way seek in top level.")
 
-;; (defvar keypad-transparent-leader nil)
+(defvar keypad-transparent-leader nil)
 
 (defvar keypad-keymaps-to-ingnore-for-transparent-leader
   (list helix-motion-state-map))
@@ -116,7 +111,7 @@ Other way seek in top level.")
   ;; Try to make this command transparent.
   (setq this-command last-command)
   (setq keypad--keys nil
-        keypad--prefix-arg current-prefix-arg
+        keypad-prefix-arg current-prefix-arg
         keypad--use-leader-map nil)
   (unwind-protect
       (progn
@@ -131,10 +126,22 @@ Other way seek in top level.")
   (if (equal 'escape last-input-event)
       (keypad--quit)
     (setq last-command-event last-input-event)
-    (if-let* ((key (single-key-description event))
-              (cmd (keymap-lookup keypad-map key)))
+    (if-let* ((cmd (keymap-lookup keypad-map (single-key-description event))))
         (call-interactively cmd)
-      (keypad--handle-input-key key))))
+      (keypad--handle-input-key (single-key-description event)))))
+
+(defsubst keypad--add-control (key)
+  (concat "C-" (s-replace "C-" "" key)))
+
+(defsubst keypad--add-control-meta (key)
+  (concat "C-M-" (s-with key
+                   (s-replace "C-" "")
+                   (s-replace "M-" ""))))
+
+(defsubst keypad--add-meta (key)
+  (if (s-contains? "C-" key)
+      (concat "C-M-" (s-replace "C-" "" key))
+    (concat "M-" key)))
 
 (defun keypad--handle-input-key (key)
   (cond (keypad--modifier
@@ -142,23 +149,23 @@ Other way seek in top level.")
                     ('control      (keypad--add-control key))
                     ('meta         (keypad--add-meta key))
                     ('control-meta (keypad--add-control-meta key))
-                    ;; ('literal key)
-                    )))
-           (push k keypad--keys))
-         (setq keypad--modifier nil))
-        ((equal keypad-ctrl-prefix key)
-         (setq keypad--modifier 'control))
-        ((and (equal keypad-meta-prefix key)
+                    ('literal key))))
+           (push k keypad--keys)
+           (setq keypad--modifier nil)))
+        ((and (equal key keypad-meta-prefix)
               (keypad--meta-keybindings-available-p))
          (setq keypad--modifier 'meta))
-        ((and (equal keypad-ctrl-meta-prefix key)
+        ((and (equal key keypad-ctrl-meta-prefix)
               (keypad--meta-keybindings-available-p))
          (setq keypad--modifier 'control-meta))
-        ((equal "c" key)
-         (push "C-c" keypad--keys)
-         (setq keypad--modifier 'control))
-        ((equal "x" key)
-         (push "C-x" keypad--keys))
+        ((and keypad--keys
+              (equal key keypad-literal-prefix))
+         (setq keypad--modifier 'literal))
+        (keypad--keys
+         (push (keypad--add-control key) keypad--keys))
+        ((when-let* ((k (alist-get key keypad-start-keys nil nil 'equal)))
+           (push (keypad--add-control k) keypad--keys)
+           t)) ; exit cond
         (t
          (setq keypad--use-leader-map t)
          (push key keypad--keys)))
@@ -177,8 +184,9 @@ This function supports a fallback behavior, where it allows to use
     (let* ((keys (keypad--entered-keys))
            (cmd  (keypad--lookup-key keys)))
       (cond ((commandp cmd t)
-             (setq current-prefix-arg keypad--prefix-arg)
-             (keypad--quit)
+             (setq current-prefix-arg keypad-prefix-arg
+                   keypad-prefix-arg nil)
+             (keypad--close-preview)
              (setq real-this-command cmd
                    this-command cmd)
              (call-interactively cmd)
@@ -186,22 +194,35 @@ This function supports a fallback behavior, where it allows to use
             ((keymapp cmd)
              (keypad--show-message)
              (keypad--open-preview))
+            ((when (s-contains? "C-" (car keypad--keys))
+               (setcar keypad--keys (s-replace "C-" "" (car keypad--keys)))
+               (keypad--try-execute)))
             (t
+             (setq keypad-prefix-arg nil)
              (keypad--quit)
-             (message "%s is undefined" keys)
+             (if keypad-transparent-leader
+                 (keypad-transparent-leader)
+               (message "%s is undefined" keys))
              :quit)))))
 
-;; (defun keypad-transparent-leader ()
-;;   (let* ((key (single-key-description last-input-event))
-;;          (origin-cmd (cl-some (lambda (keymap)
-;;                                 (unless (memq keymap keypad-keymaps-transparent-leader-should-ignore)
-;;                                   (keymap-lookup keymap key)))
-;;                               (current-active-maps)))
-;;          (remapped-cmd (command-remapping origin-cmd))
-;;          (cmd (if (memq remapped-cmd '(undefined nil))
-;;                   (or origin-cmd 'undefined)
-;;                 remapped-cmd)))
-;;     (call-interactively cmd)))
+(defun keypad-transparent-leader ()
+  (let* ((key (single-key-description last-input-event))
+         (origin-cmd (cl-some (lambda (keymap)
+                                (unless (memq keymap keypad-keymaps-transparent-leader-should-ignore)
+                                  (keymap-lookup keymap key)))
+                              (current-active-maps)))
+         (remapped-cmd (command-remapping origin-cmd))
+         (cmd (if (memq remapped-cmd '(undefined nil))
+                  (or origin-cmd 'undefined)
+                remapped-cmd)))
+    (call-interactively cmd)))
+
+(defun keypad-quit ()
+  "Quit keypad state."
+  (interactive)
+  (setq this-command last-command)
+  (when keypad-echo (message "KEYPAD exit"))
+  (keypad--quit))
 
 (defun keypad-undo ()
   "Pop the last input."
@@ -211,41 +232,22 @@ This function supports a fallback behavior, where it allows to use
       (setq keypad--modifier nil)
     (pop keypad--keys))
   (if keypad--keys
-      (keypad--open-preview)
+      (progn
+        ;; (meow--update-indicator)
+        (keypad--open-preview))
     (when keypad-echo (message "KEYPAD exit"))
     (keypad--quit)))
-
-(defun keypad-quit ()
-  "Quit keypad state."
-  (interactive)
-  (setq this-command last-command)
-  (when keypad-echo (message "KEYPAD exit"))
-  (keypad--quit))
 
 (defun keypad--quit ()
   "Quit keypad state."
   (setq keypad--keys nil
         keypad--modifier nil
-        keypad--prefix-arg nil
         keypad--use-leader-map nil)
   (keypad--close-preview)
   :quit) ; Indicate that keypad loop should be stopped
 
-(defsubst keypad--add-control (key)
-  (concat "C-" (s-replace "C-" "" key)))
-
-(defsubst keypad--add-meta (key)
-  (if (s-contains? "C-" key)
-      (concat "C-M-" (s-replace "C-" "" key))
-    (concat "M-" key)))
-
-(defsubst keypad--add-control-meta (key)
-  (concat "C-M-" (s-with key
-                   (s-replace "C-" "")
-                   (s-replace "M-" ""))))
-
 (defun keypad--meta-keybindings-available-p ()
-  "Return non-nil if there are keybindins that starts with Meta prefix."
+  "Return t if there are keybindins that starts with Meta prefix."
   (or (not keypad--keys)
       (if-let* ((keymap (keypad--lookup-key (keypad--entered-keys)))
                 (keymapp keymap))
@@ -435,11 +437,10 @@ This keymap is intended to be passed further to Which-key API."
 
 (defun keypad--format-prefix ()
   "Return a display format for current prefix."
-  (cond ((equal '(4) keypad--prefix-arg)
+  (cond ((equal '(4) keypad-prefix-arg)
          "C-u ")
-        (keypad--prefix-arg
-         ;; (format "%s " keypad--prefix-arg)
-         (concat keypad--prefix-arg " "))
+        (keypad-prefix-arg
+         (format "%s " keypad-prefix-arg))
         (t "")))
 
 (defun keypad--strip-ctrl-meta-from-event (event)
@@ -457,5 +458,5 @@ Return vector suitable to pass to `define-key'."
   (setq keypad--keypad-help t)
   (meow-keypad))
 
-(provide 'keypad)
-;;; keypad.el ends here
+(provide 'keypad-meow)
+;;; keypad-meow.el ends here
