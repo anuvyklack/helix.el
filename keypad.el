@@ -38,12 +38,13 @@
 ;;           :key-type (string :tag "From")
 ;;           :value-type (string :tag "To")))
 
-(defcustom keypad-leader-map nil ; mode-specific-map
-  "The fallback dispatching in KEYPAD when there's no translation.
-The value can be either a string or a keymap:
-A keymap stands for a base keymap used for further translation.
-A string stands for finding the keymap at a specified key binding.
-Nil stands for taking leader keymap from `meow-keymap-alist'."
+(defcustom keypad-leader "C-c" ; mode-specific-map
+  "Where to search keybindings by default?
+
+The value can be a string, a keymap or nil:
+- keymap — Search keybindings in this keymap.
+- string — Use keymap under this prefix.
+- nil — Search in top level."
   :group 'keypad
   :type 'variable)
 
@@ -82,8 +83,8 @@ For example, key sequence \"C-f M-t h\" will be stored like
 (defvar keypad--modifier nil)
 (defvar keypad--keypad-help nil "If keypad in help mode.")
 
-(defvar keypad--use-leader-map nil
-  "When non-nil seek for key bindings in `keypad-leader-map'.
+(defvar keypad--use-leader nil
+  "When non-nil seek for key bindings in `keypad-leader'.
 Other way seek in top level.")
 
 (defvar keypad--preview-is-active nil)
@@ -101,7 +102,7 @@ Other way seek in top level.")
   (setq this-command last-command)
   (setq keypad--keys nil
         keypad--prefix-arg current-prefix-arg
-        keypad--use-leader-map nil)
+        keypad--use-leader nil)
   (unwind-protect
       (progn
         (keypad--show-message)
@@ -144,7 +145,7 @@ Other way seek in top level.")
         ((equal "x" key)
          (push "C-x" keypad--keys))
         (t
-         (setq keypad--use-leader-map t)
+         (setq keypad--use-leader t)
          (push key keypad--keys)))
   ;; Try execute if the input is valid.
   (if keypad--modifier
@@ -197,7 +198,7 @@ This function supports a fallback behavior, where it allows to use
   (setq keypad--keys nil
         keypad--modifier nil
         keypad--prefix-arg nil
-        keypad--use-leader-map nil)
+        keypad--use-leader nil)
   (keypad--close-preview)
   :quit) ; Indicate that keypad loop should be stopped
 
@@ -250,12 +251,15 @@ Shift with Ctrl, you must write \"C-S-k\"."
 
 (defun keypad--lookup-key (keys)
   "Lookup the command which is bound at KEYS."
-  (let ((keymap (if keypad--use-leader-map keypad-leader-map))
-        (keys (if (and keypad--use-leader-map
-                       (not keypad-leader-map))
-                  (concat "C-c " keys)
-                keys)))
+  (let ((keymap (if keypad--use-leader
+                    (keypad--leader-keymap))))
     (keymap-lookup keymap keys)))
+
+(defun keypad--leader-keymap ()
+  "Return Keypad leader keymap."
+  (if (stringp keypad-leader)
+      (keymap-lookup nil keypad-leader)
+    keypad-leader))
 
 (defun keypad--entered-keys ()
   "Return entered keys as a string or nil."
@@ -324,8 +328,7 @@ that were entered in the Keypad."
                                  keypad-meta-prefix
                                  keypad-ctrl-meta-prefix)))
                (keypad--filter-keymap
-                (or keypad-leader-map
-                    (keymap-lookup nil "C-c"))
+                (keypad--leader-keymap)
                 (lambda (key)
                   (not (or (s-contains? "C-" key)
                            (member key ignore)
@@ -360,7 +363,7 @@ for which PREDICATE is non-nil."
                     ('control-meta "C-M-"))))
     (cond ((or keys modifier)
            (concat keys (if keys " ") modifier))
-          ((not keypad-leader-map)
+          ((not keypad-leader)
            "C-c")
           (t ""))))
 
