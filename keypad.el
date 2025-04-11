@@ -202,17 +202,6 @@ This function supports a fallback behavior, where it allows to use
   (keypad--close-preview)
   :quit) ; Indicate that keypad loop should be stopped
 
-(defun keypad--handle-shift (key)
-  "Convert capical letters: \"K\" -> \"S-k\".
-It is needed when Shift is used along with Ctrl.
-For Emacs, \"C-K\" and \"C-k\" are the same event, and to use
-Shift with Ctrl, you must write \"C-S-k\"."
-  (let ((event (seq-first (key-parse key))))
-    (if (equal '(shift) (event-modifiers event))
-        (concat "S-" (single-key-description
-                      (event-basic-type event)))
-      key)))
-
 (defun keypad--add-control (key)
   (pcase key
     ("TAB" "C-<tab>")
@@ -239,6 +228,17 @@ Shift with Ctrl, you must write \"C-S-k\"."
                            (s-replace "C-" "")
                            (s-replace "M-" "")
                            (keypad--handle-shift))))))
+
+(defun keypad--handle-shift (key)
+  "Convert capical letters: \"K\" -> \"S-k\".
+It is needed when Shift is used along with Ctrl.
+For Emacs, \"C-K\" and \"C-k\" are the same event, and to use
+Shift with Ctrl, you must write \"C-S-k\"."
+  (let ((event (seq-first (key-parse key))))
+    (if (equal '(shift) (event-modifiers event))
+        (concat "S-" (single-key-description
+                      (event-basic-type event)))
+      key)))
 
 (defun keypad--meta-keybindings-available-p ()
   "Return non-nil if there are keybindings that starts with Meta prefix."
@@ -323,16 +323,16 @@ that were entered in the Keypad."
           (keys (if-let* ((keymap (keypad--lookup-key keys))
                           ((keymapp keymap)))
                     keymap))
-          (t (let ((ignore (list "x" "c"
+          (t
+           (let* ((ignored (list "x" "c"
                                  keypad-ctrl-prefix
                                  keypad-meta-prefix
                                  keypad-ctrl-meta-prefix)))
-               (keypad--filter-keymap
-                (keypad--leader-keymap)
-                (lambda (key)
-                  (not (or (s-contains? "C-" key)
-                           (member key ignore)
-                           (keypad--service-key-p key))))))))))
+             (keypad--filter-keymap (keypad--leader-keymap)
+                                    (lambda (key)
+                                      (not (or (s-contains? "C-" key)
+                                               (member key ignored)
+                                               (keypad--service-key-p key))))))))))
 
 (defun keypad--filter-keymap (keymap predicate)
   "Return new keymap that contains only elements from KEYMAP
@@ -376,12 +376,6 @@ for which PREDICATE is non-nil."
         (keypad--prefix-arg
          (concat keypad--prefix-arg " "))
         (t "")))
-
-(defun keypad--describe-key ()
-  "Describe key via KEYPAD input."
-  (interactive)
-  (setq keypad--keypad-help t)
-  (meow-keypad))
 
 (provide 'keypad)
 ;;; keypad.el ends here
