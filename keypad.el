@@ -13,7 +13,12 @@
   "Custom group for keypad."
   :group 'keypad-module)
 
-(defcustom keypad-ctrl-prefix "SPC"
+(defcustom keypad-literal-prefix "SPC"
+  "The key disables all other modifiers."
+  :group 'keypad
+  :type 'string)
+
+(defcustom keypad-ctrl-prefix nil ; "SPC"
   "The key disables all other modifiers."
   :group 'keypad
   :type 'string)
@@ -38,13 +43,9 @@
 ;;           :key-type (string :tag "From")
 ;;           :value-type (string :tag "To")))
 
-(defcustom keypad-leader "C-c" ; mode-specific-map
-  "Where to search keybindings by default?
-
-The value can be a string, a keymap or nil:
-- keymap — Search keybindings in this keymap.
-- string — Use keymap under this prefix.
-- nil — Search in top level."
+(defcustom keypad-leader nil ; "C-c" ; mode-specific-map
+  "The keymap in which Keypad will search keybindings by default.
+If nil Keypad will look under \"C-c\" prefix."
   :group 'keypad
   :type 'variable)
 
@@ -122,32 +123,48 @@ Other way seek in top level.")
       (keypad--handle-input-key key))))
 
 (defun keypad--handle-input-key (key)
-  (cond (keypad--modifier
-         (push (pcase keypad--modifier
-                 ('control      (keypad--add-control key))
-                 ('meta         (keypad--add-meta key))
-                 ('control-meta (keypad--add-control-meta key)))
-               keypad--keys)
-         (setq keypad--modifier nil))
-        ((equal keypad-ctrl-prefix key)
-         (setq keypad--modifier 'control))
-        ((and (equal keypad-meta-prefix key)
-              (keypad--meta-keybindings-available-p))
-         (setq keypad--modifier 'meta))
-        ((and (equal keypad-ctrl-meta-prefix key)
-              (keypad--meta-keybindings-available-p))
-         (setq keypad--modifier 'control-meta))
-        (keypad--keys
-         (push key keypad--keys))
-        ;; ((equal "c" key)
-        ;;  (push "C-c" keypad--keys)
-        ;;  (setq keypad--modifier 'control))
-        ((equal "x" key)
-         (push "C-x" keypad--keys)
-         (setq keypad--modifier 'control))
-        (t
-         (setq keypad--use-leader t)
-         (push key keypad--keys)))
+  (let ((spc? (equal "SPC" key))
+        (entered-keys (keypad--entered-keys)))
+    (cond ((and spc?
+                (equal "C-x" entered-keys)
+                (eq 'control keypad--modifier))
+           (setq keypad--modifier nil))
+          ((and spc?
+                keypad-leader
+                (equal "C-c" entered-keys)
+                (eq 'control keypad--modifier))
+           (setq keypad--modifier nil))
+          ((and spc?
+                (not keypad-leader)
+                (not entered-keys))
+           (push "C-c" keypad--keys)
+           (setq keypad--modifier 'control))
+          ((and spc?
+                (not keypad-leader)
+                entered-keys
+                (setq keypad--modifier 'control)))
+          ((and (equal "x" key)
+                (not entered-keys))
+           (push "C-x" keypad--keys)
+           (setq keypad--modifier 'control))
+          (keypad--modifier
+           (push (pcase keypad--modifier
+                   ('control      (keypad--add-control key))
+                   ('meta         (keypad--add-meta key))
+                   ('control-meta (keypad--add-control-meta key)))
+                 keypad--keys)
+           (setq keypad--modifier nil))
+          ((and (equal keypad-meta-prefix key)
+                (keypad--meta-keybindings-available-p))
+           (setq keypad--modifier 'meta))
+          ((and (equal keypad-ctrl-meta-prefix key)
+                (keypad--meta-keybindings-available-p))
+           (setq keypad--modifier 'control-meta))
+          (keypad--keys
+           (push key keypad--keys))
+          (t
+           (setq keypad--use-leader t)
+           (push key keypad--keys))))
   ;; Try execute if the input is valid.
   (if keypad--modifier
       (progn
@@ -258,9 +275,9 @@ Shift with Ctrl, you must write \"C-S-k\"."
 
 (defun keypad--leader-keymap ()
   "Return Keypad leader keymap."
-  (if (stringp keypad-leader)
-      (keymap-lookup nil keypad-leader)
-    keypad-leader))
+  (if keypad-leader
+      keypad-leader
+    (keymap-lookup nil "C-c")))
 
 (defun keypad--entered-keys ()
   "Return entered keys as a string or nil."
