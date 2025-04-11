@@ -281,8 +281,11 @@ Shift with Ctrl, you must write \"C-S-k\"."
 
 (defun keypad--entered-keys ()
   "Return entered keys as a string or nil."
-  (if keypad--keys
-      (string-join (reverse keypad--keys) " ")))
+  (cond (keypad--keys
+         (string-join (reverse keypad--keys) " "))
+        ((and (not keypad--keys)
+              (not keypad-leader))
+         "C-c")))
 
 ;;; Which-key integration
 
