@@ -139,11 +139,12 @@ Other way seek in top level.")
          (setq keypad--modifier 'control-meta))
         (keypad--keys
          (push key keypad--keys))
-        ((equal "c" key)
-         (push "C-c" keypad--keys)
-         (setq keypad--modifier 'control))
+        ;; ((equal "c" key)
+        ;;  (push "C-c" keypad--keys)
+        ;;  (setq keypad--modifier 'control))
         ((equal "x" key)
-         (push "C-x" keypad--keys))
+         (push "C-x" keypad--keys)
+         (setq keypad--modifier 'control))
         (t
          (setq keypad--use-leader t)
          (push key keypad--keys)))
@@ -310,7 +311,8 @@ that were entered in the Keypad."
     (cond (keypad--modifier
            (pcase keypad--modifier
              ('control (keypad--filter-keymap
-                        (keypad--lookup-key keys)
+                        (if keys (keypad--lookup-key keys)
+                          (keypad--leader-keymap))
                         control-p))
              ('meta    (define-keymap
                          "ESC" (keypad--filter-keymap
@@ -324,7 +326,7 @@ that were entered in the Keypad."
                           ((keymapp keymap)))
                     keymap))
           (t
-           (let* ((ignored (list "x" "c"
+           (let* ((ignored (list "x" ; "c"
                                  keypad-ctrl-prefix
                                  keypad-meta-prefix
                                  keypad-ctrl-meta-prefix)))
