@@ -273,7 +273,9 @@ Inside it calls Which-Key API, and if you want to redefine this,
 you should redefine this particular function."
   (when (and which-key-mode keymap)
     (which-key--create-buffer-and-show
-     nil keymap nil (concat keypad-message-prefix (keypad--format-keys)))))
+     nil keymap nil (concat keypad-message-prefix
+                            (keypad--format-prefix)
+                            (keypad--format-keys)))))
 
 (defun keypad--open-preview ()
   "Show preview with possible continuations for the keys

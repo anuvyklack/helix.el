@@ -311,7 +311,9 @@ Inside it calls Which-Key API, and if you want to redefine this,
 you should redefine this particular function."
   (when (and which-key-mode keymap)
     (which-key--create-buffer-and-show
-     nil keymap nil (concat keypad-message-prefix (keypad--format-keys)))))
+     nil keymap nil (concat keypad-message-prefix
+                            (keypad--format-prefix)
+                            (keypad--format-keys)))))
 
 (defun keypad--open-preview ()
   "Show preview with possible continuations for the keys
@@ -361,7 +363,11 @@ that were entered in the Keypad."
              ('control-meta (define-keymap
                               "ESC" (keypad--filter-keymap
                                      (keypad--lookup-key (concat keys (if keys " ") "ESC"))
-                                     control-p)))))
+                                     ;; control-p
+                                     (lambda (key)
+                                       (and (s-contains? "C-" key)
+                                            (not (keypad--service-key-p key))))
+                                     )))))
           (keys (if-let* ((keymap (keypad--lookup-key keys))
                           ((keymapp keymap)))
                     keymap))
@@ -382,11 +388,12 @@ for which PREDICATE is non-nil."
   (when (keymapp keymap)
     (let ((result (define-keymap)))
       (map-keymap (lambda (event command)
-                    (when-let* ((key (single-key-description event))
-                                ((key-valid-p key))
-                                ((not (keymap-lookup result key)))
-                                ((funcall predicate key)))
-                      (keymap-set result key command)))
+                    (unless (eq command 'digit-argument)
+                      (when-let* ((key (single-key-description event))
+                                  ((key-valid-p key))
+                                  ((not (keymap-lookup result key)))
+                                  ((funcall predicate key)))
+                        (keymap-set result key command))))
                   keymap)
       result)))
 
@@ -398,34 +405,19 @@ for which PREDICATE is non-nil."
 
 (defun keypad--format-keys ()
   "Return a display format for current input keys."
-  ;; (let ((keys (cond ((keypad--entered-keys))
-  ;;                   ((not keypad-leader) "C-c")))
-  ;;       (modifier (pcase keypad--modifier
-  ;;                   ('control      "C-")
-  ;;                   ('meta         "M-")
-  ;;                   ('control-meta "C-M-"))))
-  ;;   (if (or keys modifier)
-  ;;       (concat keys (if keys " ") modifier)
-  ;;     ""))
-  ;; (let ((keys (keypad--entered-keys))
-  ;;       (modifier (pcase keypad--modifier
-  ;;                   ('control      "C-")
-  ;;                   ('meta         "M-")
-  ;;                   ('control-meta "C-M-"))))
-  ;;   (cond ((or keys modifier)
-  ;;          (concat keys (if keys " ") modifier))
-  ;;         ((not keypad-leader) "C-c")
-  ;;         (t "")))
-  (let ((keys (keypad--entered-keys)))
-    (pcase keypad--modifier
-      ('control      (cond (keys (concat keys " C-"))
-                           ((not keypad-leader) "C-c C-")
-                           (t "C-")))
-      ('meta         (concat keys (if keys " ") "M-"))
-      ('control-meta (concat keys (if keys " ") "C-M-"))
-      (_ (cond (keys)
-               ((not keypad-leader) "C-c")
-               (t ""))))))
+  (let* ((keys (keypad--entered-keys))
+         (keys (cond ((and (not keys)
+                           (not keypad-leader))
+                      "C-c")
+                     ((and keypad--use-leader
+                           (not keypad-leader))
+                      (concat "C-c " keys))
+                     (keys)))
+         (modifier (pcase keypad--modifier
+                     ('control      "C-")
+                     ('meta         "M-")
+                     ('control-meta "C-M-"))))
+    (concat keys (if keys " ") modifier)))
 
 (defun keypad--format-prefix ()
   "Return a display format for current prefix."
