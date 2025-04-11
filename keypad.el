@@ -102,6 +102,7 @@ Other way seek in top level.")
   ;; Try to make this command transparent.
   (setq this-command last-command)
   (setq keypad--keys nil
+        keypad--modifier nil
         keypad--prefix-arg current-prefix-arg
         keypad--use-leader nil)
   (unwind-protect
@@ -123,75 +124,93 @@ Other way seek in top level.")
       (keypad--handle-input-key key))))
 
 (defun keypad--handle-input-key (key)
-  (let ((spc? (equal "SPC" key))
-        (entered-keys (keypad--entered-keys)))
-    (cond ((and spc?
-                (equal "C-x" entered-keys)
-                (eq 'control keypad--modifier))
-           (setq keypad--modifier nil))
-          ((and spc?
-                keypad-leader
-                (equal "C-c" entered-keys)
-                (eq 'control keypad--modifier))
-           (setq keypad--modifier nil))
-          ((and spc?
-                (not keypad-leader)
-                (not entered-keys))
-           (push "C-c" keypad--keys)
-           (setq keypad--modifier 'control))
-          ((and spc?
-                (not keypad-leader)
-                entered-keys
-                (setq keypad--modifier 'control)))
-          ((and (equal "x" key)
-                (not entered-keys))
-           (push "C-x" keypad--keys)
-           (setq keypad--modifier 'control))
-          (keypad--modifier
-           (push (pcase keypad--modifier
-                   ('control      (keypad--add-control key))
-                   ('meta         (keypad--add-meta key))
-                   ('control-meta (keypad--add-control-meta key)))
-                 keypad--keys)
-           (setq keypad--modifier nil))
-          ((and (equal keypad-meta-prefix key)
-                (keypad--meta-keybindings-available-p))
-           (setq keypad--modifier 'meta))
-          ((and (equal keypad-ctrl-meta-prefix key)
-                (keypad--meta-keybindings-available-p))
-           (setq keypad--modifier 'control-meta))
-          (keypad--keys
-           (push key keypad--keys))
-          (t
-           (setq keypad--use-leader t)
-           (push key keypad--keys))))
+  (cond ((if-let* ((prefix (car (last keypad--keys))))
+             (member prefix (if keypad-leader '("C-x" "C-c") '("C-x"))))
+         (cond ((equal "SPC" key)
+                (setq keypad--modifier (if (or (null keypad--modifier)
+                                               (eq 'literal keypad--modifier))
+                                           'control
+                                         'literal)))
+               ((eq 'literal keypad--modifier)
+                (push key keypad--keys))
+               ((not (eq 'literal keypad--modifier))
+                (cond (keypad--modifier
+                       (let ((k (pcase keypad--modifier
+                                  ('control      (keypad--add-control key))
+                                  ('meta         (keypad--add-meta key))
+                                  ('control-meta (keypad--add-control-meta key)))))
+                         (push k keypad--keys)
+                         (setq keypad--modifier 'control)))
+                      ((and (equal keypad-meta-prefix key)
+                            (keypad--meta-keybindings-available-p))
+                       (setq keypad--modifier 'meta))
+                      ((and (equal keypad-ctrl-meta-prefix key)
+                            (keypad--meta-keybindings-available-p))
+                       (setq keypad--modifier 'control-meta))
+                      (t (push key keypad--keys))))))
+        (t
+         (cond ((equal "SPC" key)
+                (if keypad--modifier
+                    (setq keypad--modifier nil)
+                  ;; else
+                  (if (not keypad--keys)
+                      (setq keypad--use-leader t))
+                  (if keypad-leader
+                      (push "SPC" keypad--keys)
+                    (setq keypad--modifier 'control))))
+               ((and (equal "x" key)
+                     (not keypad--keys))
+                (push "C-x" keypad--keys)
+                (setq keypad--modifier 'control))
+               ((and keypad-leader
+                     (equal "c" key)
+                     (not keypad--keys))
+                (push "C-c" keypad--keys)
+                (setq keypad--modifier 'control))
+               (keypad--modifier
+                (let ((k (pcase keypad--modifier
+                           ('control      (keypad--add-control key))
+                           ('meta         (keypad--add-meta key))
+                           ('control-meta (keypad--add-control-meta key)))))
+                  (push k keypad--keys)
+                  (setq keypad--modifier nil)))
+               ((and (equal keypad-meta-prefix key)
+                     (keypad--meta-keybindings-available-p))
+                (setq keypad--modifier 'meta))
+               ((and (equal keypad-ctrl-meta-prefix key)
+                     (keypad--meta-keybindings-available-p))
+                (setq keypad--modifier 'control-meta))
+               (keypad--keys
+                (push key keypad--keys))
+               (t
+                (setq keypad--use-leader t)
+                (push key keypad--keys)))))
   ;; Try execute if the input is valid.
-  (if keypad--modifier
-      (progn
-        (keypad--show-message)
-        (keypad--open-preview))
-    (keypad--try-execute)))
+  (if keypad--keys
+      (keypad--try-execute)
+    (keypad--show-message)
+    (keypad--open-preview)))
 
 (defun keypad--try-execute ()
   "Try execute command, return t when the translation progress can be ended.
 This function supports a fallback behavior, where it allows to use
 `SPC x f' to execute `C-x C-f' or `C-x f' when `C-x C-f' is not bound."
-  (let* ((keys (keypad--entered-keys))
-         (cmd  (keypad--lookup-key keys)))
-    (cond ((commandp cmd t)
-           (setq current-prefix-arg keypad--prefix-arg)
-           (keypad--quit)
-           (setq real-this-command cmd
-                 this-command cmd)
-           (call-interactively cmd)
-           :quit)
-          ((keymapp cmd)
-           (keypad--show-message)
-           (keypad--open-preview))
-          (t
-           (keypad--quit)
-           (message "%s is undefined" keys)
-           :quit))))
+  (when-let* ((keys (keypad--entered-keys)))
+    (let ((cmd (keypad--lookup-key keys)))
+      (cond ((commandp cmd t)
+             (setq current-prefix-arg keypad--prefix-arg)
+             (keypad--quit)
+             (setq real-this-command cmd
+                   this-command cmd)
+             (call-interactively cmd)
+             :quit)
+            ((keymapp cmd)
+             (keypad--show-message)
+             (keypad--open-preview))
+            (t
+             (keypad--quit)
+             (message "%s is undefined" keys)
+             :quit)))))
 
 (defun keypad-undo ()
   "Pop the last input."
@@ -213,10 +232,11 @@ This function supports a fallback behavior, where it allows to use
 
 (defun keypad--quit ()
   "Quit keypad state."
-  (setq keypad--keys nil
-        keypad--modifier nil
-        keypad--prefix-arg nil
-        keypad--use-leader nil)
+  (setq
+   ;; keypad--keys nil
+   ;; keypad--modifier nil
+   keypad--prefix-arg nil
+   keypad--use-leader nil)
   (keypad--close-preview)
   :quit) ; Indicate that keypad loop should be stopped
 
@@ -275,17 +295,13 @@ Shift with Ctrl, you must write \"C-S-k\"."
 
 (defun keypad--leader-keymap ()
   "Return Keypad leader keymap."
-  (if keypad-leader
-      keypad-leader
-    (keymap-lookup nil "C-c")))
+  (or keypad-leader
+      (keymap-lookup nil "C-c")))
 
 (defun keypad--entered-keys ()
   "Return entered keys as a string or nil."
-  (cond (keypad--keys
-         (string-join (reverse keypad--keys) " "))
-        ((and (not keypad--keys)
-              (not keypad-leader))
-         "C-c")))
+  (if keypad--keys
+      (string-join (reverse keypad--keys) " ")))
 
 ;;; Which-key integration
 
@@ -330,6 +346,10 @@ that were entered in the Keypad."
                               (keypad--service-key-p key))))))
     (cond (keypad--modifier
            (pcase keypad--modifier
+             ('literal (keypad--filter-keymap
+                        (if keys (keypad--lookup-key keys)
+                          (keypad--leader-keymap))
+                        literal-p))
              ('control (keypad--filter-keymap
                         (if keys (keypad--lookup-key keys)
                           (keypad--leader-keymap))
@@ -378,16 +398,34 @@ for which PREDICATE is non-nil."
 
 (defun keypad--format-keys ()
   "Return a display format for current input keys."
-  (let ((keys (keypad--entered-keys))
-        (modifier (pcase keypad--modifier
-                    ('control      "C-")
-                    ('meta         "M-")
-                    ('control-meta "C-M-"))))
-    (cond ((or keys modifier)
-           (concat keys (if keys " ") modifier))
-          ((not keypad-leader)
-           "C-c")
-          (t ""))))
+  ;; (let ((keys (cond ((keypad--entered-keys))
+  ;;                   ((not keypad-leader) "C-c")))
+  ;;       (modifier (pcase keypad--modifier
+  ;;                   ('control      "C-")
+  ;;                   ('meta         "M-")
+  ;;                   ('control-meta "C-M-"))))
+  ;;   (if (or keys modifier)
+  ;;       (concat keys (if keys " ") modifier)
+  ;;     ""))
+  ;; (let ((keys (keypad--entered-keys))
+  ;;       (modifier (pcase keypad--modifier
+  ;;                   ('control      "C-")
+  ;;                   ('meta         "M-")
+  ;;                   ('control-meta "C-M-"))))
+  ;;   (cond ((or keys modifier)
+  ;;          (concat keys (if keys " ") modifier))
+  ;;         ((not keypad-leader) "C-c")
+  ;;         (t "")))
+  (let ((keys (keypad--entered-keys)))
+    (pcase keypad--modifier
+      ('control      (cond (keys (concat keys " C-"))
+                           ((not keypad-leader) "C-c C-")
+                           (t "C-")))
+      ('meta         (concat keys (if keys " ") "M-"))
+      ('control-meta (concat keys (if keys " ") "C-M-"))
+      (_ (cond (keys)
+               ((not keypad-leader) "C-c")
+               (t ""))))))
 
 (defun keypad--format-prefix ()
   "Return a display format for current prefix."
