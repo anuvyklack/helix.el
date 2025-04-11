@@ -38,7 +38,7 @@
 ;;           :key-type (string :tag "From")
 ;;           :value-type (string :tag "To")))
 
-(defcustom keypad-leader-map mode-specific-map
+(defcustom keypad-leader-map nil ; mode-specific-map
   "The fallback dispatching in KEYPAD when there's no translation.
 The value can be either a string or a keymap:
 A keymap stands for a base keymap used for further translation.
@@ -136,13 +136,13 @@ Other way seek in top level.")
         ((and (equal keypad-ctrl-meta-prefix key)
               (keypad--meta-keybindings-available-p))
          (setq keypad--modifier 'control-meta))
+        (keypad--keys
+         (push key keypad--keys))
         ((equal "c" key)
          (push "C-c" keypad--keys)
          (setq keypad--modifier 'control))
         ((equal "x" key)
          (push "C-x" keypad--keys))
-        (keypad--keys
-         (push key keypad--keys))
         (t
          (setq keypad--use-leader-map t)
          (push key keypad--keys)))
@@ -178,13 +178,12 @@ This function supports a fallback behavior, where it allows to use
   "Pop the last input."
   (interactive)
   (setq this-command last-command)
-  (if keypad--modifier
-      (setq keypad--modifier nil)
-    (pop keypad--keys))
-  (if keypad--keys
-      (keypad--open-preview)
-    (when keypad-echo (message "KEYPAD exit"))
-    (keypad--quit)))
+  (cond (keypad--modifier (setq keypad--modifier nil)
+                          (keypad--open-preview))
+        (keypad--keys (pop keypad--keys)
+                      (keypad--open-preview))
+        (t (when keypad-echo (message "KEYPAD exit"))
+           (keypad--quit))))
 
 (defun keypad-quit ()
   "Quit keypad state."
@@ -241,7 +240,7 @@ Shift with Ctrl, you must write \"C-S-k\"."
                            (keypad--handle-shift))))))
 
 (defun keypad--meta-keybindings-available-p ()
-  "Return t if there are keybindins that starts with Meta prefix."
+  "Return non-nil if there are keybindings that starts with Meta prefix."
   (let ((keys (keypad--entered-keys)))
     (or (not keys)
         (if-let* ((keymap (keypad--lookup-key keys))
@@ -251,12 +250,15 @@ Shift with Ctrl, you must write \"C-S-k\"."
 
 (defun keypad--lookup-key (keys)
   "Lookup the command which is bound at KEYS."
-  (keymap-lookup (if keypad--use-leader-map
-                     keypad-leader-map)
-                 keys))
+  (let ((keymap (if keypad--use-leader-map keypad-leader-map))
+        (keys (if (and keypad--use-leader-map
+                       (not keypad-leader-map))
+                  (concat "C-c " keys)
+                keys)))
+    (keymap-lookup keymap keys)))
 
 (defun keypad--entered-keys ()
-  "Return entered keys as a string."
+  "Return entered keys as a string or nil."
   (if keypad--keys
       (string-join (reverse keypad--keys) " ")))
 
@@ -314,17 +316,20 @@ that were entered in the Keypad."
                               "ESC" (keypad--filter-keymap
                                      (keypad--lookup-key (concat keys (if keys " ") "ESC"))
                                      control-p)))))
-          (keys (let ((keymap (keypad--lookup-key keys)))
-                  (if (keymapp keymap) keymap)))
-          (t (keypad--filter-keymap
-              keypad-leader-map
-              (lambda (key)
-                (not (or (s-contains? "C-" key)
-                         (member key (list "x" "c"
-                                           keypad-ctrl-prefix
-                                           keypad-meta-prefix
-                                           keypad-ctrl-meta-prefix))
-                         (keypad--service-key-p key)))))))))
+          (keys (if-let* ((keymap (keypad--lookup-key keys))
+                          ((keymapp keymap)))
+                    keymap))
+          (t (let ((ignore (list "x" "c"
+                                 keypad-ctrl-prefix
+                                 keypad-meta-prefix
+                                 keypad-ctrl-meta-prefix)))
+               (keypad--filter-keymap
+                (or keypad-leader-map
+                    (keymap-lookup nil "C-c"))
+                (lambda (key)
+                  (not (or (s-contains? "C-" key)
+                           (member key ignore)
+                           (keypad--service-key-p key))))))))))
 
 (defun keypad--filter-keymap (keymap predicate)
   "Return new keymap that contains only elements from KEYMAP
@@ -334,6 +339,7 @@ for which PREDICATE is non-nil."
       (map-keymap (lambda (event command)
                     (when-let* ((key (single-key-description event))
                                 ((key-valid-p key))
+                                ((not (keymap-lookup result key)))
                                 ((funcall predicate key)))
                       (keymap-set result key command)))
                   keymap)
@@ -347,17 +353,23 @@ for which PREDICATE is non-nil."
 
 (defun keypad--format-keys ()
   "Return a display format for current input keys."
-  (let ((keys (keypad--entered-keys)))
-    (concat keys (if keys " ")
-            (pcase keypad--modifier
-              ('control      "C-")
-              ('meta         "M-")
-              ('control-meta "C-M-")))))
+  (let ((keys (keypad--entered-keys))
+        (modifier (pcase keypad--modifier
+                    ('control      "C-")
+                    ('meta         "M-")
+                    ('control-meta "C-M-"))))
+    (cond ((or keys modifier)
+           (concat keys (if keys " ") modifier))
+          ((not keypad-leader-map)
+           "C-c")
+          (t ""))))
 
 (defun keypad--format-prefix ()
   "Return a display format for current prefix."
   (cond ((equal '(4) keypad--prefix-arg)
          "C-u ")
+        ((equal '(16) keypad--prefix-arg)
+         "C-u C-u ")
         (keypad--prefix-arg
          (concat keypad--prefix-arg " "))
         (t "")))
