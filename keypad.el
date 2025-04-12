@@ -76,10 +76,6 @@ If nil Keypad will look under \"C-c\" prefix."
 For example, key sequence \"C-f M-t h\" will be stored like
 (\"h\" \"M-t\" \"C-f\")")
 
-(defvar keypad--use-literal nil)
-(defvar keypad--use-meta nil)
-(defvar keypad--use-both nil)
-
 (defvar keypad--prefix-arg nil)
 (defvar keypad--modifier nil)
 (defvar keypad--keypad-help nil "If keypad in help mode.")
@@ -128,6 +124,16 @@ Other way seek in top level.")
              (member prefix (if keypad-leader '("C-x" "C-c") '("C-x"))))
          (keypad--handle-C-x-C-c key))
         ((equal "SPC" key)
+         ;; (cond ((eq 'control keypad--modifier)
+         ;;        (setq keypad--modifier nil))
+         ;;       ((not keypad--modifier)
+         ;;        (if (not keypad--keys)
+         ;;            (setq keypad--use-leader t))
+         ;;        (if keypad-leader
+         ;;            (push "SPC" keypad--keys)
+         ;;          (setq keypad--modifier 'control))
+         ;;        ))
+
          (if keypad--modifier
              (setq keypad--modifier nil)
            ;; else
