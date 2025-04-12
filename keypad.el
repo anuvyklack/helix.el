@@ -403,9 +403,9 @@ for which PREDICATE is non-nil."
 (defun keypad--format-keys ()
   "Return a display format for current input keys."
   (let* ((keys (keypad--entered-keys))
-         (keys (cond ((and (not keys)
-                           (not keypad-leader)
-                           (not (memq keypad--modifier '(meta control-meta))))
+         (keys (cond ((not (or keys
+                               keypad-leader
+                               (memq keypad--modifier '(meta control-meta))))
                       "C-c")
                      ((and keys
                            keypad--use-leader
