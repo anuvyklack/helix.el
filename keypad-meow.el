@@ -119,7 +119,7 @@ Other way seek in top level.")
       (keypad--handle-input-key key))))
 
 (defun keypad--handle-input-key (key)
-  (cond ((and (C-x-or-C-c?)
+  (cond ((and (keypad--C-x-or-C-c?)
               (equal "SPC" key))
          (setq keypad--modifier (if (or (null keypad--modifier)
                                         (eq 'literal keypad--modifier))
@@ -133,7 +133,7 @@ Other way seek in top level.")
                     ('literal      key))))
            (push k keypad--keys)
            (setq keypad--modifier (cond ((eq keypad--modifier 'literal) 'literal)
-                                        ((C-x-or-C-c?) 'control)
+                                        ((keypad--C-x-or-C-c?) 'control)
                                         (t nil)))))
         ((and (equal keypad-ctrl-prefix key))
          (setq keypad--modifier 'control))
@@ -253,7 +253,7 @@ Shift with Ctrl, you must write \"C-S-k\"."
   (if keypad--keys
       (string-join (reverse keypad--keys) " ")))
 
-(defun C-x-or-C-c? ()
+(defun keypad--C-x-or-C-c? ()
   (if-let* ((first-key (car (last keypad--keys))))
       (member first-key '("C-x" "C-c"))))
 
@@ -313,44 +313,56 @@ that were entered in the Keypad."
 
 (defun keypad--keymap-for-preview ()
   "Get a keymap for Which-key preview."
-  (let ((keys (keypad--entered-keys))
-        (control-p (lambda (key)
-                     (and (s-contains? "C-" key)
-                          (not (keypad--service-key-p key)))))
-        (literal-p (lambda (key)
-                     (not (or (s-contains? "C-" key)
-                              (keypad--service-key-p key))))))
+  (let ((keys (keypad--entered-keys)))
     (cond (keypad--modifier
-           (pcase keypad--modifier
-             ('literal (keypad--filter-keymap
-                        (if keys (keypad--lookup-key keys)
-                          (keypad--leader-keymap))
-                        literal-p))
-             ('control (keypad--filter-keymap
-                        (if keys (keypad--lookup-key keys)
-                          (keypad--leader-keymap))
-                        control-p))
-             ('meta    (define-keymap
-                         "ESC" (keypad--filter-keymap
-                                (keypad--lookup-key (concat keys (if keys " ") "ESC"))
-                                literal-p)))
-             ('control-meta (define-keymap
-                              "ESC" (keypad--filter-keymap
-                                     (keypad--lookup-key (concat keys (if keys " ") "ESC"))
-                                     control-p)))))
+           (let ((control-p    (lambda (key) (s-contains? "C-" key)))
+                 (no-control-p (lambda (key) (not (s-contains? "C-" key)))))
+             (pcase keypad--modifier
+               ('literal (let ((keymap (if keys (keypad--lookup-key keys)
+                                         (keypad--leader-keymap))))
+                           (keypad--filter-keymap keymap no-control-p)))
+               ('control (if (keypad--C-x-or-C-c?)
+                             (keypad--C-x-or-C-c-preview-keymap)
+                           (let ((keymap (if keys (keypad--lookup-key keys)
+                                           (keypad--leader-keymap))))
+                             (keypad--filter-keymap keymap control-p))))
+               ('meta    (let* ((keys (concat keys (if keys " ") "ESC"))
+                                (keymap (keypad--lookup-key keys))
+                                (keymap (keypad--filter-keymap keymap no-control-p)))
+                           (define-keymap "ESC" keymap)))
+               ('control-meta (let* ((keys (concat keys (if keys " ") "ESC"))
+                                     (keymap (keypad--lookup-key keys))
+                                     (keymap (keypad--filter-keymap keymap control-p)))
+                                (define-keymap "ESC" keymap))))))
           (keys (if-let* ((keymap (keypad--lookup-key keys))
                           ((keymapp keymap)))
                     keymap))
           (t ; (not keys)
-           (let* ((ignored (list "x" "c"
-                                 keypad-ctrl-prefix
-                                 keypad-meta-prefix
-                                 keypad-ctrl-meta-prefix)))
+           (let ((ignored (list "x" "c"
+                                keypad-ctrl-prefix
+                                keypad-meta-prefix
+                                keypad-ctrl-meta-prefix)))
              (keypad--filter-keymap (keypad--leader-keymap)
                                     (lambda (key)
                                       (not (or (s-contains? "C-" key)
-                                               (member key ignored)
-                                               (keypad--service-key-p key))))))))))
+                                               (member key ignored))))))))))
+
+(defun keypad--C-x-or-C-c-preview-keymap ()
+  (let* ((keymap (keypad--lookup-key (keypad--entered-keys)))
+         (ignored `("SPC"
+                    ,@(if (keypad--meta-keybindings-available-p)
+                          (list keypad-meta-prefix
+                                keypad-ctrl-meta-prefix))))
+         (r1 (keypad--filter-keymap keymap
+                                    (lambda (key)
+                                      (and (s-contains? "C-" key)
+                                           (not (member key ignored))))))
+         (r2 (keypad--filter-keymap keymap
+                                    (lambda (key)
+                                      (not (or (s-contains? "C-" key)
+                                               (keymap-lookup r1 (concat "C-" key))
+                                               (member key ignored)))))))
+    (make-composed-keymap r1 r2)))
 
 (defun keypad--filter-keymap (keymap predicate)
   "Return new keymap that contains only elements from KEYMAP
@@ -361,6 +373,7 @@ for which PREDICATE is non-nil."
                     (unless (eq command 'digit-argument)
                       (when-let* ((key (single-key-description event))
                                   ((key-valid-p key))
+                                  ((not (keypad--service-key-p key)))
                                   ((not (keymap-lookup result key)))
                                   ((funcall predicate key)))
                         (keymap-set result key command))))
