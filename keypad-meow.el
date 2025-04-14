@@ -78,6 +78,7 @@ For example, key sequence \"C-f M-t h\" will be stored like
 
 (defvar keypad--prefix-arg nil)
 (defvar keypad--modifier nil)
+(defvar keypad--describe-key nil)
 
 (defvar keypad--use-leader nil
   "When non-nil seek for key bindings in `keypad-leader'.
@@ -92,26 +93,34 @@ Other way seek in top level.")
   (interactive)
   (keypad-start))
 
-(defun keypad-start ()
-  "Enter keypad state."
+(defun keypad-start (&optional return)
+  "Enter keypad state.
+When RETURN non-nil return the entered key sequence instead of executing it."
   ;; Try to make this command transparent.
   (setq this-command last-command)
   (setq keypad--keys nil
         keypad--modifier nil
         keypad--prefix-arg current-prefix-arg
-        keypad--use-leader nil)
+        keypad--use-leader nil
+        keypad--describe-key return)
   (unwind-protect
       (progn
         (keypad--show-message)
         (keypad--open-preview)
         (while (not (eq (keypad--handle-input-event (read-key))
                         :quit))))
-    (keypad--quit)))
+    (keypad--close-preview))
+  (when return
+    (setq return keypad--describe-key
+          keypad--describe-key nil)
+    return))
 
 (defun keypad--handle-input-event (event)
   "Handle input EVENT. Return `:quit' if handling is completed."
   (if (equal 'escape last-input-event)
-      (keypad--quit)
+      (progn (keypad--close-preview)
+             :quit)
+    ;; else
     (setq last-command-event last-input-event)
     (if-let* ((key (single-key-description event))
               (cmd (keymap-lookup keypad-map key)))
@@ -165,10 +174,13 @@ This function supports a fallback behavior, where it allows to use
     (let ((cmd (keypad--lookup-key keys)))
       (cond ((commandp cmd t)
              (setq current-prefix-arg keypad--prefix-arg)
-             (keypad--quit)
-             (setq real-this-command cmd
-                   this-command cmd)
-             (call-interactively cmd)
+             (keypad--close-preview)
+             (if (keypad--describe-key)
+                 (setq keypad--describe-key keys)
+               ;; else
+               (setq real-this-command cmd
+                     this-command cmd)
+               (call-interactively cmd))
              :quit)
             ((keymapp cmd)
              (keypad--show-message)
@@ -178,7 +190,7 @@ This function supports a fallback behavior, where it allows to use
              (setcar keypad--keys (s-replace "C-" "" (car keypad--keys)))
              (keypad--try-execute))
             (t
-             (keypad--quit)
+             (keypad--close-preview)
              (message "%s is undefined" keys)
              :quit)))))
 
@@ -191,22 +203,14 @@ This function supports a fallback behavior, where it allows to use
         (keypad--keys (pop keypad--keys)
                       (keypad--open-preview))
         (t (when keypad-echo (message "KEYPAD exit"))
-           (keypad--quit))))
+           (keypad--close-preview)
+           :quit)))
 
 (defun keypad-quit ()
   "Quit keypad state."
   (interactive)
   (setq this-command last-command)
   (when keypad-echo (message "KEYPAD exit"))
-  (keypad--quit))
-
-(defun keypad--quit ()
-  "Quit keypad state."
-  (setq
-   ;; keypad--keys nil
-   ;; keypad--modifier nil
-   keypad--prefix-arg nil
-   keypad--use-leader nil)
   (keypad--close-preview)
   :quit) ; Indicate that keypad loop should be stopped
 
@@ -414,7 +418,18 @@ for which PREDICATE is non-nil."
          (concat keypad--prefix-arg " "))
         (t "")))
 
-;; this-command-keys
+;; Describe key
+
+(defun keypad-describe-key (key-list &optional buffer)
+  (interactive (list (help--read-key-sequence)))
+  (let* ((keys (cdar key-list))
+         (cmd (key-binding (key-parse keys))))
+    (when (eq cmd #'keypad)
+      (setq keys (keypad-start t)
+            key-list (key-parse keys)))
+    (if (fboundp 'helpful-key)
+        (helpful-key keys)
+      (describe-key key-list buffer))))
 
 (provide 'keypad)
 ;;; keypad.el ends here
