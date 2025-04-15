@@ -203,5 +203,65 @@ With no region delete char before point with next conditions:
   (deactivate-mark)
   (undo))
 
+;;; Window navigation
+
+(defalias 'helix-window-split #'split-window-below)
+
+;; (split-window-right)
+(defun helix-window-vsplit ()
+  "Split the current window vertically.
+The new window will be created to the right. All children of the
+parent of the splitted window are rebalanced."
+  (interactive)
+  (let* ((window-to-split (selected-window))
+         (new-window (split-window window-to-split nil 'right)))
+    (select-window new-window)
+    ;; Always copy quit-restore parameter in interactive use.
+    (when-let* ((quit-restore (window-parameter window-to-split 'quit-restore)))
+      (set-window-parameter new-window 'quit-restore quit-restore)))
+  (balance-windows (window-parent)))
+
+(defmacro helix-save-side-windows (&rest body)
+  "Toggle side windows, evaluate BODY, restore side windows."
+  (declare (indent defun) (debug (&rest form)))
+  (let ((sides (make-symbol "sidesvar")))
+    `(let ((,sides (window-with-parameter 'window-side)))
+       (when ,sides (window-toggle-side-windows))
+       (unwind-protect
+           (progn ,@body)
+         (when ,sides (window-toggle-side-windows))))))
+
+(defun helix-move-window (side)
+  "SIDE has the same meaning as in `split-window'."
+  (helix-save-side-windows
+   (unless (one-window-p)
+     (save-excursion
+       (let ((w (window-state-get (selected-window))))
+         (delete-window)
+         (let ((wtree (window-state-get)))
+           (delete-other-windows)
+           (let ((subwin (selected-window))
+                 (newwin (split-window nil nil side)))
+             (window-state-put wtree subwin)
+             (window-state-put w newwin)
+             (select-window newwin)))))
+     (balance-windows))))
+
+(defun helix-window-left ()
+  (interactive)
+  (helix-move-window 'left))
+
+(defun helix-window-right ()
+  (interactive)
+  (helix-move-window 'right))
+
+(defun helix-window-up ()
+  (interactive)
+  (helix-move-window 'up))
+
+(defun helix-window-down ()
+  (interactive)
+  (helix-move-window 'down))
+
 (provide 'helix-commands)
 ;;; helix-commands.el ends here
