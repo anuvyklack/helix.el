@@ -16,6 +16,7 @@
 ;;; Code:
 
 (require 'thingatpt)
+(require 'multiple-cursors-core)
 (require 'helix-common)
 
 ;; h
@@ -153,14 +154,16 @@ If BIGWORD move over WORD-s."
   (deactivate-mark))
 
 (defun helix-normal-state-escape ()
+  "Command for ESC key in Helix Normal state."
   (interactive)
   (cond (helix--extend-selection
-         (helix-extend-selection))
+         (setq helix--extend-selection nil))
         (t
-         (helix-collapse-selection))))
+         (mc/execute-command-for-all-cursors #'helix-collapse-selection))))
 
 ;; v
 (defun helix-extend-selection ()
+  "Toggle extend selection."
   (interactive)
   (setq helix--extend-selection (not helix--extend-selection)))
 

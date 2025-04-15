@@ -17,8 +17,10 @@
 (require 'helix-vars)
 (require 'helix-common)
 (require 'helix-commands)
+(require 'helix-multiple-cursors)
 (require 'helix-core)
 (require 'helix-states)
+(require 'helix-keybindings)
 
 (provide 'helix)
 ;;; helix.el ends here

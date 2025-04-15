@@ -15,9 +15,11 @@
 (require 'helix-commands)
 (require 'helix-states)
 (require 'keypad)
+(require 'helix-multiple-cursors)
 
 ;;; Normal state
 
+(keymap-set helix-normal-state-map "<backspace>" #'execute-extended-command)
 (keymap-set helix-normal-state-map "SPC" #'keypad)
 
 (keymap-set helix-normal-state-map "h" #'helix-backward-char)
@@ -33,7 +35,7 @@
 (keymap-set helix-normal-state-map "e" #'helix-forward-word-end)
 (keymap-set helix-normal-state-map "W" #'helix-forward-WORD-start)
 (keymap-set helix-normal-state-map "B" #'helix-backward-WORD-start)
-(keymap-set helix-normal-state-map "e" #'helix-forward-WORD-end)
+(keymap-set helix-normal-state-map "E" #'helix-forward-WORD-end)
 (keymap-set helix-normal-state-map "x" #'helix-select-or-extend-line)
 
 (keymap-set helix-normal-state-map "d" #'helix-delete-selection)
@@ -43,6 +45,13 @@
 
 (keymap-set helix-normal-state-map "u" #'helix-undo)
 (keymap-set helix-normal-state-map "U" #'undo-redo)
+
+;;;; Selections
+
+(global-unset-key (kbd "M-<down-mouse-1>"))
+(keymap-set helix-normal-state-map "M-<mouse-1>" #'helix-toggle-cursor-on-click)
+
+(keymap-set helix-normal-state-map "," #'helix-keep-primary-selection)
 
 ;;; Insert state
 
