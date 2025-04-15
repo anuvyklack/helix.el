@@ -106,5 +106,8 @@ Else returns t.
 ;;        (or (region-active-p) (set-mark (point)))
 ;;      ,@body))
 
+(defsubst helix-empty-line-p ()
+  (and (bolp) (eolp)))
+
 (provide 'helix-common)
 ;;; helix-common.el ends here

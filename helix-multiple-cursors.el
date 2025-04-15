@@ -36,9 +36,8 @@
 
 (defun helix-create-fake-cursor-at-point (&optional id ignore-region)
   " Add a fake cursor and possibly a fake active region overlay
-based on point and mark.
-
-Saves the current state in the overlay to be restored later."
+based on point and mark. Saves the current state in the overlay
+to be restored later."
   (unless mc--max-cursors-original
     (setq mc--max-cursors-original mc/max-cursors))
   (when mc/max-cursors
@@ -93,8 +92,8 @@ already there."
                 helix-forward-WORD-start    ; W
                 helix-backward-WORD-start   ; B
                 helix-forward-WORD-end      ; E
-                helix-select-or-extend-line ; x
-                helix-delete-selection ; d
+                helix-line ; x
+                helix-delete ; d
                 helix-collapse-selection ; ;
                 )))
 

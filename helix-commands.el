@@ -5,7 +5,7 @@
 ;; Author: Yuriy Artemyev <anuvyklack@gmail.com>
 ;; Maintainer: Yuriy Artemyev <anuvyklack@gmail.com>
 ;; Version: 0.0.1
-;; Package-Requires: ((emacs "24.3"))
+;; Package-Requires: ((emacs "29.1"))
 ;;
 ;; This file is not part of GNU Emacs.
 ;;
@@ -114,25 +114,27 @@ If BIGWORD move over WORD-s."
   (helix-forward-word-end count :bigword))
 
 ;; x
-(defun helix-select-or-extend-line (count)
+(defun helix-line (count)
   (interactive "p")
-  (if (not (region-active-p))
-      (let ((bounds (bounds-of-thing-at-point 'line)))
-        (set-mark (car bounds))
-        (goto-char (cdr bounds)))
+  (if (region-active-p)
+      (let ((b (region-beginning))
+            (e (region-end)))
+        (goto-char b)
+        (set-mark (car (bounds-of-thing-at-point 'line))) ; left end
+        (goto-char e)
+        (when (eolp) (forward-char))
+        (goto-char (cdr (bounds-of-thing-at-point 'line)))) ; right end
     ;; else
-    (let ((b (region-beginning))
-          (e (region-end)))
-      (goto-char b)
-      (set-mark (car (bounds-of-thing-at-point 'line))) ; left end
-      (goto-char e)
-      (goto-char (cdr (bounds-of-thing-at-point 'line)))))  ; right end
+    (let ((bounds (bounds-of-thing-at-point 'line)))
+      (set-mark (car bounds))
+      (goto-char (cdr bounds)))) ; right end
   (helix-motion-loop (_ (1- count))
-    (goto-char (cdr (bounds-of-thing-at-point 'line)))))
+    (goto-char (cdr (bounds-of-thing-at-point 'line))))
+  (backward-char))
 
 ;; i
 (defun helix-insert ()
-  "Switch to Insert state before selection."
+  "Switch to Insert state before region."
   (interactive)
   (when (and (region-active-p)
              (< (mark) (point)))
@@ -141,15 +143,24 @@ If BIGWORD move over WORD-s."
 
 ;; a
 (defun helix-append ()
-  "Switch to Insert state after selection."
+  "Switch to Insert state after region."
   (interactive)
   (when (and (region-active-p)
              (< (point) (mark)))
     (exchange-point-and-mark))
   (helix-insert-state 1))
 
+;; c
+(defun helix-change ()
+  "Delete region and enter Insert state."
+  (interactive)
+  (if (use-region-p)
+      (kill-region nil nil :region)
+    (delete-char (- 1)))
+  (helix-insert))
+
 (defun helix-collapse-selection ()
-  "Collapse selection onto a single cursor."
+  "Collapse region onto a single cursor."
   (interactive)
   (deactivate-mark))
 
@@ -168,9 +179,9 @@ If BIGWORD move over WORD-s."
   (setq helix--extend-selection (not helix--extend-selection)))
 
 ;; d
-(defun helix-delete-selection ()
-  "Delete text in selection.
-With no selection delete char before point with next conditions:
+(defun helix-delete ()
+  "Delete text in region.
+With no region delete char before point with next conditions:
 - If point is surrounded by (balanced) whitespace and a brace delimiter
   ({} [] ()), delete a space on either side of the cursor.
 - If point is at BOL and surrounded by braces on adjacent lines,
@@ -180,14 +191,14 @@ With no selection delete char before point with next conditions:
   } => {|} "
   (interactive)
   (cond ((use-region-p)
-         (kill-region (region-beginning) (region-end) 'region)
-         ;; (funcall region-extract-function 'delete-only)
-         )
+         (kill-region nil nil :region)
+         (when (helix-empty-line-p)
+           (delete-char 1)))
         (t (delete-char (- 1)))))
 
 ;; u
 (defun helix-undo ()
-  "Cancel current selection then undo."
+  "Cancel current region then undo."
   (interactive)
   (deactivate-mark)
   (undo))
