@@ -116,21 +116,22 @@ If BIGWORD move over WORD-s."
 ;; x
 (defun helix-line (count)
   (interactive "p")
-  (if (region-active-p)
-      (let ((b (region-beginning))
-            (e (region-end)))
-        (goto-char b)
-        (set-mark (car (bounds-of-thing-at-point 'line))) ; left end
-        (goto-char e)
-        (when (eolp) (forward-char))
-        (goto-char (cdr (bounds-of-thing-at-point 'line)))) ; right end
-    ;; else
-    (let ((bounds (bounds-of-thing-at-point 'line)))
-      (set-mark (car bounds))
-      (goto-char (cdr bounds)))) ; right end
-  (helix-motion-loop (_ (1- count))
-    (goto-char (cdr (bounds-of-thing-at-point 'line))))
-  (backward-char))
+  (let ((line (if visual-line-mode 'visual-line 'line)))
+    (if (region-active-p)
+        (let ((b (region-beginning))
+              (e (region-end)))
+          (goto-char b)
+          (set-mark (car (bounds-of-thing-at-point line))) ; left end
+          (goto-char e)
+          (when (eolp) (forward-char))
+          (goto-char (cdr (bounds-of-thing-at-point line)))) ; right end
+      ;; else
+      (let ((bounds (bounds-of-thing-at-point line)))
+        (set-mark (car bounds))
+        (goto-char (cdr bounds))))      ; right end
+    (helix-motion-loop (_ (1- count))
+      (goto-char (cdr (bounds-of-thing-at-point line))))
+    (backward-char)))
 
 ;; i
 (defun helix-insert ()
@@ -221,6 +222,30 @@ parent of the splitted window are rebalanced."
       (set-window-parameter new-window 'quit-restore quit-restore)))
   (balance-windows (window-parent)))
 
+(defun helix-window-left (count)
+  "Move the cursor to new COUNT-th window left of the current one."
+  (interactive "p")
+  (dotimes (_ count)
+    (windmove-left)))
+
+(defun helix-window-right (count)
+  "Move the cursor to new COUNT-th window right of the current one."
+  (interactive "p")
+  (dotimes (_ count)
+    (windmove-right)))
+
+(defun helix-window-up (count)
+  "Move the cursor to new COUNT-th window up of the current one."
+  (interactive "p")
+  (dotimes (_ count)
+    (windmove-up)))
+
+(defun helix-window-down (count)
+  "Move the cursor to new COUNT-th window down of the current one."
+  (interactive "p")
+  (dotimes (_ count)
+    (windmove-down)))
+
 (defmacro helix-save-side-windows (&rest body)
   "Toggle side windows, evaluate BODY, restore side windows."
   (declare (indent defun) (debug (&rest form)))
@@ -234,32 +259,32 @@ parent of the splitted window are rebalanced."
 (defun helix-move-window (side)
   "SIDE has the same meaning as in `split-window'."
   (helix-save-side-windows
-   (unless (one-window-p)
-     (save-excursion
-       (let ((w (window-state-get (selected-window))))
-         (delete-window)
-         (let ((wtree (window-state-get)))
-           (delete-other-windows)
-           (let ((subwin (selected-window))
-                 (newwin (split-window nil nil side)))
-             (window-state-put wtree subwin)
-             (window-state-put w newwin)
-             (select-window newwin)))))
-     (balance-windows))))
+    (unless (one-window-p)
+      (save-excursion
+        (let ((w (window-state-get (selected-window))))
+          (delete-window)
+          (let ((wtree (window-state-get)))
+            (delete-other-windows)
+            (let ((subwin (selected-window))
+                  (newwin (split-window nil nil side)))
+              (window-state-put wtree subwin)
+              (window-state-put w newwin)
+              (select-window newwin)))))
+      (balance-windows))))
 
-(defun helix-window-left ()
+(defun helix-move-window-left ()
   (interactive)
   (helix-move-window 'left))
 
-(defun helix-window-right ()
+(defun helix-move-window-right ()
   (interactive)
   (helix-move-window 'right))
 
-(defun helix-window-up ()
+(defun helix-move-window-up ()
   (interactive)
   (helix-move-window 'up))
 
-(defun helix-window-down ()
+(defun helix-move-window-down ()
   (interactive)
   (helix-move-window 'down))
 

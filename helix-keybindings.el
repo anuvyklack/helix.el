@@ -42,6 +42,22 @@
 (keymap-set helix-normal-state-map "u" #'helix-undo)
 (keymap-set helix-normal-state-map "U" #'undo-redo)
 
+(defvar-keymap helix-window-map
+  "C-h" #'helix-window-left
+  "C-j" #'helix-window-down
+  "C-k" #'helix-window-up
+  "C-l" #'helix-window-right
+  "h"   #'helix-window-left
+  "j"   #'helix-window-down
+  "k"   #'helix-window-up
+  "l"   #'helix-window-right
+  "H"   #'helix-move-window-left
+  "J"   #'helix-move-window-down
+  "K"   #'helix-move-window-up
+  "L"   #'helix-move-window-right)
+
+(keymap-set helix-normal-state-map "C-w" helix-window-map)
+
 ;;;; Changes
 
 (keymap-set helix-normal-state-map "i" #'helix-insert)

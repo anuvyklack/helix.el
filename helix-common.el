@@ -32,11 +32,11 @@
 (defun helix-get-next-char (&optional dir)
   "Get the next char toward the direction.
 If DIR is positive number get following char, negative — preceding char."
-  (setq dir (or dir 1))
+  (or dir (setq dir 1))
   (if (> dir 0) (following-char) (preceding-char)))
 
 (defun helix-forward-chars (chars &optional dir)
-  (setq dir (or dir 1))
+  (or dir (setq dir 1))
   (not (zerop (if (> dir 0)
                   (skip-chars-forward chars)
                 (skip-chars-backward chars)))))
@@ -73,6 +73,8 @@ Else returns t.
            (setq n (1- n)))
          (zerop n)))))
 
+;;; Things (`thingatpt.el')
+
 (defun forward-helix-word (&optional count)
   (helix-motion-loop (dir (or count 1))
     (helix-forward-chars "\r\n" dir)
@@ -80,7 +82,7 @@ Else returns t.
     (or (memq (helix-get-next-char dir) '(?\r ?\n))
         (helix-forward-chars "^[:word:]\n\r\t\f " dir)
         (let ((word-separating-categories helix-cjk-word-separating-categories)
-              (word-combining-categories helix-cjk-word-combining-categories))
+              (word-combining-categories  helix-cjk-word-combining-categories))
           (forward-word dir)))))
 
 (defun forward-helix-WORD (&optional count)
@@ -89,6 +91,9 @@ Else returns t.
     (helix-forward-chars " \t" dir)
     (or (memq (helix-get-next-char dir) '(?\r ?\n))
         (helix-forward-chars "^\n\r\t\f " dir))))
+
+(put 'visual-line 'beginning-op 'beginning-of-visual-line)
+(put 'visual-line 'end-op       'end-of-visual-line)
 
 ;;; Utils
 
