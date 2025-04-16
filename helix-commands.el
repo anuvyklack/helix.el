@@ -123,12 +123,12 @@ If BIGWORD move over WORD-s."
           (goto-char b)
           (set-mark (car (bounds-of-thing-at-point line))) ; left end
           (goto-char e)
-          (when (eolp) (forward-char))
+          (when (helix-eolp) (forward-char))
           (goto-char (cdr (bounds-of-thing-at-point line)))) ; right end
-      ;; else
+      ;; no region
       (let ((bounds (bounds-of-thing-at-point line)))
         (set-mark (car bounds))
-        (goto-char (cdr bounds))))      ; right end
+        (goto-char (cdr bounds))))
     (helix-motion-loop (_ (1- count))
       (goto-char (cdr (bounds-of-thing-at-point line))))
     (backward-char)))
@@ -287,6 +287,21 @@ parent of the splitted window are rebalanced."
 (defun helix-move-window-down ()
   (interactive)
   (helix-move-window 'down))
+
+(defun helix-window-delete ()
+  "Delete the current window or tab.
+Rebalance all children of the deleted window's parent window."
+  (interactive)
+  (let ((parent (window-parent)))
+    ;; If tabs are enabled and this is the only visible window, then attempt to
+    ;; close this tab.
+    (if (and (bound-and-true-p tab-bar-mode)
+             (null parent))
+        (tab-close)
+      (delete-window)
+      ;; balance-windows raises an error if the parent does not have
+      ;; any further children (then rebalancing is not necessary anyway)
+      (ignore-errors (balance-windows parent)))))
 
 (provide 'helix-commands)
 ;;; helix-commands.el ends here

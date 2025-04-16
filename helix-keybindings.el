@@ -43,14 +43,18 @@
 (keymap-set helix-normal-state-map "U" #'undo-redo)
 
 (defvar-keymap helix-window-map
-  "C-h" #'helix-window-left
-  "C-j" #'helix-window-down
-  "C-k" #'helix-window-up
-  "C-l" #'helix-window-right
+  "s"   #'helix-window-split
+  "v"   #'helix-window-vsplit
+  "d"   #'helix-window-delete
+  "c"   #'helix-window-delete
   "h"   #'helix-window-left
   "j"   #'helix-window-down
   "k"   #'helix-window-up
   "l"   #'helix-window-right
+  "C-h" #'helix-window-left
+  "C-j" #'helix-window-down
+  "C-k" #'helix-window-up
+  "C-l" #'helix-window-right
   "H"   #'helix-move-window-left
   "J"   #'helix-move-window-down
   "K"   #'helix-move-window-up

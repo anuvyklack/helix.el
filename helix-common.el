@@ -92,8 +92,11 @@ Else returns t.
     (or (memq (helix-get-next-char dir) '(?\r ?\n))
         (helix-forward-chars "^\n\r\t\f " dir))))
 
-(put 'visual-line 'beginning-op 'beginning-of-visual-line)
-(put 'visual-line 'end-op       'end-of-visual-line)
+;; (put 'visual-line 'beginning-op 'beginning-of-visual-line)
+;; (put 'visual-line 'end-op       'end-of-visual-line)
+(put 'visual-line 'forward-op (lambda (&optional count)
+                                (or count (setq count 1))
+                                (vertical-motion count)))
 
 ;;; Utils
 
@@ -113,6 +116,15 @@ Else returns t.
 
 (defsubst helix-empty-line-p ()
   (and (bolp) (eolp)))
+
+(defun helix-eolp ()
+  "Like `eolp' but respects `visual-line-mode'."
+  (if visual-line-mode
+      (save-excursion
+        (let ((p (point)))
+          (end-of-visual-line)
+          (= p (point))))
+    (eolp)))
 
 (provide 'helix-common)
 ;;; helix-common.el ends here
