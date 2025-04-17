@@ -16,6 +16,7 @@
 ;;; Code:
 
 (require 'thingatpt)
+(require 'pixel-scroll)
 (require 'multiple-cursors-core)
 (require 'helix-common)
 
@@ -137,7 +138,7 @@ If BIGWORD move over WORD-s."
 (defun helix-insert ()
   "Switch to Insert state before region."
   (interactive)
-  (when (and (region-active-p)
+  (when (and (use-region-p)
              (< (mark) (point)))
     (exchange-point-and-mark))
   (helix-insert-state 1))
@@ -146,7 +147,7 @@ If BIGWORD move over WORD-s."
 (defun helix-append ()
   "Switch to Insert state after region."
   (interactive)
-  (when (and (region-active-p)
+  (when (and (use-region-p)
              (< (point) (mark)))
     (exchange-point-and-mark))
   (helix-insert-state 1))
@@ -302,6 +303,104 @@ Rebalance all children of the deleted window's parent window."
       ;; balance-windows raises an error if the parent does not have
       ;; any further children (then rebalancing is not necessary anyway)
       (ignore-errors (balance-windows parent)))))
+
+;;; Scrolling
+
+(defun helix--get-scroll-count (count)
+  "Given a user-supplied COUNT, return scroll count."
+  (cl-flet ((posint (x) (and (natnump x) (< 0 x) x)))
+    (cond ((posint count)
+           (setq helix-scroll-count count))
+          ((posint helix-scroll-count))
+          (t 0))))
+
+;; C-u
+(defun helix-scroll-up (count)
+  "Scroll the window and the cursor COUNT lines upwards.
+If COUNT is not specified the function scrolls up `helix-scroll-count'
+lines, which is the last used COUNT. If the scroll count is zero
+the command scrolls half the screen."
+  (interactive "P")
+  (setq count (helix--get-scroll-count count))
+  (let* ((window-height (- (window-text-height nil t)
+                           (window-mode-line-height)
+                           (window-tab-line-height)))
+         (delta (if (= 0 count)
+                    (/ window-height 2)
+                  (* count (window-font-height))))
+         ;; Y coordinate of the point
+         (point-y (cdr (posn-x-y (posn-at-point)))))
+    ;; If point goes off of the screen as the result of the scroll —
+    ;; disable selection unless we want to extend it.
+    (when (and (not helix--extend-selection)
+               (> delta (- window-height point-y)))
+      (deactivate-mark))
+    (pixel-scroll-precision-interpolate delta nil 1)))
+
+(put 'helix-scroll-line-up 'scroll-command t)
+
+;; C-d
+(defun helix-scroll-down (count)
+  "Scroll the window and the cursor COUNT lines downwards.
+If COUNT is not specified the function scrolls down `helix-scroll-count'
+lines, which is the last used COUNT. If the scroll count is zero
+the command scrolls half the screen."
+  (interactive "P")
+  (setq count (helix--get-scroll-count count))
+  (let* ((window-height (- (window-text-height nil t)
+                           (window-mode-line-height)
+                           (window-tab-line-height)))
+         (delta (if (= 0 count)
+                    (/ window-height 2)
+                  (* count (window-font-height))))
+         ;; Y coordinate of the point
+         (point-y (cdr (posn-x-y (posn-at-point)))))
+    ;; If point goes off of the screen as the result of the scroll —
+    ;; disable selection unless we want to extend it.
+    (when (and (not helix--extend-selection)
+               (> delta point-y))
+      (deactivate-mark))
+    (pixel-scroll-precision-interpolate (- delta) nil 1)))
+
+(put 'helix-scroll-line-down 'scroll-command t)
+
+;; C-b
+(defun helix-scroll-page-up (count)
+  "Scroll the window COUNT pages upwards."
+  (interactive "p")
+  (unless helix--extend-selection (deactivate-mark))
+  (let* ((window-height (- (window-text-height nil t)
+                           (window-mode-line-height)
+                           (window-tab-line-height)))
+         (delta (* count window-height)))
+    (pixel-scroll-precision-interpolate delta nil 1)))
+
+;; C-f
+(defun helix-scroll-page-down (count)
+  "Scroll the window COUNT pages downwards."
+  (interactive "p")
+  (unless helix--extend-selection (deactivate-mark))
+  (let* ((window-height (- (window-text-height nil t)
+                           (window-mode-line-height)
+                           (window-tab-line-height)))
+         (delta (* count window-height)))
+    (pixel-scroll-precision-interpolate (- delta) nil 1)))
+
+;; C-e
+(defun helix-scroll-line-down (count)
+  (interactive "p")
+  (let (scroll-preserve-screen-position)
+    (scroll-up count)))
+
+(put 'helix-scroll-line-down 'scroll-command t)
+
+;; C-y
+(defun helix-scroll-line-up (count)
+  (interactive "p")
+  (let (scroll-preserve-screen-position)
+    (scroll-down count)))
+
+(put 'helix-scroll-line-up 'scroll-command t)
 
 (provide 'helix-commands)
 ;;; helix-commands.el ends here

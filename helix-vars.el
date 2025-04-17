@@ -120,5 +120,10 @@ use `helix-state-property'.")
 (helix-defvar-local helix--region-was-active-on-insert nil
   "Whether region was active when we last time switched to Insert state.")
 
+(helix-defvar-local helix-scroll-count 0
+  "Hold last used prefix for `helix-scroll-up' and `helix-scroll-down'.
+Determine how many lines should be scrolled.
+Default value is 0 - scroll half the screen.")
+
 (provide 'helix-vars)
 ;;; helix-vars.el ends here

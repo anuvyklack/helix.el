@@ -76,7 +76,8 @@ Else returns t.
 ;;; Things (`thingatpt.el')
 
 (defun forward-helix-word (&optional count)
-  (helix-motion-loop (dir (or count 1))
+  (or count (setq count 1))
+  (helix-motion-loop (dir count)
     (helix-forward-chars "\r\n" dir)
     (helix-forward-chars " \t" dir)
     (or (memq (helix-get-next-char dir) '(?\r ?\n))
@@ -86,7 +87,8 @@ Else returns t.
           (forward-word dir)))))
 
 (defun forward-helix-WORD (&optional count)
-  (helix-motion-loop (dir (or count 1))
+  (or count (setq count 1))
+  (helix-motion-loop (dir count)
     (helix-forward-chars "\r\n" dir)
     (helix-forward-chars " \t" dir)
     (or (memq (helix-get-next-char dir) '(?\r ?\n))

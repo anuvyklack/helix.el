@@ -19,6 +19,17 @@
 
 ;;; Normal state
 
+(keymap-set helix-normal-state-map "0" #'digit-argument)
+(keymap-set helix-normal-state-map "1" #'digit-argument)
+(keymap-set helix-normal-state-map "2" #'digit-argument)
+(keymap-set helix-normal-state-map "3" #'digit-argument)
+(keymap-set helix-normal-state-map "4" #'digit-argument)
+(keymap-set helix-normal-state-map "5" #'digit-argument)
+(keymap-set helix-normal-state-map "6" #'digit-argument)
+(keymap-set helix-normal-state-map "7" #'digit-argument)
+(keymap-set helix-normal-state-map "8" #'digit-argument)
+(keymap-set helix-normal-state-map "9" #'digit-argument)
+
 (keymap-set helix-normal-state-map "<backspace>" #'execute-extended-command)
 (keymap-set helix-normal-state-map "SPC" #'keypad)
 
@@ -61,6 +72,12 @@
   "L"   #'helix-move-window-right)
 
 (keymap-set helix-normal-state-map "C-w" helix-window-map)
+
+(keymap-set helix-normal-state-map "C-b" #'helix-scroll-page-up)
+(keymap-set helix-normal-state-map "C-f" #'helix-scroll-page-down)
+
+(keymap-set helix-normal-state-map "C-d" #'helix-scroll-down)
+(keymap-set helix-normal-state-map "C-u" #'helix-scroll-up)
 
 ;;;; Changes
 
