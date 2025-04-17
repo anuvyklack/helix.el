@@ -313,8 +313,8 @@ Rebalance all children of the deleted window's parent window."
     helix-scroll-count))
 
 ;; C-u
-(defun helix-scroll-up (count)
-  "Scroll the window and the cursor COUNT lines upwards.
+(defun helix-smooth-scroll-up (count)
+  "Smoothly scroll the window and the cursor COUNT lines upwards.
 If COUNT is not specified the function scrolls up `helix-scroll-count'
 lines, which is the last used COUNT. If the scroll count is zero
 the command scrolls half the screen."
@@ -325,21 +325,22 @@ the command scrolls half the screen."
                            (window-tab-line-height)))
          (delta (if (= 0 count)
                     (/ window-height 2)
-                  (* count (window-font-height))))
-         ;; Y coordinate of the point
-         (point-y (cdr (posn-x-y (posn-at-point)))))
+                  (let ((line-height (window-font-height))
+                        (spacing (or line-spacing 0)))
+                    (* count (+ line-height spacing))))))
     ;; If point goes off of the screen as the result of the scroll —
     ;; disable selection unless we want to extend it.
-    (when (and (not helix--extend-selection)
-               (> delta (- window-height point-y)))
-      (deactivate-mark))
+    (unless helix--extend-selection
+      ;; Y coordinate of the point
+      (let ((y (cdr (posn-x-y (posn-at-point)))))
+        (when (> delta (- window-height y))
+          (deactivate-mark))))
     (pixel-scroll-precision-interpolate delta nil 1)))
-
 (put 'helix-scroll-line-up 'scroll-command t)
 
 ;; C-d
-(defun helix-scroll-down (count)
-  "Scroll the window and the cursor COUNT lines downwards.
+(defun helix-smooth-scroll-down (count)
+  "Smoothly scroll the window and the cursor COUNT lines downwards.
 If COUNT is not specified the function scrolls down `helix-scroll-count'
 lines, which is the last used COUNT. If the scroll count is zero
 the command scrolls half the screen."
@@ -350,21 +351,22 @@ the command scrolls half the screen."
                            (window-tab-line-height)))
          (delta (if (= 0 count)
                     (/ window-height 2)
-                  (* count (window-font-height))))
-         ;; Y coordinate of the point
-         (point-y (cdr (posn-x-y (posn-at-point)))))
+                  (let ((line-height (window-font-height))
+                        (spacing (or line-spacing 0)))
+                    (* count (+ line-height spacing))))))
     ;; If point goes off of the screen as the result of the scroll —
     ;; disable selection unless we want to extend it.
-    (when (and (not helix--extend-selection)
-               (> delta point-y))
-      (deactivate-mark))
+    (unless helix--extend-selection
+      ;; Y coordinate of the point
+      (let ((y (cdr (posn-x-y (posn-at-point)))))
+        (when (> delta y)
+          (deactivate-mark))))
     (pixel-scroll-precision-interpolate (- delta) nil 1)))
-
 (put 'helix-scroll-line-down 'scroll-command t)
 
 ;; C-b
-(defun helix-scroll-page-up (count)
-  "Scroll the window COUNT pages upwards."
+(defun helix-smooth-scroll-page-up (count)
+  "Smoothly scroll the window COUNT pages upwards."
   (interactive "p")
   (unless helix--extend-selection (deactivate-mark))
   (let* ((window-height (- (window-text-height nil t)
@@ -372,10 +374,11 @@ the command scrolls half the screen."
                            (window-tab-line-height)))
          (delta (* count window-height)))
     (pixel-scroll-precision-interpolate delta nil 1)))
+(put 'helix-smooth-scroll-page-up 'scroll-command t)
 
 ;; C-f
-(defun helix-scroll-page-down (count)
-  "Scroll the window COUNT pages downwards."
+(defun helix-smooth-scroll-page-down (count)
+  "Smoothly scroll the window COUNT pages downwards."
   (interactive "p")
   (unless helix--extend-selection (deactivate-mark))
   (let* ((window-height (- (window-text-height nil t)
@@ -383,22 +386,91 @@ the command scrolls half the screen."
                            (window-tab-line-height)))
          (delta (* count window-height)))
     (pixel-scroll-precision-interpolate (- delta) nil 1)))
+(put 'helix-smooth-scroll-page-down 'scroll-command t)
 
 ;; C-e
-(defun helix-scroll-line-down (count)
+(defun helix-mix-scroll-line-down (count)
+  "Scroll the window COUNT lines downwards.
+If COUNT > 1 scroll smoothly."
   (interactive "p")
-  (let (scroll-preserve-screen-position)
-    (scroll-up count)))
+  (if (= count 1)
+      (helix-scroll-line-down count)
+    (helix-smooth-scroll-line-down count)))
+(put 'helix-mix-scroll-line-down 'scroll-command t)
 
+(defun helix-scroll-line-down (count)
+  "Scroll the window COUNT lines downwards."
+  (interactive "p")
+  (unless helix--extend-selection
+    (let ((point-row (cdr (posn-col-row (posn-at-point)))))
+      (when (> count point-row)
+        (deactivate-mark))))
+  (let ((scroll-preserve-screen-position nil))
+    (scroll-up count)))
 (put 'helix-scroll-line-down 'scroll-command t)
 
-;; C-y
-(defun helix-scroll-line-up (count)
+(defun helix-smooth-scroll-line-down (count)
+  "Smoothly scroll the window COUNT lines downwards."
   (interactive "p")
-  (let (scroll-preserve-screen-position)
-    (scroll-down count)))
+  (let* ((pixel-scroll-precision-interpolation-total-time 0.1) ; duration
+         (line-height (window-font-height))
+         (spacing (or line-spacing 0))
+         (delta (* count (+ line-height spacing))))
+    ;; If point goes off of the screen as the result of the scroll —
+    ;; disable selection unless we want to extend it.
+    (unless helix--extend-selection
+      ;; Y coordinate of the point
+      (let ((y (cdr (posn-x-y (posn-at-point)))))
+        (when (> delta y)
+          (deactivate-mark))))
+    (pixel-scroll-precision-interpolate (- delta) nil 1)))
+(put 'helix-smooth-scroll-line-down 'scroll-command t)
 
+;; C-y
+(defun helix-mix-scroll-line-up (count)
+  "Scroll the window COUNT lines upwards.
+If COUNT > 1 scroll smoothly."
+  (interactive "p")
+  (if (= count 1)
+      (helix-scroll-line-up count)
+    (helix-smooth-scroll-line-up count)))
+(put 'helix-mix-scroll-line-up 'scroll-command t)
+
+(defun helix-scroll-line-up (count)
+  "Scroll the window COUNT lines upwards."
+  (interactive "p")
+  (unless helix--extend-selection
+    (let (;; BUG: `window-text-height' claims that it doesn't count
+          ;; modeline, headline, dividers, partially visible lines at bottom,
+          ;; but it is not true.
+          (num-of-lines (window-text-height))
+          (point-row (-> (cdr (posn-col-row (posn-at-point)))
+                         (1+)))) ; because numbering starts from 0
+      (when (> count (- num-of-lines point-row))
+        (deactivate-mark))))
+  (let ((scroll-preserve-screen-position nil))
+    (scroll-down count)))
 (put 'helix-scroll-line-up 'scroll-command t)
+
+(defun helix-smooth-scroll-line-up (count)
+  "Smoothly scroll the window COUNT lines upwards."
+  (interactive "p")
+  (let* ((pixel-scroll-precision-interpolation-total-time 0.1) ; duration
+         (line-height (window-font-height))
+         (spacing (or line-spacing 0))
+         (delta (* count (+ line-height spacing))))
+    ;; If point goes off of the screen as the result of the scroll —
+    ;; disable selection unless we want to extend it.
+    (unless helix--extend-selection
+      (let ((win-height (- (window-text-height nil t)
+                           (window-mode-line-height)
+                           (window-tab-line-height)))
+            ;; Y coordinate of the point
+            (y (cdr (posn-x-y (posn-at-point)))))
+        (when (> delta (- win-height y))
+          (deactivate-mark))))
+    (pixel-scroll-precision-interpolate delta nil 1)))
+(put 'helix-smooth-scroll-line-up 'scroll-command t)
 
 (provide 'helix-commands)
 ;;; helix-commands.el ends here

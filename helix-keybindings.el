@@ -69,12 +69,12 @@
 
 ;;;; Scrolling
 
-(keymap-set helix-normal-state-map "C-b" #'helix-scroll-page-up)
-(keymap-set helix-normal-state-map "C-f" #'helix-scroll-page-down)
-(keymap-set helix-normal-state-map "C-d" #'helix-scroll-down)
-(keymap-set helix-normal-state-map "C-u" #'helix-scroll-up)
-(keymap-set helix-normal-state-map "C-e" #'helix-scroll-line-down)
-(keymap-set helix-normal-state-map "C-y" #'helix-scroll-line-up)
+(keymap-set helix-normal-state-map "C-b" #'helix-smooth-scroll-page-up)
+(keymap-set helix-normal-state-map "C-f" #'helix-smooth-scroll-page-down)
+(keymap-set helix-normal-state-map "C-d" #'helix-smooth-scroll-down)
+(keymap-set helix-normal-state-map "C-u" #'helix-smooth-scroll-up)
+(keymap-set helix-normal-state-map "C-e" #'helix-mix-scroll-line-down)
+(keymap-set helix-normal-state-map "C-y" #'helix-mix-scroll-line-up)
 
 ;;;; Windows
 
