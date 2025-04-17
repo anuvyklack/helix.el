@@ -308,11 +308,9 @@ Rebalance all children of the deleted window's parent window."
 
 (defun helix--get-scroll-count (count)
   "Given a user-supplied COUNT, return scroll count."
-  (cl-flet ((posint (x) (and (natnump x) (< 0 x) x)))
-    (cond ((posint count)
-           (setq helix-scroll-count count))
-          ((posint helix-scroll-count))
-          (t 0))))
+  (if (natnump count)
+      (setq helix-scroll-count count)
+    helix-scroll-count))
 
 ;; C-u
 (defun helix-scroll-up (count)

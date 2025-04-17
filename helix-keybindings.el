@@ -53,6 +53,31 @@
 (keymap-set helix-normal-state-map "u" #'helix-undo)
 (keymap-set helix-normal-state-map "U" #'undo-redo)
 
+;;;; Changes
+
+(keymap-set helix-normal-state-map "i" #'helix-insert)
+(keymap-set helix-normal-state-map "a" #'helix-append)
+(keymap-set helix-normal-state-map "c" #'helix-change)
+(keymap-set helix-normal-state-map "d" #'helix-delete)
+
+;;;; Selections
+
+(keymap-set helix-normal-state-map "," #'helix-keep-primary-selection)
+
+(global-unset-key (kbd "M-<down-mouse-1>"))
+(keymap-set helix-normal-state-map "M-<mouse-1>" #'helix-toggle-cursor-on-click)
+
+;;;; Scrolling
+
+(keymap-set helix-normal-state-map "C-b" #'helix-scroll-page-up)
+(keymap-set helix-normal-state-map "C-f" #'helix-scroll-page-down)
+(keymap-set helix-normal-state-map "C-d" #'helix-scroll-down)
+(keymap-set helix-normal-state-map "C-u" #'helix-scroll-up)
+(keymap-set helix-normal-state-map "C-e" #'helix-scroll-line-down)
+(keymap-set helix-normal-state-map "C-y" #'helix-scroll-line-up)
+
+;;;; Windows
+
 (defvar-keymap helix-window-map
   "s"   #'helix-window-split
   "v"   #'helix-window-vsplit
@@ -70,28 +95,7 @@
   "J"   #'helix-move-window-down
   "K"   #'helix-move-window-up
   "L"   #'helix-move-window-right)
-
 (keymap-set helix-normal-state-map "C-w" helix-window-map)
-
-(keymap-set helix-normal-state-map "C-b" #'helix-scroll-page-up)
-(keymap-set helix-normal-state-map "C-f" #'helix-scroll-page-down)
-
-(keymap-set helix-normal-state-map "C-d" #'helix-scroll-down)
-(keymap-set helix-normal-state-map "C-u" #'helix-scroll-up)
-
-;;;; Changes
-
-(keymap-set helix-normal-state-map "i" #'helix-insert)
-(keymap-set helix-normal-state-map "a" #'helix-append)
-(keymap-set helix-normal-state-map "c" #'helix-change)
-(keymap-set helix-normal-state-map "d" #'helix-delete)
-
-;;;; Selections
-
-(keymap-set helix-normal-state-map "," #'helix-keep-primary-selection)
-
-(global-unset-key (kbd "M-<down-mouse-1>"))
-(keymap-set helix-normal-state-map "M-<mouse-1>" #'helix-toggle-cursor-on-click)
 
 ;;; Insert state
 
