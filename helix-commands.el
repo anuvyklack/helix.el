@@ -472,5 +472,58 @@ If COUNT > 1 scroll smoothly."
     (pixel-scroll-precision-interpolate delta nil 1)))
 (put 'helix-smooth-scroll-line-up 'scroll-command t)
 
+;; zz
+(defun helix-smooth-scroll-line-to-center ()
+  "Smoothly scroll current line to the center of the window."
+  (interactive)
+  (let* ((win-height (- (window-text-height nil t)
+                        (window-mode-line-height)
+                        (window-tab-line-height)))
+         (distance (ceiling (/ win-height 2)))
+         (point-y (cdr (posn-x-y (posn-at-point))))
+         (delta (- distance point-y)))
+    (pixel-scroll-precision-interpolate delta nil 1)))
+
+(defun helix-smooth-scroll-line-not-to-very-top ()
+  "Smoothly scroll current line not to the very top of the window."
+  (interactive)
+  (let* ((win-height (- (window-text-height nil t)
+                        (window-mode-line-height)
+                        (window-tab-line-height)))
+         (distance (ceiling (/ win-height 5)))
+         (point-y (cdr (posn-x-y (posn-at-point))))
+         (delta (- distance point-y)))
+    (pixel-scroll-precision-interpolate delta nil 1)))
+
+;; zt
+(defun helix-smooth-scroll-line-to-top ()
+  "Smoothly scroll current line to the top of the window."
+  (let* ((p (point))
+         (point-y (cdr (posn-x-y (posn-at-point))))
+         (delta (- point-y)))
+    (pixel-scroll-precision-interpolate delta nil 1)
+    ;; Interpolation is imperfect: the line may be not on top,
+    ;; or point can move to next line, so ensure that point is
+    ;; unchanged and desired line is on top.
+    (goto-char p)
+    (recenter 0)))
+
+;; zb
+(defun helix-smooth-scroll-line-to-bottom ()
+  "Smoothly scroll current line to the bottom of the window."
+  (interactive)
+  (let* ((p (point))
+         (win-height (- (window-text-height nil t)
+                        (window-mode-line-height)
+                        (window-tab-line-height)))
+         (point-y (cdr (posn-x-y (posn-at-point))))
+         (delta (- win-height point-y)))
+    (pixel-scroll-precision-interpolate delta nil 1)
+    ;; Interpolation is imperfect: the line may be not on top,
+    ;; or point can move to next line, so ensure that point is
+    ;; unchanged and desired line is on top.
+    (goto-char p)
+    (recenter -1)))
+
 (provide 'helix-commands)
 ;;; helix-commands.el ends here
