@@ -158,38 +158,39 @@ Push mark at previous position, unless extending selection."
   (push-mark)
   (goto-char (point-max)))
 
-;;gh
-(defun helix-first-non-blank ()
-  "Move point to beginning of current line with respect to `visual-line-mode'."
+;; gs
+(defun helix-beginning-of-line ()
+  "Move point to beginning of current line.
+Use visual line when `visual-line-mode' is on."
   (interactive)
   (if helix--extend-selection
       (or (region-active-p) (set-mark (point)))
     (set-mark (point)))
   (if visual-line-mode
       (beginning-of-visual-line)
-    (move-beginning-of-line 1))
+    (move-beginning-of-line 1)))
+
+;; gh
+(defun helix-first-non-blank ()
+  "Move point to beginning of current line skipping indentation.
+Use visual line when `visual-line-mode' is on."
+  (interactive)
+  (helix-beginning-of-line)
   (skip-syntax-forward " " (line-end-position))
   ;; Move back over chars that have whitespace syntax but have the p flag.
   (backward-prefix-chars))
 
-;;gl
-(defun helix-end-of-line ())
-
-;; back-to-indentation
-;; move-beginning-of-line
-;; move-end-of-line
-
-;; beginning-of-visual-line
-;; end-of-visual-line
-
-;; (syntax-class)
-;; (syntax-after)
-;; (syntax-ppss)
-
-;; (syntax-class (syntax-after (point)))
-;; (string (syntax-class-to-char (syntax-class (syntax-after (point)))))
-;; (string-to-syntax " ")
-;; (skip-chars-forward " \t\r")
+;; gl
+(defun helix-end-of-line ()
+  "Move point to end of current line.
+Use visual line when `visual-line-mode' is on."
+  (interactive)
+  (if helix--extend-selection
+      (or (region-active-p) (set-mark (point)))
+    (set-mark (point)))
+  (if visual-line-mode
+      (end-of-visual-line)
+    (move-end-of-line 1)))
 
 ;;; Changes
 

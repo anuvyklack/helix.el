@@ -43,9 +43,11 @@
 (keymap-set helix-normal-state-map "W"   #'helix-forward-WORD-start)
 (keymap-set helix-normal-state-map "B"   #'helix-backward-WORD-start)
 (keymap-set helix-normal-state-map "E"   #'helix-forward-WORD-end)
+(keymap-set helix-normal-state-map "g s" #'helix-beginning-of-line)
+(keymap-set helix-normal-state-map "g h" #'helix-first-non-blank)
+(keymap-set helix-normal-state-map "g l" #'helix-end-of-line)
 (keymap-set helix-normal-state-map "g g" #'helix-goto-first-line)
 (keymap-set helix-normal-state-map "G"   #'helix-goto-last-line)
-(keymap-set helix-normal-state-map "g h" #'helix-first-non-blank)
 
 ;;;; Changes
 
