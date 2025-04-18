@@ -158,6 +158,23 @@ Push mark at previous position, unless extending selection."
   (push-mark)
   (goto-char (point-max)))
 
+;;gh
+(defun helix-first-non-blank ()
+  "Move point to beginning of current line with respect to `visual-line-mode'."
+  (interactive)
+  (if helix--extend-selection
+      (or (region-active-p) (set-mark (point)))
+    (set-mark (point)))
+  (if visual-line-mode
+      (beginning-of-visual-line)
+    (move-beginning-of-line 1))
+  (skip-syntax-forward " " (line-end-position))
+  ;; Move back over chars that have whitespace syntax but have the p flag.
+  (backward-prefix-chars))
+
+;;gl
+(defun helix-end-of-line ())
+
 ;; back-to-indentation
 ;; move-beginning-of-line
 ;; move-end-of-line
@@ -173,29 +190,6 @@ Push mark at previous position, unless extending selection."
 ;; (string (syntax-class-to-char (syntax-class (syntax-after (point)))))
 ;; (string-to-syntax " ")
 ;; (skip-chars-forward " \t\r")
-
-;;gh
-(defun helix-first-non-blank ()
-  "Move point to beginning of current line with respect to `visual-line-mode'."
-  (interactive)
-  ;; (save-excursion
-  ;;   (let (pv pi)
-  ;;     (beginning-of-visual-line)
-  ;;     (setq pv (point))
-  ;;     (back-to-indentation)
-  ;;     (setq pi (point))
-  ;;     ))
-  ;; (back-to-indentation)
-  (if visual-line-mode
-      (beginning-of-visual-line)
-    (move-beginning-of-line 1))
-  (skip-syntax-forward " " (line-end-position))
-  ;; Move back over chars that have whitespace syntax but have the p flag.
-  (backward-prefix-chars))
-
-;;gl
-
-(defun helix-end-of-line ())
 
 ;;; Changes
 
@@ -478,39 +472,36 @@ If COUNT > 1 scroll smoothly."
 ;; zt
 (defun helix-smooth-scroll-line-to-top ()
   "Smoothly scroll current line to the top of the window."
-  (let* ((p (point))
+  (interactive)
+  ;; Interpolation is imperfect: the line may be not on top, or point can move
+  ;; to the next line. So we scroll a little bit before the top, and then finish
+  ;; with `recenter' getting a clear result.
+  (let* ((line-height (window-font-height))
          (point-y (cdr (posn-x-y (posn-at-point))))
-         (delta (- point-y)))
-    (pixel-scroll-precision-interpolate delta nil 1)
-    ;; Interpolation is imperfect: the line may be not on top,
-    ;; or point can move to next line, so ensure that point is
-    ;; unchanged and the desired line is on top.
-    (goto-char p)
+         (delta (- point-y (/ line-height 4))))
+    (pixel-scroll-precision-interpolate (- delta) nil 1)
     (recenter 0)))
 
 ;; zb
 (defun helix-smooth-scroll-line-to-bottom ()
   "Smoothly scroll current line to the bottom of the window."
   (interactive)
-  (let* ((p (point))
-         (win-height (- (window-text-height nil t)
+  ;; Interpolation is imperfect: the line may be not on top, or point can move
+  ;; to the next line. So we scroll a little bit before the bottom, and then
+  ;; finish with `recenter' getting a clear result.
+  (let* ((win-height (- (window-text-height nil t)
                         (window-mode-line-height)
                         (window-tab-line-height)))
+         (line-height (window-font-height))
          (point-y (cdr (posn-x-y (posn-at-point))))
-         (delta (- win-height point-y)))
+         (delta (- win-height point-y (/ line-height 4))))
     (pixel-scroll-precision-interpolate delta nil 1)
-    ;; Interpolation is imperfect: the line may be not on top,
-    ;; or point can move to next line, so ensure that point is
-    ;; unchanged and the desired line is on top.
-    (goto-char p)
     (recenter -1)))
 
-(provide 'helix-commands)
 ;;; Window navigation
 
 (defalias 'helix-window-split #'split-window-below)
 
-;; (split-window-right)
 (defun helix-window-vsplit ()
   "Split the current window vertically.
 The new window will be created to the right. All children of the
@@ -609,4 +600,5 @@ Rebalance all children of the deleted window's parent window."
       ;; any further children (then rebalancing is not necessary anyway)
       (ignore-errors (balance-windows parent)))))
 
+(provide 'helix-commands)
 ;;; helix-commands.el ends here
