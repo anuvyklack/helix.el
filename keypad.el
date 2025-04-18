@@ -78,7 +78,8 @@ For example, key sequence \"C-f M-t h\" will be stored like
 
 (defvar keypad--prefix-arg nil)
 (defvar keypad--modifier nil)
-(defvar keypad--describe-key nil)
+(defvar keypad--execute nil "When t Keypad will execute command when found.")
+(defvar keypad--command nil "The command that Keypad found.")
 
 (defvar keypad--use-leader nil
   "When non-nil seek for key bindings in `keypad-leader'.
@@ -91,18 +92,20 @@ Other way seek in top level.")
 (defun keypad ()
   "Enter keypad state."
   (interactive)
-  (keypad-start))
+  (keypad-start t))
 
-(defun keypad-start (&optional return)
+(defun keypad-start (&optional execute)
   "Enter keypad state.
-When RETURN non-nil return the entered key sequence instead of executing it."
+When EXECUTE is non-nil execute the found command.
+Return the found command."
   ;; Try to make this command transparent.
   (setq this-command last-command)
-  (setq keypad--keys nil
-        keypad--modifier nil
+  (setq keypad--execute execute
         keypad--prefix-arg current-prefix-arg
+        keypad--keys nil
+        keypad--modifier nil
         keypad--use-leader nil
-        keypad--describe-key return)
+        keypad--command nil)
   (unwind-protect
       (progn
         (keypad--show-message)
@@ -110,8 +113,7 @@ When RETURN non-nil return the entered key sequence instead of executing it."
         (while (not (eq (keypad--handle-input-event (read-key))
                         :quit))))
     (keypad--close-preview))
-  (if return (prog1 keypad--describe-key
-               (setq keypad--describe-key nil))))
+  keypad--command)
 
 (defun keypad--handle-input-event (event)
   "Handle input EVENT. Return `:quit' if handling is completed."
@@ -171,11 +173,10 @@ This function supports a fallback behavior, where it allows to use
   (when-let* ((keys (keypad--entered-keys)))
     (let ((cmd (keypad--lookup-key keys)))
       (cond ((commandp cmd t)
-             (setq current-prefix-arg keypad--prefix-arg)
              (keypad--close-preview)
-             (if (keypad--describe-key)
-                 (setq keypad--describe-key keys)
-               ;; else
+             (setq keypad--command cmd)
+             (setq current-prefix-arg keypad--prefix-arg)
+             (when keypad--execute
                (setq real-this-command cmd
                      this-command cmd)
                (call-interactively cmd))
@@ -416,18 +417,19 @@ for which PREDICATE is non-nil."
          (concat keypad--prefix-arg " "))
         (t "")))
 
-;; Describe key
-
 (defun keypad-describe-key (key-list &optional buffer)
+  "Like `describe-key', but correctly handle key chords entered with Keypad.
+If Helpful package is loaded, `helpful-key' will be used instead of
+`describe-key'."
   (interactive (list (help--read-key-sequence)))
-  (let* ((keys (cdar key-list))
-         (cmd (key-binding (key-parse keys))))
-    (when (eq cmd #'keypad)
-      (setq keys (keypad-start t)
-            key-list (key-parse keys)))
-    (if (fboundp 'helpful-key)
-        (helpful-key keys)
-      (describe-key key-list buffer))))
+  (pcase (key-binding (cdar key-list))
+    ('keypad (let ((cmd (keypad-start nil)))
+               (if (fboundp 'helpful-command)
+                   (funcall #'helpful-command cmd)
+                 (funcall #'describe-command cmd))))
+    (_ (if (fboundp 'helpful-key)
+           (funcall #'helpful-key (cdar key-list))
+         (describe-key key-list buffer)))))
 
 (provide 'keypad)
 ;;; keypad.el ends here
