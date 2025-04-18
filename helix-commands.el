@@ -274,18 +274,22 @@ parent of the splitted window are rebalanced."
       (balance-windows))))
 
 (defun helix-move-window-left ()
+  "Swap window with one to the left."
   (interactive)
   (helix-move-window 'left))
 
 (defun helix-move-window-right ()
+  "Swap window with one to the right."
   (interactive)
   (helix-move-window 'right))
 
 (defun helix-move-window-up ()
+  "Swap window with one upwards."
   (interactive)
   (helix-move-window 'up))
 
 (defun helix-move-window-down ()
+  "Swap window with one downwards."
   (interactive)
   (helix-move-window 'down))
 
@@ -524,6 +528,40 @@ If COUNT > 1 scroll smoothly."
     ;; unchanged and the desired line is on top.
     (goto-char p)
     (recenter -1)))
+
+;; gg
+(defun helix-goto-first-line (num)
+  "Move point to the beginning of the buffer.
+With numeric arg NUM, put point NUM/10 of the way from the beginning.
+If the buffer is narrowed, this command uses the beginning of the
+accessible part of the buffer.
+Push mark at previous position, unless extending selection."
+  (interactive "P")
+  (if helix--extend-selection
+      (or (region-active-p) (set-mark (point)))
+    ;; else
+    (set-marker (mark-marker) (point))
+    (deactivate-mark))
+  (push-mark)
+  (goto-char (if num (+ (point-min)
+                        (/ (* (- (point-max) (point-min))
+                              (prefix-numeric-value num))
+                           10))
+               (point-min)))
+  (if num (forward-line 1)
+    (recenter 0)))
+
+;; G
+(defun helix-goto-last-line ()
+  "Move point the end of the buffer."
+  (interactive)
+  (if helix--extend-selection
+      (or (region-active-p) (set-mark (point)))
+    ;; else
+    (set-marker (mark-marker) (point))
+    (deactivate-mark))
+  (push-mark)
+  (goto-char (point-max)))
 
 (provide 'helix-commands)
 ;;; helix-commands.el ends here

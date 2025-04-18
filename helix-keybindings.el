@@ -75,6 +75,8 @@
 (keymap-set helix-normal-state-map "C-u" #'helix-smooth-scroll-up)
 (keymap-set helix-normal-state-map "C-e" #'helix-mix-scroll-line-down)
 (keymap-set helix-normal-state-map "C-y" #'helix-mix-scroll-line-up)
+(keymap-set helix-normal-state-map "g g" #'helix-goto-first-line)
+(keymap-set helix-normal-state-map "G"   #'helix-goto-last-line)
 ;; (keymap-set helix-normal-state-map "z z" #'helix-smooth-scroll-line-to-center)
 (keymap-set helix-normal-state-map "z z" #'helix-smooth-scroll-line-not-to-very-top)
 (keymap-set helix-normal-state-map "z t" #'helix-smooth-scroll-line-to-top)
