@@ -29,8 +29,8 @@
       (when (forward-thing thing count)
         (beginning-of-thing thing)))))
 
-(defun helix-get-next-char (&optional dir)
-  "Get the next char toward the direction.
+(defun helix-next-char (&optional dir)
+  "Return the next after point char toward the direction.
 If DIR is positive number get following char, negative — preceding char."
   (or dir (setq dir 1))
   (if (> dir 0) (following-char) (preceding-char)))
@@ -80,7 +80,7 @@ Else returns t.
   (helix-motion-loop (dir count)
     (helix-forward-chars "\r\n" dir)
     (helix-forward-chars " \t" dir)
-    (or (memq (helix-get-next-char dir) '(?\r ?\n))
+    (or (memq (helix-next-char dir) '(?\r ?\n))
         (helix-forward-chars "^[:word:]\n\r\t\f " dir)
         (let ((word-separating-categories helix-cjk-word-separating-categories)
               (word-combining-categories  helix-cjk-word-combining-categories))
@@ -91,7 +91,7 @@ Else returns t.
   (helix-motion-loop (dir count)
     (helix-forward-chars "\r\n" dir)
     (helix-forward-chars " \t" dir)
-    (or (memq (helix-get-next-char dir) '(?\r ?\n))
+    (or (memq (helix-next-char dir) '(?\r ?\n))
         (helix-forward-chars "^\n\r\t\f " dir))))
 
 ;; (put 'visual-line 'beginning-op 'beginning-of-visual-line)
