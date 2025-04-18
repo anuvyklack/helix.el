@@ -33,25 +33,19 @@
 (keymap-set helix-normal-state-map "<backspace>" #'execute-extended-command)
 (keymap-set helix-normal-state-map "SPC" #'keypad)
 
-(keymap-set helix-normal-state-map "h" #'helix-backward-char)
-(keymap-set helix-normal-state-map "j" #'helix-next-line)
-(keymap-set helix-normal-state-map "k" #'helix-previous-line)
-(keymap-set helix-normal-state-map "l" #'helix-forward-char)
-
-(keymap-set helix-normal-state-map "w" #'helix-forward-word-start)
-(keymap-set helix-normal-state-map "b" #'helix-backward-word-start)
-(keymap-set helix-normal-state-map "e" #'helix-forward-word-end)
-(keymap-set helix-normal-state-map "W" #'helix-forward-WORD-start)
-(keymap-set helix-normal-state-map "B" #'helix-backward-WORD-start)
-(keymap-set helix-normal-state-map "E" #'helix-forward-WORD-end)
-(keymap-set helix-normal-state-map "x" #'helix-line)
-
-(keymap-set helix-normal-state-map "v" #'helix-extend-selection)
-(keymap-set helix-normal-state-map ";" #'helix-collapse-selection)
-(keymap-set helix-normal-state-map "<escape>" #'helix-normal-state-escape)
-
-(keymap-set helix-normal-state-map "u" #'helix-undo)
-(keymap-set helix-normal-state-map "U" #'undo-redo)
+(keymap-set helix-normal-state-map "h"   #'helix-backward-char)
+(keymap-set helix-normal-state-map "j"   #'helix-next-line)
+(keymap-set helix-normal-state-map "k"   #'helix-previous-line)
+(keymap-set helix-normal-state-map "l"   #'helix-forward-char)
+(keymap-set helix-normal-state-map "w"   #'helix-forward-word-start)
+(keymap-set helix-normal-state-map "b"   #'helix-backward-word-start)
+(keymap-set helix-normal-state-map "e"   #'helix-forward-word-end)
+(keymap-set helix-normal-state-map "W"   #'helix-forward-WORD-start)
+(keymap-set helix-normal-state-map "B"   #'helix-backward-WORD-start)
+(keymap-set helix-normal-state-map "E"   #'helix-forward-WORD-end)
+(keymap-set helix-normal-state-map "g g" #'helix-goto-first-line)
+(keymap-set helix-normal-state-map "G"   #'helix-goto-last-line)
+(keymap-set helix-normal-state-map "g h" #'helix-first-non-blank)
 
 ;;;; Changes
 
@@ -59,10 +53,16 @@
 (keymap-set helix-normal-state-map "a" #'helix-append)
 (keymap-set helix-normal-state-map "c" #'helix-change)
 (keymap-set helix-normal-state-map "d" #'helix-delete)
+(keymap-set helix-normal-state-map "u" #'helix-undo)
+(keymap-set helix-normal-state-map "U" #'undo-redo)
 
 ;;;; Selections
 
+(keymap-set helix-normal-state-map "v" #'helix-extend-selection)
+(keymap-set helix-normal-state-map "x" #'helix-line)
 (keymap-set helix-normal-state-map "," #'helix-keep-primary-selection)
+(keymap-set helix-normal-state-map ";" #'helix-collapse-selection)
+(keymap-set helix-normal-state-map "<escape>" #'helix-normal-state-escape)
 
 (global-unset-key (kbd "M-<down-mouse-1>"))
 (keymap-set helix-normal-state-map "M-<mouse-1>" #'helix-toggle-cursor-on-click)
@@ -75,8 +75,6 @@
 (keymap-set helix-normal-state-map "C-u" #'helix-smooth-scroll-up)
 (keymap-set helix-normal-state-map "C-e" #'helix-mix-scroll-line-down)
 (keymap-set helix-normal-state-map "C-y" #'helix-mix-scroll-line-up)
-(keymap-set helix-normal-state-map "g g" #'helix-goto-first-line)
-(keymap-set helix-normal-state-map "G"   #'helix-goto-last-line)
 ;; (keymap-set helix-normal-state-map "z z" #'helix-smooth-scroll-line-to-center)
 (keymap-set helix-normal-state-map "z z" #'helix-smooth-scroll-line-not-to-very-top)
 (keymap-set helix-normal-state-map "z t" #'helix-smooth-scroll-line-to-top)

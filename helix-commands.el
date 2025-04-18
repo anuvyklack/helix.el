@@ -20,6 +20,16 @@
 (require 'multiple-cursors-core)
 (require 'helix-common)
 
+(defun helix-normal-state-escape ()
+  "Command for ESC key in Helix Normal state."
+  (interactive)
+  (cond (helix--extend-selection
+         (setq helix--extend-selection nil))
+        (t
+         (mc/execute-command-for-all-cursors #'helix-collapse-selection))))
+
+;;; Movements
+
 ;; h
 (defun helix-backward-char (count)
   (interactive "p")
@@ -114,25 +124,80 @@ If BIGWORD move over WORD-s."
   (interactive "p")
   (helix-forward-word-end count :bigword))
 
-;; x
-(defun helix-line (count)
-  (interactive "p")
-  (let ((line (if visual-line-mode 'visual-line 'line)))
-    (if (region-active-p)
-        (let ((b (region-beginning))
-              (e (region-end)))
-          (goto-char b)
-          (set-mark (car (bounds-of-thing-at-point line))) ; left end
-          (goto-char e)
-          (when (helix-eolp) (forward-char))
-          (goto-char (cdr (bounds-of-thing-at-point line)))) ; right end
-      ;; no region
-      (let ((bounds (bounds-of-thing-at-point line)))
-        (set-mark (car bounds))
-        (goto-char (cdr bounds))))
-    (helix-motion-loop (_ (1- count))
-      (goto-char (cdr (bounds-of-thing-at-point line))))
-    (backward-char)))
+;; gg
+(defun helix-goto-first-line (num)
+  "Move point to the beginning of the buffer.
+With numeric arg NUM, put point NUM/10 of the way from the beginning.
+If the buffer is narrowed, this command uses the beginning of the
+accessible part of the buffer.
+Push mark at previous position, unless extending selection."
+  (interactive "P")
+  (if helix--extend-selection
+      (or (region-active-p) (set-mark (point)))
+    ;; else
+    (set-marker (mark-marker) (point))
+    (deactivate-mark))
+  (push-mark)
+  (goto-char (if num (+ (point-min)
+                        (/ (* (- (point-max) (point-min))
+                              (prefix-numeric-value num))
+                           10))
+               (point-min)))
+  (if num (forward-line 1)
+    (recenter 0)))
+
+;; G
+(defun helix-goto-last-line ()
+  "Move point the end of the buffer."
+  (interactive)
+  (if helix--extend-selection
+      (or (region-active-p) (set-mark (point)))
+    ;; else
+    (set-marker (mark-marker) (point))
+    (deactivate-mark))
+  (push-mark)
+  (goto-char (point-max)))
+
+;; back-to-indentation
+;; move-beginning-of-line
+;; move-end-of-line
+
+;; beginning-of-visual-line
+;; end-of-visual-line
+
+;; (syntax-class)
+;; (syntax-after)
+;; (syntax-ppss)
+
+;; (syntax-class (syntax-after (point)))
+;; (string (syntax-class-to-char (syntax-class (syntax-after (point)))))
+;; (string-to-syntax " ")
+;; (skip-chars-forward " \t\r")
+
+;;gh
+(defun helix-first-non-blank ()
+  "Move point to beginning of current line with respect to `visual-line-mode'."
+  (interactive)
+  ;; (save-excursion
+  ;;   (let (pv pi)
+  ;;     (beginning-of-visual-line)
+  ;;     (setq pv (point))
+  ;;     (back-to-indentation)
+  ;;     (setq pi (point))
+  ;;     ))
+  ;; (back-to-indentation)
+  (if visual-line-mode
+      (beginning-of-visual-line)
+    (move-beginning-of-line 1))
+  (skip-syntax-forward " " (line-end-position))
+  ;; Move back over chars that have whitespace syntax but have the p flag.
+  (backward-prefix-chars))
+
+;;gl
+
+(defun helix-end-of-line ())
+
+;;; Changes
 
 ;; i
 (defun helix-insert ()
@@ -166,20 +231,6 @@ If BIGWORD move over WORD-s."
   (interactive)
   (deactivate-mark))
 
-(defun helix-normal-state-escape ()
-  "Command for ESC key in Helix Normal state."
-  (interactive)
-  (cond (helix--extend-selection
-         (setq helix--extend-selection nil))
-        (t
-         (mc/execute-command-for-all-cursors #'helix-collapse-selection))))
-
-;; v
-(defun helix-extend-selection ()
-  "Toggle extend selection."
-  (interactive)
-  (setq helix--extend-selection (not helix--extend-selection)))
-
 ;; d
 (defun helix-delete ()
   "Delete text in region.
@@ -205,108 +256,33 @@ With no region delete char before point with next conditions:
   (deactivate-mark)
   (undo))
 
-;;; Window navigation
+;;; Selection
 
-(defalias 'helix-window-split #'split-window-below)
-
-;; (split-window-right)
-(defun helix-window-vsplit ()
-  "Split the current window vertically.
-The new window will be created to the right. All children of the
-parent of the splitted window are rebalanced."
+;; v
+(defun helix-extend-selection ()
+  "Toggle extend selection."
   (interactive)
-  (let* ((window-to-split (selected-window))
-         (new-window (split-window window-to-split nil 'right)))
-    (select-window new-window)
-    ;; Always copy quit-restore parameter in interactive use.
-    (when-let* ((quit-restore (window-parameter window-to-split 'quit-restore)))
-      (set-window-parameter new-window 'quit-restore quit-restore)))
-  (balance-windows (window-parent)))
+  (setq helix--extend-selection (not helix--extend-selection)))
 
-(defun helix-window-left (count)
-  "Move the cursor to new COUNT-th window left of the current one."
+;; x
+(defun helix-line (count)
   (interactive "p")
-  (dotimes (_ count)
-    (windmove-left)))
-
-(defun helix-window-right (count)
-  "Move the cursor to new COUNT-th window right of the current one."
-  (interactive "p")
-  (dotimes (_ count)
-    (windmove-right)))
-
-(defun helix-window-up (count)
-  "Move the cursor to new COUNT-th window up of the current one."
-  (interactive "p")
-  (dotimes (_ count)
-    (windmove-up)))
-
-(defun helix-window-down (count)
-  "Move the cursor to new COUNT-th window down of the current one."
-  (interactive "p")
-  (dotimes (_ count)
-    (windmove-down)))
-
-(defmacro helix-save-side-windows (&rest body)
-  "Toggle side windows, evaluate BODY, restore side windows."
-  (declare (indent defun) (debug (&rest form)))
-  (let ((sides (make-symbol "sidesvar")))
-    `(let ((,sides (window-with-parameter 'window-side)))
-       (when ,sides (window-toggle-side-windows))
-       (unwind-protect
-           (progn ,@body)
-         (when ,sides (window-toggle-side-windows))))))
-
-(defun helix-move-window (side)
-  "SIDE has the same meaning as in `split-window'."
-  (helix-save-side-windows
-    (unless (one-window-p)
-      (save-excursion
-        (let ((w (window-state-get (selected-window))))
-          (delete-window)
-          (let ((wtree (window-state-get)))
-            (delete-other-windows)
-            (let ((subwin (selected-window))
-                  (newwin (split-window nil nil side)))
-              (window-state-put wtree subwin)
-              (window-state-put w newwin)
-              (select-window newwin)))))
-      (balance-windows))))
-
-(defun helix-move-window-left ()
-  "Swap window with one to the left."
-  (interactive)
-  (helix-move-window 'left))
-
-(defun helix-move-window-right ()
-  "Swap window with one to the right."
-  (interactive)
-  (helix-move-window 'right))
-
-(defun helix-move-window-up ()
-  "Swap window with one upwards."
-  (interactive)
-  (helix-move-window 'up))
-
-(defun helix-move-window-down ()
-  "Swap window with one downwards."
-  (interactive)
-  (helix-move-window 'down))
-
-(defun helix-window-delete ()
-  "Delete the current window or tab.
-Rebalance all children of the deleted window's parent window."
-  (interactive)
-  (let ((parent (window-parent)))
-    ;; If tabs are enabled and this is the only visible window, then attempt to
-    ;; close this tab.
-    (if (and (bound-and-true-p tab-bar-mode)
-             (null parent))
-        (tab-close)
-      (delete-window)
-      ;; balance-windows raises an error if the parent does not have
-      ;; any further children (then rebalancing is not necessary anyway)
-      (ignore-errors (balance-windows parent)))))
+  (let ((line (if visual-line-mode 'visual-line 'line)))
+    (if (region-active-p)
+        (let ((b (region-beginning))
+              (e (region-end)))
+          (goto-char b)
+          (set-mark (car (bounds-of-thing-at-point line))) ; left end
+          (goto-char e)
+          (when (helix-eolp) (forward-char))
+          (goto-char (cdr (bounds-of-thing-at-point line)))) ; right end
+      ;; no region
+      (let ((bounds (bounds-of-thing-at-point line)))
+        (set-mark (car bounds))
+        (goto-char (cdr bounds))))
+    (helix-motion-loop (_ (1- count))
+      (goto-char (cdr (bounds-of-thing-at-point line))))
+    (backward-char)))
 
 ;;; Scrolling
 
@@ -529,39 +505,108 @@ If COUNT > 1 scroll smoothly."
     (goto-char p)
     (recenter -1)))
 
-;; gg
-(defun helix-goto-first-line (num)
-  "Move point to the beginning of the buffer.
-With numeric arg NUM, put point NUM/10 of the way from the beginning.
-If the buffer is narrowed, this command uses the beginning of the
-accessible part of the buffer.
-Push mark at previous position, unless extending selection."
-  (interactive "P")
-  (if helix--extend-selection
-      (or (region-active-p) (set-mark (point)))
-    ;; else
-    (set-marker (mark-marker) (point))
-    (deactivate-mark))
-  (push-mark)
-  (goto-char (if num (+ (point-min)
-                        (/ (* (- (point-max) (point-min))
-                              (prefix-numeric-value num))
-                           10))
-               (point-min)))
-  (if num (forward-line 1)
-    (recenter 0)))
-
-;; G
-(defun helix-goto-last-line ()
-  "Move point the end of the buffer."
-  (interactive)
-  (if helix--extend-selection
-      (or (region-active-p) (set-mark (point)))
-    ;; else
-    (set-marker (mark-marker) (point))
-    (deactivate-mark))
-  (push-mark)
-  (goto-char (point-max)))
-
 (provide 'helix-commands)
+;;; Window navigation
+
+(defalias 'helix-window-split #'split-window-below)
+
+;; (split-window-right)
+(defun helix-window-vsplit ()
+  "Split the current window vertically.
+The new window will be created to the right. All children of the
+parent of the splitted window are rebalanced."
+  (interactive)
+  (let* ((window-to-split (selected-window))
+         (new-window (split-window window-to-split nil 'right)))
+    (select-window new-window)
+    ;; Always copy quit-restore parameter in interactive use.
+    (when-let* ((quit-restore (window-parameter window-to-split 'quit-restore)))
+      (set-window-parameter new-window 'quit-restore quit-restore)))
+  (balance-windows (window-parent)))
+
+(defun helix-window-left (count)
+  "Move the cursor to new COUNT-th window left of the current one."
+  (interactive "p")
+  (dotimes (_ count)
+    (windmove-left)))
+
+(defun helix-window-right (count)
+  "Move the cursor to new COUNT-th window right of the current one."
+  (interactive "p")
+  (dotimes (_ count)
+    (windmove-right)))
+
+(defun helix-window-up (count)
+  "Move the cursor to new COUNT-th window up of the current one."
+  (interactive "p")
+  (dotimes (_ count)
+    (windmove-up)))
+
+(defun helix-window-down (count)
+  "Move the cursor to new COUNT-th window down of the current one."
+  (interactive "p")
+  (dotimes (_ count)
+    (windmove-down)))
+
+(defmacro helix-save-side-windows (&rest body)
+  "Toggle side windows, evaluate BODY, restore side windows."
+  (declare (indent defun) (debug (&rest form)))
+  (let ((sides (make-symbol "sidesvar")))
+    `(let ((,sides (window-with-parameter 'window-side)))
+       (when ,sides (window-toggle-side-windows))
+       (unwind-protect
+           (progn ,@body)
+         (when ,sides (window-toggle-side-windows))))))
+
+(defun helix-move-window (side)
+  "SIDE has the same meaning as in `split-window'."
+  (helix-save-side-windows
+    (unless (one-window-p)
+      (save-excursion
+        (let ((w (window-state-get (selected-window))))
+          (delete-window)
+          (let ((wtree (window-state-get)))
+            (delete-other-windows)
+            (let ((subwin (selected-window))
+                  (newwin (split-window nil nil side)))
+              (window-state-put wtree subwin)
+              (window-state-put w newwin)
+              (select-window newwin)))))
+      (balance-windows))))
+
+(defun helix-move-window-left ()
+  "Swap window with one to the left."
+  (interactive)
+  (helix-move-window 'left))
+
+(defun helix-move-window-right ()
+  "Swap window with one to the right."
+  (interactive)
+  (helix-move-window 'right))
+
+(defun helix-move-window-up ()
+  "Swap window with one upwards."
+  (interactive)
+  (helix-move-window 'up))
+
+(defun helix-move-window-down ()
+  "Swap window with one downwards."
+  (interactive)
+  (helix-move-window 'down))
+
+(defun helix-window-delete ()
+  "Delete the current window or tab.
+Rebalance all children of the deleted window's parent window."
+  (interactive)
+  (let ((parent (window-parent)))
+    ;; If tabs are enabled and this is the only visible window, then attempt to
+    ;; close this tab.
+    (if (and (bound-and-true-p tab-bar-mode)
+             (null parent))
+        (tab-close)
+      (delete-window)
+      ;; balance-windows raises an error if the parent does not have
+      ;; any further children (then rebalancing is not necessary anyway)
+      (ignore-errors (balance-windows parent)))))
+
 ;;; helix-commands.el ends here
