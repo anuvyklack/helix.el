@@ -110,10 +110,8 @@ When RETURN non-nil return the entered key sequence instead of executing it."
         (while (not (eq (keypad--handle-input-event (read-key))
                         :quit))))
     (keypad--close-preview))
-  (when return
-    (setq return keypad--describe-key
-          keypad--describe-key nil)
-    return))
+  (if return (prog1 keypad--describe-key
+               (setq keypad--describe-key nil))))
 
 (defun keypad--handle-input-event (event)
   "Handle input EVENT. Return `:quit' if handling is completed."
