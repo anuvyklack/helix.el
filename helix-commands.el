@@ -332,8 +332,8 @@ the command scrolls half the screen."
     ;; disable selection unless we want to extend it.
     (unless helix--extend-selection
       ;; Y coordinate of the point
-      (let ((y (cdr (posn-x-y (posn-at-point)))))
-        (when (> delta (- window-height y))
+      (let ((point-y (cdr (posn-x-y (posn-at-point)))))
+        (when (> delta (- window-height point-y))
           (deactivate-mark))))
     (pixel-scroll-precision-interpolate delta nil 1)))
 (put 'helix-scroll-line-up 'scroll-command t)
@@ -358,8 +358,8 @@ the command scrolls half the screen."
     ;; disable selection unless we want to extend it.
     (unless helix--extend-selection
       ;; Y coordinate of the point
-      (let ((y (cdr (posn-x-y (posn-at-point)))))
-        (when (> delta y)
+      (let ((point-y (cdr (posn-x-y (posn-at-point)))))
+        (when (> delta point-y)
           (deactivate-mark))))
     (pixel-scroll-precision-interpolate (- delta) nil 1)))
 (put 'helix-scroll-line-down 'scroll-command t)
@@ -420,8 +420,8 @@ If COUNT > 1 scroll smoothly."
     ;; disable selection unless we want to extend it.
     (unless helix--extend-selection
       ;; Y coordinate of the point
-      (let ((y (cdr (posn-x-y (posn-at-point)))))
-        (when (> delta y)
+      (let ((point-y (cdr (posn-x-y (posn-at-point)))))
+        (when (> delta point-y)
           (deactivate-mark))))
     (pixel-scroll-precision-interpolate (- delta) nil 1)))
 (put 'helix-smooth-scroll-line-down 'scroll-command t)
@@ -445,7 +445,7 @@ If COUNT > 1 scroll smoothly."
           ;; but it is not true.
           (num-of-lines (window-text-height))
           (point-row (-> (cdr (posn-col-row (posn-at-point)))
-                         (1+)))) ; because numbering starts from 0
+                         (1+)))) ; +1 because numbering starts from 0
       (when (> count (- num-of-lines point-row))
         (deactivate-mark))))
   (let ((scroll-preserve-screen-position nil))
@@ -466,8 +466,8 @@ If COUNT > 1 scroll smoothly."
                            (window-mode-line-height)
                            (window-tab-line-height)))
             ;; Y coordinate of the point
-            (y (cdr (posn-x-y (posn-at-point)))))
-        (when (> delta (- win-height y))
+            (point-y (cdr (posn-x-y (posn-at-point)))))
+        (when (> delta (- win-height point-y))
           (deactivate-mark))))
     (pixel-scroll-precision-interpolate delta nil 1)))
 (put 'helix-smooth-scroll-line-up 'scroll-command t)
@@ -479,9 +479,9 @@ If COUNT > 1 scroll smoothly."
   (let* ((win-height (- (window-text-height nil t)
                         (window-mode-line-height)
                         (window-tab-line-height)))
-         (distance (ceiling (/ win-height 2)))
+         (target (ceiling (/ win-height 2)))
          (point-y (cdr (posn-x-y (posn-at-point))))
-         (delta (- distance point-y)))
+         (delta (- target point-y)))
     (pixel-scroll-precision-interpolate delta nil 1)))
 
 (defun helix-smooth-scroll-line-not-to-very-top ()
@@ -490,9 +490,9 @@ If COUNT > 1 scroll smoothly."
   (let* ((win-height (- (window-text-height nil t)
                         (window-mode-line-height)
                         (window-tab-line-height)))
-         (distance (ceiling (/ win-height 5)))
+         (target (ceiling (/ win-height 5)))
          (point-y (cdr (posn-x-y (posn-at-point))))
-         (delta (- distance point-y)))
+         (delta (- target point-y)))
     (pixel-scroll-precision-interpolate delta nil 1)))
 
 ;; zt
@@ -504,7 +504,7 @@ If COUNT > 1 scroll smoothly."
     (pixel-scroll-precision-interpolate delta nil 1)
     ;; Interpolation is imperfect: the line may be not on top,
     ;; or point can move to next line, so ensure that point is
-    ;; unchanged and desired line is on top.
+    ;; unchanged and the desired line is on top.
     (goto-char p)
     (recenter 0)))
 
@@ -521,7 +521,7 @@ If COUNT > 1 scroll smoothly."
     (pixel-scroll-precision-interpolate delta nil 1)
     ;; Interpolation is imperfect: the line may be not on top,
     ;; or point can move to next line, so ensure that point is
-    ;; unchanged and desired line is on top.
+    ;; unchanged and the desired line is on top.
     (goto-char p)
     (recenter -1)))
 
