@@ -209,7 +209,7 @@ Use visual line when `visual-line-mode' is on."
   (interactive)
   (when (and (use-region-p)
              (< (mark) (point)))
-    (exchange-point-and-mark))
+    (helix-exchange-point-and-mark))
   (helix-insert-state 1))
 
 ;; a
@@ -218,7 +218,7 @@ Use visual line when `visual-line-mode' is on."
   (interactive)
   (when (and (use-region-p)
              (< (point) (mark)))
-    (exchange-point-and-mark))
+    (helix-exchange-point-and-mark))
   (helix-insert-state 1))
 
 ;; c
@@ -228,13 +228,13 @@ Use visual line when `visual-line-mode' is on."
   (if (use-region-p)
       (let ((line? (cond ((and (bolp)
                                (save-mark-and-excursion
-                                 (exchange-point-and-mark)
+                                 (helix-exchange-point-and-mark)
                                  (bolp)))
                           'line)
                          ((and visual-line-mode
                                (helix-visual-bolp)
                                (save-mark-and-excursion
-                                 (exchange-point-and-mark)
+                                 (helix-exchange-point-and-mark)
                                  (helix-visual-bolp)))
                           'visual-line))))
         (kill-region nil nil t)
@@ -244,7 +244,7 @@ Use visual line when `visual-line-mode' is on."
           ('visual-line (save-excursion
                           (insert " ")))))
     ;; no region
-    (delete-char (- 1)))
+    (delete-char -1))
   (helix-insert-state 1))
 
 (defun helix-collapse-selection ()
@@ -266,7 +266,7 @@ With no region delete char before point with next conditions:
   (interactive)
   (if (use-region-p)
       (kill-region nil nil t)
-    (delete-char (- 1)))
+    (delete-char -1))
   (setq helix--extend-selection nil))
 
 ;; u

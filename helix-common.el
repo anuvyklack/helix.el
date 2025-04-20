@@ -106,7 +106,7 @@ Else returns t.
         ((zerop num) 0)
         (t 1)))
 
-(defsubst helix-forward-selection-p ()
+(defsubst helix-forward-region-p ()
   "Return t if mark precedes point."
   (< (mark) (point)))
 
@@ -142,6 +142,13 @@ Else returns t.
           (end-of-visual-line)
           (= p (point))))
     (eolp)))
+
+(defun helix-exchange-point-and-mark ()
+  "Exchange point and mark without activating the region."
+  (let* ((point (point))
+         (mark  (or (mark t) point)))
+    (set-marker (mark-marker) point)
+    (goto-char mark)))
 
 (provide 'helix-common)
 ;;; helix-common.el ends here
