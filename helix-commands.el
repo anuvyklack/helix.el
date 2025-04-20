@@ -226,16 +226,26 @@ Use visual line when `visual-line-mode' is on."
   "Delete region and enter Insert state."
   (interactive)
   (if (use-region-p)
-      (progn
+      (let ((line? (cond ((and (bolp)
+                               (save-mark-and-excursion
+                                 (exchange-point-and-mark)
+                                 (bolp)))
+                          'line)
+                         ((and visual-line-mode
+                               (helix-visual-bolp)
+                               (save-mark-and-excursion
+                                 (exchange-point-and-mark)
+                                 (helix-visual-bolp)))
+                          'visual-line))))
         (kill-region nil nil t)
-        (cond ((bolp)
-               (save-excursion (newline))
-               (indent-according-to-mode))
-              ((and visual-line-mode
-                    (helix-visual-bolp))
-               (save-excursion (insert " ")))))
+        (pcase line?
+          ('line (save-excursion (newline))
+                 (indent-according-to-mode))
+          ('visual-line (save-excursion
+                          (insert " ")))))
+    ;; no region
     (delete-char (- 1)))
-  (helix-insert))
+  (helix-insert-state 1))
 
 (defun helix-collapse-selection ()
   "Collapse region onto a single cursor."
@@ -254,9 +264,9 @@ With no region delete char before point with next conditions:
   |
   } => {|} "
   (interactive)
-  (cond ((use-region-p)
-         (kill-region nil nil t))
-        (t (delete-char (- 1))))
+  (if (use-region-p)
+      (kill-region nil nil t)
+    (delete-char (- 1)))
   (setq helix--extend-selection nil))
 
 ;; u
@@ -301,6 +311,9 @@ With no region delete char before point with next conditions:
       (goto-char (cdr bounds)))))
 
 ;;; Scrolling
+
+;; (line-pixel-height)
+;; (pixel-visible-pos-in-window)
 
 (defun helix--get-scroll-count (count)
   "Given a user-supplied COUNT, return scroll count."

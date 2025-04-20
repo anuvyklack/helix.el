@@ -129,9 +129,10 @@ Else returns t.
 
 (defun helix-visual-bolp ()
   "Return t if point is at the beginning of visual line."
-  (let ((p (point)))
-    (beginning-of-visual-line)
-    (= p (point))))
+  (save-excursion
+    (let ((p (point)))
+      (beginning-of-visual-line)
+      (= p (point)))))
 
 (defun helix-eolp ()
   "Like 'eolp' but consider visual lines when 'visual-line-mode' is enabled."
