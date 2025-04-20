@@ -19,6 +19,8 @@
 
 ;;; Normal state
 
+(keymap-set helix-normal-state-map "C-h k" #'keypad-describe-key)
+
 (keymap-set helix-normal-state-map "0" #'digit-argument)
 (keymap-set helix-normal-state-map "1" #'digit-argument)
 (keymap-set helix-normal-state-map "2" #'digit-argument)
@@ -61,13 +63,15 @@
 ;;;; Selections
 
 (keymap-set helix-normal-state-map "v" #'helix-extend-selection)
-(keymap-set helix-normal-state-map "x" #'helix-line)
+(keymap-set helix-normal-state-map "x" #'helix-select-line)
 (keymap-set helix-normal-state-map "," #'helix-keep-primary-selection)
 (keymap-set helix-normal-state-map ";" #'helix-collapse-selection)
 (keymap-set helix-normal-state-map "<escape>" #'helix-normal-state-escape)
 
 (global-unset-key (kbd "M-<down-mouse-1>"))
 (keymap-set helix-normal-state-map "M-<mouse-1>" #'helix-toggle-cursor-on-click)
+
+(keymap-set helix-normal-state-map "m i p" #'helix-mark-inner-paragraph)
 
 ;;;; Scrolling
 

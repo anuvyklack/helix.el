@@ -30,7 +30,8 @@
          (deactivate-mark))
         (t
          (when helix--region-was-active-on-insert
-           (activate-mark 'no-tmm)))))
+           (activate-mark 'no-tmm))
+         (setq helix--extend-selection nil))))
 
 ;;;
 

@@ -44,7 +44,19 @@
   (if helix--extend-selection
       (or (region-active-p) (set-mark (point)))
     (deactivate-mark))
-  (forward-char count))
+  (forward-char count)
+  ;; (when (helix-empty-line-p)
+  ;;   (helix--visual-overlay (point)))
+  )
+
+;; (defun helix--visual-overlay-on-empty-line ()
+;;   (interactive)
+;;   (when (helix-empty-line-p)
+;;     (setq helix-visual-overlay (make-overlay (point) (1+ (point))))
+;;     (overlay-put helix-visual-overlay 'face 'region)
+;;     (overlay-put helix-visual-overlay 'priority 99)))
+
+;; (delete-overlay helix-visual-overlay)
 
 ;; j
 (defun helix-next-line (count)
@@ -240,9 +252,11 @@ With no region delete char before point with next conditions:
   (interactive)
   (cond ((use-region-p)
          (kill-region nil nil :region)
-         (when (helix-empty-line-p)
-           (delete-char 1)))
-        (t (delete-char (- 1)))))
+         ;; (when (helix-empty-line-p)
+         ;;   (delete-char 1))
+         )
+        (t (delete-char (- 1))))
+  (setq helix--extend-selection nil))
 
 ;; u
 (defun helix-undo ()
@@ -260,7 +274,7 @@ With no region delete char before point with next conditions:
   (setq helix--extend-selection (not helix--extend-selection)))
 
 ;; x
-(defun helix-line (count)
+(defun helix-select-line (count)
   (interactive "p")
   (let ((line (if visual-line-mode 'visual-line 'line)))
     (if (region-active-p)
@@ -277,7 +291,53 @@ With no region delete char before point with next conditions:
         (goto-char (cdr bounds))))
     (helix-motion-loop (_ (1- count))
       (goto-char (cdr (bounds-of-thing-at-point line))))
+    ;; (helix-empty-line-p)
     (backward-char)))
+
+;; (defun helix--visual-overlay (pos)
+;;   (interactive)
+;;   (setq helix-visual-overlay (make-overlay pos (1+ pos)))
+;;   (overlay-put helix-visual-overlay 'face 'region)
+;;   (overlay-put helix-visual-overlay 'priority 99))
+
+;; (defun evil-visual-highlight (&optional arg)
+;;   "Highlight Visual selection, depending on the Visual type.
+;; With negative ARG, disable highlighting."
+;;   (cond ((and (numberp arg) (< arg 1))
+;;          (when evil-visual-overlay
+;;            (delete-overlay evil-visual-overlay)
+;;            (setq evil-visual-overlay nil))
+;;          (when evil-visual-block-overlays
+;;            (mapc #'delete-overlay evil-visual-block-overlays)
+;;            (setq evil-visual-block-overlays nil)))
+;;         ((eq evil-visual-selection 'block)
+;;          (when evil-visual-overlay
+;;            (evil-visual-highlight -1))
+;;          (evil-visual-highlight-block evil-visual-beginning
+;;                                       evil-visual-end))
+;;         (t
+;;          (when evil-visual-block-overlays
+;;            (evil-visual-highlight -1))
+;;          (if evil-visual-overlay
+;;              (move-overlay evil-visual-overlay
+;;                            evil-visual-beginning evil-visual-end)
+;;            (setq evil-visual-overlay
+;;                  (make-overlay evil-visual-beginning evil-visual-end)))
+;;          (overlay-put evil-visual-overlay 'face 'region)
+;;          (overlay-put evil-visual-overlay 'priority 99))))
+
+;; (delete-overlay helix-visual-overlay)
+;; (setq helix-visual-overlay nil)
+
+;; (evil-visual-make-region nil nil 'screen-line)
+
+(defun helix-mark-inner-paragraph (count)
+  (interactive "p")
+  ;; (helix-forward-beginning 'paragraph)
+  (let ((thing 'paragraph))
+    (let ((bounds (bounds-of-thing-at-point thing)))
+      (set-mark (car bounds))
+      (goto-char (cdr bounds)))))
 
 ;;; Scrolling
 

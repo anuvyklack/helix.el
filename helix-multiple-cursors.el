@@ -92,7 +92,7 @@ already there."
                 helix-forward-WORD-start    ; W
                 helix-backward-WORD-start   ; B
                 helix-forward-WORD-end      ; E
-                helix-line ; x
+                helix-select-line ; x
                 helix-delete ; d
                 helix-collapse-selection ; ;
                 )))
