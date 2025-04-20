@@ -292,43 +292,6 @@ With no region delete char before point with next conditions:
     (helix-motion-loop (_ (1- count))
       (goto-char (cdr (bounds-of-thing-at-point line))))))
 
-;; (defun helix--visual-overlay (pos)
-;;   (interactive)
-;;   (setq helix-visual-overlay (make-overlay pos (1+ pos)))
-;;   (overlay-put helix-visual-overlay 'face 'region)
-;;   (overlay-put helix-visual-overlay 'priority 99))
-
-;; (defun evil-visual-highlight (&optional arg)
-;;   "Highlight Visual selection, depending on the Visual type.
-;; With negative ARG, disable highlighting."
-;;   (cond ((and (numberp arg) (< arg 1))
-;;          (when evil-visual-overlay
-;;            (delete-overlay evil-visual-overlay)
-;;            (setq evil-visual-overlay nil))
-;;          (when evil-visual-block-overlays
-;;            (mapc #'delete-overlay evil-visual-block-overlays)
-;;            (setq evil-visual-block-overlays nil)))
-;;         ((eq evil-visual-selection 'block)
-;;          (when evil-visual-overlay
-;;            (evil-visual-highlight -1))
-;;          (evil-visual-highlight-block evil-visual-beginning
-;;                                       evil-visual-end))
-;;         (t
-;;          (when evil-visual-block-overlays
-;;            (evil-visual-highlight -1))
-;;          (if evil-visual-overlay
-;;              (move-overlay evil-visual-overlay
-;;                            evil-visual-beginning evil-visual-end)
-;;            (setq evil-visual-overlay
-;;                  (make-overlay evil-visual-beginning evil-visual-end)))
-;;          (overlay-put evil-visual-overlay 'face 'region)
-;;          (overlay-put evil-visual-overlay 'priority 99))))
-
-;; (delete-overlay helix-visual-overlay)
-;; (setq helix-visual-overlay nil)
-
-;; (evil-visual-make-region nil nil 'screen-line)
-
 (defun helix-mark-inner-paragraph (count)
   (interactive "p")
   ;; (helix-forward-beginning 'paragraph)

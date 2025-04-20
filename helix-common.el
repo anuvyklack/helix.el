@@ -96,9 +96,8 @@ Else returns t.
 
 ;; (put 'visual-line 'beginning-op 'beginning-of-visual-line)
 ;; (put 'visual-line 'end-op       'end-of-visual-line)
-(put 'visual-line 'forward-op (lambda (&optional count)
-                                (or count (setq count 1))
-                                (vertical-motion count)))
+(put 'visual-line 'forward-op #'(lambda (&optional count)
+                                  (vertical-motion (or count 1))))
 
 ;;; Utils
 
