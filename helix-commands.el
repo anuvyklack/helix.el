@@ -366,9 +366,8 @@ the command scrolls half the screen."
     ;; If point goes off of the screen as the result of the scroll —
     ;; disable selection unless we want to extend it.
     (unless helix--extend-selection
-      ;; Y coordinate of the point
-      (let ((point-y (cdr (posn-x-y (posn-at-point)))))
-        (when (> delta (- window-height point-y))
+      (let ((posn-y-at-point (cdr (posn-x-y (posn-at-point)))))
+        (when (> delta (- window-height posn-y-at-point))
           (deactivate-mark))))
     (pixel-scroll-precision-interpolate delta nil 1)))
 (put 'helix-scroll-line-up 'scroll-command t)
@@ -392,9 +391,8 @@ the command scrolls half the screen."
     ;; If point goes off of the screen as the result of the scroll —
     ;; disable selection unless we want to extend it.
     (unless helix--extend-selection
-      ;; Y coordinate of the point
-      (let ((point-y (cdr (posn-x-y (posn-at-point)))))
-        (when (> delta point-y)
+      (let ((posn-y-at-point (cdr (posn-x-y (posn-at-point)))))
+        (when (> delta posn-y-at-point)
           (deactivate-mark))))
     (pixel-scroll-precision-interpolate (- delta) nil 1)))
 (put 'helix-scroll-line-down 'scroll-command t)
@@ -454,9 +452,8 @@ If COUNT > 1 scroll smoothly."
     ;; If point goes off of the screen as the result of the scroll —
     ;; disable selection unless we want to extend it.
     (unless helix--extend-selection
-      ;; Y coordinate of the point
-      (let ((point-y (cdr (posn-x-y (posn-at-point)))))
-        (when (> delta point-y)
+      (let ((posn-y-at-point (cdr (posn-x-y (posn-at-point)))))
+        (when (> delta posn-y-at-point)
           (deactivate-mark))))
     (pixel-scroll-precision-interpolate (- delta) nil 1)))
 (put 'helix-smooth-scroll-line-down 'scroll-command t)
@@ -500,9 +497,8 @@ If COUNT > 1 scroll smoothly."
       (let ((win-height (- (window-text-height nil t)
                            (window-mode-line-height)
                            (window-tab-line-height)))
-            ;; Y coordinate of the point
-            (point-y (cdr (posn-x-y (posn-at-point)))))
-        (when (> delta (- win-height point-y))
+            (posn-y-at-point (cdr (posn-x-y (posn-at-point)))))
+        (when (> delta (- win-height posn-y-at-point))
           (deactivate-mark))))
     (pixel-scroll-precision-interpolate delta nil 1)))
 (put 'helix-smooth-scroll-line-up 'scroll-command t)
@@ -514,9 +510,10 @@ If COUNT > 1 scroll smoothly."
   (let* ((win-height (- (window-text-height nil t)
                         (window-mode-line-height)
                         (window-tab-line-height)))
-         (target (ceiling (/ win-height 2)))
-         (point-y (cdr (posn-x-y (posn-at-point))))
-         (delta (- target point-y)))
+         (posn-y-target (ceiling (/ win-height 2)))
+         (posn-y-at-point (cdr (posn-x-y (posn-at-point))))
+         (delta (- posn-y-target
+                   posn-y-at-point)))
     (pixel-scroll-precision-interpolate delta nil 1)))
 
 (defun helix-smooth-scroll-line-not-to-very-top ()
@@ -525,9 +522,10 @@ If COUNT > 1 scroll smoothly."
   (let* ((win-height (- (window-text-height nil t)
                         (window-mode-line-height)
                         (window-tab-line-height)))
-         (target (ceiling (/ win-height 5)))
-         (point-y (cdr (posn-x-y (posn-at-point))))
-         (delta (- target point-y)))
+         (posn-y-target (ceiling (/ win-height 5)))
+         (posn-y-at-point (cdr (posn-x-y (posn-at-point))))
+         (delta (- posn-y-target
+                   posn-y-at-point)))
     (pixel-scroll-precision-interpolate delta nil 1)))
 
 ;; zt
@@ -538,8 +536,9 @@ If COUNT > 1 scroll smoothly."
   ;; to the next line. So we scroll a little bit before the top, and then finish
   ;; with `recenter' getting a clear result.
   (let* ((line-height (window-font-height))
-         (point-y (cdr (posn-x-y (posn-at-point))))
-         (delta (- point-y (/ line-height 4))))
+         (posn-y-at-point (cdr (posn-x-y (posn-at-point))))
+         (delta (- posn-y-at-point
+                   (/ line-height 4))))
     (pixel-scroll-precision-interpolate (- delta) nil 1)
     (recenter 0)))
 
@@ -554,8 +553,10 @@ If COUNT > 1 scroll smoothly."
                         (window-mode-line-height)
                         (window-tab-line-height)))
          (line-height (window-font-height))
-         (point-y (cdr (posn-x-y (posn-at-point))))
-         (delta (- win-height point-y (/ line-height 4))))
+         (posn-y-at-point (cdr (posn-x-y (posn-at-point))))
+         (delta (- win-height
+                   posn-y-at-point
+                   (/ line-height 4))))
     (pixel-scroll-precision-interpolate delta nil 1)
     (recenter -1)))
 
