@@ -44,10 +44,7 @@
   (if helix--extend-selection
       (or (region-active-p) (set-mark (point)))
     (deactivate-mark))
-  (forward-char count)
-  ;; (when (helix-empty-line-p)
-  ;;   (helix--visual-overlay (point)))
-  )
+  (forward-char count))
 
 ;; (defun helix--visual-overlay-on-empty-line ()
 ;;   (interactive)
@@ -229,7 +226,14 @@ Use visual line when `visual-line-mode' is on."
   "Delete region and enter Insert state."
   (interactive)
   (if (use-region-p)
-      (kill-region nil nil :region)
+      (progn
+        (kill-region nil nil t)
+        (cond ((bolp)
+               (save-excursion (newline))
+               (indent-according-to-mode))
+              ((and visual-line-mode
+                    (helix-visual-bolp))
+               (save-excursion (insert " ")))))
     (delete-char (- 1)))
   (helix-insert))
 
@@ -251,10 +255,7 @@ With no region delete char before point with next conditions:
   } => {|} "
   (interactive)
   (cond ((use-region-p)
-         (kill-region nil nil :region)
-         ;; (when (helix-empty-line-p)
-         ;;   (delete-char 1))
-         )
+         (kill-region nil nil t))
         (t (delete-char (- 1))))
   (setq helix--extend-selection nil))
 
@@ -283,16 +284,13 @@ With no region delete char before point with next conditions:
           (goto-char b)
           (set-mark (car (bounds-of-thing-at-point line))) ; left end
           (goto-char e)
-          (when (helix-eolp) (forward-char))
           (goto-char (cdr (bounds-of-thing-at-point line)))) ; right end
       ;; no region
       (let ((bounds (bounds-of-thing-at-point line)))
         (set-mark (car bounds))
         (goto-char (cdr bounds))))
     (helix-motion-loop (_ (1- count))
-      (goto-char (cdr (bounds-of-thing-at-point line))))
-    ;; (helix-empty-line-p)
-    (backward-char)))
+      (goto-char (cdr (bounds-of-thing-at-point line))))))
 
 ;; (defun helix--visual-overlay (pos)
 ;;   (interactive)
