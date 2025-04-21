@@ -314,10 +314,8 @@ the command scrolls half the screen."
                            (window-tab-line-height)))
          (delta (if (= 0 count)
                     (/ window-height 2)
-                  (let ((line-height (window-font-height))
-                        (spacing (or line-spacing 0)))
-                    (* count (+ line-height spacing))))))
-    ;; If point goes off of the screen as the result of the scroll —
+                  (* count (default-line-height)))))
+    ;; If point goes off the screen as the result of the scroll —
     ;; disable selection unless we want to extend it.
     (unless helix--extend-selection
       (let ((posn-y-at-point (cdr (posn-x-y (posn-at-point)))))
@@ -339,10 +337,8 @@ the command scrolls half the screen."
                            (window-tab-line-height)))
          (delta (if (= 0 count)
                     (/ window-height 2)
-                  (let ((line-height (window-font-height))
-                        (spacing (or line-spacing 0)))
-                    (* count (+ line-height spacing))))))
-    ;; If point goes off of the screen as the result of the scroll —
+                  (* count (default-line-height)))))
+    ;; If point goes off the screen as the result of the scroll —
     ;; disable selection unless we want to extend it.
     (unless helix--extend-selection
       (let ((posn-y-at-point (cdr (posn-x-y (posn-at-point)))))
@@ -400,10 +396,8 @@ If COUNT > 1 scroll smoothly."
   "Smoothly scroll the window COUNT lines downwards."
   (interactive "p")
   (let* ((pixel-scroll-precision-interpolation-total-time 0.1) ; duration
-         (line-height (window-font-height))
-         (spacing (or line-spacing 0))
-         (delta (* count (+ line-height spacing))))
-    ;; If point goes off of the screen as the result of the scroll —
+         (delta (* count (default-line-height))))
+    ;; If point goes off the screen as the result of the scroll —
     ;; disable selection unless we want to extend it.
     (unless helix--extend-selection
       (let ((posn-y-at-point (cdr (posn-x-y (posn-at-point)))))
@@ -442,10 +436,8 @@ If COUNT > 1 scroll smoothly."
   "Smoothly scroll the window COUNT lines upwards."
   (interactive "p")
   (let* ((pixel-scroll-precision-interpolation-total-time 0.1) ; duration
-         (line-height (window-font-height))
-         (spacing (or line-spacing 0))
-         (delta (* count (+ line-height spacing))))
-    ;; If point goes off of the screen as the result of the scroll —
+         (delta (* count (default-line-height))))
+    ;; If point goes off the screen as the result of the scroll —
     ;; disable selection unless we want to extend it.
     (unless helix--extend-selection
       (let ((win-height (- (window-text-height nil t)
