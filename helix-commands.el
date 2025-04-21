@@ -46,15 +46,6 @@
     (deactivate-mark))
   (forward-char count))
 
-;; (defun helix--visual-overlay-on-empty-line ()
-;;   (interactive)
-;;   (when (helix-empty-line-p)
-;;     (setq helix-visual-overlay (make-overlay (point) (1+ (point))))
-;;     (overlay-put helix-visual-overlay 'face 'region)
-;;     (overlay-put helix-visual-overlay 'priority 99)))
-
-;; (delete-overlay helix-visual-overlay)
-
 ;; j
 (defun helix-next-line (count)
   "Move to the next line."
@@ -177,7 +168,7 @@ Use visual line when `visual-line-mode' is on."
     (set-mark (point)))
   (if visual-line-mode
       (beginning-of-visual-line)
-    (move-beginning-of-line 1)))
+    (beginning-of-line)))
 
 ;; gh
 (defun helix-first-non-blank ()
@@ -226,23 +217,12 @@ Use visual line when `visual-line-mode' is on."
   "Delete region and enter Insert state."
   (interactive)
   (if (use-region-p)
-      (let ((line? (cond ((and (bolp)
-                               (save-mark-and-excursion
-                                 (helix-exchange-point-and-mark)
-                                 (bolp)))
-                          'line)
-                         ((and visual-line-mode
-                               (helix-visual-bolp)
-                               (save-mark-and-excursion
-                                 (helix-exchange-point-and-mark)
-                                 (helix-visual-bolp)))
-                          'visual-line))))
+      (let ((line? (helix-point-and-mark-at-bolp-p)))
         (kill-region nil nil t)
         (pcase line?
           ('line (save-excursion (newline))
                  (indent-according-to-mode))
-          ('visual-line (save-excursion
-                          (insert " ")))))
+          ('visual-line (save-excursion (insert " ")))))
     ;; no region
     (delete-char -1))
   (helix-insert-state 1))

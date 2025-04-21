@@ -3,7 +3,7 @@
 ;; Author: Yuriy Artemyev <anuvyklack@gmail.com>
 ;; Maintainer: Yuriy Artemyev <anuvyklack@gmail.com>
 ;; Version: 0.0.1
-;; Package-Requires: ((emacs "24.3"))
+;; Package-Requires: ((emacs "29.1"))
 ;;
 ;; This file is not part of GNU Emacs.
 ;;
@@ -101,10 +101,12 @@ Else returns t.
 
 ;;; Utils
 
-(defsubst helix-sign (&optional num)
-  (cond ((< num 0) -1)
-        ((zerop num) 0)
-        (t 1)))
+(defun helix-exchange-point-and-mark ()
+  "Exchange point and mark without activating the region."
+  (let* ((point (point))
+         (mark  (or (mark t) point)))
+    (set-marker (mark-marker) point)
+    (goto-char mark)))
 
 (defsubst helix-forward-region-p ()
   "Return t if mark precedes point."
@@ -143,12 +145,27 @@ Else returns t.
           (= p (point))))
     (eolp)))
 
-(defun helix-exchange-point-and-mark ()
-  "Exchange point and mark without activating the region."
-  (let* ((point (point))
-         (mark  (or (mark t) point)))
-    (set-marker (mark-marker) point)
-    (goto-char mark)))
+(defun helix-point-and-mark-at-bolp-p ()
+  "Return symbol:
+- `line' — if both point and mark are at the beginning of logical lines;
+- `visual-line' — if point and mark are at the beginning of visual lines;
+- nil — otherwise."
+  (cond ((and (bolp)
+              (save-mark-and-excursion
+                (helix-exchange-point-and-mark)
+                (bolp)))
+         'line)
+        ((and visual-line-mode
+              (helix-visual-bolp)
+              (save-mark-and-excursion
+                (helix-exchange-point-and-mark)
+                (helix-visual-bolp)))
+         'visual-line)))
+
+(defsubst helix-sign (&optional num)
+  (cond ((< num 0) -1)
+        ((zerop num) 0)
+        (t 1)))
 
 (provide 'helix-common)
 ;;; helix-common.el ends here
