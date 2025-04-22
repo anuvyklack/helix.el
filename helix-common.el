@@ -40,7 +40,7 @@ divided with empty lines, are considered adjoined when moving over them."
                    ((eobp) (backward-char))) ; assuming that buffer ends with newline
              rest))))
 
-(defun helix-forward-chars (chars &optional direction)
+(defun helix-skip-chars (chars &optional direction)
   "Return t if moved any."
   (or direction (setq direction 1))
   (/= 0 (if (< 0 direction)
@@ -58,11 +58,11 @@ negative — preceding char."
 ;;   "Skip all empty lines toward direction.
 ;; If DIR is positive number move forward, else — backward."
 ;;   ;; (prog1
-;;   ;;     (helix-forward-chars "\r\n" (or dir 1))
+;;   ;;     (helix-skip-chars "\r\n" (or dir 1))
 ;;   ;;   (when (not helix-select-state-minor-mode)
 ;;   ;;     (set-mark (point))))
 ;;   (or direction (setq direction 1))
-;;   (let ((point-moved (helix-forward-chars "\r\n" direction)))
+;;   (let ((point-moved (helix-skip-chars "\r\n" direction)))
 ;;     (when (and point-moved
 ;;                (not helix-select-state-minor-mode))
 ;;       (set-mark (point)))
