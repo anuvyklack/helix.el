@@ -19,21 +19,26 @@
 
 ;;; Motions
 
-(defun helix-forward-beginning (thing &optional count)
-  "Move to the beginning of the COUNT THING."
-  (setq count (or count 1))
-  (let ((bounds (bounds-of-thing-at-point thing)))
-    (when (and bounds (< (point) (cdr bounds)))
-      (goto-char (cdr bounds)))
-    (ignore-errors
-      (when (forward-thing thing count)
-        (beginning-of-thing thing)))))
-
-(defun helix-next-char (&optional dir)
-  "Return the next after point char toward the direction.
-If DIR is positive number get following char, negative — preceding char."
-  (or dir (setq dir 1))
-  (if (> dir 0) (following-char) (preceding-char)))
+(defun helix-forward-beginning (thing &optional count skip-empty-lines)
+  "Move forward to beginning of COUNT THING.
+When SKIP-EMPTY-LINES is non-nil skip all blank lines along the way.
+This is needed, for example, for `helix-word': two `helix-word's
+divided with empty lines, are considered adjoined when moving over them."
+  (or count (setq count 1))
+  (cond ((= count 0) 0)
+        ((< count 0)
+         (forward-thing thing count))
+        (t (when skip-empty-lines (skip-chars-forward "\r\n"))
+           (when-let* ((bnd (bounds-of-thing-at-point thing))
+                       ((< (point) (cdr bnd))))
+             (goto-char (cdr bnd))
+             (when skip-empty-lines (skip-chars-forward "\r\n")))
+           (let ((rest (forward-thing thing count)))
+             (cond ((zerop rest)
+                    (forward-thing thing -1)
+                    (when skip-empty-lines (skip-chars-backward "\r\n")))
+                   ((eobp) (backward-char))) ; assuming that buffer ends with newline
+             rest))))
 
 (defun helix-forward-chars (chars &optional direction)
   "Return t if moved any."
