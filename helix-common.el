@@ -36,10 +36,11 @@ If DIR is positive number get following char, negative — preceding char."
   (if (> dir 0) (following-char) (preceding-char)))
 
 (defun helix-forward-chars (chars &optional dir)
+  "Return t if moved any."
   (or dir (setq dir 1))
-  (not (zerop (if (> dir 0)
-                  (skip-chars-forward chars)
-                (skip-chars-backward chars)))))
+  (/= 0 (if (> dir 0)
+            (skip-chars-forward chars)
+          (skip-chars-backward chars))))
 
 ;; (defun helix-skip-empty-lines (&optional dir)
 ;;   "Skip all empty lines toward direction.
@@ -76,7 +77,27 @@ COUNT minus number of steps moved; if backward, COUNT plus number moved.
          (setq ,n (1- ,n)))
        (* ,n ,direction))))
 
-;;; Things (`thingatpt.el')
+(defun helix-bounds-of-complement-of-thing-at-point (thing)
+  "Return the bounds of a complement of THING at point.
+I.e., if there is a THING at point — returns nil, otherwise
+the gap between two THINGs is returned.
+
+Works only with THINGs, that returns the count of steps left to move,
+like: `helix-word', `paragraph', `line'."
+  (let ((orig-point (point)))
+    (if-let* ((beg (save-excursion
+                     (and (zerop (forward-thing thing -1))
+                          (forward-thing thing))
+                     (if (<= (point) orig-point)
+                         (point))))
+              (end (save-excursion
+                     (and (zerop (forward-thing thing))
+                          (forward-thing thing -1))
+                     (if (<= orig-point (point))
+                         (point))))
+              ((and (<= beg (point) end)
+                    (< beg end))))
+        (cons beg end))))
 
 (defun forward-helix-word (&optional count)
   "Returns the count of word left to move, positive or negative
