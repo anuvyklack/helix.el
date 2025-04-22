@@ -58,24 +58,29 @@ If DIR is positive number get following char, negative — preceding char."
   "Loop a certain number of times.
 Evaluate BODY repeatedly COUNT times with DIRECTION bound to 1 or -1,
 depending on the sign of COUNT. Each iteration must move point; if point
-does not change, the loop immediately quits and returns nil.
-Else returns t.
+does not change, the loop immediately quits.
+
+Returns the count of steps left to move.  If moving forward, that is
+COUNT minus number of steps moved; if backward, COUNT plus number moved.
 
 \(fn (DIRECTION COUNT) BODY...)"
   (declare (indent defun)
            (debug ((symbolp form) body)))
-  (pcase-let ((`(,direction ,count) spec))
-    `(let* ((,direction (if (< ,count 0) -1 1))
-            (n (abs ,count)))
-       (if (zerop n) t
-         (while (and (not (zerop n))
-                     (/= (point) (progn ,@body (point))))
-           (setq n (1- n)))
-         (zerop n)))))
+  (let ((direction (pop spec))
+        (count (pop spec))
+        (n (gensym "n")))
+    `(let ((,direction (helix-sign ,count))
+           (,n (abs ,count)))
+       (while (and (/= ,n 0)
+                   (/= (point) (progn ,@body (point))))
+         (setq ,n (1- ,n)))
+       (* ,n ,direction))))
 
 ;;; Things (`thingatpt.el')
 
 (defun forward-helix-word (&optional count)
+  "Returns the count of word left to move, positive or negative
+depending on sign of COUNT."
   (or count (setq count 1))
   (helix-motion-loop (dir count)
     (helix-forward-chars "\r\n" dir)
@@ -87,6 +92,8 @@ Else returns t.
           (forward-word dir)))))
 
 (defun forward-helix-WORD (&optional count)
+  "Returns the count of word left to move, positive or negative
+depending on sign of COUNT."
   (or count (setq count 1))
   (helix-motion-loop (dir count)
     (helix-forward-chars "\r\n" dir)
