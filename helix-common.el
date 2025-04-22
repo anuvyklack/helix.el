@@ -35,21 +35,29 @@ If DIR is positive number get following char, negative — preceding char."
   (or dir (setq dir 1))
   (if (> dir 0) (following-char) (preceding-char)))
 
-(defun helix-forward-chars (chars &optional dir)
+(defun helix-forward-chars (chars &optional direction)
   "Return t if moved any."
-  (or dir (setq dir 1))
-  (/= 0 (if (> dir 0)
+  (or direction (setq direction 1))
+  (/= 0 (if (< 0 direction)
             (skip-chars-forward chars)
           (skip-chars-backward chars))))
 
-;; (defun helix-skip-empty-lines (&optional dir)
+(defun helix-next-char (&optional direction)
+  "Return the next after point char toward the direction.
+If DIRECTION is positive number get following char,
+negative — preceding char."
+  (or direction (setq direction 1))
+  (if (> direction 0) (following-char) (preceding-char)))
+
+;; (defun helix-skip-empty-lines (&optional direction)
 ;;   "Skip all empty lines toward direction.
 ;; If DIR is positive number move forward, else — backward."
 ;;   ;; (prog1
 ;;   ;;     (helix-forward-chars "\r\n" (or dir 1))
 ;;   ;;   (when (not helix-select-state-minor-mode)
 ;;   ;;     (set-mark (point))))
-;;   (let ((point-moved (helix-forward-chars "\r\n" (or dir 1))))
+;;   (or direction (setq direction 1))
+;;   (let ((point-moved (helix-forward-chars "\r\n" direction)))
 ;;     (when (and point-moved
 ;;                (not helix-select-state-minor-mode))
 ;;       (set-mark (point)))
@@ -77,7 +85,7 @@ COUNT minus number of steps moved; if backward, COUNT plus number moved.
          (setq ,n (1- ,n)))
        (* ,n ,direction))))
 
-(defun helix-bounds-of-complement-of-thing-at-point (thing)
+(defun helix-bounds-of-complement-of-thing-at-point (thing &optional which)
   "Return the bounds of a complement of THING at point.
 I.e., if there is a THING at point — returns nil, otherwise
 the gap between two THINGs is returned.
@@ -97,7 +105,10 @@ like: `helix-word', `paragraph', `line'."
                          (point))))
               ((and (<= beg (point) end)
                     (< beg end))))
-        (cons beg end))))
+        (pcase which
+          (-1 beg)
+          (1  end)
+          (_ (cons beg end))))))
 
 (defun forward-helix-word (&optional count)
   "Move point forward COUNT words (backward if COUNT is negative).
