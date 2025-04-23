@@ -293,6 +293,12 @@ With no region delete char before point with next conditions:
   (digit-argument arg)
   (set-transient-map helix-match-map))
 
+;; Don't show `helix-digit-argument-for-match-map' in which-key popup.
+(with-eval-after-load 'which-key
+  (defvar which-key-replacement-alist)
+  (cl-pushnew '((nil . "helix-digit-argument-for-match-map") . ignore)
+              which-key-replacement-alist))
+
 (defun helix-mark-inner-paragraph (count)
   (interactive "p")
   ;; (helix-forward-beginning 'paragraph)
