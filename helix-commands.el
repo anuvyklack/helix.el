@@ -271,21 +271,40 @@ With no region delete char before point with next conditions:
 
 ;; x
 (defun helix-select-line (count)
+  "Select COUNT lines.
+
+Select visual lines when `visual-line-mode' is on.
+Select upward if COUNT is negative.
+
+If current selection already consists of whole lines and COUNT is positive,
+expand the selection by COUNT lines upward if point is at the beginning
+of the region, or downward if at the end."
   (interactive "p")
-  (let ((line (if visual-line-mode 'visual-line 'line)))
-    (if (region-active-p)
-        (let ((b (region-beginning))
-              (e (region-end)))
-          (goto-char b)
-          (set-mark (car (bounds-of-thing-at-point line))) ; left end
-          (goto-char e)
-          (goto-char (cdr (bounds-of-thing-at-point line)))) ; right end
-      ;; no region
-      (let ((bounds (bounds-of-thing-at-point line)))
-        (set-mark (car bounds))
-        (goto-char (cdr bounds))))
-    (helix-motion-loop (_ (1- count))
-      (goto-char (cdr (bounds-of-thing-at-point line))))))
+  (let* ((line (if visual-line-mode 'visual-line 'line))
+         (dir (helix-sign count)))
+    (cond ((use-region-p)
+           (unless (helix-line-selected-p)
+             (let ((b (region-beginning))
+                   (e (region-end)))
+               (goto-char b)
+               (set-mark (car (bounds-of-thing-at-point line))) ; left end
+               (goto-char e)
+               (goto-char (cdr (bounds-of-thing-at-point line))) ; right end
+               (setq count (- count dir))))
+           (let ((rd (helix-region-direction)))
+             (cond ((< rd 0 dir) (setq count (- count)))
+                   ((< dir 0 rd) (helix-exchange-point-and-mark))))
+           (forward-thing line count))
+          ;; no region
+          (t (let ((bounds (bounds-of-thing-at-point line)))
+               (set-mark (car bounds))
+               (goto-char (cdr bounds))
+               (if (< dir 0) (helix-exchange-point-and-mark))
+               (forward-thing line (- count dir)))))))
+
+(defun helix-select-line-upward (count)
+  (interactive "p")
+  (helix-select-line (- count)))
 
 (defun helix-match-map-digit-argument (arg)
   "Like `digit-argument' but keep `helix-match-map' active."
