@@ -299,19 +299,30 @@ With no region delete char before point with next conditions:
   (cl-pushnew '((nil . "helix-digit-argument-for-match-map") . ignore)
               which-key-replacement-alist))
 
+(defun helix-mark-inner-thing (thing &optional count)
+  (or count (setq count 1))
+  (when (zerop count)
+    (error "Cannot mark zero %ss'" thing))
+  (let ((bounds (bounds-of-thing-at-point thing)))
+    (cond (bounds
+           (set-mark (car bounds))
+           (goto-char (cdr bounds))
+           (setq count (1- count)))
+          (t
+           (forward-thing thing)
+           (forward-thing thing -1)
+           (set-mark (point)))))
+  (forward-thing thing count))
+
+;; miw
+(defun helix-mark-inner-word (count)
+  (interactive "p")
+  (helix-mark-inner-thing 'helix-word count))
+
+;; mip
 (defun helix-mark-inner-paragraph (count)
   (interactive "p")
-  ;; (helix-forward-beginning 'paragraph)
-  (let ((thing 'paragraph))
-    (let ((bounds (bounds-of-thing-at-point thing)))
-      (set-mark (car bounds))
-      (goto-char (cdr bounds)))))
-  (when (zerop count)
-    (error "Cannot mark zero paragraphs"))
-  (forward-paragraph count)
-  (set-mark (point))
-  (backward-paragraph count)
-  (helix-exchange-point-and-mark))
+  (helix-mark-inner-thing 'paragraph count))
 
 ;;; Scrolling
 

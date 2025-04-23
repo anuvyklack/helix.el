@@ -23,7 +23,9 @@
   "Move forward to beginning of COUNT THING.
 When SKIP-EMPTY-LINES is non-nil skip all blank lines along the way.
 This is needed, for example, for `helix-word': two `helix-word's
-divided with empty lines, are considered adjoined when moving over them."
+divided with empty lines, are considered adjoined when moving over them.
+
+Works only with THINGs, that returns the count of steps left to move."
   (or count (setq count 1))
   (cond ((= count 0) 0)
         ((< count 0)
