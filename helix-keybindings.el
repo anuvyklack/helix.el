@@ -72,6 +72,7 @@
 (keymap-set helix-normal-state-map "M-<mouse-1>" #'helix-toggle-cursor-on-click)
 
 (keymap-set helix-normal-state-map "m i p" #'helix-mark-inner-paragraph)
+(keymap-set helix-normal-state-map "m p"   #'helix-mark-inner-paragraph)
 
 ;;;; Scrolling
 

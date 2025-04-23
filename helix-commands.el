@@ -294,6 +294,12 @@ With no region delete char before point with next conditions:
     (let ((bounds (bounds-of-thing-at-point thing)))
       (set-mark (car bounds))
       (goto-char (cdr bounds)))))
+  (when (zerop count)
+    (error "Cannot mark zero paragraphs"))
+  (forward-paragraph count)
+  (set-mark (point))
+  (backward-paragraph count)
+  (helix-exchange-point-and-mark))
 
 ;;; Scrolling
 
