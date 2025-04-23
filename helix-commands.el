@@ -338,6 +338,11 @@ of the region, or downward if at the end."
   (interactive "p")
   (helix-mark-inner-thing 'helix-word count))
 
+;; miW
+(defun helix-mark-inner-WORD (count)
+  (interactive "p")
+  (helix-mark-inner-thing 'helix-WORD count))
+
 ;; mip
 (defun helix-mark-inner-paragraph (count)
   (interactive "p")

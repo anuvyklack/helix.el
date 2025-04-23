@@ -29,7 +29,7 @@
 ;; (keymap-lookup nil "M-<down-mouse-1>")
 
 (defun helix-keep-primary-selection ()
-  "Disable multiple-cursors-mode and run the corresponding hook."
+  "Disable `multiple-cursors-mode' and run the corresponding hook."
   (interactive)
   (multiple-cursors-mode 0)
   (run-hooks 'multiple-cursors-mode-disabled-hook))

@@ -67,6 +67,8 @@
 (keymap-set helix-normal-state-map "X" #'helix-select-line-upward)
 (keymap-set helix-normal-state-map "," #'helix-keep-primary-selection)
 (keymap-set helix-normal-state-map ";" #'helix-collapse-selection)
+(keymap-set helix-normal-state-map "M-;" #'exchange-point-and-mark)
+(keymap-set helix-normal-state-map "g o" #'exchange-point-and-mark)
 (keymap-set helix-normal-state-map "<escape>" #'helix-normal-state-escape)
 
 (global-unset-key (kbd "M-<down-mouse-1>"))
@@ -87,7 +89,8 @@
 (keymap-set helix-match-map "p"   #'helix-mark-inner-paragraph)
 (keymap-set helix-match-map "i w" #'helix-mark-inner-word)
 (keymap-set helix-match-map "w"   #'helix-mark-inner-word)
-(keymap-set helix-normal-state-map "m" 'helix-match-map)
+(keymap-set helix-match-map "i W" #'helix-mark-inner-WORD)
+(keymap-set helix-match-map "W"   #'helix-mark-inner-WORD)
 
 ;;;; Scrolling
 
