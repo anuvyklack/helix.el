@@ -222,7 +222,7 @@ Use visual line when `visual-line-mode' is on."
   "Delete region and enter Insert state."
   (interactive)
   (if (use-region-p)
-      (let ((line? (helix-point-and-mark-at-bolp-p)))
+      (let ((line? (helix-line-selected-p)))
         (kill-region nil nil t)
         (pcase line?
           ('line (save-excursion (newline))

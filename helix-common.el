@@ -180,9 +180,11 @@ WORD is:
     (set-marker (mark-marker) point)
     (goto-char mark)))
 
-(defsubst helix-forward-region-p ()
-  "Return t if mark precedes point."
-  (< (mark) (point)))
+(defun helix-region-direction ()
+  "Return the direction of region: -1 if point precedes mark, 1 otherwise."
+  (let* ((point (point))
+         (mark (or (mark t) point)))
+    (if (< point mark) -1 1)))
 
 ;; (defmacro helix-expand-selection-or (body)
 ;;   `(if helix-extend-selection
@@ -217,27 +219,36 @@ WORD is:
           (= p (point))))
     (eolp)))
 
-(defun helix-point-and-mark-at-bolp-p ()
-  "Return symbol:
-- `line' — if both point and mark are at the beginning of logical lines;
-- `visual-line' — if point and mark are at the beginning of visual lines;
+(defun helix-line-selected-p ()
+  "Check that the selection is a multiple of whole lines.
+Return symbol:
+- `line' — if logical lines are selected;
+- `visual-line' — if visual lines are selected;
 - nil — otherwise."
-  (cond ((and (bolp)
-              (save-mark-and-excursion
-                (helix-exchange-point-and-mark)
-                (bolp)))
-         'line)
-        ((and visual-line-mode
-              (helix-visual-bolp)
-              (save-mark-and-excursion
-                (helix-exchange-point-and-mark)
-                (helix-visual-bolp)))
-         'visual-line)))
+  (if (use-region-p)
+      (cond ((and (bolp)
+                  (save-mark-and-excursion
+                    (helix-exchange-point-and-mark)
+                    (bolp)))
+             'line)
+            ((and visual-line-mode
+                  (helix-visual-bolp)
+                  (save-mark-and-excursion
+                    (helix-exchange-point-and-mark)
+                    (helix-visual-bolp)))
+             'visual-line))))
 
 (defsubst helix-sign (&optional num)
   (cond ((< num 0) -1)
         ((zerop num) 0)
         (t 1)))
+
+(defun helix-skip-gap (thing &optional direction)
+  (or direction (setq direction 1))
+  (when-let* ((bounds (helix-bounds-of-complement-of-thing-at-point thing)))
+    (goto-char (if (< direction 0)
+                   (car bounds)
+                 (cdr bounds)))))
 
 (provide 'helix-common)
 ;;; helix-common.el ends here
