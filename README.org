@@ -1,0 +1,15 @@
+#+title: Hell (Helix Emulation Layer)
+
+[[https://helix-editor.com/][Helix Editor]] emulation layer. The name "Hell" was choosen to rhyme with [[https://github.com/emacs-evil/evil][Evil]].
+
+* Differences from Helix text editor
+
+- =gh= / =gl= make a selection from current position till the beginning/end of the
+  line. This is done for convenience, since all other motions make selections.
+  In Helix they only move cursor without selection.
+
+- Inner objects are available directly under =m= prefix together with =mi= to reduce
+  keystrokes: =mw= is the same as =miw= — select word.
+
+- Match (or mark) commands accept numeric arguments:
+  =m2ip= or =2mip= — mark 2 paragraphs.
