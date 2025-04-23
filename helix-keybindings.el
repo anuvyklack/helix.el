@@ -71,8 +71,22 @@
 (global-unset-key (kbd "M-<down-mouse-1>"))
 (keymap-set helix-normal-state-map "M-<mouse-1>" #'helix-toggle-cursor-on-click)
 
-(keymap-set helix-normal-state-map "m i p" #'helix-mark-inner-paragraph)
-(keymap-set helix-normal-state-map "m p"   #'helix-mark-inner-paragraph)
+(define-prefix-command 'helix-match-map)
+(keymap-set helix-match-map "0"   #'helix-match-map-digit-argument)
+(keymap-set helix-match-map "1"   #'helix-match-map-digit-argument)
+(keymap-set helix-match-map "2"   #'helix-match-map-digit-argument)
+(keymap-set helix-match-map "3"   #'helix-match-map-digit-argument)
+(keymap-set helix-match-map "4"   #'helix-match-map-digit-argument)
+(keymap-set helix-match-map "5"   #'helix-match-map-digit-argument)
+(keymap-set helix-match-map "6"   #'helix-match-map-digit-argument)
+(keymap-set helix-match-map "7"   #'helix-match-map-digit-argument)
+(keymap-set helix-match-map "8"   #'helix-match-map-digit-argument)
+(keymap-set helix-match-map "9"   #'helix-match-map-digit-argument)
+(keymap-set helix-match-map "i p" #'helix-mark-inner-paragraph)
+(keymap-set helix-match-map "p"   #'helix-mark-inner-paragraph)
+(keymap-set helix-match-map "i w" #'helix-mark-inner-word)
+(keymap-set helix-match-map "w"   #'helix-mark-inner-word)
+(keymap-set helix-normal-state-map "m" 'helix-match-map)
 
 ;;;; Scrolling
 
@@ -89,24 +103,24 @@
 
 ;;;; Windows
 
-(defvar-keymap helix-window-map
-  "s"   #'helix-window-split
-  "v"   #'helix-window-vsplit
-  "d"   #'helix-window-delete
-  "c"   #'helix-window-delete
-  "h"   #'helix-window-left
-  "j"   #'helix-window-down
-  "k"   #'helix-window-up
-  "l"   #'helix-window-right
-  "C-h" #'helix-window-left
-  "C-j" #'helix-window-down
-  "C-k" #'helix-window-up
-  "C-l" #'helix-window-right
-  "H"   #'helix-move-window-left
-  "J"   #'helix-move-window-down
-  "K"   #'helix-move-window-up
-  "L"   #'helix-move-window-right)
-(keymap-set helix-normal-state-map "C-w" helix-window-map)
+(define-prefix-command 'helix-window-map)
+(keymap-set helix-window-map "s"   #'helix-window-split)
+(keymap-set helix-window-map "v"   #'helix-window-vsplit)
+(keymap-set helix-window-map "d"   #'helix-window-delete)
+(keymap-set helix-window-map "c"   #'helix-window-delete)
+(keymap-set helix-window-map "h"   #'helix-window-left)
+(keymap-set helix-window-map "j"   #'helix-window-down)
+(keymap-set helix-window-map "k"   #'helix-window-up)
+(keymap-set helix-window-map "l"   #'helix-window-right)
+(keymap-set helix-window-map "C-h" #'helix-window-left)
+(keymap-set helix-window-map "C-j" #'helix-window-down)
+(keymap-set helix-window-map "C-k" #'helix-window-up)
+(keymap-set helix-window-map "C-l" #'helix-window-right)
+(keymap-set helix-window-map "H"   #'helix-move-window-left)
+(keymap-set helix-window-map "J"   #'helix-move-window-down)
+(keymap-set helix-window-map "K"   #'helix-move-window-up)
+(keymap-set helix-window-map "L"   #'helix-move-window-right)
+(keymap-set helix-normal-state-map "C-w" 'helix-window-map)
 
 ;;; Insert state
 

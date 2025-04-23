@@ -287,6 +287,12 @@ With no region delete char before point with next conditions:
     (helix-motion-loop (_ (1- count))
       (goto-char (cdr (bounds-of-thing-at-point line))))))
 
+(defun helix-match-map-digit-argument (arg)
+  "Like `digit-argument' but keep `helix-match-map' active."
+  (interactive "P")
+  (digit-argument arg)
+  (set-transient-map helix-match-map))
+
 (defun helix-mark-inner-paragraph (count)
   (interactive "p")
   ;; (helix-forward-beginning 'paragraph)

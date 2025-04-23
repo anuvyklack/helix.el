@@ -125,5 +125,11 @@ use `helix-state-property'.")
 Determine how many lines should be scrolled.
 Default value is 0 - scroll half the screen.")
 
+(defvar helix-match-map (make-sparse-keymap)
+  "Keymap for Helix `m' key.")
+
+(defvar helix-window-map (make-sparse-keymap)
+  "Keymap for window-related commands.")
+
 (provide 'helix-vars)
 ;;; helix-vars.el ends here
