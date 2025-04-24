@@ -74,12 +74,12 @@
   "Move to the COUNT-th next word start."
   (interactive "p")
   (let ((thing (if bigword 'helix-WORD 'helix-word)))
-    (when (zerop (helix-forward-beginning thing (1- count) t))
+    (when (zerop (helix-forward-beginning-of-thing thing (1- count) t))
       (if helix--extend-selection
           (or (region-active-p) (set-mark (point)))
         (skip-chars-forward "\r\n")
         (set-mark (point)))
-      (helix-forward-beginning thing 1 t))))
+      (helix-forward-beginning-of-thing thing 1 t))))
 
 ;; W
 (defun helix-forward-WORD-start (count)

@@ -19,11 +19,13 @@
 
 ;;; Motions
 
-(defun helix-forward-beginning (thing &optional count skip-empty-lines)
-  "Move forward to beginning of COUNT THING.
+(defun helix-forward-beginning-of-thing (thing &optional count skip-empty-lines)
+  "Move to the beginning of next COUNT-th THING.
+Move backward if COUNT is negative.
+
 When SKIP-EMPTY-LINES is non-nil skip all blank lines along the way.
-This is needed, for example, for `helix-word': two `helix-word's
-divided with empty lines, are considered adjoined when moving over them.
+This is needed, for example, for `helix-word': two `helix-word's divided
+with empty lines, are considered adjoined when moving over them.
 
 Works only with THINGs, that returns the count of steps left to move."
   (or count (setq count 1))
