@@ -86,11 +86,11 @@ COUNT minus number of steps moved; if backward, COUNT plus number moved.
         (count (pop spec))
         (n (gensym "n")))
     `(let ((,direction (helix-sign ,count))
-           (,n (abs ,count)))
+           (,n ,count))
        (while (and (/= ,n 0)
                    (/= (point) (progn ,@body (point))))
-         (setq ,n (1- ,n)))
-       (* ,n ,direction))))
+         (setq ,n (- ,n ,direction)))
+       ,n)))
 
 (defun helix-bounds-of-complement-of-thing-at-point (thing &optional which)
   "Return the bounds of a complement of THING at point.
