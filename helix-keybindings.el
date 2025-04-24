@@ -13,6 +13,7 @@
 ;;; Code:
 
 (require 'helix-commands)
+(require 'helix-scrolling)
 (require 'helix-states)
 (require 'keypad)
 (require 'helix-multiple-cursors)
