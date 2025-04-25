@@ -45,18 +45,37 @@ Works only with THINGs, that returns the count of steps left to move."
              rest))))
 
 (defun helix-skip-chars (chars &optional direction)
-  "Return t if moved any."
+  "Move point toward the DIRECTION stopping after a char is not in CHARS string.
+Move backward when DIRECTION is negative number, forward — otherwise.
+Return t if point has moved."
   (or direction (setq direction 1))
-  (/= 0 (if (< 0 direction)
-            (skip-chars-forward chars)
-          (skip-chars-backward chars))))
+  (/= 0 (if (< direction 0)
+            (skip-chars-backward chars)
+          (skip-chars-forward chars))))
+
+(defun helix-skip-whitespaces (&optional direction)
+  "Move point toward the DIRECTION across whitespace.
+Move backward when DIRECTION is negative number, forward — otherwise.
+Return the distance traveled positive or negative depending on DIRECTION."
+  (or direction (setq direction 1))
+  ;; Alternative: (helix-skip-chars " \t" dir)
+  (if (< direction 0)
+      (skip-syntax-backward " " (line-beginning-position))
+    (skip-syntax-forward " " (line-end-position))
+    ;; (let ((steps (skip-syntax-forward " " (line-end-position))))
+    ;;   (if (/= steps 0)
+    ;;       (let ((pnt (point)))
+    ;;         (backward-prefix-chars)
+    ;;         (+ steps (- (point) pnt)))
+    ;;     steps))
+    ))
 
 (defun helix-next-char (&optional direction)
   "Return the next after point char toward the direction.
 If DIRECTION is positive number get following char,
 negative — preceding char."
   (or direction (setq direction 1))
-  (if (> direction 0) (following-char) (preceding-char)))
+  (if (< direction 0) (preceding-char) (following-char)))
 
 ;; (defun helix-skip-empty-lines (&optional direction)
 ;;   "Skip all empty lines toward direction.
@@ -126,47 +145,29 @@ on sign of COUNT.
 
 Word is:
 - sequence of characters matching `[[:word:]]'
-- sequence non-word non-whitespace characters matching `[^[:word:]\\n\\r\\t\\f ]'
-- indentation"
+- sequence non-word non-whitespace characters matching `[^[:word:]\\n\\r\\t\\f ]'"
   (or count (setq count 1))
-  (let* ((forward?  (natnump count))
-         (backward? (not forward?)))
-    (helix-motion-loop (dir count)
-      (helix-skip-chars "\r\n" dir)
-      (cond ((and forward?
-                  (bolp)
-                  (helix-skip-chars " \t" dir)))
-            ((and backward?
-                  (helix-skip-chars " \t" dir)
-                  (bolp)))
-            ((helix-skip-chars "^[:word:]\n\r\t\f " dir))
-            ((let ((word-separating-categories helix-cjk-word-separating-categories)
-                   (word-combining-categories  helix-cjk-word-combining-categories))
-               (forward-word dir)))))))
+  (helix-motion-loop (dir count)
+    (helix-skip-chars "\r\n" dir)
+    (helix-skip-whitespaces dir)
+    (or (helix-beginning-or-end-of-line-p dir)
+        (helix-skip-chars "^[:word:]\n\r\t\f " dir)
+        (let ((word-separating-categories helix-cjk-word-separating-categories)
+              (word-combining-categories  helix-cjk-word-combining-categories))
+          (forward-word dir)))))
 
 (defun forward-helix-WORD (&optional count)
   "Move point forward COUNT WORDs (backward if COUNT is negative).
 Returns the count of WORD left to move, positive or negative depending
 on sign of COUNT.
 
-WORD is:
-- any space separated sequence of characters
-- indentation"
+WORD is any space separated sequence of characters."
   (or count (setq count 1))
-  (let* ((forward?  (natnump count))
-         (backward? (not forward?)))
-    (helix-motion-loop (dir count)
-      (helix-skip-chars "\r\n" dir)
-      (cond ((and forward?
-                  (bolp)
-                  (helix-skip-chars " \t" dir)))
-            ((and backward?
-                  (helix-skip-chars " \t" dir)
-                  (bolp)))
-            (t (when forward?
-                 (helix-skip-chars " \t" dir)
-                 (helix-skip-chars "\r\n" dir))
-               (helix-skip-chars "^\n\r\t\f " dir))))))
+  (helix-motion-loop (dir count)
+    (helix-skip-chars "\r\n" dir)
+    (helix-skip-whitespaces dir)
+    (unless (helix-beginning-or-end-of-line-p dir)
+      (helix-skip-chars "^\n\r\t\f " dir))))
 
 ;; (put 'visual-line 'beginning-op 'beginning-of-visual-line)
 ;; (put 'visual-line 'end-op       'end-of-visual-line)
@@ -187,6 +188,11 @@ WORD is:
   (let* ((point (point))
          (mark (or (mark t) point)))
     (if (< point mark) -1 1)))
+
+(defun helix-beginning-or-end-of-line-p (direction)
+  "DIRECTION should be a number. If DIRECTION is negative,
+checks for beginning of line, positive — end of line."
+  (if (< direction 0) (bolp) (eolp)))
 
 ;; (defmacro helix-expand-selection-or (body)
 ;;   `(if helix-extend-selection
@@ -239,6 +245,14 @@ Return symbol:
                     (helix-exchange-point-and-mark)
                     (helix-visual-bolp)))
              'visual-line))))
+
+(defun helilx-whitespace? (char)
+  "Non-nil when CHAR belongs to whitespace syntax class."
+  ;; FIXME: Space syntax class can be denoted with both " " and "-" chars.
+  ;; Are we shore that `char-syntax' always returns " "?
+  (eql (char-syntax char) ?\s)
+  ;; Alternative: (memq char '(?\s ?\t))
+  )
 
 (defsubst helix-sign (&optional num)
   (cond ((< num 0) -1)

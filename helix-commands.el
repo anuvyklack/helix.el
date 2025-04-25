@@ -71,15 +71,18 @@
 
 ;; w
 (defun helix-forward-word-start (count &optional bigword)
-  "Move to the COUNT-th next word start."
+  "Move to the COUNT-th next word start.
+If BIGWORD move over WORD-s."
   (interactive "p")
   (let ((thing (if bigword 'helix-WORD 'helix-word)))
-    (when (zerop (helix-forward-beginning-of-thing thing (1- count) t))
+    (when (zerop (forward-thing thing (1- count)))
       (if helix--extend-selection
           (or (region-active-p) (set-mark (point)))
         (skip-chars-forward "\r\n")
         (set-mark (point)))
-      (helix-forward-beginning-of-thing thing 1 t))))
+      (or (helilx-whitespace? (following-char))
+          (forward-thing thing))
+      (helix-skip-whitespaces))))
 
 ;; W
 (defun helix-forward-WORD-start (count)
@@ -94,7 +97,7 @@ If BIGWORD move over WORD-s."
   (interactive "p")
   (setq count (- count))
   (let ((thing (if bigword 'helix-WORD 'helix-word)))
-    (when (forward-thing thing (1+ count))
+    (when (zerop (forward-thing thing (1+ count)))
       (if helix--extend-selection
           (or (region-active-p) (set-mark (point)))
         (skip-chars-backward "\r\n")
@@ -113,7 +116,7 @@ If BIGWORD move over WORD-s."
 If BIGWORD move over WORD-s."
   (interactive "p")
   (let ((thing (if bigword 'helix-WORD 'helix-word)))
-    (when (forward-thing thing (1- count))
+    (when (zerop (forward-thing thing (1- count)))
       (if helix--extend-selection
           (or (region-active-p) (set-mark (point)))
         (skip-chars-forward "\r\n")
@@ -179,7 +182,6 @@ Use visual line when `visual-line-mode' is on."
   (interactive)
   (helix-beginning-of-line)
   (skip-syntax-forward " " (line-end-position))
-  ;; Move back over chars that have whitespace syntax but have the p flag.
   (backward-prefix-chars))
 
 ;; gl
