@@ -51,6 +51,10 @@
 (keymap-set helix-normal-state-map "g l" #'helix-end-of-line)
 (keymap-set helix-normal-state-map "g g" #'helix-goto-first-line)
 (keymap-set helix-normal-state-map "G"   #'helix-goto-last-line)
+(keymap-set helix-normal-state-map "] p" #'helix-forward-paragraph)
+(keymap-set helix-normal-state-map "[ p" #'helix-backward-paragraph)
+(keymap-set helix-normal-state-map "}"   #'helix-forward-paragraph)
+(keymap-set helix-normal-state-map "{"   #'helix-backward-paragraph)
 
 ;;;; Changes
 

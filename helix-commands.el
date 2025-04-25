@@ -196,6 +196,25 @@ Use visual line when `visual-line-mode' is on."
       (end-of-visual-line)
     (move-end-of-line 1)))
 
+;; ]p
+(defun helix-forward-paragraph (count)
+  "Move to the end of the COUNT next paragraph."
+  (interactive "p")
+  (if helix--extend-selection
+      (or (region-active-p) (set-mark (point)))
+    (set-mark (point)))
+  (forward-thing 'paragraph count))
+
+;; [p
+(defun helix-backward-paragraph (count)
+  "Move to the beginning of the COUNT previous paragraph."
+  (interactive "p")
+  (setq count (- count))
+  (if helix--extend-selection
+      (or (region-active-p) (set-mark (point)))
+    (set-mark (point)))
+  (forward-thing 'paragraph count))
+
 ;;; Changes
 
 ;; i
