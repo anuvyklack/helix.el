@@ -240,9 +240,9 @@ Use visual line when `visual-line-mode' is on."
   "Delete region and enter Insert state."
   (interactive)
   (if (use-region-p)
-      (let ((line? (helix-line-selected-p)))
+      (let ((line-selected? (helix-line-selected-p)))
         (kill-region nil nil t)
-        (pcase line?
+        (pcase line-selected?
           ('line (save-excursion (newline))
                  (indent-according-to-mode))
           ('visual-line (save-excursion (insert " ")))))
@@ -320,7 +320,10 @@ of the region, or downward if at the end."
                (if (< dir 0) (helix-exchange-point-and-mark))
                (forward-thing line (- count dir)))))))
 
+;; X
 (defun helix-select-line-upward (count)
+  "Select COUNT lines upward.
+Select visual lines when `visual-line-mode' is on."
   (interactive "p")
   (helix-select-line (- count)))
 

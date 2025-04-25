@@ -80,6 +80,7 @@
 (keymap-set helix-normal-state-map "M-<mouse-1>" #'helix-toggle-cursor-on-click)
 
 (define-prefix-command 'helix-match-map)
+(keymap-set helix-normal-state-map "m" 'helix-match-map)
 (keymap-set helix-match-map "0"   #'helix-match-map-digit-argument)
 (keymap-set helix-match-map "1"   #'helix-match-map-digit-argument)
 (keymap-set helix-match-map "2"   #'helix-match-map-digit-argument)
@@ -113,6 +114,7 @@
 ;;;; Windows
 
 (define-prefix-command 'helix-window-map)
+(keymap-set helix-normal-state-map "C-w" 'helix-window-map)
 (keymap-set helix-window-map "s"   #'helix-window-split)
 (keymap-set helix-window-map "v"   #'helix-window-vsplit)
 (keymap-set helix-window-map "d"   #'helix-window-delete)
@@ -129,7 +131,6 @@
 (keymap-set helix-window-map "J"   #'helix-move-window-down)
 (keymap-set helix-window-map "K"   #'helix-move-window-up)
 (keymap-set helix-window-map "L"   #'helix-move-window-right)
-(keymap-set helix-normal-state-map "C-w" 'helix-window-map)
 
 ;;; Insert state
 
