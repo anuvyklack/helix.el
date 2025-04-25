@@ -101,39 +101,52 @@ like: `helix-word', `paragraph', `line'."
 
 (defun forward-helix-word (&optional count)
   "Move point forward COUNT words (backward if COUNT is negative).
-If COUNT is nil, move forward one word. Returns the count of word
-left to move, positive or negative depending on sign of COUNT.
+Returns the count of word left to move, positive or negative depending
+on sign of COUNT.
 
-Words are:
+Word is:
 - sequence of characters matching `[[:word:]]'
-- sequence non-word non-whitespace characters: `[^[:word:]\\n\\r\\t\\f ]'
-- indentation."
+- sequence non-word non-whitespace characters matching `[^[:word:]\\n\\r\\t\\f ]'
+- indentation"
   (or count (setq count 1))
   (let* ((forward?  (natnump count))
          (backward? (not forward?)))
     (helix-motion-loop (dir count)
-      (let ((newline? (helix-forward-chars "\r\n" dir)))
-        (cond ((and forward?
-                    (or newline?
-                        (memq (preceding-char) '(?\r ?\n)))
-                    (helix-forward-chars " \t" dir)))
-              ((and backward?
-                    (helix-forward-chars " \t" dir)
-                    (memq (helix-next-char dir) '(?\r ?\n))))
-              ((helix-forward-chars "^[:word:]\n\r\t\f " dir))
-              ((let ((word-separating-categories helix-cjk-word-separating-categories)
-                     (word-combining-categories  helix-cjk-word-combining-categories))
-                 (forward-word dir))))))))
+      (helix-skip-chars "\r\n" dir)
+      (cond ((and forward?
+                  (bolp)
+                  (helix-skip-chars " \t" dir)))
+            ((and backward?
+                  (helix-skip-chars " \t" dir)
+                  (bolp)))
+            ((helix-skip-chars "^[:word:]\n\r\t\f " dir))
+            ((let ((word-separating-categories helix-cjk-word-separating-categories)
+                   (word-combining-categories  helix-cjk-word-combining-categories))
+               (forward-word dir)))))))
 
 (defun forward-helix-WORD (&optional count)
-  "Returns the count of word left to move, positive or negative
-depending on sign of COUNT."
+  "Move point forward COUNT WORDs (backward if COUNT is negative).
+Returns the count of WORD left to move, positive or negative depending
+on sign of COUNT.
+
+WORD is:
+- any space separated sequence of characters
+- indentation"
   (or count (setq count 1))
-  (helix-motion-loop (dir count)
-    (helix-forward-chars "\r\n" dir)
-    (helix-forward-chars " \t" dir)
-    (or (memq (helix-next-char dir) '(?\r ?\n))
-        (helix-forward-chars "^\n\r\t\f " dir))))
+  (let* ((forward?  (natnump count))
+         (backward? (not forward?)))
+    (helix-motion-loop (dir count)
+      (helix-skip-chars "\r\n" dir)
+      (cond ((and forward?
+                  (bolp)
+                  (helix-skip-chars " \t" dir)))
+            ((and backward?
+                  (helix-skip-chars " \t" dir)
+                  (bolp)))
+            (t (when forward?
+                 (helix-skip-chars " \t" dir)
+                 (helix-skip-chars "\r\n" dir))
+               (helix-skip-chars "^\n\r\t\f " dir))))))
 
 ;; (put 'visual-line 'beginning-op 'beginning-of-visual-line)
 ;; (put 'visual-line 'end-op       'end-of-visual-line)
