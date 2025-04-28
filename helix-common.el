@@ -203,6 +203,21 @@ like: `helix-word', `paragraph', `line'."
 
 ;;; Selection
 
+(defun helix-mark-inner-thing (thing &optional count)
+  (or count (setq count 1))
+  (when (zerop count)
+    (error "Cannot mark zero %s" thing))
+  (let ((bounds (bounds-of-thing-at-point thing)))
+    (cond (bounds
+           (set-mark (car bounds))
+           (goto-char (cdr bounds))
+           (setq count (1- count)))
+          (t
+           (forward-thing thing)
+           (forward-thing thing -1)
+           (set-mark (point)))))
+  (forward-thing thing count))
+
 (defun helix-bounds-of-string-at-point (quote-mark)
   "Return a cons cell (START . END) with bounds of string
 enclosed in QUOTE-MARKs."

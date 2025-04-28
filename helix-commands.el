@@ -339,21 +339,6 @@ Select visual lines when `visual-line-mode' is on."
   (cl-pushnew '((nil . "helix-digit-argument-for-match-map") . ignore)
               which-key-replacement-alist))
 
-(defun helix-mark-inner-thing (thing &optional count)
-  (or count (setq count 1))
-  (when (zerop count)
-    (error "Cannot mark zero %ss'" thing))
-  (let ((bounds (bounds-of-thing-at-point thing)))
-    (cond (bounds
-           (set-mark (car bounds))
-           (goto-char (cdr bounds))
-           (setq count (1- count)))
-          (t
-           (forward-thing thing)
-           (forward-thing thing -1)
-           (set-mark (point)))))
-  (forward-thing thing count))
-
 ;; miw
 (defun helix-mark-inner-word (count)
   (interactive "p")
