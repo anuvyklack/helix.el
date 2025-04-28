@@ -97,6 +97,15 @@
 (keymap-set helix-match-map "w"   #'helix-mark-inner-word)
 (keymap-set helix-match-map "i W" #'helix-mark-inner-WORD)
 (keymap-set helix-match-map "W"   #'helix-mark-inner-WORD)
+(keymap-set helix-match-map "\""  #'helix-mark-inner-double-quoted)
+(keymap-set helix-match-map "i \"" #'helix-mark-inner-double-quoted)
+(keymap-set helix-match-map "a \"" #'helix-mark-a-double-quoted)
+(keymap-set helix-match-map "'"   #'helix-mark-inner-single-quoted)
+(keymap-set helix-match-map "i '" #'helix-mark-inner-single-quoted)
+(keymap-set helix-match-map "a '" #'helix-mark-a-single-quoted)
+(keymap-set helix-match-map "`"   #'helix-mark-inner-back-quoted)
+(keymap-set helix-match-map "i `" #'helix-mark-inner-back-quoted)
+(keymap-set helix-match-map "a `" #'helix-mark-a-back-quoted)
 
 ;;;; Scrolling
 

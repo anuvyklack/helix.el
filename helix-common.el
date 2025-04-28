@@ -17,6 +17,20 @@
 (require 'helix-vars)
 (require 'thingatpt)
 
+;;; Macros
+
+(defmacro helix-with-restriction (restrictions &rest body)
+  "Execute BODY with the buffer narrowed to BEG and END.
+
+\(fn (BEG . END) BODY...)"
+  (declare (indent defun) (debug t))
+  (let ((beg (gensym "beg"))
+        (end (gensym "end")))
+    `(cl-destructuring-bind (,beg . ,end) ,restrictions
+       (save-restriction
+         (narrow-to-region ,beg ,end)
+         ,@body))))
+
 ;;; Motions
 
 (defun helix-forward-beginning-of-thing (thing &optional count skip-empty-lines)
@@ -113,30 +127,7 @@ COUNT minus number of steps moved; if backward, COUNT plus number moved.
          (setq ,n (- ,n ,direction)))
        ,n)))
 
-(defun helix-bounds-of-complement-of-thing-at-point (thing &optional which)
-  "Return the bounds of a complement of THING at point.
-I.e., if there is a THING at point — returns nil, otherwise
-the gap between two THINGs is returned.
-
-Works only with THINGs, that returns the count of steps left to move,
-like: `helix-word', `paragraph', `line'."
-  (let ((orig-point (point)))
-    (if-let* ((beg (save-excursion
-                     (and (zerop (forward-thing thing -1))
-                          (forward-thing thing))
-                     (if (<= (point) orig-point)
-                         (point))))
-              (end (save-excursion
-                     (and (zerop (forward-thing thing))
-                          (forward-thing thing -1))
-                     (if (<= orig-point (point))
-                         (point))))
-              ((and (<= beg (point) end)
-                    (< beg end))))
-        (pcase which
-          (-1 beg)
-          (1  end)
-          (_ (cons beg end))))))
+;;; Things
 
 (defun forward-helix-word (&optional count)
   "Move point forward COUNT words (backward if COUNT is negative).
@@ -169,10 +160,120 @@ WORD is any space separated sequence of characters."
     (unless (helix-beginning-or-end-of-line-p dir)
       (helix-skip-chars "^\n\r\t\f " dir))))
 
-;; (put 'visual-line 'beginning-op 'beginning-of-visual-line)
-;; (put 'visual-line 'end-op       'end-of-visual-line)
 (put 'visual-line 'forward-op #'(lambda (&optional count)
                                   (vertical-motion (or count 1))))
+;; (put 'visual-line 'beginning-op 'beginning-of-visual-line)
+;; (put 'visual-line 'end-op       'end-of-visual-line)
+
+(put 'helix-comment 'bounds-of-thing-at-point #'helix-bounds-of-comment-at-point-ppss)
+(defun helix-bounds-of-comment-at-point-ppss ()
+  "Return the bounds of a comment at point using Parse-Partial-Sexp Scanner."
+  (save-excursion
+    (let ((state (syntax-ppss)))
+      (when (nth 4 state)
+        (cons (nth 8 state)
+              (when (parse-partial-sexp
+                     (point) (point-max) nil nil state 'syntax-table)
+                (point)))))))
+
+(defun helix-bounds-of-complement-of-thing-at-point (thing &optional which)
+  "Return the bounds of a complement of THING at point.
+I.e., if there is a THING at point — returns nil, otherwise
+the gap between two THINGs is returned.
+
+Works only with THINGs, that returns the count of steps left to move,
+like: `helix-word', `paragraph', `line'."
+  (let ((orig-point (point)))
+    (if-let* ((beg (save-excursion
+                     (and (zerop (forward-thing thing -1))
+                          (forward-thing thing))
+                     (if (<= (point) orig-point)
+                         (point))))
+              (end (save-excursion
+                     (and (zerop (forward-thing thing))
+                          (forward-thing thing -1))
+                     (if (<= orig-point (point))
+                         (point))))
+              ((and (<= beg (point) end)
+                    (< beg end))))
+        (pcase which
+          (-1 beg)
+          (1  end)
+          (_ (cons beg end))))))
+
+;;; Selection
+
+(defun helix-bounds-of-string-at-point (quote-mark)
+  "Return a cons cell (START . END) with bounds of string
+enclosed in QUOTE-MARKs."
+  (let (bounds)
+    (cond ((setq bounds (bounds-of-thing-at-point 'helix-comment))
+           (helix-bounds-of-enclosed-text-at-point quote-mark bounds))
+          ((setq bounds (bounds-of-thing-at-point 'string))
+           (if (eq (char-after (car bounds)) quote-mark)
+               bounds
+             (helix-bounds-of-enclosed-text-at-point quote-mark bounds)))
+          (t
+           (helix--bounds-of-quoted-at-point-ppss quote-mark)))))
+
+(defun helix-bounds-of-enclosed-text-at-point (delimiter &optional limits)
+  "Return the bounds of the text region enclosed in DELIMITERs.
+
+The point should be inside this text region. DELIMITER should be
+a string or a character. The search is bounded within LIMITS:
+a cons cell with (LEFT . RIGHT) positions.
+
+Return the cons cell (START . END) with positions before the openning
+DELIMITER and after the closing one."
+  (when (characterp delimiter) (setq delimiter (string delimiter)))
+  (cl-destructuring-bind (left . right) limits
+    (save-excursion
+      (let ((pnt (point)))
+        (if-let* ((beg (search-forward delimiter left t))
+                  (end (progn
+                         (goto-char pnt)
+                         (search-backward delimiter right t))))
+            (cons beg end))))))
+
+(defun helix--bounds-of-quoted-at-point-ppss (quote-mark)
+  "Return a cons cell (START . END) with bounds of region around
+the point enclosed in QUOTE-MARK character.
+
+Internally uses Emacs' built-in Parse-Partial-Sexp Scanner for
+balanced expressions."
+  (save-excursion
+    (let ((syntax-table (if (eq (char-syntax quote-mark) ?\")
+                            (syntax-table)
+                          (let ((st (copy-syntax-table (syntax-table))))
+                            (modify-syntax-entry quote-mark "\"" st)
+                            st))))
+      (with-syntax-table syntax-table
+        (let* ((curpoint (point))
+               (state (progn
+                        (beginning-of-defun)
+                        (parse-partial-sexp (point) curpoint nil nil (syntax-ppss)))))
+          (if (nth 3 state)
+              ;; Inside the string
+              (ignore-errors
+                (goto-char (nth 8 state))
+                (cons (point)
+                      (progn (forward-sexp) (point))))
+            ;; At the beginning of the string
+            (if-let* ((ca (char-after))
+                      ;; ((eq (char-syntax ca) ?\"))
+                      ((eq ca quote-mark))
+                      (bounds (bounds-of-thing-at-point 'sexp))
+	              ((<= (car bounds) (point)))
+                      ((< (point) (cdr bounds))))
+	        bounds)))))))
+
+(defun helix--syntax-ppss-string-quote-mark (state)
+  "If the position corresponding to Parse-Partial-Sexp Scanner STATE
+is inside a string, return quote-mark character that bounds that string."
+  (nth 3 state))
+
+(defalias 'helix--syntax-ppss-inside-string-p #'helix--syntax-ppss-string-quote-mark)
+
 
 ;;; Utils
 
@@ -265,6 +366,36 @@ Return symbol:
     (goto-char (if (< direction 0)
                    (car bounds)
                  (cdr bounds)))))
+
+(defun helix-comment-at-point-p ()
+  "Return non-nil if point is inside a comment, or comment starts
+right after the point."
+  (ignore-errors
+    (save-excursion
+      ;; We cannot be in a comment if we are inside a string
+      (unless (nth 3 (syntax-ppss))
+        (let ((pnt (point)))
+          (or (nth 4 (syntax-ppss))
+              ;; this also test opening and closing comment delimiters... we
+              ;; need to check that it is not newline, which is in "comment
+              ;; ender" class in elisp-mode, but we just want it to be treated
+              ;; as whitespace
+              (and (< pnt (point-max))
+                   (memq (char-syntax (char-after pnt)) '(?< ?>))
+                   (not (eq (char-after pnt) ?\n)))
+              ;; we also need to test the special syntax flag for comment
+              ;; starters and enders, because `syntax-ppss' does not yet know if
+              ;; we are inside a comment or not (e.g. / can be a division or
+              ;; comment starter...).
+              (when-let ((s (car (syntax-after pnt))))
+                (or (and (/= 0 (logand (ash 1 16) s))
+                         (nth 4 (syntax-ppss (+ pnt 2))))
+                    (and (/= 0 (logand (ash 1 17) s))
+                         (nth 4 (syntax-ppss (+ pnt 1))))
+                    (and (/= 0 (logand (ash 1 18) s))
+                         (nth 4 (syntax-ppss (- pnt 1))))
+                    (and (/= 0 (logand (ash 1 19) s))
+                         (nth 4 (syntax-ppss (- pnt 2))))))))))))
 
 (provide 'helix-common)
 ;;; helix-common.el ends here

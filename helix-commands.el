@@ -369,6 +369,49 @@ Select visual lines when `visual-line-mode' is on."
   (interactive "p")
   (helix-mark-inner-thing 'paragraph count))
 
+;; mi"
+(defun helix-mark-inner-double-quoted ()
+  (interactive)
+  (when-let* ((bounds (helix-bounds-of-string-at-point ?\")))
+    (set-mark (1+ (car bounds)))
+    (goto-char (1- (cdr bounds)))))
+
+;; ma"
+(defun helix-mark-a-double-quoted ()
+  (interactive)
+  (when-let* ((bounds (helix-bounds-of-string-at-point ?\")))
+    (set-mark (car bounds))
+    (goto-char (cdr bounds))))
+
+;; mi'
+(defun helix-mark-inner-single-quoted ()
+  (interactive)
+  (when-let* ((bounds (helix-bounds-of-string-at-point ?')))
+    (set-mark (1+ (car bounds)))
+    (goto-char (1- (cdr bounds)))))
+
+;; ma'
+(defun helix-mark-a-single-quoted ()
+  (interactive)
+  (when-let* ((bounds (helix-bounds-of-string-at-point ?')))
+    (set-mark (car bounds))
+    (goto-char (cdr bounds))))
+
+;; mi`
+(defun helix-mark-inner-back-quoted ()
+  (interactive)
+  (when-let* ((bounds (helix-bounds-of-string-at-point ?`)))
+    (set-mark (1+ (car bounds)))
+    (goto-char (1- (cdr bounds)))))
+
+;; ma`
+(defun helix-mark-a-back-quoted ()
+  (interactive)
+  (when-let* ((bounds (helix-bounds-of-string-at-point ?`)))
+    (set-mark (car bounds))
+    (goto-char (cdr bounds))))
+
+
 ;;; Window navigation
 
 (defalias 'helix-window-split #'split-window-below)
