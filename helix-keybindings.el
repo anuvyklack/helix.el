@@ -68,8 +68,8 @@
 ;;;; Selections
 
 (keymap-set helix-normal-state-map "v" #'helix-extend-selection)
-(keymap-set helix-normal-state-map "x" #'helix-select-line)
-(keymap-set helix-normal-state-map "X" #'helix-select-line-upward)
+(keymap-set helix-normal-state-map "x" #'helix-mark-line)
+(keymap-set helix-normal-state-map "X" #'helix-mark-line-upward)
 (keymap-set helix-normal-state-map "," #'helix-keep-primary-selection)
 (keymap-set helix-normal-state-map ";" #'helix-collapse-selection)
 (keymap-set helix-normal-state-map "M-;" #'exchange-point-and-mark)

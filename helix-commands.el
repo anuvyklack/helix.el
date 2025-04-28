@@ -288,7 +288,7 @@ With no region delete char before point with next conditions:
   (setq helix--extend-selection (not helix--extend-selection)))
 
 ;; x
-(defun helix-select-line (count)
+(defun helix-mark-line (count)
   "Select COUNT lines.
 
 Select visual lines when `visual-line-mode' is on.
@@ -321,11 +321,11 @@ of the region, or downward if at the end."
                (forward-thing line (- count dir)))))))
 
 ;; X
-(defun helix-select-line-upward (count)
+(defun helix-mark-line-upward (count)
   "Select COUNT lines upward.
 Select visual lines when `visual-line-mode' is on."
   (interactive "p")
-  (helix-select-line (- count)))
+  (helix-mark-line (- count)))
 
 (defun helix-match-map-digit-argument (arg)
   "Like `digit-argument' but keep `helix-match-map' active."
