@@ -107,6 +107,34 @@
 (keymap-set helix-match-map "i `" #'helix-mark-inner-back-quoted)
 (keymap-set helix-match-map "a `" #'helix-mark-a-back-quoted)
 
+(keymap-set helix-match-map "("   #'helix-mark-inner-paren)
+(keymap-set helix-match-map ")"   #'helix-mark-inner-paren)
+(keymap-set helix-match-map "i (" #'helix-mark-inner-paren)
+(keymap-set helix-match-map "i )" #'helix-mark-inner-paren)
+(keymap-set helix-match-map "a (" #'helix-mark-a-paren)
+(keymap-set helix-match-map "a )" #'helix-mark-a-paren)
+
+(keymap-set helix-match-map "["   #'helix-mark-inner-bracket)
+(keymap-set helix-match-map "]"   #'helix-mark-inner-bracket)
+(keymap-set helix-match-map "i [" #'helix-mark-inner-bracket)
+(keymap-set helix-match-map "i ]" #'helix-mark-inner-bracket)
+(keymap-set helix-match-map "a [" #'helix-mark-a-bracket)
+(keymap-set helix-match-map "a ]" #'helix-mark-a-bracket)
+
+(keymap-set helix-match-map "{"   #'helix-mark-inner-curly)
+(keymap-set helix-match-map "}"   #'helix-mark-inner-curly)
+(keymap-set helix-match-map "i {" #'helix-mark-inner-curly)
+(keymap-set helix-match-map "i }" #'helix-mark-inner-curly)
+(keymap-set helix-match-map "a {" #'helix-mark-a-curly)
+(keymap-set helix-match-map "a }" #'helix-mark-a-curly)
+
+(keymap-set helix-match-map "<"   #'helix-mark-inner-angle)
+(keymap-set helix-match-map ">"   #'helix-mark-inner-angle)
+(keymap-set helix-match-map "i <" #'helix-mark-inner-angle)
+(keymap-set helix-match-map "i >" #'helix-mark-inner-angle)
+(keymap-set helix-match-map "a <" #'helix-mark-an-angle)
+(keymap-set helix-match-map "a >" #'helix-mark-an-angle)
+
 ;;;; Scrolling
 
 (keymap-set helix-normal-state-map "C-b" #'helix-smooth-scroll-page-up)
