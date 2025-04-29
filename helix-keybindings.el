@@ -8,170 +8,204 @@
 ;;
 ;;; Commentary:
 ;;
-;;  Helix default keybindins.
+;;  Helix default keybindings.
 ;;
 ;;; Code:
 
 (require 'helix-commands)
 (require 'helix-scrolling)
+(require 'helix-core)
 (require 'helix-states)
 (require 'keypad)
 (require 'helix-multiple-cursors)
 
 ;;; Normal state
 
-(keymap-set helix-normal-state-map "C-h k" #'keypad-describe-key)
+(helix-keymap-set nil 'normal
+  "SPC" #'keypad
+  "C-h k" #'keypad-describe-key
+  "<backspace>" #'execute-extended-command)
 
-(keymap-set helix-normal-state-map "0" #'digit-argument)
-(keymap-set helix-normal-state-map "1" #'digit-argument)
-(keymap-set helix-normal-state-map "2" #'digit-argument)
-(keymap-set helix-normal-state-map "3" #'digit-argument)
-(keymap-set helix-normal-state-map "4" #'digit-argument)
-(keymap-set helix-normal-state-map "5" #'digit-argument)
-(keymap-set helix-normal-state-map "6" #'digit-argument)
-(keymap-set helix-normal-state-map "7" #'digit-argument)
-(keymap-set helix-normal-state-map "8" #'digit-argument)
-(keymap-set helix-normal-state-map "9" #'digit-argument)
+(helix-keymap-set nil 'normal
+  ":" #'execute-extended-command
 
-(keymap-set helix-normal-state-map "<backspace>" #'execute-extended-command)
-(keymap-set helix-normal-state-map "SPC" #'keypad)
+  "0" #'digit-argument
+  "1" #'digit-argument
+  "2" #'digit-argument
+  "3" #'digit-argument
+  "4" #'digit-argument
+  "5" #'digit-argument
+  "6" #'digit-argument
+  "7" #'digit-argument
+  "8" #'digit-argument
+  "9" #'digit-argument
 
-(keymap-set helix-normal-state-map "h"   #'helix-backward-char)
-(keymap-set helix-normal-state-map "j"   #'helix-next-line)
-(keymap-set helix-normal-state-map "k"   #'helix-previous-line)
-(keymap-set helix-normal-state-map "l"   #'helix-forward-char)
-(keymap-set helix-normal-state-map "w"   #'helix-forward-word-start)
-(keymap-set helix-normal-state-map "W"   #'helix-forward-WORD-start)
-(keymap-set helix-normal-state-map "b"   #'helix-backward-word-start)
-(keymap-set helix-normal-state-map "B"   #'helix-backward-WORD-start)
-(keymap-set helix-normal-state-map "e"   #'helix-forward-word-end)
-(keymap-set helix-normal-state-map "E"   #'helix-forward-WORD-end)
-(keymap-set helix-normal-state-map "g s" #'helix-beginning-of-line)
-(keymap-set helix-normal-state-map "g h" #'helix-first-non-blank)
-(keymap-set helix-normal-state-map "g l" #'helix-end-of-line)
-(keymap-set helix-normal-state-map "g g" #'helix-goto-first-line)
-(keymap-set helix-normal-state-map "G"   #'helix-goto-last-line)
-(keymap-set helix-normal-state-map "] p" #'helix-forward-paragraph)
-(keymap-set helix-normal-state-map "[ p" #'helix-backward-paragraph)
-(keymap-set helix-normal-state-map "}"   #'helix-forward-paragraph)
-(keymap-set helix-normal-state-map "{"   #'helix-backward-paragraph)
+  ;; Motions
+  "h"   #'helix-backward-char
+  "j"   #'helix-next-line
+  "k"   #'helix-previous-line
+  "l"   #'helix-forward-char
+  "w"   #'helix-forward-word-start
+  "W"   #'helix-forward-WORD-start
+  "b"   #'helix-backward-word-start
+  "B"   #'helix-backward-WORD-start
+  "e"   #'helix-forward-word-end
+  "E"   #'helix-forward-WORD-end
+  "g s" #'helix-beginning-of-line
+  "g h" #'helix-first-non-blank
+  "g l" #'helix-end-of-line
+  "g g" #'helix-goto-first-line
+  "G"   #'helix-goto-last-line
+  "] p" #'helix-forward-paragraph
+  "[ p" #'helix-backward-paragraph
+  "}"   #'helix-forward-paragraph
+  "{"   #'helix-backward-paragraph
 
-;;;; Changes
+  ;; Changes
+  "i" #'helix-insert
+  "a" #'helix-append
+  "c" #'helix-change
+  "d" #'helix-delete
+  "u" #'helix-undo
+  "U" #'undo-redo
 
-(keymap-set helix-normal-state-map "i" #'helix-insert)
-(keymap-set helix-normal-state-map "a" #'helix-append)
-(keymap-set helix-normal-state-map "c" #'helix-change)
-(keymap-set helix-normal-state-map "d" #'helix-delete)
-(keymap-set helix-normal-state-map "u" #'helix-undo)
-(keymap-set helix-normal-state-map "U" #'undo-redo)
+  ;; Selections
+  "v"   #'helix-extend-selection
+  "x"   #'helix-mark-line
+  "X"   #'helix-mark-line-upward
+  ","   #'helix-keep-primary-selection
+  ";"   #'helix-collapse-selection
+  "M-;" #'exchange-point-and-mark
+  "g o" #'exchange-point-and-mark
+  "<escape>" #'helix-normal-state-escape
 
-;;;; Selections
+  ;; Scrolling
+  "C-b" #'helix-smooth-scroll-page-up
+  "C-f" #'helix-smooth-scroll-page-down
+  "C-d" #'helix-smooth-scroll-down
+  "C-u" #'helix-smooth-scroll-up
+  "C-e" #'helix-mix-scroll-line-down
+  "C-y" #'helix-mix-scroll-line-up
+  ;; "z z" #'helix-smooth-scroll-line-to-center)
+  "z z" #'helix-smooth-scroll-line-not-to-very-top
+  "z t" #'helix-smooth-scroll-line-to-top
+  "z b" #'helix-smooth-scroll-line-to-bottom)
 
-(keymap-set helix-normal-state-map "v" #'helix-extend-selection)
-(keymap-set helix-normal-state-map "x" #'helix-mark-line)
-(keymap-set helix-normal-state-map "X" #'helix-mark-line-upward)
-(keymap-set helix-normal-state-map "," #'helix-keep-primary-selection)
-(keymap-set helix-normal-state-map ";" #'helix-collapse-selection)
-(keymap-set helix-normal-state-map "M-;" #'exchange-point-and-mark)
-(keymap-set helix-normal-state-map "g o" #'exchange-point-and-mark)
-(keymap-set helix-normal-state-map "<escape>" #'helix-normal-state-escape)
+(keymap-global-unset "M-<down-mouse-1>")
+(helix-keymap-set nil 'normal "M-<mouse-1>" #'helix-toggle-cursor-on-click)
 
-(global-unset-key (kbd "M-<down-mouse-1>"))
-(keymap-set helix-normal-state-map "M-<mouse-1>" #'helix-toggle-cursor-on-click)
+;;;; Match
 
+(helix-keymap-set nil 'normal "m" 'helix-match-map)
 (define-prefix-command 'helix-match-map)
-(keymap-set helix-normal-state-map "m" 'helix-match-map)
-(keymap-set helix-match-map "0"   #'helix-match-map-digit-argument)
-(keymap-set helix-match-map "1"   #'helix-match-map-digit-argument)
-(keymap-set helix-match-map "2"   #'helix-match-map-digit-argument)
-(keymap-set helix-match-map "3"   #'helix-match-map-digit-argument)
-(keymap-set helix-match-map "4"   #'helix-match-map-digit-argument)
-(keymap-set helix-match-map "5"   #'helix-match-map-digit-argument)
-(keymap-set helix-match-map "6"   #'helix-match-map-digit-argument)
-(keymap-set helix-match-map "7"   #'helix-match-map-digit-argument)
-(keymap-set helix-match-map "8"   #'helix-match-map-digit-argument)
-(keymap-set helix-match-map "9"   #'helix-match-map-digit-argument)
-(keymap-set helix-match-map "i p" #'helix-mark-inner-paragraph)
-(keymap-set helix-match-map "p"   #'helix-mark-inner-paragraph)
-(keymap-set helix-match-map "i w" #'helix-mark-inner-word)
-(keymap-set helix-match-map "w"   #'helix-mark-inner-word)
-(keymap-set helix-match-map "i W" #'helix-mark-inner-WORD)
-(keymap-set helix-match-map "W"   #'helix-mark-inner-WORD)
-(keymap-set helix-match-map "\""  #'helix-mark-inner-double-quoted)
-(keymap-set helix-match-map "i \"" #'helix-mark-inner-double-quoted)
-(keymap-set helix-match-map "a \"" #'helix-mark-a-double-quoted)
-(keymap-set helix-match-map "'"   #'helix-mark-inner-single-quoted)
-(keymap-set helix-match-map "i '" #'helix-mark-inner-single-quoted)
-(keymap-set helix-match-map "a '" #'helix-mark-a-single-quoted)
-(keymap-set helix-match-map "`"   #'helix-mark-inner-back-quoted)
-(keymap-set helix-match-map "i `" #'helix-mark-inner-back-quoted)
-(keymap-set helix-match-map "a `" #'helix-mark-a-back-quoted)
+(helix-keymap-set helix-match-map nil
+  "0"   #'helix-match-map-digit-argument
+  "1"   #'helix-match-map-digit-argument
+  "2"   #'helix-match-map-digit-argument
+  "3"   #'helix-match-map-digit-argument
+  "4"   #'helix-match-map-digit-argument
+  "5"   #'helix-match-map-digit-argument
+  "6"   #'helix-match-map-digit-argument
+  "7"   #'helix-match-map-digit-argument
+  "8"   #'helix-match-map-digit-argument
+  "9"   #'helix-match-map-digit-argument
 
-(keymap-set helix-match-map "("   #'helix-mark-inner-paren)
-(keymap-set helix-match-map ")"   #'helix-mark-inner-paren)
-(keymap-set helix-match-map "i (" #'helix-mark-inner-paren)
-(keymap-set helix-match-map "i )" #'helix-mark-inner-paren)
-(keymap-set helix-match-map "a (" #'helix-mark-a-paren)
-(keymap-set helix-match-map "a )" #'helix-mark-a-paren)
+  "i p" #'helix-mark-inner-paragraph
+  "p"   #'helix-mark-inner-paragraph
+  "i w" #'helix-mark-inner-word
+  "w"   #'helix-mark-inner-word
+  "i W" #'helix-mark-inner-WORD
+  "W"   #'helix-mark-inner-WORD
+  "\""  #'helix-mark-inner-double-quoted
+  "i \"" #'helix-mark-inner-double-quoted
+  "a \"" #'helix-mark-a-double-quoted
+  "'"   #'helix-mark-inner-single-quoted
+  "i '" #'helix-mark-inner-single-quoted
+  "a '" #'helix-mark-a-single-quoted
+  "`"   #'helix-mark-inner-back-quoted
+  "i `" #'helix-mark-inner-back-quoted
+  "a `" #'helix-mark-a-back-quoted
 
-(keymap-set helix-match-map "["   #'helix-mark-inner-bracket)
-(keymap-set helix-match-map "]"   #'helix-mark-inner-bracket)
-(keymap-set helix-match-map "i [" #'helix-mark-inner-bracket)
-(keymap-set helix-match-map "i ]" #'helix-mark-inner-bracket)
-(keymap-set helix-match-map "a [" #'helix-mark-a-bracket)
-(keymap-set helix-match-map "a ]" #'helix-mark-a-bracket)
+  "("   #'helix-mark-inner-paren
+  ")"   #'helix-mark-inner-paren
+  "i (" #'helix-mark-inner-paren
+  "i )" #'helix-mark-inner-paren
+  "a (" #'helix-mark-a-paren
+  "a )" #'helix-mark-a-paren
 
-(keymap-set helix-match-map "{"   #'helix-mark-inner-curly)
-(keymap-set helix-match-map "}"   #'helix-mark-inner-curly)
-(keymap-set helix-match-map "i {" #'helix-mark-inner-curly)
-(keymap-set helix-match-map "i }" #'helix-mark-inner-curly)
-(keymap-set helix-match-map "a {" #'helix-mark-a-curly)
-(keymap-set helix-match-map "a }" #'helix-mark-a-curly)
+  "["   #'helix-mark-inner-bracket
+  "]"   #'helix-mark-inner-bracket
+  "i [" #'helix-mark-inner-bracket
+  "i ]" #'helix-mark-inner-bracket
+  "a [" #'helix-mark-a-bracket
+  "a ]" #'helix-mark-a-bracket
 
-(keymap-set helix-match-map "<"   #'helix-mark-inner-angle)
-(keymap-set helix-match-map ">"   #'helix-mark-inner-angle)
-(keymap-set helix-match-map "i <" #'helix-mark-inner-angle)
-(keymap-set helix-match-map "i >" #'helix-mark-inner-angle)
-(keymap-set helix-match-map "a <" #'helix-mark-an-angle)
-(keymap-set helix-match-map "a >" #'helix-mark-an-angle)
+  "{"   #'helix-mark-inner-curly
+  "}"   #'helix-mark-inner-curly
+  "i {" #'helix-mark-inner-curly
+  "i }" #'helix-mark-inner-curly
+  "a {" #'helix-mark-a-curly
+  "a }" #'helix-mark-a-curly
 
-;;;; Scrolling
-
-(keymap-set helix-normal-state-map "C-b" #'helix-smooth-scroll-page-up)
-(keymap-set helix-normal-state-map "C-f" #'helix-smooth-scroll-page-down)
-(keymap-set helix-normal-state-map "C-d" #'helix-smooth-scroll-down)
-(keymap-set helix-normal-state-map "C-u" #'helix-smooth-scroll-up)
-(keymap-set helix-normal-state-map "C-e" #'helix-mix-scroll-line-down)
-(keymap-set helix-normal-state-map "C-y" #'helix-mix-scroll-line-up)
-;; (keymap-set helix-normal-state-map "z z" #'helix-smooth-scroll-line-to-center)
-(keymap-set helix-normal-state-map "z z" #'helix-smooth-scroll-line-not-to-very-top)
-(keymap-set helix-normal-state-map "z t" #'helix-smooth-scroll-line-to-top)
-(keymap-set helix-normal-state-map "z b" #'helix-smooth-scroll-line-to-bottom)
+  "<"   #'helix-mark-inner-angle
+  ">"   #'helix-mark-inner-angle
+  "i <" #'helix-mark-inner-angle
+  "i >" #'helix-mark-inner-angle
+  "a <" #'helix-mark-an-angle
+  "a >" #'helix-mark-an-angle)
 
 ;;;; Windows
 
+(helix-keymap-set nil 'normal "C-w" 'helix-window-map)
 (define-prefix-command 'helix-window-map)
-(keymap-set helix-normal-state-map "C-w" 'helix-window-map)
-(keymap-set helix-window-map "s"   #'helix-window-split)
-(keymap-set helix-window-map "v"   #'helix-window-vsplit)
-(keymap-set helix-window-map "d"   #'helix-window-delete)
-(keymap-set helix-window-map "c"   #'helix-window-delete)
-(keymap-set helix-window-map "h"   #'helix-window-left)
-(keymap-set helix-window-map "j"   #'helix-window-down)
-(keymap-set helix-window-map "k"   #'helix-window-up)
-(keymap-set helix-window-map "l"   #'helix-window-right)
-(keymap-set helix-window-map "C-h" #'helix-window-left)
-(keymap-set helix-window-map "C-j" #'helix-window-down)
-(keymap-set helix-window-map "C-k" #'helix-window-up)
-(keymap-set helix-window-map "C-l" #'helix-window-right)
-(keymap-set helix-window-map "H"   #'helix-move-window-left)
-(keymap-set helix-window-map "J"   #'helix-move-window-down)
-(keymap-set helix-window-map "K"   #'helix-move-window-up)
-(keymap-set helix-window-map "L"   #'helix-move-window-right)
+(helix-keymap-set helix-window-map nil
+  "s"   #'helix-window-split
+  "v"   #'helix-window-vsplit
+  "d"   #'helix-window-delete
+  "c"   #'helix-window-delete
+  "h"   #'helix-window-left
+  "j"   #'helix-window-down
+  "k"   #'helix-window-up
+  "l"   #'helix-window-right
+  "C-h" #'helix-window-left
+  "C-j" #'helix-window-down
+  "C-k" #'helix-window-up
+  "C-l" #'helix-window-right
+  "H"   #'helix-move-window-left
+  "J"   #'helix-move-window-down
+  "K"   #'helix-move-window-up
+  "L"   #'helix-move-window-right)
+
+;; Ingored
+
+(helix-keymap-set nil 'normal
+  "q"  #'ingnore
+  "\"" #'ingnore
+  "'"  #'ingnore
+  ;; "/" #'ingnore
+  ;; "n" #'ingnore
+  ;; "p" #'ingnore
+  ;; "f" #'ingnore
+  ;; "t" #'ingnore
+  ;; "o" #'ingnore
+  )
+
+;; (defun helix-general-o-fun ()
+;;   (interactive)
+;;   (message "General o function"))
+;;
+;; (keymap-set helix-normal-state-map "o" #'helix-general-o-fun)
+;;
+;; (defun helix-elisp-mode-o-fun ()
+;;   (interactive)
+;;   (message "Emacs-Lisp mode local o function"))
+;;
+;; (helix-keymap-set emacs-lisp-mode-map 'normal
+;;   "o" #'helix-elisp-mode-o-fun)
 
 ;;; Insert state
 
-(keymap-set helix-insert-state-map "<escape>" #'helix-normal-state)
+(helix-keymap-set nil 'insert "<escape>" #'helix-normal-state)
 
 ;;; Motion state
 
