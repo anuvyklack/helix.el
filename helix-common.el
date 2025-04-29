@@ -19,6 +19,18 @@
 
 ;;; Macros
 
+(defmacro helix--add-to-alist (alist &rest elements)
+  "Add the association of KEY and VAL to the value of ALIST.
+If the list already contains an entry for KEY, update that entry;
+otherwise prepend it to the list.
+
+\(fn ALIST [KEY VAL]...)"
+  `(progn
+     ,@(cl-loop
+        for (key val) on elements by #'cddr collect
+        `(setf (alist-get ,key ,alist nil nil #'equal) ,val))
+     ,alist))
+
 (defmacro helix-with-restriction (restrictions &rest body)
   "Execute BODY with the buffer narrowed to BEG and END.
 
