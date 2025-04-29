@@ -28,7 +28,7 @@
   :group 'keypad
   :type 'string)
 
-(defcustom keypad-ctrl-meta-prefix "M"
+(defcustom keypad-ctrl-meta-prefix "g"
   "The key coresponding to C-M- modifier."
   :group 'keypad
   :type 'string)
