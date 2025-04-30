@@ -21,6 +21,7 @@
 (require 'helix-core)
 (require 'helix-states)
 (require 'helix-keybindings)
+(require 'helix-integration)
 
 (provide 'helix)
 ;;; helix.el ends here
