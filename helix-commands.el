@@ -452,6 +452,26 @@ Select visual lines when `visual-line-mode' is on."
     (set-mark (car bounds))
     (goto-char (cdr bounds))))
 
+(defun helix-mark-inner-char ()
+  (interactive)
+  (let ((char (if (integerp last-command-event)
+                  last-command-event
+                (get last-command-event 'ascii-character)))
+        (limits (bounds-of-thing-at-point 'defun)))
+    (when-let* ((bounds (helix-bounds-of-enclosed-text-at-point char limits)))
+      (set-mark (1+ (car bounds)))
+      (goto-char (1- (cdr bounds))))))
+
+(defun helix-mark-a-char ()
+  (interactive)
+  (let ((char (if (integerp last-command-event)
+                  last-command-event
+                (get last-command-event 'ascii-character)))
+        (limits (bounds-of-thing-at-point 'defun)))
+    (when-let* ((bounds (helix-bounds-of-enclosed-text-at-point char limits)))
+      (set-mark (car bounds))
+      (goto-char (cdr bounds)))))
+
 ;;; Window navigation
 
 (defalias 'helix-window-split #'split-window-below)

@@ -152,7 +152,43 @@
   "i <" #'helix-mark-inner-angle
   "i >" #'helix-mark-inner-angle
   "a <" #'helix-mark-an-angle
-  "a >" #'helix-mark-an-angle)
+  "a >" #'helix-mark-an-angle
+
+  "!" #'helix-mark-inner-char
+  "@" #'helix-mark-inner-char
+  "#" #'helix-mark-inner-char
+  "$" #'helix-mark-inner-char
+  "%" #'helix-mark-inner-char
+  "^" #'helix-mark-inner-char
+  "&" #'helix-mark-inner-char
+  "*" #'helix-mark-inner-char
+  "~" #'helix-mark-inner-char
+  "=" #'helix-mark-inner-char
+  "_" #'helix-mark-inner-char
+
+  "i !" #'helix-mark-inner-char
+  "i @" #'helix-mark-inner-char
+  "i #" #'helix-mark-inner-char
+  "i $" #'helix-mark-inner-char
+  "i %" #'helix-mark-inner-char
+  "i ^" #'helix-mark-inner-char
+  "i &" #'helix-mark-inner-char
+  "i *" #'helix-mark-inner-char
+  "i ~" #'helix-mark-inner-char
+  "i =" #'helix-mark-inner-char
+  "i _" #'helix-mark-inner-char
+
+  "a !" #'helix-mark-a-char
+  "a @" #'helix-mark-a-char
+  "a #" #'helix-mark-a-char
+  "a $" #'helix-mark-a-char
+  "a %" #'helix-mark-a-char
+  "a ^" #'helix-mark-a-char
+  "a &" #'helix-mark-a-char
+  "a *" #'helix-mark-a-char
+  "a ~" #'helix-mark-a-char
+  "a =" #'helix-mark-a-char
+  "a _" #'helix-mark-a-char)
 
 ;;;; Windows
 
