@@ -14,6 +14,8 @@
 ;;; Code:
 
 (require 'pixel-scroll)
+(require 'dash)
+(require 'helix-vars)
 
 ;; (line-pixel-height)
 ;; (pixel-visible-pos-in-window)

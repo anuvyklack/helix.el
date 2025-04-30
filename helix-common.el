@@ -275,9 +275,8 @@ with positions before LEFT and after RIGHT."
             ;; If inside comment or string use manual algorithm.
             (sexp-bounds (helix--bounds-of-balanced-sexp-at-point left right bounds)))
       sexp-bounds
-    ;; Else if not or nothing found go out ...
+    ;; Else if not or nothing found go out and try Parse-Partial-Sexp Scanner.
     (when bounds (goto-char (car bounds)))
-    ;; ... and try Parse-Partial-Sexp Scanner
     (helix--bounds-of-balanced-sexp-at-point-ppss left right)))
 
 (defun helix--bounds-of-balanced-sexp-at-point-ppss (left right)
