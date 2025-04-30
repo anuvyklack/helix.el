@@ -253,14 +253,14 @@ a cons cell with (LEFT . RIGHT) positions.
 Return the cons cell (START . END) with positions before the openning
 DELIMITER and after the closing one."
   (when (characterp delimiter) (setq delimiter (string delimiter)))
-  (cl-destructuring-bind (left . right) limits
-    (save-excursion
-      (let ((pnt (point)))
-        (if-let* ((beg (search-forward delimiter left t))
-                  (end (progn
-                         (goto-char pnt)
-                         (search-backward delimiter right t))))
-            (cons beg end))))))
+  (save-excursion
+    (pcase-let ((pnt (point))
+                (`(,left . ,right) limits))
+      (if-let* ((beg (search-backward delimiter left t))
+                (end (progn
+                       (goto-char pnt)
+                       (search-forward delimiter right t))))
+          (cons beg end)))))
 
 (defun helix-bounds-of-sexp-at-point (left right)
   "Return the bounds of the balanced expression at point enclosed
