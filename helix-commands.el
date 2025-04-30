@@ -327,6 +327,19 @@ Select visual lines when `visual-line-mode' is on."
   (interactive "p")
   (helix-mark-line (- count)))
 
+;; _
+(defun helix-trim-whitespaces-from-selection ()
+  "Trim whitespaces and newlines from the both ends of the current selection."
+  (interactive)
+  (when (use-region-p)
+    (let ((dir (if (< (point) (mark)) -1 1)))
+      (helix-skip-chars " \t\r\n" (- dir))
+      (helix-exchange-point-and-mark)
+      (helix-skip-chars " \t\r\n" dir)
+      (helix-exchange-point-and-mark))))
+
+;;; Match
+
 (defun helix-match-map-digit-argument (arg)
   "Like `digit-argument' but keep `helix-match-map' active."
   (interactive "P")

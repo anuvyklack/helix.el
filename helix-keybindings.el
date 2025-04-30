@@ -70,6 +70,7 @@
   "U" #'undo-redo
 
   ;; Selections
+  "<escape>" #'helix-normal-state-escape
   "v"   #'helix-extend-selection
   "x"   #'helix-mark-line
   "X"   #'helix-mark-line-upward
@@ -77,7 +78,7 @@
   ";"   #'helix-collapse-selection
   "M-;" #'exchange-point-and-mark
   "g o" #'exchange-point-and-mark
-  "<escape>" #'helix-normal-state-escape
+  "_"   #'helix-trim-whitespaces-from-selection
 
   ;; Scrolling
   "C-b" #'helix-smooth-scroll-page-up
