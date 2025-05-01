@@ -454,16 +454,20 @@ Select visual lines when `visual-line-mode' is on."
 ;; mi< mi>
 (defun helix-mark-inner-angle ()
   (interactive)
-  (when-let* ((bounds (helix-bounds-of-sexp-at-point ?< ?>)))
-    (set-mark (1+ (car bounds)))
-    (goto-char (1- (cdr bounds)))))
+  (let ((pair '("<" . ">"))
+        (limits (bounds-of-thing-at-point 'defun)))
+    (when-let* ((bounds (helix-bounds-of-surrounded-at-point pair limits nil t)))
+      (set-mark (1+ (car bounds)))
+      (goto-char (1- (cdr bounds))))))
 
 ;; ma< ma>
 (defun helix-mark-an-angle ()
   (interactive)
-  (when-let* ((bounds (helix-bounds-of-sexp-at-point ?< ?>)))
-    (set-mark (car bounds))
-    (goto-char (cdr bounds))))
+  (let ((pair '("<" . ">"))
+        (limits (bounds-of-thing-at-point 'defun)))
+    (when-let* ((bounds (helix-bounds-of-surrounded-at-point pair limits nil t)))
+      (set-mark (car bounds))
+      (goto-char (cdr bounds)))))
 
 (defun helix-mark-inner-char ()
   (interactive)
@@ -471,7 +475,7 @@ Select visual lines when `visual-line-mode' is on."
                   last-command-event
                 (get last-command-event 'ascii-character)))
         (limits (bounds-of-thing-at-point 'defun)))
-    (when-let* ((bounds (helix-bounds-of-enclosed-text-at-point char limits)))
+    (when-let* ((bounds (helix-bounds-of-surrounded-at-point char limits)))
       (set-mark (1+ (car bounds)))
       (goto-char (1- (cdr bounds))))))
 
@@ -481,7 +485,7 @@ Select visual lines when `visual-line-mode' is on."
                   last-command-event
                 (get last-command-event 'ascii-character)))
         (limits (bounds-of-thing-at-point 'defun)))
-    (when-let* ((bounds (helix-bounds-of-enclosed-text-at-point char limits)))
+    (when-let* ((bounds (helix-bounds-of-surrounded-at-point char limits)))
       (set-mark (car bounds))
       (goto-char (cdr bounds)))))
 

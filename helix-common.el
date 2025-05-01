@@ -233,155 +233,234 @@ like: `helix-word', `paragraph', `line'."
 (defun helix-bounds-of-string-at-point (quote-mark)
   "Return a cons cell (START . END) with bounds of string
 enclosed in QUOTE-MARKs."
-  (let (bounds)
-    (cond ((setq bounds (bounds-of-thing-at-point 'helix-comment))
-           (helix-bounds-of-enclosed-text-at-point quote-mark bounds))
-          ((setq bounds (bounds-of-thing-at-point 'string))
-           (if (eq (char-after (car bounds)) quote-mark)
-               bounds
-             (helix-bounds-of-enclosed-text-at-point quote-mark bounds)))
-          (t
-           (helix--bounds-of-quoted-at-point-ppss quote-mark)))))
-
-(defun helix-bounds-of-enclosed-text-at-point (delimiter &optional limits)
-  "Return the bounds of the text region enclosed in DELIMITERs.
-
-The point should be inside this text region. DELIMITER should be
-a string or a character. The search is bounded within LIMITS:
-a cons cell with (LEFT . RIGHT) positions.
-
-Return the cons cell (START . END) with positions before the openning
-DELIMITER and after the closing one."
-  (when (characterp delimiter) (setq delimiter (string delimiter)))
-  (save-excursion
-    (pcase-let ((pnt (point))
-                (`(,left . ,right) limits))
-      (if-let* ((beg (search-backward delimiter left t))
-                (end (progn
-                       (goto-char pnt)
-                       (search-forward delimiter right t))))
-          (cons beg end)))))
-
-(defun helix-bounds-of-sexp-at-point (left right)
-  "Return the bounds of the balanced expression at point enclosed
-in LEFT and RIGHT, for which the point is in the position directly
-before the LEFT delimiter, or inside. All nested balanced expressions
-are skipped.
-
-LEFT and RIGHT should be characters. Return the cons cell (START . END)
-with positions before LEFT and after RIGHT."
   (if-let* ((bounds (or (bounds-of-thing-at-point 'helix-comment)
-                        (bounds-of-thing-at-point 'string)))
-            ;; If inside comment or string use manual algorithm.
-            (sexp-bounds (helix--bounds-of-balanced-sexp-at-point left right bounds)))
-      sexp-bounds
-    ;; Else if not or nothing found go out and try Parse-Partial-Sexp Scanner.
-    (when bounds (goto-char (car bounds)))
-    (helix--bounds-of-balanced-sexp-at-point-ppss left right)))
+                        (bounds-of-thing-at-point 'string))))
+      (helix-bounds-of-surrounded-at-point quote-mark bounds)
+    (helix--bounds-of-quoted-at-point-ppss quote-mark)))
 
-(defun helix--bounds-of-balanced-sexp-at-point-ppss (left right)
-  "Return the bounds of the balanced expression at point enclosed
-in LEFT and RIGHT, for which the point is either: directly before
-LEFT, directly after RIGHT, or inside.
+(defun helix-bounds-of-surrounded-at-point (pair &optional limits regexp? balanced?)
+  "Return the bounds of the text region enclosed in LEFT and RIGHT.
 
-All nested balanced expressions are skipped.
-Internally uses Emacs built-in Parse-Partial-Sexp Scanner.
+LEFT and RIGHT should be strings. If they are different, then point
+can be either: directly before LEFT, directly after RIGHT, or somewhere
+between them. If LEFT and RIGHT are equal — point should between them.
 
-LEFT and RIGHT should be characters, typically parenthesis.
+The search is optionally bounded within LIMITS: a cons cell with
+\(LEFT-LIMIT . RIGHT-LIMIT) positions.
+
+If REGEXP? is non-nil LEFT and RIGHT will be searched as regexp patterns
+\(and clobber match data), else they will be searched literally.
+
+If BALANCED? is non-nil all nested LEFT RIGHT pairs will be skipped.
+
 Return the cons cell (START . END) with positions before LEFT and
-after RIGHT."
-  (save-excursion
-    (let ((syntax-table (if (and (eq (char-syntax left) ?\()
-                                 (eq (char-syntax right) ?\)))
-                            (syntax-table)
-                          (let ((st (copy-syntax-table (syntax-table))))
-                            (modify-syntax-entry left (format "(%c" right) st)
-                            (modify-syntax-entry right (format ")%c" left) st)
-                            st)))
-          ;; Always use the default `forward-sexp-function'. This is important
-          ;; for modes that use a custom one like `python-mode'.
-          forward-sexp-function)
-      (with-syntax-table syntax-table
-        (cond ((= (following-char) left) ; point is before LEFT
-               (cons (point)
-                     (progn (forward-sexp) (point))))
-              ((= (preceding-char) right) ; point is after RIGHT
-               (let ((end (point)))
-                 (cons (progn (backward-sexp) (point))
-                       end)))
-              (t
-               (let ((pnt (point)))
-                 (condition-case nil
-                     (while (progn (up-list -1 t)
-                                   (/= (following-char) left)))
-                   (error (goto-char pnt)))
-                 (if (/= (point) pnt)
-                     (cons (point)
-                           (progn (forward-sexp) (point)))))))))))
+after RIGHT.
 
-(defun helix--bounds-of-balanced-sexp-at-point (left right limits)
+\(fn (LEFT . RIGHT) &optional LIMITS REGEXP? BALANCED?)"
+  (save-excursion
+    (pcase-let* ((`(,left . ,right) pair)
+                 (balanced? (if (string-equal left right)
+                                nil
+                              balanced?)))
+      (if (and balanced?
+               ;; Check if we can use Parse-Partial-Sexp Scanner
+               (and (length= left 1)
+                    (length= right 1)
+                    (eq (char-syntax (string-to-char left)) ?\()
+                    (eq (char-syntax (string-to-char right)) ?\))))
+          (helix-bounds-of-sexp-at-point pair)
+        (helix--bounds-of-surrounded-at-point-1 pair limits regexp? balanced?)))))
+
+(defun helix-bounds-of-sexp-at-point (pair)
   "Return the bounds of the balanced expression at point enclosed
 in LEFT and RIGHT, for which the point is either: directly before
 LEFT, directly after RIGHT, or inside. All nested balanced expressions
 are skipped.
 
-LEFT and RIGHT can be strings or characters. The search is bounded
-within LIMITS: a cons cell with \(LEFT-LIMIT . RIGHT-LIMIT) positions.
+LEFT and RIGHT should be strings of one character, typically brackets,
+for example: (\"{\" . \"}\").
+
+This function was created to search balanced brackets in programming
+modes, since uses Emacs built-in Parse-Partial-Sexp Scanner inside.
+For arbitrary delimeters use `helix-bounds-of-surrounded-at-point'.
 
 Return the cons cell (START . END) with positions before LEFT and
-after RIGHT."
-  (when (characterp left) (setq left (string left)))
-  (when (characterp right) (setq right (string right)))
-  (cl-destructuring-bind (left-limit . right-limit) limits
-    (save-excursion
-      (let ((pnt (point)))
-        (cond ((helix-looking-at left) ; point is before LEFT
-               (forward-char (length left))
-               (if-let* ((end (helix--scan-balanced left right 1 right-limit)))
-                   (cons pnt end)))
-              ((helix-looking-back right) ; point is after RIGHT
-               (backward-char (length right))
-               (if-let* ((beg (helix--scan-balanced left right -1 left-limit)))
-                   (cons beg pnt)))
-              (t
-               (if-let* ((beg (helix--scan-balanced left right -1 left-limit))
-                         (end (helix--scan-balanced left right 1 right-limit)))
-                   (cons beg end))))))))
+after RIGHT.
 
-(defun helix--scan-balanced (left right &optional direction limit)
-  "Return the position after the closing delimiter toward the DIRECTION
-skipping all balanced LEFT RIGHT pairs on the way.
+\(fn (LEFT . RIGHT))"
+  (pcase-let ((`(,left . ,right) pair))
+    (when (string-equal left right)
+      (user-error "Left and right delimiters should not be equal"))
+    (if-let* ((bounds (or (bounds-of-thing-at-point 'helix-comment)
+                          (bounds-of-thing-at-point 'string)))
+              ;; If inside comment or string use manual algorithm.
+              (sexp-bounds (helix--bounds-of-surrounded-at-point-1 pair bounds nil t)))
+        sexp-bounds
+      ;; Else if not or nothing have found — go out ...
+      (when bounds (goto-char (car bounds)))
+      ;; ... and try Parse-Partial-Sexp Scanner
+      (save-excursion
+        (let* ((pnt (point))
+               (left  (string-to-char left))
+               (right (string-to-char right))
+               (syntax-table (if (and (eq (char-syntax left) ?\()
+                                      (eq (char-syntax right) ?\)))
+                                 (syntax-table)
+                               (let ((st (copy-syntax-table (syntax-table))))
+                                 (modify-syntax-entry left (format "(%c" right) st)
+                                 (modify-syntax-entry right (format ")%c" left) st)
+                                 st)))
+               ;; Always use the default `forward-sexp-function'. This is important
+               ;; for modes that use a custom one like `python-mode'.
+               forward-sexp-function)
+          (with-syntax-table syntax-table
+            (cond ((eq (following-char) left) ; point is before LEFT
+                   (cons pnt
+                         (progn (forward-sexp) (point))))
+                  ((eq (preceding-char) right) ; point is after RIGHT
+                   (cons (progn (backward-sexp) (point))
+                         pnt))
+                  (t
+                   (condition-case nil
+                       (while (progn (up-list -1 t)
+                                     (/= (following-char) left)))
+                     (error (goto-char pnt)))
+                   (if (/= (point) pnt)
+                       (cons (point)
+                             (progn (forward-sexp) (point))))))))))))
 
-LEFT and RIGHT should be strings. If DIRECTION is positive number,
-return the position after RIGHT, negative — before LEFT."
+(defun helix--bounds-of-surrounded-at-point-1 (pair &optional limits regexp? balanced?)
+  "The internal function for `helix-bounds-of-surrounded-at-point'."
   (save-excursion
-    (let ((open  (if (< direction 0) right left))
-          (close (if (< direction 0) left right)))
+    (pcase-let* ((`(,left . ,right) pair)
+                 (left-not-equal-right? (not (string-equal left right)))
+                 (pnt (point)))
+      (cond (;; point is before LEFT
+             (and left-not-equal-right?
+                  (helix-looking-at left 1 regexp?))
+             (goto-char (if regexp? (match-end 0)
+                          (+ pnt (length left))))
+             (if-let* ((end (helix-search-out pair 1 limits regexp? balanced?)))
+                 (cons pnt end)))
+            (;; point is after RIGHT
+             (and left-not-equal-right?
+                  (helix-looking-at right -1 regexp?))
+             (goto-char (if regexp? (match-beginning 0)
+                          (- pnt (length right))))
+             (if-let* ((beg (helix-search-out pair -1 limits regexp? balanced?)))
+                 (cons beg pnt)))
+            (t
+             (if-let* ((beg (helix-search-out pair -1 limits regexp? balanced?))
+                       (end (helix-search-out pair 1 limits regexp? balanced?)))
+                 (cons beg end)))))))
+
+(defun helix-looking-at (str &optional direction regexp?)
+  "Return t if text directly after point toward the DIRECTION
+matches string STR.
+
+If REGEXP? is non-nil STR will be searched as regexp pattern,
+else it will be searched literally.
+
+When REGEXP? is non-nil this function modifies the match data
+that `match-beginning', `match-end' and `match-data' access."
+  (or direction (setq direction 1))
+  (cond ((and regexp? (< 0 direction))
+         (looking-at str))
+        ((and regexp? (< direction 0))
+         (looking-back str (line-beginning-position)))
+        ((< 0 direction)
+         (let* ((pnt (point))
+                (pos (+ pnt (length str))))
+           (and (<= pos (point-max))
+                (string-equal (buffer-substring-no-properties pnt pos) str))))
+        ((< direction 0)
+         (let* ((pnt (point))
+                (pos (- pnt (length str))))
+           (and (<= (point-min) pos)
+                (string-equal (buffer-substring-no-properties pos pnt)
+                              str))))))
+
+(defun helix-search-out (pair &optional direction limits regexp? balanced?)
+  "This function assume, that you are somewhere inside LEFT RIGHT
+enclosed text region, and return the position before LEFT or after
+RIGHT depending on DIRECTION.
+
+LEFT and RIGHT should be strings.
+DIRECTION should be either 1 — return the position after RIGHT,
+or -1 — before LEFT.
+
+The search is optionally bounded within LIMITS: a cons cell with
+\(LEFT-LIMIT . RIGHT-LIMIT) positions.
+
+If REGEXP? is non-nil LEFT and RIGHT will be searched as regexp patterns
+\(and clobber match data), else they will be searched literally.
+
+If BALANCED? is non-nil all nested LEFT RIGHT pairs on the way will
+be skipped.
+
+\(fn (LEFT . RIGHT) &optional LIMITS REGEXP? BALANCED?)"
+  (or direction (setq direction 1))
+  (save-excursion
+    (if balanced?
+        (helix--search-out-balanced pair direction limits regexp?)
+      (let ((str   (if (< direction 0) (car pair) (car pair)))
+            (limit (if (< direction 0) (car limits) (cdr limits))))
+        (helix--search str direction limit regexp?)))))
+
+(defun helix--search-out-balanced (pair &optional direction limits regexp?)
+  "This is an internal function for `helix-search-out' that is used
+when BALANCED? argument is non-nil."
+  (save-excursion
+    (let (open close limit)
+      (if (> direction 0)
+          (pcase-setq `(,open . ,close) pair
+                      `(,_ . ,limit) limits)
+        (pcase-setq `(,close . ,open) pair
+                    `(,limit . ,_) limits))
       ;; The algorithm assume we are *inside* a pair: level of nesting is 1.
       (let ((level 1))
         (cl-block nil
           (while (> level 0)
             (let* ((pnt (point))
-                   (close-pos (search-forward close limit t direction))
+                   (close-pos (helix--search close direction limit regexp?))
                    (open-pos (progn
                                (goto-char pnt)
-                               (search-forward open limit t direction))))
-              (if (and close-pos open-pos)
-                  (let ((close-dist (helix-distance pnt close-pos))
-                        (open-dist  (helix-distance pnt open-pos)))
-                    (cond ((< open-dist close-dist)
-                           (setq level (1+ level))
-                           (goto-char open-pos))
-                          (t
-                           (setq level (1- level))
-                           (goto-char close-pos))))
-                ;; else
-                (when close-pos
-                  (setq level (1- level))
-                  (goto-char close-pos))
-                (cl-return)))))
+                               (helix--search open direction limit regexp?))))
+              (cond ((and close-pos open-pos)
+                     (let ((close-dist (helix-distance pnt close-pos))
+                           (open-dist  (helix-distance pnt open-pos)))
+                       (cond ((< open-dist close-dist)
+                              (setq level (1+ level))
+                              (goto-char open-pos))
+                             (t
+                              (setq level (1- level))
+                              (goto-char close-pos)))))
+                    (close-pos
+                     (setq level (1- level))
+                     (goto-char close-pos))
+                    (t (cl-return))))))
         (if (eql level 0)
             (point))))))
+
+(defun helix--search (str &optional direction limit regexp?)
+  "Search for string STR toward the DIRECTION.
+
+DIRECTION should be either -1 — search backward, or 1 — search
+forward.
+
+LIMIT optionally bounds the search. It should be a position that
+is *after* the point if DIRECTION is positive, and *before* the
+point — if negative.
+
+If REGEXP? is non-nil STR will be searched as regexp pattern,
+else it will be searched literally.
+
+When REGEXP? is non-nil this function modifies the match data
+that `match-beginning', `match-end' and `match-data' access."
+  (or direction (setq direction 1))
+  (if regexp?
+      (re-search-forward str limit t direction)
+    (search-forward str limit t direction)))
 
 (defun helix--bounds-of-quoted-at-point-ppss (quote-mark)
   "Return a cons cell (START . END) with bounds of region around
@@ -502,21 +581,6 @@ Return symbol:
   (eql (char-syntax char) ?\s)
   ;; Alternative: (memq char '(?\s ?\t))
   )
-
-(defun helix-looking-at (str)
-  "Return t if text after point literally matches string STR."
-  (let* ((pnt (point))
-         (pos (+ pnt (length str))))
-    (and (<= pos (point-max))
-         (string-equal (buffer-substring-no-properties pnt pos) str))))
-
-(defun helix-looking-back (str)
-  "Return t if text before point literally matches string STR."
-  (let* ((pnt (point))
-         (pos (- pnt (length str))))
-    (and (<= (point-min) pos)
-         (string-equal (buffer-substring-no-properties pos pnt)
-                       str))))
 
 (defun helix-comment-at-point-p ()
   "Return non-nil if point is inside a comment, or comment starts
