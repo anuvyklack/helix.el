@@ -253,8 +253,8 @@ If REGEXP? is non-nil LEFT and RIGHT will be searched as regexp patterns
 
 If BALANCED? is non-nil all nested LEFT RIGHT pairs will be skipped.
 
-Return the cons cell (START . END) with positions before LEFT and
-after RIGHT.
+Return the list (LEFT-BEG LEFT-END RIGHT-LEFT RIGHT-END) with
+4 positions: before/after LEFT and before/after RIGHT.
 
 \(fn (LEFT . RIGHT) &optional LIMITS REGEXP? BALANCED?)"
   (save-excursion
@@ -262,14 +262,19 @@ after RIGHT.
                  (balanced? (if (string-equal left right)
                                 nil
                               balanced?)))
-      (if (and balanced?
-               ;; Check if we can use Parse-Partial-Sexp Scanner
-               (and (length= left 1)
-                    (length= right 1)
-                    (eq (char-syntax (string-to-char left)) ?\()
-                    (eq (char-syntax (string-to-char right)) ?\))))
-          (helix-bounds-of-sexp-at-point pair)
-        (helix--bounds-of-surrounded-at-point-1 pair limits regexp? balanced?)))))
+      (cond ((and balanced?
+                  ;; Check if we can use Parse-Partial-Sexp Scanner
+                  (and (length= left 1)
+                       (length= right 1)
+                       (eq (char-syntax (string-to-char left)) ?\()
+                       (eq (char-syntax (string-to-char right)) ?\))))
+             (if-let* ((bounds (helix-bounds-of-sexp-at-point pair)))
+                 (list (car bounds)
+                       (1+ (car bounds))
+                       (1- (cdr bounds))
+                       (cdr bounds))))
+            (t
+             (helix--bounds-of-surrounded-at-point-1 pair limits regexp? balanced?))))))
 
 (defun helix-bounds-of-sexp-at-point (pair)
   "Return the bounds of the balanced expression at point enclosed
@@ -295,7 +300,8 @@ after RIGHT.
                           (bounds-of-thing-at-point 'string)))
               ;; If inside comment or string use manual algorithm.
               (sexp-bounds (helix--bounds-of-surrounded-at-point-1 pair bounds nil t)))
-        sexp-bounds
+        (pcase-let ((`(,l ,_ ,_ ,r) sexp-bounds))
+          (cons l r))
       ;; Else if not or nothing have found — go out ...
       (when bounds (goto-char (car bounds)))
       ;; ... and try Parse-Partial-Sexp Scanner
@@ -333,26 +339,37 @@ after RIGHT.
   "The internal function for `helix-bounds-of-surrounded-at-point'."
   (save-excursion
     (pcase-let* ((`(,left . ,right) pair)
-                 (left-not-equal-right? (not (string-equal left right)))
-                 (pnt (point)))
+                 (left-not-equal-right? (not (string-equal left right))))
       (cond (;; point is before LEFT
              (and left-not-equal-right?
                   (helix-looking-at left 1 regexp?))
-             (goto-char (if regexp? (match-end 0)
-                          (+ pnt (length left))))
-             (if-let* ((end (helix-search-out pair 1 limits regexp? balanced?)))
-                 (cons pnt end)))
+             (let* ((left-beg (point))
+                    (left-end (if regexp? (match-end 0)
+                                (+ left-beg (length left)))))
+               (goto-char left-end)
+               (if-let* ((right-end (helix-search-out pair 1 limits regexp? balanced?))
+                         (right-beg (if regexp? (match-beginning 0)
+                                      (- right-end (length right)))))
+                   (list left-beg left-end right-beg right-end))))
             (;; point is after RIGHT
              (and left-not-equal-right?
                   (helix-looking-at right -1 regexp?))
-             (goto-char (if regexp? (match-beginning 0)
-                          (- pnt (length right))))
-             (if-let* ((beg (helix-search-out pair -1 limits regexp? balanced?)))
-                 (cons beg pnt)))
+             (let* ((right-end (point))
+                    (right-beg (if regexp? (match-beginning 0)
+                                 (- right-end (length right)))))
+               (goto-char right-beg)
+               (if-let* ((left-beg (helix-search-out pair -1 limits regexp? balanced?))
+                         (left-end (if regexp? (match-end 0)
+                                     (+ left-beg (length left)))))
+                   (list left-beg left-end right-beg right-end))))
             (t
-             (if-let* ((beg (helix-search-out pair -1 limits regexp? balanced?))
-                       (end (helix-search-out pair 1 limits regexp? balanced?)))
-                 (cons beg end)))))))
+             (if-let* ((left-beg (helix-search-out pair -1 limits regexp? balanced?))
+                       (left-end (if regexp? (match-end 0)
+                                   (+ left-beg (length left))))
+                       (right-end (helix-search-out pair 1 limits regexp? balanced?))
+                       (right-beg (if regexp? (match-beginning 0)
+                                    (- right-end (length right)))))
+                 (list left-beg left-end right-beg right-end)))))))
 
 (defun helix-looking-at (str &optional direction regexp?)
   "Return t if text directly after point toward the DIRECTION
@@ -445,8 +462,7 @@ when BALANCED? argument is non-nil."
 (defun helix--search (str &optional direction limit regexp?)
   "Search for string STR toward the DIRECTION.
 
-DIRECTION should be either -1 — search backward, or 1 — search
-forward.
+DIRECTION can be either 1 — search forward, or -1 — search backward.
 
 LIMIT optionally bounds the search. It should be a position that
 is *after* the point if DIRECTION is positive, and *before* the

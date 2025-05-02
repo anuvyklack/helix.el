@@ -412,42 +412,42 @@ Select visual lines when `visual-line-mode' is on."
 ;; mi( mi)
 (defun helix-mark-inner-paren ()
   (interactive)
-  (when-let* ((bounds (helix-bounds-of-sexp-at-point ?\( ?\))))
+  (when-let* ((bounds (helix-bounds-of-sexp-at-point '("(" . ")"))))
     (set-mark (1+ (car bounds)))
     (goto-char (1- (cdr bounds)))))
 
 ;; ma( ma)
 (defun helix-mark-a-paren ()
   (interactive)
-  (when-let* ((bounds (helix-bounds-of-sexp-at-point ?\( ?\))))
+  (when-let* ((bounds (helix-bounds-of-sexp-at-point '("(" . ")"))))
     (set-mark (car bounds))
     (goto-char (cdr bounds))))
 
 ;; mi[ mi]
 (defun helix-mark-inner-bracket ()
   (interactive)
-  (when-let* ((bounds (helix-bounds-of-sexp-at-point ?\[ ?\])))
+  (when-let* ((bounds (helix-bounds-of-sexp-at-point '("[" . "]"))))
     (set-mark (1+ (car bounds)))
     (goto-char (1- (cdr bounds)))))
 
 ;; ma[ ma]
 (defun helix-mark-a-bracket ()
   (interactive)
-  (when-let* ((bounds (helix-bounds-of-sexp-at-point ?\[ ?\])))
+  (when-let* ((bounds (helix-bounds-of-sexp-at-point '("[" . "]"))))
     (set-mark (car bounds))
     (goto-char (cdr bounds))))
 
 ;; mi{ mi}
 (defun helix-mark-inner-curly ()
   (interactive)
-  (when-let* ((bounds (helix-bounds-of-sexp-at-point ?{ ?})))
+  (when-let* ((bounds (helix-bounds-of-sexp-at-point '("{" . "}"))))
     (set-mark (1+ (car bounds)))
     (goto-char (1- (cdr bounds)))))
 
 ;; ma{ ma}
 (defun helix-mark-a-curly ()
   (interactive)
-  (when-let* ((bounds (helix-bounds-of-sexp-at-point ?{ ?})))
+  (when-let* ((bounds (helix-bounds-of-sexp-at-point '("{" . "}"))))
     (set-mark (car bounds))
     (goto-char (cdr bounds))))
 
@@ -457,8 +457,9 @@ Select visual lines when `visual-line-mode' is on."
   (let ((pair '("<" . ">"))
         (limits (bounds-of-thing-at-point 'defun)))
     (when-let* ((bounds (helix-bounds-of-surrounded-at-point pair limits nil t)))
-      (set-mark (1+ (car bounds)))
-      (goto-char (1- (cdr bounds))))))
+      (pcase-let ((`(,_ ,l ,r ,_) bounds))
+        (set-mark l)
+        (goto-char r)))))
 
 ;; ma< ma>
 (defun helix-mark-an-angle ()
@@ -466,8 +467,9 @@ Select visual lines when `visual-line-mode' is on."
   (let ((pair '("<" . ">"))
         (limits (bounds-of-thing-at-point 'defun)))
     (when-let* ((bounds (helix-bounds-of-surrounded-at-point pair limits nil t)))
-      (set-mark (car bounds))
-      (goto-char (cdr bounds)))))
+      (pcase-let ((`(,l ,_ ,_ ,r) bounds))
+        (set-mark l)
+        (goto-char r)))))
 
 (defun helix-mark-inner-char ()
   (interactive)
@@ -476,8 +478,9 @@ Select visual lines when `visual-line-mode' is on."
                 (get last-command-event 'ascii-character)))
         (limits (bounds-of-thing-at-point 'defun)))
     (when-let* ((bounds (helix-bounds-of-surrounded-at-point char limits)))
-      (set-mark (1+ (car bounds)))
-      (goto-char (1- (cdr bounds))))))
+      (pcase-let ((`(,_ ,l ,r ,_) bounds))
+        (set-mark l)
+        (goto-char r)))))
 
 (defun helix-mark-a-char ()
   (interactive)
@@ -486,8 +489,9 @@ Select visual lines when `visual-line-mode' is on."
                 (get last-command-event 'ascii-character)))
         (limits (bounds-of-thing-at-point 'defun)))
     (when-let* ((bounds (helix-bounds-of-surrounded-at-point char limits)))
-      (set-mark (car bounds))
-      (goto-char (cdr bounds)))))
+      (pcase-let ((`(,l ,_ ,_ ,r) bounds))
+        (set-mark l)
+        (goto-char r)))))
 
 ;;; Window navigation
 
