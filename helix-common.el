@@ -238,15 +238,15 @@ enclosed in QUOTE-MARKs."
       (helix-bounds-of-surrounded-at-point quote-mark bounds)
     (helix--bounds-of-quoted-at-point-ppss quote-mark)))
 
-(defun helix-bounds-of-surrounded-at-point (pair &optional limits regexp? balanced?)
+(defun helix-bounds-of-surrounded-at-point (pair &optional scope regexp? balanced?)
   "Return the bounds of the text region enclosed in LEFT and RIGHT.
 
 LEFT and RIGHT should be strings. If they are different, then point
 can be either: directly before LEFT, directly after RIGHT, or somewhere
 between them. If LEFT and RIGHT are equal — point should between them.
 
-The search is optionally bounded within LIMITS: a cons cell with
-\(LEFT-LIMIT . RIGHT-LIMIT) positions.
+The search is optionally bounded within the SCOPE: a cons cell with
+\(LEFT-BOUND . RIGHT-BOUND) positions.
 
 If REGEXP? is non-nil LEFT and RIGHT will be searched as regexp patterns
 \(and clobber match data), else they will be searched literally.
@@ -256,7 +256,7 @@ If BALANCED? is non-nil all nested LEFT RIGHT pairs will be skipped.
 Return the list (LEFT-BEG LEFT-END RIGHT-LEFT RIGHT-END) with
 4 positions: before/after LEFT and before/after RIGHT.
 
-\(fn (LEFT . RIGHT) &optional LIMITS REGEXP? BALANCED?)"
+\(fn (LEFT . RIGHT) &optional SCOPE REGEXP? BALANCED?)"
   (save-excursion
     (pcase-let* ((`(,left . ,right) pair)
                  (balanced? (if (string-equal left right)
@@ -274,7 +274,7 @@ Return the list (LEFT-BEG LEFT-END RIGHT-LEFT RIGHT-END) with
                        (1- (cdr bounds))
                        (cdr bounds))))
             (t
-             (helix--bounds-of-surrounded-at-point-1 pair limits regexp? balanced?))))))
+             (helix--bounds-of-surrounded-at-point-1 pair scope regexp? balanced?))))))
 
 (defun helix-bounds-of-sexp-at-point (pair)
   "Return the bounds of the balanced expression at point enclosed
@@ -335,7 +335,7 @@ after RIGHT.
                        (cons (point)
                              (progn (forward-sexp) (point))))))))))))
 
-(defun helix--bounds-of-surrounded-at-point-1 (pair &optional limits regexp? balanced?)
+(defun helix--bounds-of-surrounded-at-point-1 (pair &optional scope regexp? balanced?)
   "The internal function for `helix-bounds-of-surrounded-at-point'."
   (save-excursion
     (pcase-let* ((`(,left . ,right) pair)
@@ -347,7 +347,7 @@ after RIGHT.
                     (left-end (if regexp? (match-end 0)
                                 (+ left-beg (length left)))))
                (goto-char left-end)
-               (if-let* ((right-end (helix-search-out pair 1 limits regexp? balanced?))
+               (if-let* ((right-end (helix-search-out pair 1 scope regexp? balanced?))
                          (right-beg (if regexp? (match-beginning 0)
                                       (- right-end (length right)))))
                    (list left-beg left-end right-beg right-end))))
@@ -358,15 +358,15 @@ after RIGHT.
                     (right-beg (if regexp? (match-beginning 0)
                                  (- right-end (length right)))))
                (goto-char right-beg)
-               (if-let* ((left-beg (helix-search-out pair -1 limits regexp? balanced?))
+               (if-let* ((left-beg (helix-search-out pair -1 scope regexp? balanced?))
                          (left-end (if regexp? (match-end 0)
                                      (+ left-beg (length left)))))
                    (list left-beg left-end right-beg right-end))))
             (t
-             (if-let* ((left-beg (helix-search-out pair -1 limits regexp? balanced?))
+             (if-let* ((left-beg (helix-search-out pair -1 scope regexp? balanced?))
                        (left-end (if regexp? (match-end 0)
                                    (+ left-beg (length left))))
-                       (right-end (helix-search-out pair 1 limits regexp? balanced?))
+                       (right-end (helix-search-out pair 1 scope regexp? balanced?))
                        (right-beg (if regexp? (match-beginning 0)
                                     (- right-end (length right)))))
                  (list left-beg left-end right-beg right-end)))))))
@@ -397,7 +397,7 @@ that `match-beginning', `match-end' and `match-data' access."
                 (string-equal (buffer-substring-no-properties pos pnt)
                               str))))))
 
-(defun helix-search-out (pair &optional direction limits regexp? balanced?)
+(defun helix-search-out (pair &optional direction scope regexp? balanced?)
   "This function assume, that you are somewhere inside LEFT RIGHT
 enclosed text region, and return the position before LEFT or after
 RIGHT depending on DIRECTION.
@@ -406,8 +406,8 @@ LEFT and RIGHT should be strings.
 DIRECTION should be either 1 — return the position after RIGHT,
 or -1 — before LEFT.
 
-The search is optionally bounded within LIMITS: a cons cell with
-\(LEFT-LIMIT . RIGHT-LIMIT) positions.
+The search is optionally bounded within SCOPE: a cons cell with
+\(LEFT-BOUND . RIGHT-BOUND) positions.
 
 If REGEXP? is non-nil LEFT and RIGHT will be searched as regexp patterns
 \(and clobber match data), else they will be searched literally.
@@ -415,34 +415,34 @@ If REGEXP? is non-nil LEFT and RIGHT will be searched as regexp patterns
 If BALANCED? is non-nil all nested LEFT RIGHT pairs on the way will
 be skipped.
 
-\(fn (LEFT . RIGHT) &optional LIMITS REGEXP? BALANCED?)"
+\(fn (LEFT . RIGHT) &optional SCOPE REGEXP? BALANCED?)"
   (or direction (setq direction 1))
   (save-excursion
     (if balanced?
-        (helix--search-out-balanced pair direction limits regexp?)
+        (helix--search-out-balanced pair direction scope regexp?)
       (let ((str   (if (< direction 0) (car pair) (car pair)))
-            (limit (if (< direction 0) (car limits) (cdr limits))))
-        (helix--search str direction limit regexp?)))))
+            (bound (if (< direction 0) (car scope) (cdr scope))))
+        (helix--search str direction bound regexp?)))))
 
-(defun helix--search-out-balanced (pair &optional direction limits regexp?)
+(defun helix--search-out-balanced (pair &optional direction scope regexp?)
   "This is an internal function for `helix-search-out' that is used
 when BALANCED? argument is non-nil."
   (save-excursion
-    (let (open close limit)
+    (let (open close bound)
       (if (> direction 0)
           (pcase-setq `(,open . ,close) pair
-                      `(,_ . ,limit) limits)
+                      `(,_ . ,bound) scope)
         (pcase-setq `(,close . ,open) pair
-                    `(,limit . ,_) limits))
+                    `(,bound . ,_) scope))
       ;; The algorithm assume we are *inside* a pair: level of nesting is 1.
       (let ((level 1))
         (cl-block nil
           (while (> level 0)
             (let* ((pnt (point))
-                   (open-pos (helix--search open direction limit regexp?))
+                   (open-pos (helix--search open direction bound regexp?))
                    (close-pos (progn
                                 (goto-char pnt)
-                                (helix--search close direction limit regexp?))))
+                                (helix--search close direction bound regexp?))))
               (cond ((and close-pos open-pos)
                      (let ((close-dist (helix-distance pnt close-pos))
                            (open-dist  (helix-distance pnt open-pos)))
@@ -459,12 +459,12 @@ when BALANCED? argument is non-nil."
         (if (eql level 0)
             (point))))))
 
-(defun helix--search (str &optional direction limit regexp?)
+(defun helix--search (str &optional direction bound regexp?)
   "Search for string STR toward the DIRECTION.
 
 DIRECTION can be either 1 — search forward, or -1 — search backward.
 
-LIMIT optionally bounds the search. It should be a position that
+BOUND optionally bounds the search. It should be a position that
 is *after* the point if DIRECTION is positive, and *before* the
 point — if negative.
 
@@ -475,8 +475,8 @@ When REGEXP? is non-nil this function modifies the match data
 that `match-beginning', `match-end' and `match-data' access."
   (or direction (setq direction 1))
   (if regexp?
-      (re-search-forward str limit t direction)
-    (search-forward str limit t direction)))
+      (re-search-forward str bound t direction)
+    (search-forward str bound t direction)))
 
 (defun helix--bounds-of-quoted-at-point-ppss (quote-mark)
   "Return a cons cell (START . END) with bounds of region around
