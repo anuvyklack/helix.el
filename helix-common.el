@@ -439,10 +439,10 @@ when BALANCED? argument is non-nil."
         (cl-block nil
           (while (> level 0)
             (let* ((pnt (point))
-                   (close-pos (helix--search close direction limit regexp?))
-                   (open-pos (progn
-                               (goto-char pnt)
-                               (helix--search open direction limit regexp?))))
+                   (open-pos (helix--search open direction limit regexp?))
+                   (close-pos (progn
+                                (goto-char pnt)
+                                (helix--search close direction limit regexp?))))
               (cond ((and close-pos open-pos)
                      (let ((close-dist (helix-distance pnt close-pos))
                            (open-dist  (helix-distance pnt open-pos)))
