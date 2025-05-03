@@ -13,9 +13,12 @@
 ;;
 ;;; Code:
 
+(require 'cl-lib)
 (require 'thingatpt)
+(require 's)
 (require 'multiple-cursors-core)
 (require 'helix-common)
+(require 'helix-vars)
 
 (defun helix-normal-state-escape ()
   "Command for ESC key in Helix Normal state."
@@ -471,24 +474,134 @@ Select visual lines when `visual-line-mode' is on."
         (set-mark l)
         (goto-char r)))))
 
-(defun helix-mark-inner-char ()
+;;; Surround
+
+(defun helix-surround-add-pair (key insert &optional search regexp? balanced?)
+  "Add a new insert-delete pattern for Helix surround functionality.
+KEY       - To what KEY this pattern should be binded?
+INSERT    - Cons cell (LEFT . RIGHT) with strings, or function that returns such
+            cons cell. The strigs that will be inserted by `helix-surround' and
+            `helix-surround-change' functions.
+SEARCH    - Cons cell (LEFT . RIGHT) with strings, or function that returns such
+            cons cell. The patterns that will be used to search of two substrings
+            to delete in `helix-surround-delete' and `helix-surround-change'
+            functions. If not specified INSERT pair will be used.
+REGEXP?   - Should be strings specified in SEARCH argument be treated as regexp
+            patterns or literally?
+BALANCED? - When non-nil all nested balanced LEFT RIGHT pairs will be skipped,
+            else the first found pattern will be accepted.
+
+This function populates the buffer local `helix-surround-alist' variable,
+and thus should be called from major-modes hooks.
+See the defaul value of `helix-surround-alist' variable for examples."
+  (push (cons key (list :insert insert
+                        :search (or search insert)
+                        :regexp regexp?
+                        :balanced balanced?))
+        helix-surround-alist))
+
+(defun helix-surround-get-bounds (char)
+  (if-let* ((spec (alist-get char helix-surround-alist))
+            (pair-or-fun (plist-get spec :search)))
+      (if (functionp pair-or-fun)
+          (funcall pair-or-fun)
+        (helix-bounds-of-surrounded-at-point pair-or-fun
+                                             (bounds-of-thing-at-point 'defun)
+                                             (plist-get spec :regexp)
+                                             (plist-get spec :balanced)))
+    ;; else
+    (helix-bounds-of-surrounded-at-point (cons (char-to-string char)
+                                               (char-to-string char))
+                                         (bounds-of-thing-at-point 'defun))))
+
+(defun helix-surround ()
+  "Enclose the selected region in chosen delimiters.
+If the region consist of full lines, insert delimiters on separate
+lines and reindent the region."
+  (interactive)
+  (when (use-region-p)
+    (pcase-let*
+        ((char (read-char "Insert pair: "))
+         (forward? (< (mark) (point)))
+         (beg (region-beginning))
+         (end (region-end))
+         (newline? (helix-line-selected-p))
+         (pair-or-fun (if-let ((spec (alist-get char helix-surround-alist)))
+                          (plist-get spec :insert)))
+         (`(,left . ,right) (cond ((and pair-or-fun (functionp pair-or-fun))
+                                   (funcall pair-or-fun))
+                                  (pair-or-fun)
+                                  (t (cons char char)))))
+      (when newline?
+        (setq left (s-trim left)
+              right (s-trim right)))
+      (let ((deactivate-mark nil))
+        (goto-char end)
+        (if newline?
+            (progn (helix-skip-whitespaces)
+                   (insert right)
+                   (newline-and-indent))
+          (insert right))
+        (goto-char beg)
+        (insert left)
+        (when newline?
+          (newline-and-indent)))
+      (let* ((new-beg (point))
+             (new-end (+ end (- new-beg beg))))
+        (cond (forward?
+               (set-mark new-beg)
+               (goto-char new-end))
+              (t
+               (goto-char new-beg)
+               (set-mark new-end)))
+        (indent-region new-beg new-end)))
+    (setq helix--extend-selection nil)))
+
+(defun helix-surround-delete ()
+  (interactive)
+  (when-let* ((char (read-char "Delete pair: "))
+              (bounds (helix-surround-get-bounds char)))
+    (pcase-let ((`(,left-beg ,left-end ,right-beg ,right-end) bounds))
+      (delete-region right-beg right-end)
+      (delete-region left-beg left-end))))
+
+(defun helix-surround-change ()
+  (interactive)
+  (when-let* ((char (read-char "Delete pair: "))
+              (bounds (helix-surround-get-bounds char)))
+    (pcase-let*
+        ((`(,left-beg ,left-end ,right-beg ,right-end) bounds)
+         (char (read-char "Insert pair: "))
+         (pair-or-fun (if-let ((spec (alist-get char helix-surround-alist)))
+                          (plist-get spec :insert)))
+         (`(,left . ,right) (cond ((and pair-or-fun (functionp pair-or-fun))
+                                   (funcall pair-or-fun))
+                                  (pair-or-fun)
+                                  (t (cons char char)))))
+      (save-mark-and-excursion
+        (delete-region right-beg right-end)
+        (goto-char right-beg)
+        (insert right)
+        (delete-region left-beg left-end)
+        (goto-char left-beg)
+        (insert left)))))
+
+(defun helix-mark-inner-surround ()
   (interactive)
   (let ((char (if (integerp last-command-event)
                   last-command-event
-                (get last-command-event 'ascii-character)))
-        (limits (bounds-of-thing-at-point 'defun)))
-    (when-let* ((bounds (helix-bounds-of-surrounded-at-point char limits)))
+                (get last-command-event 'ascii-character))))
+    (when-let* ((bounds (helix-surround-get-bounds char)))
       (pcase-let ((`(,_ ,l ,r ,_) bounds))
         (set-mark l)
         (goto-char r)))))
 
-(defun helix-mark-a-char ()
+(defun helix-mark-a-surround ()
   (interactive)
   (let ((char (if (integerp last-command-event)
                   last-command-event
-                (get last-command-event 'ascii-character)))
-        (limits (bounds-of-thing-at-point 'defun)))
-    (when-let* ((bounds (helix-bounds-of-surrounded-at-point char limits)))
+                (get last-command-event 'ascii-character))))
+    (when-let* ((bounds (helix-surround-get-bounds char)))
       (pcase-let ((`(,l ,_ ,_ ,r) bounds))
         (set-mark l)
         (goto-char r)))))

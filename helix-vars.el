@@ -97,20 +97,55 @@ This symbol lies in `emulation-mode-map-alists' and its contents are updated
 every time the Helix state changes.  Elements have the form (MODE . KEYMAP),
 with the first keymaps having higher priority.")
 
-(helix-defvar-local helix-pairs-alist '((?\( . ("(" . ")"))
-                                        (?\{ . ("{" . "}"))
-                                        (?\[ . ("[" . "]"))
-                                        (?\< . ("<" . ">"))
-                                        (?\) . ("( " . " )"))
-                                        (?\} . ("{ " . " }"))
-                                        (?\] . ("[ " . " ]"))
-                                        (?\> . ("< " . " >"))
-                                        (?` .  ("`" . "'"))
-                                        (?\' . ("`" . "'"))
-                                        ;; ("'"  . "'")
-                                        ;; ("`"  . "`")
-                                        ;; ("\"" . "\"")
-                                        ))
+(helix-defvar-local helix-surround-alist
+  `((?\( :insert ("(" . ")") :search ("(" . ")") :balanced t)
+    (?\{ :insert ("{" . "}") :search ("{" . "}") :balanced t)
+    (?\[ :insert ("[" . "]") :search ("[" . "]") :balanced t)
+    (?\< :insert ("<" . ">") :search ("<" . ">") :balanced t)
+    (?\) :insert ("( " . " )")
+         :search ("([[:blank:]]*" . "[[:blank:]]*)")
+         :regexp t
+         :balanced t)
+    (?\} :insert ("{ " . " }")
+         :search ("{[[:blank:]]*" . "[[:blank:]]*}")
+         :regexp t
+         :balanced t)
+    (?\] :insert ("[ " . " ]")
+         :search ,(cons (rx "[" (zero-or-more blank))
+                        (rx (zero-or-more blank) "]"))
+         :regexp t
+         :balanced t)
+    (?\> :insert ("< " . " >")
+         :search ("<[[:blank:]]*" . "[[:blank:]]*>")
+         :regexp t
+         :balanced t)
+    (?\" :insert ("\"" . "\"")
+         :search (lambda ()
+                   (when-let* ((bounds (helix-bounds-of-string-at-point ?\")))
+                     (list (car bounds)
+                           (1+ (car bounds))
+                           (1- (cdr bounds))
+                           (cdr bounds))))))
+
+  "Association list with (KEY . SPEC) elements for Helix surrounding
+functionality.
+
+SPEC is a plist with next keys:
+:insert   - Cons cell (LEFT . RIGHT) with strings, or function that returns such
+            cons cell. The strigs that will be inserted by `helix-surround' and
+            `helix-surround-change' functions.
+:search   - Cons cell (LEFT . RIGHT) with strings, or function that returns such
+            cons cell. The patterns that will be used to search of two substrings
+            to delete in `helix-surround-delete' and `helix-surround-change'
+            functions. If not specified INSERT pair will be used.
+:regexp   - Should be strings specified in SEARCH argument be treated as regexp
+            patterns or literally?
+:balanced - When non-nil all nested balanced LEFT RIGHT pairs will be skipped,
+            else the first found pattern will be accepted.
+
+This function populates the buffer local `helix-surround-alist' variable,
+and thus should be called from major-modes hooks.
+See the defaul value of `helix-surround-alist' variable for examples.")
 
 (helix-defvar-local helix--state nil
   "The current Helix state.")

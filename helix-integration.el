@@ -15,43 +15,69 @@
 
 (require 'helix-core)
 
+;;; Lisp
+
+(add-hook 'lisp-mode-hook
+          #'(lambda ()
+              (helix-surround-add-pair ?` '("`" . "'"))
+              (helix-surround-add-pair ?' '("`" . "'"))))
+
 ;;; Org mode
 
 (declare-function org-in-regexp "org")
 
 (defun helix-mark-inner-org-emphasis ()
   (interactive)
-  (save-match-data
-    (when (org-in-regexp org-emph-re 2)
-      (set-mark (match-beginning 4))
-      (goto-char (match-end 4)))
-    ;; (when-let* ((bounds (bounds-of-thing-at-point 'defun))
-    ;;             (nlines (count-lines (car bounds) (point)))
-    ;;             ((org-in-regexp org-emph-re nlines)))
-    ;;   (set-mark (match-beginning 4))
-    ;;   (goto-char (match-end 4)))
-    ))
+  (when (org-in-regexp org-emph-re 2)
+    (set-mark (match-beginning 4))
+    (goto-char (match-end 4)))
+  ;; (when-let* ((bounds (bounds-of-thing-at-point 'defun))
+  ;;             (nlines (count-lines (car bounds) (point)))
+  ;;             ((org-in-regexp org-emph-re nlines)))
+  ;;   (set-mark (match-beginning 4))
+  ;;   (goto-char (match-end 4)))
+  )
 
 (defun helix-mark-an-org-emphasis ()
   (interactive)
-  (save-match-data
-    (when (org-in-regexp org-emph-re 2)
-      (set-mark (match-beginning 2))
-      (goto-char (match-end 2)))))
+  (when (org-in-regexp org-emph-re 2)
+    (set-mark (match-beginning 2))
+    (goto-char (match-end 2))))
 
 (defun helix-mark-inner-org-verbatim ()
   (interactive)
-  (save-match-data
-    (when (org-in-regexp org-verbatim-re 2)
-      (set-mark (match-beginning 4))
-      (goto-char (match-end 4)))))
+  (when (org-in-regexp org-verbatim-re 2)
+    (set-mark (match-beginning 4))
+    (goto-char (match-end 4))))
 
 (defun helix-mark-an-org-verbatim ()
   (interactive)
-  (save-match-data
-    (when (org-in-regexp org-verbatim-re 2)
-      (set-mark (match-beginning 2))
-      (goto-char (match-end 2)))))
+  (when (org-in-regexp org-verbatim-re 2)
+    (set-mark (match-beginning 2))
+    (goto-char (match-end 2))))
+
+(defun helix-surround--bounds-of-org-verbatim ()
+  (when (org-in-regexp org-verbatim-re 2)
+    (list (match-beginning 2)
+          (match-beginning 4)
+          (match-end 2)
+          (match-end 4))))
+
+(defun helix-surround--bounds-of-org-emphasis ()
+  (when (org-in-regexp org-emph-re 2)
+    (list (match-beginning 2)
+          (match-beginning 4)
+          (match-end 2)
+          (match-end 4))))
+
+(add-hook 'org-mode-hook
+          #'(lambda ()
+              (helix-surround-add-pair ?/ '("/" . "/") #'helix-surround--bounds-of-org-emphasis)
+              (helix-surround-add-pair ?* '("*" . "*") #'helix-surround--bounds-of-org-emphasis)
+              (helix-surround-add-pair ?_ '("_" . "_") #'helix-surround--bounds-of-org-emphasis)
+              (helix-surround-add-pair ?+ '("+" . "+") #'helix-surround--bounds-of-org-emphasis)
+              (helix-surround-add-pair ?= '("=" . "=") #'helix-surround--bounds-of-org-verbatim)
+              (helix-surround-add-pair ?~ '("~" . "~") #'helix-surround--bounds-of-org-verbatim)))
 
 (helix-keymap-set org-mode-map 'normal
   "m /"   #'helix-mark-inner-org-emphasis

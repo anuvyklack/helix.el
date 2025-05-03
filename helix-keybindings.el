@@ -155,41 +155,47 @@
   "a <" #'helix-mark-an-angle
   "a >" #'helix-mark-an-angle
 
-  "!" #'helix-mark-inner-char
-  "@" #'helix-mark-inner-char
-  "#" #'helix-mark-inner-char
-  "$" #'helix-mark-inner-char
-  "%" #'helix-mark-inner-char
-  "^" #'helix-mark-inner-char
-  "&" #'helix-mark-inner-char
-  "*" #'helix-mark-inner-char
-  "~" #'helix-mark-inner-char
-  "=" #'helix-mark-inner-char
-  "_" #'helix-mark-inner-char
+  "!" #'helix-mark-inner-surround
+  "@" #'helix-mark-inner-surround
+  "#" #'helix-mark-inner-surround
+  "$" #'helix-mark-inner-surround
+  "%" #'helix-mark-inner-surround
+  "^" #'helix-mark-inner-surround
+  "&" #'helix-mark-inner-surround
+  "*" #'helix-mark-inner-surround
+  "~" #'helix-mark-inner-surround
+  "=" #'helix-mark-inner-surround
+  "_" #'helix-mark-inner-surround
 
-  "i !" #'helix-mark-inner-char
-  "i @" #'helix-mark-inner-char
-  "i #" #'helix-mark-inner-char
-  "i $" #'helix-mark-inner-char
-  "i %" #'helix-mark-inner-char
-  "i ^" #'helix-mark-inner-char
-  "i &" #'helix-mark-inner-char
-  "i *" #'helix-mark-inner-char
-  "i ~" #'helix-mark-inner-char
-  "i =" #'helix-mark-inner-char
-  "i _" #'helix-mark-inner-char
+  "i !" #'helix-mark-inner-surround
+  "i @" #'helix-mark-inner-surround
+  "i #" #'helix-mark-inner-surround
+  "i $" #'helix-mark-inner-surround
+  "i %" #'helix-mark-inner-surround
+  "i ^" #'helix-mark-inner-surround
+  "i &" #'helix-mark-inner-surround
+  "i *" #'helix-mark-inner-surround
+  "i ~" #'helix-mark-inner-surround
+  "i =" #'helix-mark-inner-surround
+  "i _" #'helix-mark-inner-surround
 
-  "a !" #'helix-mark-a-char
-  "a @" #'helix-mark-a-char
-  "a #" #'helix-mark-a-char
-  "a $" #'helix-mark-a-char
-  "a %" #'helix-mark-a-char
-  "a ^" #'helix-mark-a-char
-  "a &" #'helix-mark-a-char
-  "a *" #'helix-mark-a-char
-  "a ~" #'helix-mark-a-char
-  "a =" #'helix-mark-a-char
-  "a _" #'helix-mark-a-char)
+  "a !" #'helix-mark-a-surround
+  "a @" #'helix-mark-a-surround
+  "a #" #'helix-mark-a-surround
+  "a $" #'helix-mark-a-surround
+  "a %" #'helix-mark-a-surround
+  "a ^" #'helix-mark-a-surround
+  "a &" #'helix-mark-a-surround
+  "a *" #'helix-mark-a-surround
+  "a ~" #'helix-mark-a-surround
+  "a =" #'helix-mark-a-surround
+  "a _" #'helix-mark-a-surround
+
+  ;; Surround
+  "s" #'helix-surround
+  "d" #'helix-surround-delete
+  "r" #'helix-surround-change ; Helix original key
+  "c" #'helix-surround-change)
 
 ;;;; Windows
 
