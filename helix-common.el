@@ -642,5 +642,14 @@ right after the point."
                    (car bounds)
                  (cdr bounds)))))
 
+(defun helix-all-elements-are-the-same-p (list)
+  "Return non-nil if all elemetns in the LIST are `equal' each other."
+  (let ((first (car list))
+        (all-equal t))
+    (while (and all-equal list)
+      (setq all-equal (equal first (car list)))
+      (setq list (cdr list)))
+    all-equal))
+
 (provide 'helix-common)
 ;;; helix-common.el ends here

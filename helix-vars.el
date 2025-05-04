@@ -21,6 +21,70 @@
   :type 'boolean
   :group 'helix)
 
+(defface helix-mc-cursor-face
+  '((t (:inverse-video t)))
+  "The face used for fake cursors."
+  :group 'helix)
+
+(defface helix-mc-cursor-bar-face
+  `((t (:height 1 :background ,(face-attribute 'cursor :background))))
+  "The face used for fake cursors if the cursor-type is bar."
+  :group 'helix)
+
+(defcustom helix-mc-match-cursor-style nil
+  "If non-nil, attempt to match the cursor style that the user
+has selected. Namely, use vertical bars the user has configured
+Emacs to use that cursor.
+
+If nil, just use standard rectangle cursors for all fake cursors.
+
+In some modes/themes, the bar fake cursors are either not
+rendered or shift text."
+  :type '(boolean)
+  :group 'helix)
+
+(defface helix-mc-region-face
+  '((t :inherit region))
+  "The face used for fake regions."
+  :group 'helix)
+
+(defcustom helix-mc-mode-line
+  `(" mc:" (:eval (format ,(propertize "%d" 'face 'font-lock-warning-face)
+                          (helix-number-of-cursors))))
+  "What to display in the mode line while `helix-multiple-cursors-mode' is active."
+  :type '(sexp)
+  :group 'helix)
+(put 'helix-mc-mode-line 'risky-local-variable t)
+
+(defcustom helix-mc-list-file (locate-user-emacs-file ".helix-mc-lists.el")
+  "File to save users preferences which commands to execute for one cursor
+and which for all."
+  :type 'file
+  :group 'helix)
+
+(defcustom helix-max-cursors nil
+  "Safety ceiling for the number of active cursors.
+If your Emacs slows down or freezes when using too many cursors,
+customize this value appropriately.
+
+Cursors will be added until this value is reached, at which point
+you can either temporarily override the value or abort the
+operation entirely.
+
+If this value is nil, there is no ceiling."
+  :type '(integer)
+  :group 'helix)
+
+(defcustom helix-mc-always-run-for-all nil
+  "Disables whitelisting and always executes commands for every fake cursor."
+  :type '(boolean)
+  :group 'helix)
+
+(defcustom helix-mc-always-repeat-command nil
+  "Disables confirmation for `helix-mc-repeat-command' command."
+  :type '(boolean)
+  :group 'helix)
+
 (defgroup helix-cjk nil
   "CJK support."
   :prefix "helix-cjk-"

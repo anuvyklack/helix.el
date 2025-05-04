@@ -13,50 +13,20 @@
 ;;
 ;;; Code:
 
-(require 'multiple-cursors-core)
-(require 'mc-mark-more)
-
-(setopt mc/match-cursor-style nil)
-
-;; (defun mc/make-cursor-overlay (pos)
-;;   "Create overlay to look like cursor at POS.
-;; Special case for end of line, because overlay over a newline
-;; highlights the entire width of the window."
-;;   (if (memq (char-after pos) '(?\r ?\n))
-;;       (mc/make-cursor-overlay-at-eol pos)
-;;     (mc/make-cursor-overlay-inline pos)))
+(require 'dash)
+(require 'helix-common)
+(require 'helix-multiple-cursors-core)
+(require 'helix-vars)
 
 ;; (keymap-lookup nil "M-<down-mouse-1>")
 
-(defun helix-keep-primary-selection ()
-  "Disable `multiple-cursors-mode' and run the corresponding hook."
-  (interactive)
-  (multiple-cursors-mode 0)
-  (run-hooks 'multiple-cursors-mode-disabled-hook))
+(defun helix-fake-cursor-at-pos (pos)
+  "Return the fake cursor at POS, or nil if no one."
+  (-find #'(lambda (overlay)
+             (eq pos (overlay-get overlay 'point)))
+         (helix-all-fake-cursors pos (1+ pos))))
 
-(defun helix-create-fake-cursor-at-point (&optional id ignore-region)
-  " Add a fake cursor and possibly a fake active region overlay
-based on point and mark. Saves the current state in the overlay
-to be restored later."
-  (unless mc--max-cursors-original
-    (setq mc--max-cursors-original mc/max-cursors))
-  (when mc/max-cursors
-    (unless (< (mc/num-cursors) mc/max-cursors)
-      (if (yes-or-no-p (format "%d active cursors. Continue? " (mc/num-cursors)))
-          (setq mc/max-cursors (read-number "Enter a new, temporary maximum: "))
-        (mc/remove-fake-cursors)
-        (error "Aborted: too many cursors"))))
-  (let ((overlay (mc/make-cursor-overlay-at-point)))
-    (overlay-put overlay 'mc-id (or id (mc/create-cursor-id)))
-    (overlay-put overlay 'type 'fake-cursor)
-    (overlay-put overlay 'priority 100)
-    (mc/store-current-state-in-overlay overlay)
-    (when (and (not ignore-region)
-               (use-region-p))
-      (overlay-put overlay 'region-overlay
-                   (mc/make-region-overlay-between-point-and-mark)))
-    overlay))
-
+;; M-right mouse
 (defun helix-toggle-cursor-on-click (event)
   "Add a cursor where you click, or remove a fake cursor that is
 already there."
@@ -68,47 +38,73 @@ already there."
     (when (not (windowp (posn-window position)))
       (error "Position not in text area of window"))
     (select-window (posn-window position))
-    (let ((pt (posn-point position)))
-      (when (numberp pt)
-        ;; is there a fake cursor with the actual *point* right where we are?
-        (if-let* ((cursor (mc/fake-cursor-at-point pt)))
-            (mc/remove-fake-cursor cursor)
-          (save-excursion ; save-mark-and-excursion
-            (goto-char pt)
-            (helix-create-fake-cursor-at-point nil :ignore-region)))))
-    (mc/maybe-multiple-cursors-mode)))
+    (when-let* ((pos (posn-point position))
+                ((numberp pos)))
+      ;; Is there a fake cursor with the actual *point* right where we are?
+      (if-let* ((cursor (helix-fake-cursor-at-pos pos)))
+          (helix--remove-fake-cursor cursor)
+        (save-excursion
+          (goto-char pos)
+          (helix-create-fake-cursor-at-point nil t))))
+    (helix-maybe-multiple-cursors-mode)))
 
-(setq mc--default-cmds-to-run-for-all
-      (append mc--default-cmds-to-run-for-all
-              '(helix-insert ; i
-                helix-append ; a
-                helix-backward-char ;
-                helix-next-line     ; j
-                helix-previous-line ; k
-                helix-forward-char  ; l
-                helix-forward-word-start    ; w
-                helix-backward-word-start   ; b
-                helix-forward-word-end      ; e
-                helix-forward-WORD-start    ; W
-                helix-backward-WORD-start   ; B
-                helix-forward-WORD-end      ; E
-                helix-select-line ; x
-                helix-delete ; d
-                helix-collapse-selection ; ;
-                )))
+(defun helix-copy-cursor-down (&optional count)
+  (or count (setq count 1))
+  (let ((dir (if (< count 0) -1 1))
+        (count (abs count)))
+    (when (use-region-p)
+      (let ((region-dir   (helix-region-direction))
+            (num-of-lines (count-lines (point) (mark)))
+            (point-column (current-column))
+            (mark-column  (progn
+                            (helix-exchange-point-and-mark)
+                            (current-column))))
 
-(setq mc--default-cmds-to-run-once
-      (append mc--default-cmds-to-run-once
-              '(helix-normal-state-escape ; esc in normal state
-                helix-normal-state
-                helix-keep-primary-selection
-                helix-extend-selection ; v
-                helix-undo
-                undo-redo
-                tab-next
-                tab-previous
-                keypad
-                )))
+        ;; (dotimes (i count))
+        ))
+    )
+  )
+
+(defun helix-mc-furthest-cursor-before-point ()
+  (let ((beg (if mark-active
+                 (min (mark) (point))
+               (point)))
+        furthest)
+    (helix-for-each-fake-cursor
+     (when (< (mc/cursor-beg cursor) beg)
+       (setq beg (mc/cursor-beg cursor))
+       (setq furthest cursor)))
+    furthest))
+
+(defun helix-mc-furthest-cursor-after-point ()
+  (let ((end (if mark-active (max (mark) (point)) (point)))
+        furthest)
+    (helix-for-each-fake-cursor
+     (when (> (mc/cursor-end cursor) end)
+       (setq end (mc/cursor-end cursor))
+       (setq furthest cursor)))
+    furthest))
+
+(defun helix-mc-first-cursor ())
+(defun helix-mc-last-cursor ())
+
+(defun helix-mc-bound-cursor (direction)
+  "Return the first fake cursor if DIRECTION is positive number /last
+If DIRECTION is negative number find the fake cursor with the minimal buffer
+position. If its position is smaller than the positon of the point — return it.
+Otherwise return nil.
+
+If DIRECTION is positive number find the fake cursor with the maximum buffer
+position. If its position is bigger than the positon of the point — return it.
+Otherwise return nil."
+  )
+
+
+;; (current-column)
+;; (move-to-column)
+;; (count-lines)
+
+;; (helix-copy-cursor-forward)
 
 (provide 'helix-multiple-cursors)
 ;;; helix-multiple-cursors.el ends here
