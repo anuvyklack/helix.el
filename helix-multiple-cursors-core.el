@@ -522,8 +522,8 @@ which action is being undone."
   "Asks the user, then adds the command either to the once-list or the all-list."
   (let ((all? (y-or-n-p (format "Do %S for all cursors?" original-command))))
     (if all?
-        (add-to-list 'helix-mc-cmds-to-run-for-all original-command)
-      (add-to-list 'helix-mc-cmds-to-run-once original-command))
+        (push original-command helix-mc-cmds-to-run-for-all)
+      (push original-command helix-mc-cmds-to-run-once))
     (helix-mc-save-lists)
     all?))
 
@@ -672,7 +672,7 @@ They are temporarily disabled when multiple-cursors are active.")
 (defun helix-mc-temporarily-disable-minor-mode (mode)
   "If MODE is available and turned on, remember that and turn it off."
   (when (and (boundp mode) (symbol-value mode))
-    (add-to-list 'helix-mc-temporarily-disabled-minor-modes mode)
+    (push mode helix-mc-temporarily-disabled-minor-modes)
     (funcall mode -1)))
 
 (defun helix-mc-temporarily-disable-unsupported-minor-modes ()
