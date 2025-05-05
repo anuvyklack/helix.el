@@ -85,17 +85,13 @@ the data needed for multiple cursors' functionality."
 
 (defmacro helix-save-window-scroll (&rest body)
   "Save the window scroll position, execute BODY, restore it."
-  (let ((pnt (make-symbol "pnt"))
-        (win-start (make-symbol "win-start"))
+  (let ((win-start (make-symbol "win-start"))
         (win-hscroll (make-symbol "win-hscroll")))
-    `(let ((,pnt (set-marker (make-marker) (point)))
-           (,win-start (set-marker (make-marker) (window-start)))
+    `(let ((,win-start (set-marker (make-marker) (window-start)))
            (,win-hscroll (window-hscroll)))
        ,@body
-       (goto-char ,pnt)
        (set-window-start nil ,win-start t)
        (set-window-hscroll nil ,win-hscroll)
-       (set-marker ,pnt nil)
        (set-marker ,win-start nil))))
 
 (defun helix-cursor-is-bar-p ()
@@ -260,11 +256,10 @@ The current state saves in the overlay to be restored later."
   "Call COMMAND interactively for each cursor.
 Internaly it moves point to the fake cursor, restore the environment
 from it, execute COMMAND, update fake cursor."
-  (helix-mc-save-excursion
-   (helix-save-window-scroll
+  (helix-save-window-scroll
+   (helix-mc-save-excursion
     (helix-for-each-fake-cursor
-     (save-excursion
-       (helix-execute-command-for-fake-cursor command cursor)))))
+     (helix-execute-command-for-fake-cursor command cursor))))
   (helix--reset-input-cache))
 
 (defun helix-execute-command-for-fake-cursor (cmd cursor)
