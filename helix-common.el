@@ -651,5 +651,28 @@ right after the point."
       (setq list (cdr list)))
     all-equal))
 
+(defun helix-cursor-is-bar-p ()
+  "Return non-nil if `cursor-type' is bar."
+  (let ((cursor-type (if (eq cursor-type t)
+                         (frame-parameter nil 'cursor-type)
+                       cursor-type)))
+    (or (eq cursor-type 'bar)
+        (and (listp cursor-type)
+             (eq (car cursor-type) 'bar)))))
+
+;; FIXME: Is it really faster?
+(defun helix-line-number-at-pos (&optional pos absolute)
+  "Faster implementation of `line-number-at-pos'."
+  (if pos
+      (save-excursion
+        (if absolute
+            (save-restriction
+              (widen)
+              (goto-char pos)
+              (string-to-number (format-mode-line "%l")))
+          (goto-char pos)
+          (string-to-number (format-mode-line "%l"))))
+    (string-to-number (format-mode-line "%l"))))
+
 (provide 'helix-common)
 ;;; helix-common.el ends here

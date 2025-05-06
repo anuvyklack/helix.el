@@ -30,92 +30,7 @@
 (require 'rect)
 (require 'helix-common)
 
-(defmacro helix--add-fake-cursor-to-undo-list (id &rest body)
-  "Make sure point is in the right place when undoing."
-  (declare (indent defun))
-  (let ((uc (make-symbol "undo-cleaner")))
-    `(let ((,uc (list 'apply 'deactivate-cursor-after-undo ,id)))
-       (setq buffer-undo-list (cons ,uc buffer-undo-list))
-       ,@body
-       ;; If nothing has been added to the undo-list
-       (if (eq ,uc (car buffer-undo-list))
-           ;; then pop the cleaner right off again
-           (setq buffer-undo-list (cdr buffer-undo-list))
-         ;; otherwise add a function to activate this cursor
-         (setq buffer-undo-list
-               (cons (list 'apply 'activate-cursor-for-undo ,id)
-                     buffer-undo-list))))))
-
-(defun helix-all-fake-cursors (&optional start end)
-  (cl-remove-if-not #'helix-fake-cursor-p
-                    (overlays-in (or start (point-min))
-                                 (or end   (point-max)))))
-
-(defmacro helix-for-each-fake-cursor (&rest body)
-  "Run the BODY for each fake cursor.
-Inside this macro, the current proceeded cursor is bound to the symbol
-CURSOR to be accessible from inside BODY."
-  `(mapc
-    #'(lambda (cursor) ,@body)
-    (helix-all-fake-cursors)))
-
-(defmacro helix-mc-save-excursion (&rest body)
-  "Like `save-excursion' but additionally save and restore all
-the data needed for multiple cursors' functionality."
-  (let ((point-state (make-symbol "point-state")))
-    `(let ((,point-state (helix-mc-store-current-state-in-overlay
-                          (make-overlay (point) (point) nil nil t))))
-       (overlay-put ,point-state 'type 'original-cursor)
-       (save-excursion ,@body)
-       (helix-mc-pop-state-from-overlay ,point-state))))
-
-(defun helix--compare-by-overlay-start (o1 o2)
-  (< (overlay-start o1) (overlay-start o2)))
-
-(defmacro helix-for-each-cursor-ordered (&rest body)
-  "Run the BODY for each cursor, fake and real, bound to the symbol CURSOR."
-  (let ((rci (make-symbol "real-cursor-id")))
-    `(let ((,rci (overlay-get (helix-create-fake-cursor-at-point) 'mc-id)))
-       (mapc #'(lambda (cursor)
-                 (when (helix-fake-cursor-p cursor)
-                   ,@body))
-             (sort (overlays-in (point-min) (point-max))
-                   #'helix--compare-by-overlay-start))
-       (helix-mc-pop-state-from-overlay (helix-cursor-with-id ,rci)))))
-
-(defmacro helix-save-window-scroll (&rest body)
-  "Save the window scroll position, execute BODY, restore it."
-  (let ((win-start (make-symbol "win-start"))
-        (win-hscroll (make-symbol "win-hscroll")))
-    `(let ((,win-start (set-marker (make-marker) (window-start)))
-           (,win-hscroll (window-hscroll)))
-       ,@body
-       (set-window-start nil ,win-start t)
-       (set-window-hscroll nil ,win-hscroll)
-       (set-marker ,win-start nil))))
-
-(defun helix-cursor-is-bar-p ()
-  "Return non-nil if `cursor-type' is bar."
-  (let ((cursor-type (if (eq cursor-type t)
-                         (frame-parameter nil 'cursor-type)
-                       cursor-type)))
-    (or (eq cursor-type 'bar)
-        (and (listp cursor-type)
-             (eq (car cursor-type) 'bar)))))
-
-;; FIXME: Is it really faster?
-(defun helix-line-number-at-pos (&optional pos absolute)
-  "Faster implementation of `line-number-at-pos'."
-  (if pos
-      (save-excursion
-        (if absolute
-            (save-restriction
-              (widen)
-              (goto-char pos)
-              (string-to-number (format-mode-line "%l")))
-          (goto-char pos)
-          (string-to-number (format-mode-line "%l"))))
-    (string-to-number (format-mode-line "%l"))))
+;;; Fake cursor
 
 (defun helix--make-cursor-overlay-at-point ()
   "Create overlay to look like cursor.
@@ -170,8 +85,9 @@ highlights the entire width of the window."
                                         dabbrev--last-table)
   "A list of vars that need to be tracked on a per-cursor basis.")
 
-(defun helix-mc-store-current-state-in-overlay (overlay)
-  "Store relevant info about point and mark in the given OVERLAY."
+(defun helix--store-point-state-in-overlay (overlay)
+  "Store point, mark and variables relevant to multiple cursors
+functionality into OVERLAY."
   (overlay-put overlay 'point (set-marker (make-marker) (point)))
   (overlay-put overlay 'mark  (set-marker (make-marker) (mark t)))
   (dolist (var helix-mc-cursor-specific-vars)
@@ -179,46 +95,52 @@ highlights the entire width of the window."
       (overlay-put overlay var (symbol-value var))))
   overlay)
 
-(defun helix-mc-pop-state-from-overlay (overlay)
-  "Restore the state stored in given OVERLAY and then remove the OVERLAY."
-  (helix-mc-restore-state-from-overlay overlay)
-  (helix--remove-fake-cursor overlay))
-
-(defun helix-mc-restore-state-from-overlay (overlay)
-  "Restore point and mark from stored info in the given OVERLAY."
-  (goto-char (overlay-get overlay 'point))
-  (set-marker (mark-marker) (overlay-get overlay 'mark))
+(defun helix--restore-point-state-from-overlay (overlay)
+  "Restore point, mark and stored variables from OVERLAY."
+  (let ((stored-point (overlay-get overlay 'point))
+        (stored-mark  (overlay-get overlay 'mark)))
+    (goto-char stored-point)
+    (set-marker (mark-marker) stored-mark)
+    ;; reset markers
+    (set-marker stored-point nil)
+    (set-marker stored-mark nil))
   (dolist (var helix-mc-cursor-specific-vars)
     (when (boundp var)
       (set var (overlay-get overlay var)))))
 
-(defun helix--remove-fake-cursor (overlay)
-  "Delete OVERLAY with state, including dependent overlays and markers."
-  (set-marker (overlay-get overlay 'point) nil)
-  (set-marker (overlay-get overlay 'mark) nil)
-  (helix--delete-region-overlay overlay)
-  (delete-overlay overlay))
+(defun helix-restore-point-from-fake-cursor (cursor)
+  "Restore point, mark and saved variables from CURSOR overlay, and delete it."
+  (helix--restore-point-state-from-overlay cursor)
+  (helix--remove-fake-cursor cursor))
 
-(defun helix--delete-region-overlay (overlay)
-  "Remove the dependent region overlay for a given cursor OVERLAY."
-  (ignore-errors
-    (delete-overlay (overlay-get overlay 'region-overlay))))
+(defun helix--remove-fake-cursor (cursor)
+  "Delete CURSOR overlay."
+  (set-marker (overlay-get cursor 'point) nil)
+  (set-marker (overlay-get cursor 'mark) nil)
+  (helix--delete-region-overlay cursor)
+  (delete-overlay cursor))
 
-(defvar helix-mc--last-used-id 0
-  "Var to store increasing id of fake cursors, used to keep track of them for undo.")
-
-(defun helix--new-cursor-id ()
-  "Return new unique cursor id."
-  (cl-incf helix-mc--last-used-id))
+(defun helix--delete-region-overlay (cursor)
+  "Remove the dependent region overlay for a given CURSOR overlay."
+  (when-let* ((region (overlay-get cursor 'region-overlay)))
+    (delete-overlay region)))
 
 (defvar helix--max-cursors-original nil
   "This variable maintains the original maximum number of cursors.
-When `helix-create-fake-cursor-at-point' is called and
+When `helix-create-fake-cursor-from-point' is called and
 `helix-max-cursors' is overridden, this value serves as a backup
 so that `helix-max-cursors' can take on a new value. When
 `helix--remove-fake-cursors' is called, the values are reset.")
 
-(defun helix-create-fake-cursor-at-point (&optional id no-region)
+(defvar helix--cursor-last-used-id 0
+  "Last used cursor ID.")
+
+(defun helix--new-cursor-id ()
+  "Return new unique cursor id.
+IDs' are used to keep track of cursors for undo."
+  (cl-incf helix--cursor-last-used-id))
+
+(defun helix-create-fake-cursor-from-point (&optional id no-region)
   "Add a fake cursor and possibly a fake active region overlay
 based on point and mark.
 
@@ -235,17 +157,106 @@ The current state saves in the overlay to be restored later."
           (setq helix-max-cursors (read-number "Enter a new, temporary maximum: "))
         (helix--remove-fake-cursors)
         (error "Aborted: too many cursors"))))
-  (let ((overlay (helix--make-cursor-overlay-at-point)))
-    (overlay-put overlay 'mc-id (or id (helix--new-cursor-id)))
-    (overlay-put overlay 'type 'fake-cursor)
-    (overlay-put overlay 'priority 100)
-    (helix-mc-store-current-state-in-overlay overlay)
-    (when (and (not no-region) (use-region-p))
-      (overlay-put overlay 'region-overlay
+  (let ((cursor (helix--make-cursor-overlay-at-point)))
+    (overlay-put cursor 'mc-id (or id (helix--new-cursor-id)))
+    (overlay-put cursor 'type 'fake-cursor)
+    (overlay-put cursor 'priority 100)
+    (helix--store-point-state-in-overlay cursor)
+    (when (and (not no-region)
+               (use-region-p))
+      (overlay-put cursor 'region-overlay
                    (helix--make-region-overlay-between-point-and-mark)))
-    overlay))
+    cursor))
 
-(defvar helix--executing-command-for-fake-cursor? nil)
+;;; Undo functionality
+
+(defmacro helix--add-fake-cursor-to-undo-list (id &rest body)
+  "Make sure point is in the right place when undoing."
+  (declare (indent defun))
+  (let ((uc (make-symbol "undo-cleaner")))
+    `(let ((,uc `(apply helix-deactivate-cursor-after-undo . (,,id))))
+       (push ,uc buffer-undo-list)
+       ,@body
+       ;; If nothing has been added to the undo-list
+       (if (eq ,uc (car buffer-undo-list))
+           ;; then pop the cleaner right off again
+           (pop buffer-undo-list)
+         ;; otherwise add a function to activate this cursor
+         (push `(apply activate-cursor-for-undo . (,,id))
+               buffer-undo-list)))))
+
+(defvar helix-mc--stored-state-for-undo nil
+  "The variable to keep the state of the real cursor while undoing a fake one.")
+
+;;;###autoload
+(defun helix-activate-cursor-for-undo (id)
+  "Called when undoing to temporarily activate the fake cursor
+which action is being undone."
+  (when-let* ((cursor (helix-cursor-with-id id)))
+    (setq helix-mc--stored-state-for-undo
+          (helix--store-point-state-in-overlay
+           (make-overlay (point) (point) nil nil t)))))
+
+(defun helix-deactivate-cursor-after-undo (id)
+  "Called when undoing to reinstate the real cursor after undoing a fake one."
+  (when helix-mc--stored-state-for-undo
+    ;; Update fake cursor
+    (helix-create-fake-cursor-from-point id)
+    ;; Restore real cursor
+    (helix--restore-point-state-from-overlay helix-mc--stored-state-for-undo)
+    (delete-overlay helix-mc--stored-state-for-undo)
+    (setq helix-mc--stored-state-for-undo nil)))
+
+;;; Executing commands
+
+(defmacro helix-save-window-scroll (&rest body)
+  "Save the window scroll position, execute BODY, restore it."
+  (let ((win-start (make-symbol "win-start"))
+        (win-hscroll (make-symbol "win-hscroll")))
+    `(let ((,win-start (set-marker (make-marker) (window-start)))
+           (,win-hscroll (window-hscroll)))
+       ,@body
+       (set-window-start nil ,win-start t)
+       (set-window-hscroll nil ,win-hscroll)
+       (set-marker ,win-start nil))))
+
+(defmacro helix-save-excursion (&rest body)
+  "Like `save-excursion' but additionally save and restore all
+the data needed for multiple cursors functionality."
+  (let ((state (make-symbol "point-state")))
+    `(let ((,state (helix--store-point-state-in-overlay
+                    (make-overlay (point) (point) nil nil t))))
+       (overlay-put ,state 'type 'original-cursor)
+       (save-excursion ,@body)
+       (helix--restore-point-state-from-overlay ,state)
+       (delete-overlay ,state))))
+
+(defmacro helix-for-each-fake-cursor (&rest body)
+  "Run the BODY for each fake cursor.
+Inside this macro, the current proceeded cursor is bound to the symbol
+CURSOR to be accessible from inside BODY."
+  `(mapc
+    #'(lambda (cursor) ,@body)
+    (helix-all-fake-cursors)))
+
+(defun helix-all-fake-cursors (&optional start end)
+  (cl-remove-if-not #'helix-fake-cursor-p
+                    (overlays-in (or start (point-min))
+                                 (or end   (point-max)))))
+
+(defmacro helix-for-each-cursor-ordered (&rest body)
+  "Run the BODY for each cursor, fake and real, bound to the symbol CURSOR."
+  (let ((real-cursor (gensym "real-cursor"))
+        (overlays (gensym "overlays")))
+    `(let ((,real-cursor (helix-create-fake-cursor-from-point))
+           (,overlays (sort (helix-all-fake-cursors)
+                            #'helix--compare-by-overlay-start)))
+       (mapc #'(lambda (cursor) ,@body)
+             ,overlays)
+       (helix-restore-point-from-fake-cursor ,real-cursor))))
+
+(defun helix--compare-by-overlay-start (o1 o2)
+  (< (overlay-start o1) (overlay-start o2)))
 
 (defun helix-execute-command-for-all-cursors (command)
   "Call COMMAND interactively for the real cursor and all fake ones."
@@ -257,29 +268,35 @@ The current state saves in the overlay to be restored later."
 Internaly it moves point to the fake cursor, restore the environment
 from it, execute COMMAND, update fake cursor."
   (helix-save-window-scroll
-   (helix-mc-save-excursion
+   (helix-save-excursion
     (helix-for-each-fake-cursor
      (helix-execute-command-for-fake-cursor command cursor))))
   (helix--reset-input-cache))
 
-(defun helix-execute-command-for-fake-cursor (cmd cursor)
+(defvar helix--executing-command-for-fake-cursor? nil)
+
+(defun helix-execute-command-for-fake-cursor (command cursor)
   (let ((helix--executing-command-for-fake-cursor? t)
         (id (overlay-get cursor 'mc-id)))
     (helix--add-fake-cursor-to-undo-list id
-      (helix-mc-pop-state-from-overlay cursor)
-      (ignore-errors
-        (helix-mc--execute-command cmd)
-        (helix-create-fake-cursor-at-point id)))))
+      (helix-restore-point-from-fake-cursor cursor)
+      (helix--execute-command command)
+      (helix-create-fake-cursor-from-point id))))
 
-(defun helix-mc--execute-command (command)
+(defun overlay-live-p (overlay)
+  (if-let* ((buffer (overlay-buffer overlay)))
+      (buffer-live-p buffer)))
+
+(defun helix--execute-command (command)
   "Run COMMAND, simulating the parts of the command loop that
 makes sense for fake cursors."
   (setq this-command command)
-  (run-hooks 'pre-command-hook)
-  (unless (eq this-command 'ignore)
-    (call-interactively command))
-  (run-hooks 'post-command-hook)
-  (when deactivate-mark (deactivate-mark)))
+  (ignore-errors
+    (run-hooks 'pre-command-hook)
+    (unless (eq this-command 'ignore)
+      (call-interactively command))
+    (run-hooks 'post-command-hook)
+    (when deactivate-mark (deactivate-mark))))
 
 (defun helix-fake-cursor-p (overlay)
   "Return t if an OVERLAY is a fake cursor."
@@ -287,238 +304,17 @@ makes sense for fake cursors."
 
 (defun helix-cursor-with-id (id)
   "Return the cursor with the given ID."
-  (cl-find-if #'(lambda (o) (and (helix-fake-cursor-p o)
-                                 (= id (overlay-get o 'mc-id))))
+  (cl-find-if #'(lambda (o)
+                  (and (helix-fake-cursor-p o)
+                       (= id (overlay-get o 'mc-id))))
               (overlays-in (point-min) (point-max))))
-
-(defvar helix-mc--stored-state-for-undo nil
-  "The variable to keep the state of the real cursor while undoing a fake one.")
-
-;;;###autoload
-(defun activate-cursor-for-undo (id)
-  "Called when undoing to temporarily activate the fake cursor
-which action is being undone."
-  (when-let* ((cursor (helix-cursor-with-id id)))
-    (setq helix-mc--stored-state-for-undo
-          (helix-mc-store-current-state-in-overlay
-           (make-overlay (point) (point) nil nil t)))))
-
-(defun deactivate-cursor-after-undo (id)
-  "Called when undoing to reinstate the real cursor after undoing a fake one."
-  (when helix-mc--stored-state-for-undo
-    (helix-create-fake-cursor-at-point id)
-    (helix-mc-pop-state-from-overlay helix-mc--stored-state-for-undo)
-    (setq helix-mc--stored-state-for-undo nil)))
-
-(defvar helix-mc-cmds-to-run-once nil
-  "Commands to run only once in `helix-multiple-cursors-mode'.")
-
-(defvar helix-mc--default-cmds-to-run-once nil
-  "Default set of commands to run only once in `helix-multiple-cursors-mode'.")
-
-(setq helix-mc--default-cmds-to-run-once
-      '(helix-normal-state-escape ; esc in normal state
-        helix-normal-state           ;; esc
-        helix-keep-primary-selection ;; ,
-        helix-extend-selection       ;; v
-        helix-undo                   ;; u
-        undo-redo                    ;; U
-        keypad                       ;; SPC
-        tab-next
-        tab-previous
-        ;; helix-mc-edit-lines
-        ;; helix-mc-edit-ends-of-lines
-        ;; helix-mc-edit-beginnings-of-lines
-        ;; helix-mc-mark-next-like-this
-        ;; helix-mc-mark-next-like-this-word
-        ;; helix-mc-mark-next-like-this-symbol
-        ;; helix-mc-mark-next-word-like-this
-        ;; helix-mc-mark-next-symbol-like-this
-        ;; helix-mc-mark-previous-like-this
-        ;; helix-mc-mark-previous-like-this-word
-        ;; helix-mc-mark-previous-like-this-symbol
-        ;; helix-mc-mark-previous-word-like-this
-        ;; helix-mc-mark-previous-symbol-like-this
-        ;; helix-mc-mark-all-like-this
-        ;; helix-mc-mark-all-words-like-this
-        ;; helix-mc-mark-all-symbols-like-this
-        ;; helix-mc-mark-more-like-this-extended
-        ;; helix-mc-mark-all-like-this-in-defun
-        ;; helix-mc-mark-all-words-like-this-in-defun
-        ;; helix-mc-mark-all-symbols-like-this-in-defun
-        ;; helix-mc-mark-all-like-this-dwim
-        ;; helix-mc-mark-all-dwim
-        ;; helix-mc-mark-sgml-tag-pair
-        ;; helix-mc-insert-numbers
-        ;; helix-mc-insert-letters
-        ;; helix-mc-sort-regions
-        ;; helix-mc-reverse-regions
-        ;; helix-mc-cycle-forward
-        ;; helix-mc-cycle-backward
-        ;; helix-mc-add-cursor-on-click
-        ;; helix-mc-mark-pop
-        ;; helix-mc-add-cursors-to-all-matches
-        ;; helix-mc-mmlte--left
-        ;; helix-mc-mmlte--right
-        ;; helix-mc-mmlte--up
-        ;; helix-mc-mmlte--down
-        ;; helix-mc-unmark-next-like-this
-        ;; helix-mc-unmark-previous-like-this
-        ;; helix-mc-skip-to-next-like-this
-        ;; helix-mc-skip-to-previous-like-this
-        ;; rrm/switch-to-multiple-cursors
-        ;; mc-hide-unmatched-lines-mode
-        helix-mc-repeat-command
-        save-buffer
-        ido-exit-minibuffer
-        ivy-done
-        exit-minibuffer
-        minibuffer-complete-and-exit
-        execute-extended-command
-        eval-expression
-        undo
-        redo
-        undo-tree-undo
-        undo-tree-redo
-        undo-fu-only-undo
-        undo-fu-only-redo
-        universal-argument
-        universal-argument-more
-        universal-argument-other-key
-        negative-argument
-        digit-argument
-        top-level
-        recenter-top-bottom
-        describe-mode
-        describe-key-1
-        describe-function
-        describe-bindings
-        describe-prefix-bindings
-        view-echo-area-messages
-        other-window
-        kill-buffer-and-window
-        split-window-right
-        split-window-below
-        delete-other-windows
-        toggle-window-split
-        mwheel-scroll
-        scroll-up-command
-        scroll-down-command
-        mouse-set-point
-        mouse-drag-region
-        quit-window
-        toggle-read-only
-        windmove-left
-        windmove-right
-        windmove-up
-        windmove-down
-        repeat-complex-command))
-
-(defvar helix-mc-cmds-to-run-for-all nil
-  "Commands to run for all cursors in `helix-multiple-cursors-mode'")
-
-(defvar helix-mc--default-cmds-to-run-for-all nil
-  "Default set of commands that should be mirrored by all cursors")
-
-(setq helix-mc--default-cmds-to-run-for-all
-      '(helix-insert              ;; i
-        helix-append              ;; a
-        helix-backward-char       ;; h
-        helix-next-line           ;; j
-        helix-previous-line       ;; k
-        helix-forward-char        ;; l
-        helix-forward-word-start  ;; w
-        helix-backward-word-start ;; b
-        helix-forward-word-end    ;; e
-        helix-forward-WORD-start  ;; W
-        helix-backward-WORD-start ;; B
-        helix-forward-WORD-end    ;; E
-        helix-select-line         ;; x
-        helix-delete              ;; d
-        helix-collapse-selection  ;; ;
-        helix-mc-keyboard-quit
-        self-insert-command
-        quoted-insert
-        previous-line
-        next-line
-        newline
-        newline-and-indent
-        open-line
-        delete-blank-lines
-        transpose-chars
-        transpose-lines
-        transpose-paragraphs
-        transpose-regions
-        join-line
-        right-char
-        right-word
-        forward-char
-        forward-word
-        left-char
-        left-word
-        backward-char
-        backward-word
-        forward-paragraph
-        backward-paragraph
-        upcase-word
-        downcase-word
-        capitalize-word
-        forward-list
-        backward-list
-        hippie-expand
-        hippie-expand-lines
-        yank
-        yank-pop
-        append-next-kill
-        kill-word
-        kill-line
-        kill-whole-line
-        backward-kill-word
-        backward-delete-char-untabify
-        delete-char delete-forward-char
-        delete-backward-char
-        py-electric-backspace
-        c-electric-backspace
-        org-delete-backward-char
-        cperl-electric-backspace
-        python-indent-dedent-line-backspace
-        paredit-backward-delete
-        autopair-backspace
-        just-one-space
-        zap-to-char
-        end-of-line
-        set-mark-command
-        exchange-point-and-mark
-        cua-set-mark
-        cua-replace-region
-        cua-delete-region
-        move-end-of-line
-        beginning-of-line
-        move-beginning-of-line
-        kill-ring-save
-        back-to-indentation
-        subword-forward
-        subword-backward
-        subword-mark
-        subword-kill
-        subword-backward-kill
-        subword-transpose
-        subword-capitalize
-        subword-upcase
-        subword-downcase
-        er/expand-region
-        er/contract-region
-        smart-forward
-        smart-backward
-        smart-up
-        smart-down))
 
 (defun helix-mc-prompt-for-inclusion-in-whitelist (original-command)
   "Asks the user, then adds the command either to the once-list or the all-list."
   (let ((all? (y-or-n-p (format "Do %S for all cursors?" original-command))))
     (if all?
-        (push original-command helix-mc-cmds-to-run-for-all)
-      (push original-command helix-mc-cmds-to-run-once))
+        (push original-command helix-commands-to-run-for-all-cursors)
+      (push original-command helix-commands-to-run-once))
     (helix-mc-save-lists)
     all?))
 
@@ -540,9 +336,8 @@ change their remapping based on state. So a command that changes the
 state will afterwards not be recognized through the `command-remapping'
 lookup."
   (unless helix--executing-command-for-fake-cursor?
-    (let ((cmd (or (command-remapping this-original-command)
-                   this-original-command)))
-      (setq helix-mc--this-command cmd))))
+    (setq helix-mc--this-command (or (command-remapping this-original-command)
+                                     this-original-command))))
 
 (defun helix-mc-execute-this-command-for-all-cursors ()
   "Wrap around `helix-mc-execute-this-command-for-all-cursors-1' to protect hook."
@@ -597,14 +392,14 @@ the original cursor, to inform about the lack of support."
 
                 (when (and original-command
                            (not (memq original-command
-                                      helix-mc--default-cmds-to-run-once))
+                                      helix-default-commands-to-run-once))
                            (not (memq original-command
-                                      helix-mc-cmds-to-run-once))
+                                      helix-commands-to-run-once))
                            (or helix-mc-always-run-for-all
                                (memq original-command
-                                     helix-mc--default-cmds-to-run-for-all)
+                                     helix-default-commands-to-run-for-all-cursors)
                                (memq original-command
-                                     helix-mc-cmds-to-run-for-all)
+                                     helix-commands-to-run-for-all-cursors)
                                (helix-mc-prompt-for-inclusion-in-whitelist original-command)))
                   (helix-execute-command-for-all-fake-cursors original-command))))))))))
 
@@ -642,8 +437,8 @@ Disable `helix-multiple-cursors-mode' instead."
 The entries are returned in the order they are found in the buffer."
   (let (entries)
     (helix-for-each-cursor-ordered
-     (setq entries (cons (car (overlay-get cursor 'kill-ring))
-                         entries)))
+     (push (car (overlay-get cursor 'kill-ring))
+           entries))
     (nreverse entries)))
 
 (defun helix-mc--maybe-set-killed-rectangle ()
@@ -816,14 +611,14 @@ of all cursors when yanking."
   (when helix-multiple-cursors-mode
     (unless (or helix-mc-always-run-for-all
                 (not (symbolp this-command))
-                (memq this-command helix-mc-cmds-to-run-for-all)
-                (memq this-command helix-mc-cmds-to-run-once)
-                (memq this-command helix-mc--default-cmds-to-run-for-all)
-                (memq this-command helix-mc--default-cmds-to-run-once))
+                (memq this-command helix-commands-to-run-for-all-cursors)
+                (memq this-command helix-commands-to-run-once)
+                (memq this-command helix-default-commands-to-run-for-all-cursors)
+                (memq this-command helix-default-commands-to-run-once))
       (helix-mc-prompt-for-inclusion-in-whitelist this-command))
     (when (or helix-mc-always-run-for-all
-              (memq this-command helix-mc-cmds-to-run-for-all)
-              (memq this-command helix-mc--default-cmds-to-run-for-all))
+              (memq this-command helix-commands-to-run-for-all-cursors)
+              (memq this-command helix-default-commands-to-run-for-all-cursors))
       (helix-execute-command-for-all-fake-cursors this-command))))
 
 ;;; File
@@ -864,9 +659,9 @@ and which for all to `helix-mc-list-file' file."
     (insert ";; It keeps track of your preferences for running commands with multiple cursors.")
     (newline)
     (newline)
-    (helix-mc-dump-list 'helix-mc-cmds-to-run-for-all)
+    (helix-mc-dump-list 'helix-commands-to-run-for-all-cursors)
     (newline)
-    (helix-mc-dump-list 'helix-mc-cmds-to-run-once)))
+    (helix-mc-dump-list 'helix-commands-to-run-once)))
 
 (provide 'helix-multiple-cursors-core)
 
