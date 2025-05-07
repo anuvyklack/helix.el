@@ -85,6 +85,13 @@ If this value is nil, there is no ceiling."
   :type '(boolean)
   :group 'helix)
 
+(defvar helix-mc-unsupported-minor-modes '(company-mode
+                                           auto-complete-mode
+                                           flyspell-mode
+                                           jedi-mode)
+  "List of minor-modes that does not work well with multiple cursors.
+They are temporarily disabled when there are multiple cursors.")
+
 (defgroup helix-cjk nil
   "CJK support."
   :prefix "helix-cjk-"
@@ -189,7 +196,6 @@ with the first keymaps having higher priority.")
                            (1+ (car bounds))
                            (1- (cdr bounds))
                            (cdr bounds))))))
-
   "Association list with (KEY . SPEC) elements for Helix surrounding
 functionality.
 
@@ -209,6 +215,15 @@ SPEC is a plist with next keys:
 This function populates the buffer local `helix-surround-alist' variable,
 and thus should be called from major-modes hooks.
 See the defaul value of `helix-surround-alist' variable for examples.")
+
+(helix-defvar-local helix-snipe-aliases '()
+  "A list of characters mapped to regexps '(CHAR REGEX).
+If CHAR is used in a snipe, it will be replaced with REGEX.
+To set an alias for a specific mode use:
+
+    (add-hook 'c++-mode-hook
+      (lambda ()
+        (push '(?\[ . \"[[{(]\") evil-snipe-aliases)))")
 
 (helix-defvar-local helix--state nil
   "The current Helix state.")
@@ -235,7 +250,8 @@ use `helix-state-property'.")
   "Whether region was active when we last time switched to Insert state.")
 
 (helix-defvar-local helix-scroll-count 0
-  "Hold last used prefix for `helix-scroll-up' and `helix-scroll-down'.
+  "Hold last used prefix for `helix-smooth-scroll-up' and
+`helix-smooth-scroll-down' commands.
 Determine how many lines should be scrolled.
 Default value is 0 - scroll half the screen.")
 
@@ -244,6 +260,12 @@ Default value is 0 - scroll half the screen.")
 
 (defvar helix-window-map (make-sparse-keymap)
   "Keymap for window-related commands.")
+
+(defvar helix-multiple-cursors-map (make-sparse-keymap)
+  "Transient keymap for `helix-multiple-cursors-mode'.
+It is active while there are multiple cursors.
+Main goal of the keymap is to rebind `C-g' to conclude multiple
+cursors editing.")
 
 (defvar helix-commands-to-run-for-all-cursors nil
   "Commands to execute for all cursors.")
@@ -264,7 +286,9 @@ Default value is 0 - scroll half the screen.")
     helix-forward-WORD-start  ;; W
     helix-backward-WORD-start ;; B
     helix-forward-WORD-end    ;; E
-    helix-select-line         ;; x
+    helix-first-non-blank     ;; gh
+    helix-end-of-line         ;; gl
+    helix-mark-line           ;; x
     helix-delete              ;; d
     helix-collapse-selection  ;; ;
     helix-mc-keyboard-quit
@@ -348,6 +372,7 @@ Default value is 0 - scroll half the screen.")
 (defvar helix-default-commands-to-run-once
   '(helix-normal-state-escape    ;; ESC in normal state
     helix-normal-state           ;; ESC
+    helix-toggle-cursor-on-click ;; M-mouse1
     helix-keep-primary-selection ;; ,
     helix-extend-selection       ;; v
     helix-undo                   ;; u
@@ -444,6 +469,15 @@ Default value is 0 - scroll half the screen.")
     repeat-complex-command)
   "Default set of commands to execute only once while multiple cursors are
 active.")
+
+(defvar helix-mc--list-file-loaded nil
+  "Non-nil when `helix-mc-list-file' file has already been loaded.")
+
+(helix-defvar-local helix--this-command nil
+  "The command that all fake cursors are now executing.")
+
+(helix-defvar-local helix-mc-temporarily-disabled-minor-modes nil
+  "The list of temporarily disabled minor-modes.")
 
 (provide 'helix-vars)
 ;;; helix-vars.el ends here

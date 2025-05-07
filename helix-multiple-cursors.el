@@ -40,64 +40,64 @@ already there."
     (select-window (posn-window position))
     (when-let* ((pos (posn-point position))
                 ((numberp pos)))
-      ;; Is there a fake cursor with the actual *point* right where we are?
       (if-let* ((cursor (helix-fake-cursor-at-pos pos)))
           (helix--remove-fake-cursor cursor)
         (save-excursion
+          (deactivate-mark)
           (goto-char pos)
-          (helix-create-fake-cursor-at-point nil t))))
+          (helix-create-fake-cursor-from-point))))
     (helix-maybe-multiple-cursors-mode)))
 
-(defun helix-copy-cursor-down (&optional count)
-  (or count (setq count 1))
-  (let ((dir (if (< count 0) -1 1))
-        (count (abs count)))
-    (when (use-region-p)
-      (let ((region-dir   (helix-region-direction))
-            (num-of-lines (count-lines (point) (mark)))
-            (point-column (current-column))
-            (mark-column  (progn
-                            (helix-exchange-point-and-mark)
-                            (current-column))))
+;; (defun helix-copy-cursor-down (&optional count)
+;;   (or count (setq count 1))
+;;   (let ((dir (if (< count 0) -1 1))
+;;         (count (abs count)))
+;;     (when (use-region-p)
+;;       (let ((region-dir   (helix-region-direction))
+;;             (num-of-lines (count-lines (point) (mark)))
+;;             (point-column (current-column))
+;;             (mark-column  (progn
+;;                             (helix-exchange-point-and-mark)
+;;                             (current-column))))
+;;
+;;         ;; (dotimes (i count))
+;;         ))
+;;     )
+;;   )
 
-        ;; (dotimes (i count))
-        ))
-    )
-  )
+;; (defun helix-mc-furthest-cursor-before-point ()
+;;   (let ((beg (if mark-active
+;;                  (min (mark) (point))
+;;                (point)))
+;;         furthest)
+;;     (helix-for-each-fake-cursor
+;;      (when (< (mc/cursor-beg cursor) beg)
+;;        (setq beg (mc/cursor-beg cursor))
+;;        (setq furthest cursor)))
+;;     furthest))
 
-(defun helix-mc-furthest-cursor-before-point ()
-  (let ((beg (if mark-active
-                 (min (mark) (point))
-               (point)))
-        furthest)
-    (helix-for-each-fake-cursor
-     (when (< (mc/cursor-beg cursor) beg)
-       (setq beg (mc/cursor-beg cursor))
-       (setq furthest cursor)))
-    furthest))
+;; (defun helix-mc-furthest-cursor-after-point ()
+;;   (let ((end (if mark-active (max (mark) (point)) (point)))
+;;         furthest)
+;;     (helix-for-each-fake-cursor
+;;      (when (> (mc/cursor-end cursor) end)
+;;        (setq end (mc/cursor-end cursor))
+;;        (setq furthest cursor)))
+;;     furthest))
 
-(defun helix-mc-furthest-cursor-after-point ()
-  (let ((end (if mark-active (max (mark) (point)) (point)))
-        furthest)
-    (helix-for-each-fake-cursor
-     (when (> (mc/cursor-end cursor) end)
-       (setq end (mc/cursor-end cursor))
-       (setq furthest cursor)))
-    furthest))
+;; (defun helix-mc-first-cursor ())
+;; (defun helix-mc-last-cursor ())
 
-(defun helix-mc-first-cursor ())
-(defun helix-mc-last-cursor ())
-
-(defun helix-mc-bound-cursor (direction)
-  "Return the first fake cursor if DIRECTION is positive number /last
-If DIRECTION is negative number find the fake cursor with the minimal buffer
-position. If its position is smaller than the positon of the point — return it.
-Otherwise return nil.
-
-If DIRECTION is positive number find the fake cursor with the maximum buffer
-position. If its position is bigger than the positon of the point — return it.
-Otherwise return nil."
-  )
+;; (defun helix-mc-bound-cursor (direction)
+;;   "Return the first fake cursor if DIRECTION is positive number /last
+;; If DIRECTION is negative number find the fake cursor with the minimal buffer
+;; position. If its position is smaller than the positon of the point — return it.
+;; Otherwise return nil.
+;;
+;; If DIRECTION is positive number find the fake cursor with the maximum buffer
+;; position. If its position is bigger than the positon of the point — return it.
+;; Otherwise return nil."
+;;   )
 
 
 ;; (current-column)

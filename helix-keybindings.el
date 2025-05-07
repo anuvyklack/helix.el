@@ -246,6 +246,15 @@
 ;; (helix-keymap-set emacs-lisp-mode-map 'normal
 ;;   "o" #'helix-elisp-mode-o-fun)
 
+;;; Multiple cursors
+
+(keymap-set helix-multiple-cursors-map "C-g" #'helix-mc-keyboard-quit)
+(keymap-set helix-multiple-cursors-map "C-:" #'helix-mc-repeat-command)
+(when (fboundp 'phi-search)
+  (keymap-set helix-multiple-cursors-map "C-s" #'phi-search))
+(when (fboundp 'phi-search-backward)
+  (keymap-set helix-multiple-cursors-map "C-r" #'phi-search-backward))
+
 ;;; Insert state
 
 (helix-keymap-set nil 'insert "<escape>" #'helix-normal-state)

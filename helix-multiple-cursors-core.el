@@ -140,7 +140,7 @@ so that `helix-max-cursors' can take on a new value. When
 IDs' are used to keep track of cursors for undo."
   (cl-incf helix--cursor-last-used-id))
 
-(defun helix-create-fake-cursor-from-point (&optional id no-region)
+(defun helix-create-fake-cursor-from-point (&optional id)
   "Add a fake cursor and possibly a fake active region overlay
 based on point and mark.
 
@@ -162,8 +162,7 @@ The current state saves in the overlay to be restored later."
     (overlay-put cursor 'type 'fake-cursor)
     (overlay-put cursor 'priority 100)
     (helix--store-point-state-in-overlay cursor)
-    (when (and (not no-region)
-               (use-region-p))
+    (when (use-region-p)
       (overlay-put cursor 'region-overlay
                    (helix--make-region-overlay-between-point-and-mark)))
     cursor))
@@ -309,22 +308,10 @@ makes sense for fake cursors."
                        (= id (overlay-get o 'mc-id))))
               (overlays-in (point-min) (point-max))))
 
-(defun helix-mc-prompt-for-inclusion-in-whitelist (original-command)
-  "Asks the user, then adds the command either to the once-list or the all-list."
-  (let ((all? (y-or-n-p (format "Do %S for all cursors?" original-command))))
-    (if all?
-        (push original-command helix-commands-to-run-for-all-cursors)
-      (push original-command helix-commands-to-run-once))
-    (helix-mc-save-lists)
-    all?))
-
 (defun helix-number-of-cursors ()
   "The number of cursors (real and fake) in the buffer."
   (1+ (cl-count-if #'helix-fake-cursor-p
                    (overlays-in (point-min) (point-max)))))
-
-(helix-defvar-local helix-mc--this-command nil
-  "The original command being run.")
 
 (defun helix-mc-make-a-note-of-the-command-being-run ()
   "Used with `pre-command-hook' to store the original command being run.
@@ -336,8 +323,8 @@ change their remapping based on state. So a command that changes the
 state will afterwards not be recognized through the `command-remapping'
 lookup."
   (unless helix--executing-command-for-fake-cursor?
-    (setq helix-mc--this-command (or (command-remapping this-original-command)
-                                     this-original-command))))
+    (setq helix--this-command (or (command-remapping this-original-command)
+                                  this-original-command))))
 
 (defun helix-mc-execute-this-command-for-all-cursors ()
   "Wrap around `helix-mc-execute-this-command-for-all-cursors-1' to protect hook."
@@ -362,7 +349,7 @@ the original cursor, to inform about the lack of support."
         ;; No fake cursors? Disable mc-mode.
         (helix-disable-multiple-cursors-mode)
       (when this-original-command
-        (let ((original-command (or helix-mc--this-command
+        (let ((original-command (or helix--this-command
                                     (command-remapping this-original-command)
                                     this-original-command)))
 
@@ -449,16 +436,6 @@ So you can paste it in later with `yank-rectangle'."
       (unless (helix-all-elements-are-the-same-p entries)
         (setq killed-rectangle entries)))))
 
-(defvar helix-mc-unsupported-minor-modes '(company-mode
-                                           auto-complete-mode
-                                           flyspell-mode
-                                           jedi-mode)
-  "List of minor-modes that does not play well with multiple-cursors.
-They are temporarily disabled when multiple-cursors are active.")
-
-(helix-defvar-local helix-mc-temporarily-disabled-minor-modes nil
-  "The list of temporarily disabled minor-modes.")
-
 (defun helix-mc-temporarily-disable-minor-mode (mode)
   "If MODE is available and turned on, remember that and turn it off."
   (when (and (boundp mode) (symbol-value mode))
@@ -474,19 +451,6 @@ They are temporarily disabled when multiple-cursors are active.")
         helix-mc-temporarily-disabled-minor-modes)
   (setq helix-mc-temporarily-disabled-minor-modes nil))
 
-(defvar-keymap helix-multiple-cursors-map
-  :doc "Transient keymap for `helix-multiple-cursors-mode'.
-It is active while there are multiple cursors.
-Main goal of the keymap is to rebind `C-g' to conclude multiple
-cursors editing."
-  "C-g" #'helix-mc-keyboard-quit
-  ;; "C-:" #'helix-mc-repeat-command
-  )
-(when (fboundp 'phi-search)
-  (keymap-set helix-multiple-cursors-map "C-s" 'phi-search))
-(when (fboundp 'phi-search-backward)
-  (keymap-set helix-multiple-cursors-map "C-r" 'phi-search-backward))
-
 ;;;###autoload
 (define-minor-mode helix-multiple-cursors-mode
   "Mode while multiple cursors are active."
@@ -501,7 +465,7 @@ cursors editing."
         (run-hooks 'helix-multiple-cursors-mode-enabled-hook))
     (remove-hook 'post-command-hook 'helix-mc-execute-this-command-for-all-cursors t)
     (remove-hook 'pre-command-hook 'helix-mc-make-a-note-of-the-command-being-run t)
-    (setq helix-mc--this-command nil)
+    (setq helix--this-command nil)
     (helix-mc--maybe-set-killed-rectangle)
     (helix--remove-fake-cursors)
     (helix-mc-enable-temporarily-disabled-minor-modes)
@@ -621,10 +585,18 @@ of all cursors when yanking."
               (memq this-command helix-default-commands-to-run-for-all-cursors))
       (helix-execute-command-for-all-fake-cursors this-command))))
 
-;;; File
+;;; Whitelists
 
-(defvar helix-mc--list-file-loaded nil
-  "Non-nil when `helix-mc-list-file' file has already been loaded.")
+(defun helix-mc-prompt-for-inclusion-in-whitelist (original-command)
+  "Ask the user, then add the command either to
+`helix-commands-to-run-for-all-cursors' list or
+`helix-commands-to-run-once'."
+  (let ((all? (y-or-n-p (format "Do %S for all cursors?" original-command))))
+    (if all?
+        (push original-command helix-commands-to-run-for-all-cursors)
+      (push original-command helix-commands-to-run-once))
+    (helix-mc-save-lists)
+    all?))
 
 (defun helix-mc-load-lists ()
   "Load `helix-mc-list-file' file."
