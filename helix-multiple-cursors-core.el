@@ -231,28 +231,29 @@ the data needed for multiple cursors functionality."
        (helix--restore-point-state-from-overlay ,state)
        (delete-overlay ,state))))
 
-(defmacro helix-for-each-fake-cursor (&rest body)
-  "Run the BODY for each fake cursor.
-Inside this macro, the current proceeded cursor is bound to the symbol
-CURSOR to be accessible from inside BODY."
-  `(mapc
-    #'(lambda (cursor) ,@body)
-    (helix-all-fake-cursors)))
-
 (defun helix-all-fake-cursors (&optional start end)
   (cl-remove-if-not #'helix-fake-cursor-p
                     (overlays-in (or start (point-min))
                                  (or end   (point-max)))))
 
-(defmacro helix-for-each-cursor-ordered (&rest body)
-  "Run the BODY for each cursor, fake and real, bound to the symbol CURSOR."
-  (let ((real-cursor (gensym "real-cursor"))
-        (overlays (gensym "overlays")))
+(defmacro helix-for-each-fake-cursor (cursor &rest body)
+  "Evaluate BODY with CURSOR bound to each fake cursor in turn."
+  (declare (indent 1))
+  `(dolist (,cursor (overlays-in (point-min) (point-max)))
+     (when (helix-fake-cursor-p ,cursor)
+       ,@body)))
+
+(defmacro helix-for-each-cursor-ordered (cursor &rest body)
+  "Evaluate BODY with CURSOR bound to each real or fake cursors
+in order they are follow in buffer."
+  (declare (indent 1))
+  (let ((real-cursor (make-symbol "real-cursor"))
+        (overlays (make-symbol "overlays")))
     `(let ((,real-cursor (helix-create-fake-cursor-from-point))
            (,overlays (sort (helix-all-fake-cursors)
                             #'helix--compare-by-overlay-start)))
-       (mapc #'(lambda (cursor) ,@body)
-             ,overlays)
+       (dolist (,cursor ,overlays)
+         ,@body)
        (helix-restore-point-from-fake-cursor ,real-cursor))))
 
 (defun helix--compare-by-overlay-start (o1 o2)
@@ -269,8 +270,8 @@ Internaly it moves point to the fake cursor, restore the environment
 from it, execute COMMAND, update fake cursor."
   (helix-save-window-scroll
    (helix-save-excursion
-    (helix-for-each-fake-cursor
-     (helix-execute-command-for-fake-cursor cursor command))))
+    (helix-for-each-fake-cursor cursor
+      (helix-execute-command-for-fake-cursor cursor command))))
   (helix--reset-input-cache))
 
 (defvar helix--executing-command-for-fake-cursor? nil)
@@ -370,11 +371,11 @@ the original cursor, to inform about the lack of support."
   "Remove all fake cursors.
 Do not use it to conclude editing with multiple cursors!
 Disable `helix-multiple-cursors-mode' instead."
-  (helix-for-each-fake-cursor
-   (helix--remove-fake-cursor cursor))
   (when helix--max-cursors-original
-    (setq helix-max-cursors helix--max-cursors-original))
-  (setq helix--max-cursors-original nil))
+    (setq helix-max-cursors helix--max-cursors-original
+          helix--max-cursors-original nil))
+  (helix-for-each-fake-cursor cursor
+    (helix--remove-fake-cursor cursor)))
 
 (defun helix-mc-keyboard-quit ()
   "Exit `helix-multiple-cursors-mode'."
@@ -386,9 +387,9 @@ Disable `helix-multiple-cursors-mode' instead."
 So you can paste it in later with `yank-rectangle'."
   (let (helix-max-cursors)
     (let ((entries (let (lst)
-                     (helix-for-each-cursor-ordered
-                      (push (car (overlay-get cursor 'kill-ring))
-                            lst))
+                     (helix-for-each-cursor-ordered cursor
+                       (push (car (overlay-get cursor 'kill-ring))
+                             lst))
                      (nreverse lst))))
       (unless (helix-all-elements-are-the-same-p entries)
         (setq killed-rectangle entries)))))
@@ -535,14 +536,14 @@ of all cursors when yanking."
         (kill-new interprogram-paste))
       ;; And then add interprogram-paste to the kill-rings
       ;; of all the other cursors too.
-      (helix-for-each-fake-cursor
-       (let ((kill-ring (overlay-get cursor 'kill-ring))
-             (kill-ring-yank-pointer (overlay-get cursor 'kill-ring-yank-pointer)))
-         (if (listp interprogram-paste)
-             (mapc 'kill-new (nreverse interprogram-paste))
-           (kill-new interprogram-paste))
-         (overlay-put cursor 'kill-ring kill-ring)
-         (overlay-put cursor 'kill-ring-yank-pointer kill-ring-yank-pointer))))))
+      (helix-for-each-fake-cursor cursor
+        (let ((kill-ring (overlay-get cursor 'kill-ring))
+              (kill-ring-yank-pointer (overlay-get cursor 'kill-ring-yank-pointer)))
+          (if (listp interprogram-paste)
+              (mapc 'kill-new (nreverse interprogram-paste))
+            (kill-new interprogram-paste))
+          (overlay-put cursor 'kill-ring kill-ring)
+          (overlay-put cursor 'kill-ring-yank-pointer kill-ring-yank-pointer))))))
 
 (define-advice execute-extended-command (:after (&rest _) multiple-cursors)
   "Execute selected command for all cursors."
