@@ -198,7 +198,7 @@ if no more fake cursors are remaining."
   "Make sure point is in the right place when undoing."
   (declare (indent defun))
   (let ((uc (make-symbol "undo-cleaner")))
-    `(let ((,uc `(apply helix-deactivate-cursor-after-undo . (,,id))))
+    `(let ((,uc `(apply helix-deactivate-cursor-after-undo ,,id)))
        (push ,uc buffer-undo-list)
        ,@body
        ;; If nothing has been added to the undo-list
@@ -206,7 +206,7 @@ if no more fake cursors are remaining."
            ;; then pop the cleaner right off again
            (pop buffer-undo-list)
          ;; otherwise add a function to activate this cursor
-         (push `(apply activate-cursor-for-undo . (,,id))
+         (push `(apply helix-activate-cursor-for-undo ,,id)
                buffer-undo-list)))))
 
 (defvar helix-mc--stored-state-for-undo nil
@@ -387,15 +387,23 @@ the original cursor, to inform about the lack of support."
                         (helix-mc-prompt-for-inclusion-in-whitelist command)))
                (helix-execute-command-for-all-fake-cursors command)))))))
 
+(defvar helix--cursors-history nil)
+
 (defun helix--remove-fake-cursors ()
   "Remove all fake cursors.
-Do not use it to conclude editing with multiple cursors!
+Do not use this funtion to conclude editing with multiple cursors!
 Disable `helix-multiple-cursors-mode' instead."
   (when helix--max-cursors-original
     (setq helix-max-cursors helix--max-cursors-original
           helix--max-cursors-original nil))
-  (helix-for-each-fake-cursor cursor
-    (helix--remove-fake-cursor cursor)))
+  (let (cursors-info)
+    (helix-for-each-fake-cursor cursor
+      (push (list (overlay-get cursor 'id)
+                  (marker-position (overlay-get cursor 'point)))
+            cursors-info)
+      (helix--remove-fake-cursor cursor))
+    (push (point) cursors-info)
+    (setq helix--cursors-history cursors-info)))
 
 (defun helix-mc-keyboard-quit ()
   "Exit `helix-multiple-cursors-mode'."
@@ -452,19 +460,48 @@ function to prevent it recursive calls.")
   :init-value nil
   :lighter helix-mc-mode-line
   :keymap helix-multiple-cursors-map
-  (let ((helix---inside-helix-multiple-cursors-mode t))
+  (let ((helix---inside-helix-multiple-cursors-mode t)
+        (add-undo? (not (or (eq buffer-undo-list t)
+                            (helix-undo-command-p this-command)))))
     (if helix-multiple-cursors-mode
         (progn
           (helix-mc-load-lists) ;; Lazy-load the user's list file
           (helix-mc-temporarily-disable-unsupported-minor-modes)
           (add-hook 'pre-command-hook 'helix--record-this-command nil t)
-          (add-hook 'post-command-hook 'helix--execute-command-for-all-cursors t))
+          (add-hook 'post-command-hook 'helix--execute-command-for-all-cursors t)
+          (when add-undo?
+            (push '(apply helix-multiple-cursors-mode toggle)
+                  buffer-undo-list)))
       (remove-hook 'post-command-hook 'helix--execute-command-for-all-cursors t)
       (remove-hook 'pre-command-hook 'helix--record-this-command t)
       (setq helix--this-command nil)
       (helix-mc--maybe-set-killed-rectangle)
-      (helix--remove-fake-cursors)
-      (helix-mc-enable-temporarily-disabled-minor-modes))))
+      (let ((cursors-info (helix--remove-fake-cursors)))
+        (when add-undo?
+          (push `(apply undo-helix-multiple-cursors-mode ,cursors-info)
+                buffer-undo-list)))
+      (helix-mc-enable-temporarily-disabled-minor-modes))
+    ;; Add to undo list
+    ;; (when add-undo?
+    ;;   (pcase-let ((`(,0th ,1st) buffer-undo-list)
+    ;;               (cmd '(apply helix-multiple-cursors-mode toggle)))
+    ;;     (if (and (null 0th) ;; undo border
+    ;;              (equal 1st cmd))
+    ;;         ;; pop first 2 elements
+    ;;         (setq buffer-undo-list (cddr buffer-undo-list))
+    ;;       (push cmd buffer-undo-list))))
+    ))
+
+(defun undo-helix-multiple-cursors-mode (cursors-data)
+  (if helix-multiple-cursors-mode
+      (helix-multiple-cursors-mode -1)
+    ;; else
+    (let ((pnt  (car cursors-data))
+          (data (cdr cursors-data)))
+      (dolist (cursor data)
+        (pcase-let ((`(,id ,pnt) cursor))
+          (helix-create-fake-cursor pnt nil id)))
+      (goto-char pnt))))
 
 (defun helix-maybe-enable-multiple-cursors-mode ()
   "Enable `helix-multiple-cursors-mode' if not yet."
