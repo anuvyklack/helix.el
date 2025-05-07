@@ -314,15 +314,15 @@ makes sense for fake cursors."
   (1+ (cl-count-if #'helix-fake-cursor-p
                    (overlays-in (point-min) (point-max)))))
 
-(defun helix-mc-execute-this-command-for-all-cursors ()
-  "Wrap around `helix-mc-execute-this-command-for-all-cursors-1' to protect hook."
+(defun helix--execute-command-for-all-cursors ()
+  "Wrap around `helix--execute-command-for-all-cursors-1' to protect hook."
   (condition-case error
-      (helix-mc-execute-this-command-for-all-cursors-1)
+      (helix--execute-command-for-all-cursors-1)
     (error
-     (message "[mc] problem in `helix-mc-execute-this-command-for-all-cursors': %s"
+     (message "[mc] problem in `helix--execute-command-for-all-cursors': %s"
               (error-message-string error)))))
 
-(defun helix-mc-execute-this-command-for-all-cursors-1 ()
+(defun helix--execute-command-for-all-cursors-1 ()
   "Used with `post-command-hook' to execute supported commands for all cursors.
 
 It uses two lists of commands to know what to do: the `run-once'list
@@ -408,7 +408,7 @@ So you can paste it in later with `yank-rectangle'."
         helix-mc-temporarily-disabled-minor-modes)
   (setq helix-mc-temporarily-disabled-minor-modes nil))
 
-(defun helix-mc-record-this-command ()
+(defun helix--record-this-command ()
   "Used with `pre-command-hook' to store the original command being run.
 Since that cannot be reliably determined in the `post-command-hook'.
 
@@ -436,10 +436,10 @@ function to prevent it recursive calls.")
         (progn
           (helix-mc-load-lists) ;; Lazy-load the user's list file
           (helix-mc-temporarily-disable-unsupported-minor-modes)
-          (add-hook 'pre-command-hook 'helix-mc-record-this-command nil t)
-          (add-hook 'post-command-hook 'helix-mc-execute-this-command-for-all-cursors  t))
-      (remove-hook 'post-command-hook 'helix-mc-execute-this-command-for-all-cursors t)
-      (remove-hook 'pre-command-hook 'helix-mc-record-this-command t)
+          (add-hook 'pre-command-hook 'helix--record-this-command nil t)
+          (add-hook 'post-command-hook 'helix--execute-command-for-all-cursors t))
+      (remove-hook 'post-command-hook 'helix--execute-command-for-all-cursors t)
+      (remove-hook 'pre-command-hook 'helix--record-this-command t)
       (setq helix--this-command nil)
       (helix-mc--maybe-set-killed-rectangle)
       (helix--remove-fake-cursors)
