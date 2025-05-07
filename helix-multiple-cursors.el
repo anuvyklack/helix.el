@@ -31,9 +31,9 @@
 
 (defun helix-fake-cursor-at-pos (pos)
   "Return the fake cursor at POS, or nil if no one."
-  (-find #'(lambda (overlay)
-             (eq pos (overlay-get overlay 'point)))
-         (helix-all-fake-cursors pos (1+ pos))))
+  (-find #'(lambda (cursor)
+             (eq pos (overlay-get cursor 'point)))
+         (helix-fake-cursors-in pos (1+ pos))))
 
 ;; (keymap-lookup nil "M-<down-mouse-1>")
 

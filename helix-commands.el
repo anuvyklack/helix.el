@@ -26,7 +26,8 @@
   (cond (helix--extend-selection
          (setq helix--extend-selection nil))
         (t
-         (mc/execute-command-for-all-cursors #'helix-collapse-selection))))
+         (helix-execute-command-for-all-cursors #'helix-collapse-selection))
+        ))
 
 ;;; Movements
 
@@ -275,12 +276,22 @@ With no region delete char before point with next conditions:
     (delete-char -1))
   (setq helix--extend-selection nil))
 
+
 ;; u
 (defun helix-undo ()
   "Cancel current region then undo."
   (interactive)
   (deactivate-mark)
-  (undo))
+  (undo-only))
+
+(defvar helix--point-marker (make-marker))
+
+;; U
+(defun helix-redo ()
+  "Cancel current region then redo."
+  (interactive)
+  (deactivate-mark)
+  (undo-redo))
 
 ;;; Selection
 

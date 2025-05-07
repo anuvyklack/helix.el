@@ -67,7 +67,7 @@
   "c" #'helix-change
   "d" #'helix-delete
   "u" #'helix-undo
-  "U" #'undo-redo
+  "U" #'helix-redo
 
   ;; Selections
   "<escape>" #'helix-normal-state-escape

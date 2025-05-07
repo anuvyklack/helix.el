@@ -278,9 +278,6 @@ It is active while there are multiple cursors.
 Main goal of the keymap is to rebind `C-g' to conclude multiple
 cursors editing.")
 
-(defvar helix-undo-commands '(helix-undo undo-redo undo)
-  "Commands that implementing undo/redo functionality.")
-
 (defvar helix-commands-to-run-for-all-cursors nil
   "Commands to execute for all cursors.")
 
@@ -390,7 +387,7 @@ cursors editing.")
     helix-toggle-cursor-on-click ;; M-mouse1
     helix-extend-selection       ;; v
     helix-undo                   ;; u
-    undo-redo                    ;; U
+    helix-redo                   ;; U
     keypad                       ;; SPC
     tab-next
     tab-previous
@@ -480,18 +477,40 @@ cursors editing.")
     windmove-right
     windmove-up
     windmove-down
-    repeat-complex-command)
+    repeat-complex-command
+    edebug-next-mode)
   "Default set of commands to execute only once while multiple cursors are
 active.")
+
+(defvar helix-fake-cursor-specific-vars '(transient-mark-mode
+                                          kill-ring
+                                          kill-ring-yank-pointer
+                                          mark-ring
+                                          mark-active
+                                          yank-undo-function
+                                          temporary-goal-column
+                                          dabbrev--abbrev-char-regexp
+                                          dabbrev--check-other-buffers
+                                          dabbrev--friend-buffer-list
+                                          dabbrev--last-abbrev-location
+                                          dabbrev--last-abbreviation
+                                          dabbrev--last-buffer
+                                          dabbrev--last-buffer-found
+                                          dabbrev--last-direction
+                                          dabbrev--last-expansion
+                                          dabbrev--last-expansion-location
+                                          dabbrev--last-table)
+  "A list of vars that need to be tracked on a per-cursor basis.")
 
 (defvar helix-mc--list-file-loaded nil
   "Non-nil when `helix-mc-list-file' file has already been loaded.")
 
 (helix-defvar-local helix--this-command nil
-  "The command that all fake cursors are now executing.")
+  "The command that all fake cursors are currently executing.")
 
 (helix-defvar-local helix-mc-temporarily-disabled-minor-modes nil
-  "The list of temporarily disabled minor-modes.")
+  "The list of temporarily disabled minor-modes while there are
+multiple cursors.")
 
 (provide 'helix-vars)
 ;;; helix-vars.el ends here
