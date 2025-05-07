@@ -18,13 +18,24 @@
 (require 'helix-multiple-cursors-core)
 (require 'helix-vars)
 
-;; (keymap-lookup nil "M-<down-mouse-1>")
+(defun helix-mc-repeat-command ()
+  "Run last command from variable `command-history' for every fake cursor."
+  (interactive)
+  (when (or helix-mc-always-repeat-command
+            (y-or-n-p (format "[mc] repeat complex command: %s? " (caar command-history))))
+    (helix-execute-command-for-all-fake-cursors
+     #'(lambda () (interactive)
+         (cl-letf (((symbol-function 'read-from-minibuffer)
+                    (lambda (p &optional i k r h d m) (read i))))
+           (repeat-complex-command 0))))))
 
 (defun helix-fake-cursor-at-pos (pos)
   "Return the fake cursor at POS, or nil if no one."
   (-find #'(lambda (overlay)
              (eq pos (overlay-get overlay 'point)))
          (helix-all-fake-cursors pos (1+ pos))))
+
+;; (keymap-lookup nil "M-<down-mouse-1>")
 
 ;; M-right mouse
 (defun helix-toggle-cursor-on-click (event)
@@ -41,12 +52,14 @@ already there."
     (when-let* ((pos (posn-point position))
                 ((numberp pos)))
       (if-let* ((cursor (helix-fake-cursor-at-pos pos)))
-          (helix--remove-fake-cursor cursor)
+          (progn
+            (helix--remove-fake-cursor cursor)
+            (when (eql 1 (helix-number-of-cursors))
+              (helix-disable-multiple-cursors-mode)))
         (save-excursion
           (deactivate-mark)
           (goto-char pos)
-          (helix-create-fake-cursor-from-point))))
-    (helix-maybe-multiple-cursors-mode)))
+          (helix-create-fake-cursor-from-point))))))
 
 ;; (defun helix-copy-cursor-down (&optional count)
 ;;   (or count (setq count 1))

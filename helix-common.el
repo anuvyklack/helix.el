@@ -661,6 +661,10 @@ right after the point."
              (eq (car cursor-type) 'bar)))))
 
 ;; FIXME: Is it really faster?
+(defun helix-undo-command-p (command)
+  "Return non-nil if COMMAND is implementing undo/redo functionality."
+  (memq command helix-undo-commands))
+
 (defun helix-line-number-at-pos (&optional pos absolute)
   "Faster implementation of `line-number-at-pos'."
   (if pos

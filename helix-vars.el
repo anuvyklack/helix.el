@@ -267,6 +267,9 @@ It is active while there are multiple cursors.
 Main goal of the keymap is to rebind `C-g' to conclude multiple
 cursors editing.")
 
+(defvar helix-undo-commands '(helix-undo undo-redo undo)
+  "Commands that implementing undo/redo functionality.")
+
 (defvar helix-commands-to-run-for-all-cursors nil
   "Commands to execute for all cursors.")
 

@@ -158,13 +158,14 @@ The current state saves in the overlay to be restored later."
         (helix--remove-fake-cursors)
         (error "Aborted: too many cursors"))))
   (let ((cursor (helix--make-cursor-overlay-at-point)))
-    (overlay-put cursor 'mc-id (or id (helix--new-cursor-id)))
+    (overlay-put cursor 'id (or id (helix--new-cursor-id)))
     (overlay-put cursor 'type 'fake-cursor)
     (overlay-put cursor 'priority 100)
     (helix--store-point-state-in-overlay cursor)
     (when (use-region-p)
       (overlay-put cursor 'region-overlay
                    (helix--make-region-overlay-between-point-and-mark)))
+    (helix-maybe-enable-multiple-cursors-mode)
     cursor))
 
 ;;; Undo functionality
@@ -276,7 +277,7 @@ from it, execute COMMAND, update fake cursor."
 
 (defun helix-execute-command-for-fake-cursor (cursor command)
   (let ((helix--executing-command-for-fake-cursor? t)
-        (id (overlay-get cursor 'mc-id)))
+        (id (overlay-get cursor 'id)))
     (helix--add-fake-cursor-to-undo-list id
       (helix-restore-point-from-fake-cursor cursor)
       (helix--execute-command command)
@@ -305,7 +306,7 @@ makes sense for fake cursors."
   "Return the cursor with the given ID."
   (cl-find-if #'(lambda (o)
                   (and (helix-fake-cursor-p o)
-                       (= id (overlay-get o 'mc-id))))
+                       (= id (overlay-get o 'id))))
               (overlays-in (point-min) (point-max))))
 
 (defun helix-number-of-cursors ()
@@ -380,31 +381,15 @@ Disable `helix-multiple-cursors-mode' instead."
   (interactive)
   (helix-disable-multiple-cursors-mode))
 
-(defun helix-mc-repeat-command ()
-  "Run last command from `command-history' for every fake cursor."
-  (interactive)
-  (when (or helix-mc-always-repeat-command
-            (y-or-n-p (format "[mc] repeat complex command: %s? " (caar command-history))))
-    (helix-execute-command-for-all-fake-cursors
-     #'(lambda () (interactive)
-         (cl-letf (((symbol-function 'read-from-minibuffer)
-                    (lambda (p &optional i k r h d m) (read i))))
-           (repeat-complex-command 0))))))
-
-(defun helix-mc--kill-ring-entries ()
-  "Return the latest `kill-ring' entry for each cursor.
-The entries are returned in the order they are found in the buffer."
-  (let (entries)
-    (helix-for-each-cursor-ordered
-     (push (car (overlay-get cursor 'kill-ring))
-           entries))
-    (nreverse entries)))
-
 (defun helix-mc--maybe-set-killed-rectangle ()
-  "Add the latest `kill-ring' entry for each cursor to killed-rectangle.
+  "Add the latest `kill-ring' entry for each cursor to `killed-rectangle'.
 So you can paste it in later with `yank-rectangle'."
   (let (helix-max-cursors)
-    (let ((entries (helix-mc--kill-ring-entries)))
+    (let ((entries (let (lst)
+                     (helix-for-each-cursor-ordered
+                      (push (car (overlay-get cursor 'kill-ring))
+                            lst))
+                     (nreverse lst))))
       (unless (helix-all-elements-are-the-same-p entries)
         (setq killed-rectangle entries)))))
 
@@ -447,7 +432,7 @@ lookup."
         (helix-mc-load-lists) ;; Lazy-load the user's list file
         (helix-mc-temporarily-disable-unsupported-minor-modes)
         (add-hook 'pre-command-hook 'helix-mc-record-this-command nil t)
-        (add-hook 'post-command-hook 'helix-mc-execute-this-command-for-all-cursors t t))
+        (add-hook 'post-command-hook 'helix-mc-execute-this-command-for-all-cursors  t))
     (remove-hook 'post-command-hook 'helix-mc-execute-this-command-for-all-cursors t)
     (remove-hook 'pre-command-hook 'helix-mc-record-this-command t)
     (setq helix--this-command nil)
@@ -455,21 +440,20 @@ lookup."
     (helix--remove-fake-cursors)
     (helix-mc-enable-temporarily-disabled-minor-modes)))
 
+(defun helix-maybe-enable-multiple-cursors-mode ()
+  "Enable `helix-multiple-cursors-mode' if not yet."
+  (unless (or helix-multiple-cursors-mode
+              (eql (helix-number-of-cursors) 1))
+    (helix-multiple-cursors-mode 1)))
+
 (defun helix-disable-multiple-cursors-mode ()
-  "Disable `helix-multiple-cursors-mode' and run the corresponding hook."
-  (helix-multiple-cursors-mode 0)
-  (run-hooks 'helix-multiple-cursors-mode-disabled-hook))
+  "Disable `helix-multiple-cursors-mode'."
+  (when helix-multiple-cursors-mode
+    (helix-multiple-cursors-mode -1)))
+
+;;; Integration with other packages
 
 (add-hook 'after-revert-hook 'helix-disable-multiple-cursors-mode)
-
-(defun helix-maybe-multiple-cursors-mode ()
-  "Enable `helix-multiple-cursors-mode' if there is more than one
-currently active cursor."
-  (if (> (helix-number-of-cursors) 1)
-      (helix-multiple-cursors-mode 1)
-    (helix-disable-multiple-cursors-mode)))
-
-;;; Advices
 
 (define-advice execute-kbd-macro (:around (orig-fun &rest args) multiple-cursors)
   "`execute-kbd-macro' should never be run for fake cursors.
