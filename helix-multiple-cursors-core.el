@@ -421,28 +421,34 @@ lookup."
     (setq helix--this-command (or (command-remapping this-original-command)
                                   this-original-command))))
 
+(defvar helix---inside-helix-multiple-cursors-mode nil
+  "This variable is t only while we are inside `helix-multiple-cursors-mode'
+function to prevent it recursive calls.")
+
 ;;;###autoload
 (define-minor-mode helix-multiple-cursors-mode
   "Minor mode, which is active when there are multiple cursors."
   :init-value nil
   :lighter helix-mc-mode-line
   :keymap helix-multiple-cursors-map
-  (if helix-multiple-cursors-mode
-      (progn
-        (helix-mc-load-lists) ;; Lazy-load the user's list file
-        (helix-mc-temporarily-disable-unsupported-minor-modes)
-        (add-hook 'pre-command-hook 'helix-mc-record-this-command nil t)
-        (add-hook 'post-command-hook 'helix-mc-execute-this-command-for-all-cursors  t))
-    (remove-hook 'post-command-hook 'helix-mc-execute-this-command-for-all-cursors t)
-    (remove-hook 'pre-command-hook 'helix-mc-record-this-command t)
-    (setq helix--this-command nil)
-    (helix-mc--maybe-set-killed-rectangle)
-    (helix--remove-fake-cursors)
-    (helix-mc-enable-temporarily-disabled-minor-modes)))
+  (let ((helix---inside-helix-multiple-cursors-mode t))
+    (if helix-multiple-cursors-mode
+        (progn
+          (helix-mc-load-lists) ;; Lazy-load the user's list file
+          (helix-mc-temporarily-disable-unsupported-minor-modes)
+          (add-hook 'pre-command-hook 'helix-mc-record-this-command nil t)
+          (add-hook 'post-command-hook 'helix-mc-execute-this-command-for-all-cursors  t))
+      (remove-hook 'post-command-hook 'helix-mc-execute-this-command-for-all-cursors t)
+      (remove-hook 'pre-command-hook 'helix-mc-record-this-command t)
+      (setq helix--this-command nil)
+      (helix-mc--maybe-set-killed-rectangle)
+      (helix--remove-fake-cursors)
+      (helix-mc-enable-temporarily-disabled-minor-modes))))
 
 (defun helix-maybe-enable-multiple-cursors-mode ()
   "Enable `helix-multiple-cursors-mode' if not yet."
   (unless (or helix-multiple-cursors-mode
+              helix---inside-helix-multiple-cursors-mode
               (eql (helix-number-of-cursors) 1))
     (helix-multiple-cursors-mode 1)))
 
