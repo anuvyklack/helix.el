@@ -316,9 +316,9 @@ after RIGHT.
                                  (modify-syntax-entry left (format "(%c" right) st)
                                  (modify-syntax-entry right (format ")%c" left) st)
                                  st)))
-               ;; Always use the default `forward-sexp-function'. This is important
-               ;; for modes that use a custom one like `python-mode'.
-               forward-sexp-function)
+               ;; Always use the default `forward-sexp-function'. This is
+               ;; important for modes that use a custom one like `python-mode'.
+               (forward-sexp-function nil))
           (with-syntax-table syntax-table
             (cond ((eq (following-char) left) ; point is before LEFT
                    (cons pnt

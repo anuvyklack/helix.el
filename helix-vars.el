@@ -103,20 +103,19 @@ with the first keymaps having higher priority.")
     (?\[ :insert ("[" . "]") :search ("[" . "]") :balanced t)
     (?\< :insert ("<" . ">") :search ("<" . ">") :balanced t)
     (?\) :insert ("( " . " )")
-         :search ("([[:blank:]]*" . "[[:blank:]]*)")
-         :regexp t
-         :balanced t)
-    (?\} :insert ("{ " . " }")
-         :search ("{[[:blank:]]*" . "[[:blank:]]*}")
-         :regexp t
-         :balanced t)
-    (?\] :insert ("[ " . " ]")
-         :search ,(cons (rx "[" (zero-or-more blank))
-                        (rx (zero-or-more blank) "]"))
-         :regexp t
-         :balanced t)
+         :search (lambda ()
+                   (helix--bounds-of-sexp-with-inner-whitespaces-at-point
+                    (cons "(" ")"))))
+    (?\] :insert ("[" . "]")
+         :search (lambda ()
+                   (helix--bounds-of-sexp-with-inner-whitespaces-at-point
+                    (cons "[" "]"))))
+    (?\} :insert ("{" . "}")
+         :search (lambda ()
+                   (helix--bounds-of-sexp-with-inner-whitespaces-at-point
+                    (cons "{" "}"))))
     (?\> :insert ("< " . " >")
-         :search ("<[[:blank:]]*" . "[[:blank:]]*>")
+         :search ("<[[:blank:]\n]*" . "[[:blank:]\n]*>")
          :regexp t
          :balanced t)
     (?\" :insert ("\"" . "\"")

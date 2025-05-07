@@ -412,12 +412,26 @@ Select visual lines when `visual-line-mode' is on."
     (set-mark (car bounds))
     (goto-char (cdr bounds))))
 
+(defun helix--bounds-of-sexp-with-inner-whitespaces-at-point (pair)
+  (if-let* ((bounds (helix-bounds-of-sexp-at-point pair)))
+      (save-excursion
+        (pcase-let ((`(,left-beg . ,right-end) bounds))
+          (let (left-end right-beg)
+            (goto-char (1+ left-beg))
+            (skip-chars-forward " \t\n")
+            (setq left-end (point))
+            (goto-char (1- right-end))
+            (skip-chars-backward " \t\n")
+            (setq right-beg (point))
+            (list left-beg left-end right-beg right-end))))))
+
 ;; mi( mi)
 (defun helix-mark-inner-paren ()
   (interactive)
-  (when-let* ((bounds (helix-bounds-of-sexp-at-point '("(" . ")"))))
-    (set-mark (1+ (car bounds)))
-    (goto-char (1- (cdr bounds)))))
+  (when-let* ((bounds (helix--bounds-of-sexp-with-inner-whitespaces-at-point '("(" . ")"))))
+    (pcase-let ((`(,_ ,l ,r ,_) bounds))
+      (set-mark l)
+      (goto-char r))))
 
 ;; ma( ma)
 (defun helix-mark-a-paren ()
@@ -429,9 +443,10 @@ Select visual lines when `visual-line-mode' is on."
 ;; mi[ mi]
 (defun helix-mark-inner-bracket ()
   (interactive)
-  (when-let* ((bounds (helix-bounds-of-sexp-at-point '("[" . "]"))))
-    (set-mark (1+ (car bounds)))
-    (goto-char (1- (cdr bounds)))))
+  (when-let* ((bounds (helix--bounds-of-sexp-with-inner-whitespaces-at-point '("[" . "]"))))
+    (pcase-let ((`(,_ ,l ,r ,_) bounds))
+      (set-mark l)
+      (goto-char r))))
 
 ;; ma[ ma]
 (defun helix-mark-a-bracket ()
@@ -443,9 +458,10 @@ Select visual lines when `visual-line-mode' is on."
 ;; mi{ mi}
 (defun helix-mark-inner-curly ()
   (interactive)
-  (when-let* ((bounds (helix-bounds-of-sexp-at-point '("{" . "}"))))
-    (set-mark (1+ (car bounds)))
-    (goto-char (1- (cdr bounds)))))
+  (when-let* ((bounds (helix--bounds-of-sexp-with-inner-whitespaces-at-point '("{" . "}"))))
+    (pcase-let ((`(,_ ,l ,r ,_) bounds))
+      (set-mark l)
+      (goto-char r))))
 
 ;; ma{ ma}
 (defun helix-mark-a-curly ()
@@ -514,6 +530,7 @@ See the defaul value of `helix-surround-alist' variable for examples."
                                                (char-to-string char))
                                          (bounds-of-thing-at-point 'defun))))
 
+;; ms
 (defun helix-surround ()
   "Enclose the selected region in chosen delimiters.
 If the region consist of full lines, insert delimiters on separate
@@ -557,6 +574,7 @@ lines and reindent the region."
         (indent-region new-beg new-end)))
     (setq helix--extend-selection nil)))
 
+;; md
 (defun helix-surround-delete ()
   (interactive)
   (when-let* ((char (read-char "Delete pair: "))
@@ -565,6 +583,7 @@ lines and reindent the region."
       (delete-region right-beg right-end)
       (delete-region left-beg left-end))))
 
+;; mr mc
 (defun helix-surround-change ()
   (interactive)
   (when-let* ((char (read-char "Delete pair: "))
