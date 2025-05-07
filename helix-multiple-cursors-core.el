@@ -263,18 +263,18 @@ CURSOR to be accessible from inside BODY."
   (helix-execute-command-for-all-fake-cursors command))
 
 (defun helix-execute-command-for-all-fake-cursors (command)
-  "Call COMMAND interactively for each cursor.
+  "Call COMMAND interactively for each fake cursor.
 Internaly it moves point to the fake cursor, restore the environment
 from it, execute COMMAND, update fake cursor."
   (helix-save-window-scroll
    (helix-save-excursion
     (helix-for-each-fake-cursor
-     (helix-execute-command-for-fake-cursor command cursor))))
+     (helix-execute-command-for-fake-cursor cursor command))))
   (helix--reset-input-cache))
 
 (defvar helix--executing-command-for-fake-cursor? nil)
 
-(defun helix-execute-command-for-fake-cursor (command cursor)
+(defun helix-execute-command-for-fake-cursor (cursor command)
   (let ((helix--executing-command-for-fake-cursor? t)
         (id (overlay-get cursor 'mc-id)))
     (helix--add-fake-cursor-to-undo-list id
@@ -313,19 +313,6 @@ makes sense for fake cursors."
   (1+ (cl-count-if #'helix-fake-cursor-p
                    (overlays-in (point-min) (point-max)))))
 
-(defun helix-mc-make-a-note-of-the-command-being-run ()
-  "Used with `pre-command-hook' to store the original command being run.
-Since that cannot be reliably determined in the `post-command-hook'.
-
-Specifically, `this-original-command' isn't always right, because it
-could have been remapped. And certain modes (cua comes to mind) will
-change their remapping based on state. So a command that changes the
-state will afterwards not be recognized through the `command-remapping'
-lookup."
-  (unless helix--executing-command-for-fake-cursor?
-    (setq helix--this-command (or (command-remapping this-original-command)
-                                  this-original-command))))
-
 (defun helix-mc-execute-this-command-for-all-cursors ()
   "Wrap around `helix-mc-execute-this-command-for-all-cursors-1' to protect hook."
   (condition-case error
@@ -344,51 +331,39 @@ it will prompt for the proper action and then save that preference.
 Some commands are so unsupported that they are even prevented for
 the original cursor, to inform about the lack of support."
   (unless helix--executing-command-for-fake-cursor?
-
     (if (eq 1 (helix-number-of-cursors))
-        ;; No fake cursors? Disable mc-mode.
-        (helix-disable-multiple-cursors-mode)
-      (when this-original-command
-        (let ((original-command (or helix--this-command
-                                    (command-remapping this-original-command)
-                                    this-original-command)))
-
-          ;; skip keyboard macros, since they will generate actual commands that are
-          ;; also run in the command loop - we'll handle those later instead.
-          (when (functionp original-command)
-
-            ;; if it's a lambda, we can't know if it's supported or not
-            ;; - so go ahead and assume it's ok, because we're just optimistic like that
-            (if (or (not (symbolp original-command))
-                    ;; lambda registered by smartrep
-                    (string-prefix-p "(" (symbol-name original-command)))
-                (helix-execute-command-for-all-fake-cursors original-command)
-
-              ;; smartrep `intern's commands into own obarray to help
-              ;; `describe-bindings'.  So, let's re-`intern' here to
-              ;; make the command comparable by `eq'.
-              (setq original-command (intern (symbol-name original-command)))
-
-              ;; otherwise it's a symbol, and we can be more thorough
-              (if (get original-command 'helix-mc--unsupported)
-                  (message "%S is not supported with multiple cursors%s"
-                           original-command
-                           (get original-command 'helix-mc--unsupported))
-                ;; lazy-load the user's list file
-                (helix-mc-load-lists)
-
-                (when (and original-command
-                           (not (memq original-command
-                                      helix-default-commands-to-run-once))
-                           (not (memq original-command
-                                      helix-commands-to-run-once))
-                           (or helix-mc-always-run-for-all
-                               (memq original-command
-                                     helix-default-commands-to-run-for-all-cursors)
-                               (memq original-command
-                                     helix-commands-to-run-for-all-cursors)
-                               (helix-mc-prompt-for-inclusion-in-whitelist original-command)))
-                  (helix-execute-command-for-all-fake-cursors original-command))))))))))
+        (helix-disable-multiple-cursors-mode) ;; No fake cursors? Disable mc-mode.
+      (when-let* ((this-original-command)
+                  (command (or helix--this-command
+                               (command-remapping this-original-command)
+                               this-original-command))
+                  ;; Skip keyboard macros, since they will generate actual
+                  ;; commands that are also run in the command loop - we will
+                  ;; handle those later instead.
+                  ((functionp command)))
+        (cond (;; If it's a lambda, we can't know if it's supported or not -
+               ;; so go ahead and assume it's ok.
+               (or (not (symbolp command))
+                   ;; Lambda registered by `smartrep' package
+                   (string-prefix-p "(" (symbol-name command)))
+               (helix-execute-command-for-all-fake-cursors command))
+              ((get command 'helix-mc--unsupported)
+               (message "%S is not supported with multiple cursors%s"
+                        command
+                        (get command 'helix-mc--unsupported)))
+              ((progn
+                 ;; Smartrep `intern's commands into own obarray to help
+                 ;; `describe-bindings'. So, let's re-`intern' here to
+                 ;; make the command comparable by `eq'.
+                 (setq command (intern (symbol-name command)))
+                 (and command
+                      (not (memq command helix-default-commands-to-run-once))
+                      (not (memq command helix-commands-to-run-once))
+                      (or helix-mc-always-run-for-all
+                          (memq command helix-default-commands-to-run-for-all-cursors)
+                          (memq command helix-commands-to-run-for-all-cursors)
+                          (helix-mc-prompt-for-inclusion-in-whitelist command))))
+               (helix-execute-command-for-all-fake-cursors command)))))))
 
 (defun helix--remove-fake-cursors ()
   "Remove all fake cursors.
@@ -401,12 +376,9 @@ Disable `helix-multiple-cursors-mode' instead."
   (setq helix--max-cursors-original nil))
 
 (defun helix-mc-keyboard-quit ()
-  "Deactivate mark if there are any active, otherwise exit
-`helix-multiple-cursors-mode'."
+  "Exit `helix-multiple-cursors-mode'."
   (interactive)
-  (if (not (use-region-p))
-      (helix-disable-multiple-cursors-mode)
-    (deactivate-mark)))
+  (helix-disable-multiple-cursors-mode))
 
 (defun helix-mc-repeat-command ()
   "Run last command from `command-history' for every fake cursor."
@@ -451,25 +423,37 @@ So you can paste it in later with `yank-rectangle'."
         helix-mc-temporarily-disabled-minor-modes)
   (setq helix-mc-temporarily-disabled-minor-modes nil))
 
+(defun helix-mc-record-this-command ()
+  "Used with `pre-command-hook' to store the original command being run.
+Since that cannot be reliably determined in the `post-command-hook'.
+
+Specifically, `this-original-command' isn't always right, because it
+could have been remapped. And certain modes (cua comes to mind) will
+change their remapping based on state. So a command that changes the
+state will afterwards not be recognized through the `command-remapping'
+lookup."
+  (unless helix--executing-command-for-fake-cursor?
+    (setq helix--this-command (or (command-remapping this-original-command)
+                                  this-original-command))))
+
 ;;;###autoload
 (define-minor-mode helix-multiple-cursors-mode
-  "Mode while multiple cursors are active."
+  "Minor mode, which is active when there are multiple cursors."
   :init-value nil
   :lighter helix-mc-mode-line
   :keymap helix-multiple-cursors-map
   (if helix-multiple-cursors-mode
       (progn
+        (helix-mc-load-lists) ;; Lazy-load the user's list file
         (helix-mc-temporarily-disable-unsupported-minor-modes)
-        (add-hook 'pre-command-hook 'helix-mc-make-a-note-of-the-command-being-run nil t)
-        (add-hook 'post-command-hook 'helix-mc-execute-this-command-for-all-cursors t t)
-        (run-hooks 'helix-multiple-cursors-mode-enabled-hook))
+        (add-hook 'pre-command-hook 'helix-mc-record-this-command nil t)
+        (add-hook 'post-command-hook 'helix-mc-execute-this-command-for-all-cursors t t))
     (remove-hook 'post-command-hook 'helix-mc-execute-this-command-for-all-cursors t)
-    (remove-hook 'pre-command-hook 'helix-mc-make-a-note-of-the-command-being-run t)
+    (remove-hook 'pre-command-hook 'helix-mc-record-this-command t)
     (setq helix--this-command nil)
     (helix-mc--maybe-set-killed-rectangle)
     (helix--remove-fake-cursors)
-    (helix-mc-enable-temporarily-disabled-minor-modes)
-    (run-hooks 'helix-multiple-cursors-mode-disabled-hook)))
+    (helix-mc-enable-temporarily-disabled-minor-modes)))
 
 (defun helix-disable-multiple-cursors-mode ()
   "Disable `helix-multiple-cursors-mode' and run the corresponding hook."
@@ -599,7 +583,7 @@ of all cursors when yanking."
     all?))
 
 (defun helix-mc-load-lists ()
-  "Load `helix-mc-list-file' file."
+  "Load `helix-mc-list-file' file if not yet."
   (unless helix-mc--list-file-loaded
     (load helix-mc-list-file 'noerror 'nomessage)
     (setq helix-mc--list-file-loaded t)))
