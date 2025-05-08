@@ -419,26 +419,12 @@ Select visual lines when `visual-line-mode' is on."
     (set-mark (car bounds))
     (goto-char (cdr bounds))))
 
-(defun helix--bounds-of-sexp-with-inner-whitespaces-at-point (pair)
-  (if-let* ((bounds (helix-bounds-of-sexp-at-point pair)))
-      (save-excursion
-        (pcase-let ((`(,left-beg . ,right-end) bounds))
-          (let (left-end right-beg)
-            (goto-char (1+ left-beg))
-            (skip-chars-forward " \t\n")
-            (setq left-end (point))
-            (goto-char (1- right-end))
-            (skip-chars-backward " \t\n")
-            (setq right-beg (point))
-            (list left-beg left-end right-beg right-end))))))
-
 ;; mi( mi)
 (defun helix-mark-inner-paren ()
   (interactive)
-  (when-let* ((bounds (helix--bounds-of-sexp-with-inner-whitespaces-at-point '("(" . ")"))))
-    (pcase-let ((`(,_ ,l ,r ,_) bounds))
-      (set-mark l)
-      (goto-char r))))
+  (when-let* ((bounds (helix-bounds-of-inner-part-of-sexp-at-point '("(" . ")"))))
+    (set-mark (car bounds))
+    (goto-char (cdr bounds))))
 
 ;; ma( ma)
 (defun helix-mark-a-paren ()
@@ -450,10 +436,9 @@ Select visual lines when `visual-line-mode' is on."
 ;; mi[ mi]
 (defun helix-mark-inner-bracket ()
   (interactive)
-  (when-let* ((bounds (helix--bounds-of-sexp-with-inner-whitespaces-at-point '("[" . "]"))))
-    (pcase-let ((`(,_ ,l ,r ,_) bounds))
-      (set-mark l)
-      (goto-char r))))
+  (when-let* ((bounds (helix-bounds-of-inner-part-of-sexp-at-point '("[" . "]"))))
+    (set-mark (car bounds))
+    (goto-char (cdr bounds))))
 
 ;; ma[ ma]
 (defun helix-mark-a-bracket ()
@@ -465,10 +450,9 @@ Select visual lines when `visual-line-mode' is on."
 ;; mi{ mi}
 (defun helix-mark-inner-curly ()
   (interactive)
-  (when-let* ((bounds (helix--bounds-of-sexp-with-inner-whitespaces-at-point '("{" . "}"))))
-    (pcase-let ((`(,_ ,l ,r ,_) bounds))
-      (set-mark l)
-      (goto-char r))))
+  (when-let* ((bounds (helix-bounds-of-inner-part-of-sexp-at-point '("{" . "}"))))
+    (set-mark (car bounds))
+    (goto-char (cdr bounds))))
 
 ;; ma{ ma}
 (defun helix-mark-a-curly ()
@@ -482,7 +466,7 @@ Select visual lines when `visual-line-mode' is on."
   (interactive)
   (let ((pair '("<" . ">"))
         (limits (bounds-of-thing-at-point 'defun)))
-    (when-let* ((bounds (helix-bounds-of-surrounded-at-point pair limits nil t)))
+    (when-let* ((bounds (helix-4-bounds-of-surrounded-at-point pair limits nil t)))
       (pcase-let ((`(,_ ,l ,r ,_) bounds))
         (set-mark l)
         (goto-char r)))))
@@ -492,7 +476,7 @@ Select visual lines when `visual-line-mode' is on."
   (interactive)
   (let ((pair '("<" . ">"))
         (limits (bounds-of-thing-at-point 'defun)))
-    (when-let* ((bounds (helix-bounds-of-surrounded-at-point pair limits nil t)))
+    (when-let* ((bounds (helix-4-bounds-of-surrounded-at-point pair limits nil t)))
       (pcase-let ((`(,l ,_ ,_ ,r) bounds))
         (set-mark l)
         (goto-char r)))))
@@ -505,12 +489,28 @@ KEY       - To what KEY this pattern should be binded?
 INSERT    - Cons cell (LEFT . RIGHT) with strings, or function that returns such
             cons cell. The strigs that will be inserted by `helix-surround' and
             `helix-surround-change' functions.
-SEARCH    - Cons cell (LEFT . RIGHT) with strings, or function that returns such
-            cons cell. The patterns that will be used to search of two substrings
-            to delete in `helix-surround-delete' and `helix-surround-change'
-            functions. If not specified INSERT pair will be used.
-REGEXP?   - Should be strings specified in SEARCH argument be treated as regexp
-            patterns or literally?
+SEARCH    - Any of:
+            1. Cons cell with strings (LEFT . RIGHT). Should be patterns that
+               will be used to search of two substrings to delete in
+               `helix-surround-delete' and `helix-surround-change'functions.
+               If not specified INSERT pair will be used.
+            2. Function that return cons cell with strings (LEFT . RIGHT) like
+               in 1.
+            3. Function that returns list
+                        (LEFT-START LEFT-END RIGHT-START RIGHT-END)
+               with 4 positions of START/END of LEFT and RIGHT delimeters.
+               Example:
+                          left             right
+                        |<tag> |Some text| </tag>|
+                        ^      ^         ^       ^
+                        ls     le        rs      re
+
+Following parameters are taken into account only when SEARCH argument is a cons
+cell with stirngs (LEFT . RIGHT) or a function, that returns such cons cell. If
+SEARCH is a function that returns list with 4 positions, they will be ignored.
+
+REGEXP?   - If non-nil than strings specified in SEARCH argument will be treated
+            as regexp patterns, otherwise they will searched literally.
 BALANCED? - When non-nil all nested balanced LEFT RIGHT pairs will be skipped,
             else the first found pattern will be accepted.
 
@@ -523,19 +523,24 @@ See the defaul value of `helix-surround-alist' variable for examples."
                         :balanced balanced?))
         helix-surround-alist))
 
-(defun helix-surround-get-bounds (char)
-  (if-let* ((spec (alist-get char helix-surround-alist))
-            (pair-or-fun (plist-get spec :search)))
-      (if (functionp pair-or-fun)
-          (funcall pair-or-fun)
-        (helix-bounds-of-surrounded-at-point pair-or-fun
-                                             (bounds-of-thing-at-point 'defun)
-                                             (plist-get spec :regexp)
-                                             (plist-get spec :balanced)))
-    ;; else
-    (helix-bounds-of-surrounded-at-point (cons (char-to-string char)
-                                               (char-to-string char))
-                                         (bounds-of-thing-at-point 'defun))))
+(defun helix-surround--get-4-bounds (char)
+  (let ((spec (alist-get char helix-surround-alist)))
+    (if (not spec)
+        (helix-4-bounds-of-surrounded-at-point (cons (char-to-string char)
+                                                     (char-to-string char))
+                                               (bounds-of-thing-at-point 'defun))
+      ;; else
+      (if-let* ((pair-or-fun (plist-get spec :search))
+                (list-or-pair (if (functionp pair-or-fun)
+                                  (funcall pair-or-fun)
+                                pair-or-fun))
+                ((consp list-or-pair)))
+          (if (length= list-or-pair 4)
+              list-or-pair
+            (helix-4-bounds-of-surrounded-at-point list-or-pair
+                                                   (bounds-of-thing-at-point 'defun)
+                                                   (plist-get spec :regexp)
+                                                   (plist-get spec :balanced)))))))
 
 ;; ms
 (defun helix-surround ()
@@ -585,7 +590,7 @@ lines and reindent the region."
 (defun helix-surround-delete ()
   (interactive)
   (when-let* ((char (read-char "Delete pair: "))
-              (bounds (helix-surround-get-bounds char)))
+              (bounds (helix-surround--get-4-bounds char)))
     (pcase-let ((`(,left-beg ,left-end ,right-beg ,right-end) bounds))
       (delete-region right-beg right-end)
       (delete-region left-beg left-end))))
@@ -594,7 +599,7 @@ lines and reindent the region."
 (defun helix-surround-change ()
   (interactive)
   (when-let* ((char (read-char "Delete pair: "))
-              (bounds (helix-surround-get-bounds char)))
+              (bounds (helix-surround--get-4-bounds char)))
     (pcase-let*
         ((`(,left-beg ,left-end ,right-beg ,right-end) bounds)
          (char (read-char "Insert pair: "))
@@ -617,7 +622,7 @@ lines and reindent the region."
   (let ((char (if (integerp last-command-event)
                   last-command-event
                 (get last-command-event 'ascii-character))))
-    (when-let* ((bounds (helix-surround-get-bounds char)))
+    (when-let* ((bounds (helix-surround--get-4-bounds char)))
       (pcase-let ((`(,_ ,l ,r ,_) bounds))
         (set-mark l)
         (goto-char r)))))
@@ -627,7 +632,7 @@ lines and reindent the region."
   (let ((char (if (integerp last-command-event)
                   last-command-event
                 (get last-command-event 'ascii-character))))
-    (when-let* ((bounds (helix-surround-get-bounds char)))
+    (when-let* ((bounds (helix-surround--get-4-bounds char)))
       (pcase-let ((`(,l ,_ ,_ ,r) bounds))
         (set-mark l)
         (goto-char r)))))

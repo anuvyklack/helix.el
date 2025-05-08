@@ -175,16 +175,13 @@ with the first keymaps having higher priority.")
     (?\< :insert ("<" . ">") :search ("<" . ">") :balanced t)
     (?\) :insert ("( " . " )")
          :search (lambda ()
-                   (helix--bounds-of-sexp-with-inner-whitespaces-at-point
-                    (cons "(" ")"))))
+                   (helix-4-bounds-of-sexp-at-point (cons "(" ")"))))
     (?\] :insert ("[" . "]")
          :search (lambda ()
-                   (helix--bounds-of-sexp-with-inner-whitespaces-at-point
-                    (cons "[" "]"))))
+                   (helix-4-bounds-of-sexp-at-point (cons "[" "]"))))
     (?\} :insert ("{" . "}")
          :search (lambda ()
-                   (helix--bounds-of-sexp-with-inner-whitespaces-at-point
-                    (cons "{" "}"))))
+                   (helix-4-bounds-of-sexp-at-point (cons "{" "}"))))
     (?\> :insert ("< " . " >")
          :search ("<[[:blank:]\n]*" . "[[:blank:]\n]*>")
          :regexp t
@@ -192,10 +189,8 @@ with the first keymaps having higher priority.")
     (?\" :insert ("\"" . "\"")
          :search (lambda ()
                    (when-let* ((bounds (helix-bounds-of-string-at-point ?\")))
-                     (list (car bounds)
-                           (1+ (car bounds))
-                           (1- (cdr bounds))
-                           (cdr bounds))))))
+                     (pcase-let ((`(,l . ,r) bounds))
+                       (list l (1+ l) (1- r) r))))))
   "Association list with (KEY . SPEC) elements for Helix surrounding
 functionality.
 
@@ -203,14 +198,30 @@ SPEC is a plist with next keys:
 :insert   - Cons cell (LEFT . RIGHT) with strings, or function that returns such
             cons cell. The strigs that will be inserted by `helix-surround' and
             `helix-surround-change' functions.
-:search   - Cons cell (LEFT . RIGHT) with strings, or function that returns such
-            cons cell. The patterns that will be used to search of two substrings
-            to delete in `helix-surround-delete' and `helix-surround-change'
-            functions. If not specified INSERT pair will be used.
-:regexp   - Should be strings specified in SEARCH argument be treated as regexp
-            patterns or literally?
-:balanced - When non-nil all nested balanced LEFT RIGHT pairs will be skipped,
-            else the first found pattern will be accepted.
+:search   - Any of:
+            1. Cons cell with strings (LEFT . RIGHT). Should be patterns that
+               will be used to search of two substrings to delete in
+               `helix-surround-delete' and `helix-surround-change'functions.
+               If not specified INSERT pair will be used.
+            2. Function that return cons cell with strings (LEFT . RIGHT)
+               like in 1.
+            3. Function that returns list with 4 positions:
+                        (LEFT-START LEFT-END RIGHT-START RIGHT-END)
+               of START and END of LEFT and RIGHT delimeters.
+               Example:
+                          LEFT             RIGHT
+                        |<tag> |Some text| </tag>|
+                        ^      ^         ^       ^
+                        LS     LE        RS      RE
+
+Following keys are taken into account only when :SEARCH argument is a cons cell
+with strings (LEFT . RIGHT) or a function, that returns such cons cell. If
+:SEARCH is a function that returns list with 4 positions, they will be ignored.
+
+:regexp   - If non-nil than LEFT and RIGHT strings specified in :SEARCH will be
+            treated as regexp patterns. Otherwise they will searched literally.
+:balanced - When non-nil all nested balanced LEFT RIGHT pairs will be skipped.
+            Otherwise the first found pattern will be accepted.
 
 This function populates the buffer local `helix-surround-alist' variable,
 and thus should be called from major-modes hooks.

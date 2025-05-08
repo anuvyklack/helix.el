@@ -14,6 +14,7 @@
 ;;; Code:
 
 (require 'helix-core)
+(require 'helix-commands)
 
 ;;; Lisp
 
@@ -56,14 +57,14 @@
     (set-mark (match-beginning 2))
     (goto-char (match-end 2))))
 
-(defun helix-surround--bounds-of-org-verbatim ()
+(defun helix-surround--4-bounds-of-org-verbatim ()
   (when (org-in-regexp org-verbatim-re 2)
     (list (match-beginning 2)
           (match-beginning 4)
           (match-end 2)
           (match-end 4))))
 
-(defun helix-surround--bounds-of-org-emphasis ()
+(defun helix-surround--4-bounds-of-org-emphasis ()
   (when (org-in-regexp org-emph-re 2)
     (list (match-beginning 2)
           (match-beginning 4)
@@ -72,12 +73,12 @@
 
 (add-hook 'org-mode-hook
           #'(lambda ()
-              (helix-surround-add-pair ?/ '("/" . "/") #'helix-surround--bounds-of-org-emphasis)
-              (helix-surround-add-pair ?* '("*" . "*") #'helix-surround--bounds-of-org-emphasis)
-              (helix-surround-add-pair ?_ '("_" . "_") #'helix-surround--bounds-of-org-emphasis)
-              (helix-surround-add-pair ?+ '("+" . "+") #'helix-surround--bounds-of-org-emphasis)
-              (helix-surround-add-pair ?= '("=" . "=") #'helix-surround--bounds-of-org-verbatim)
-              (helix-surround-add-pair ?~ '("~" . "~") #'helix-surround--bounds-of-org-verbatim)))
+              (helix-surround-add-pair ?/ '("/" . "/") #'helix-surround--4-bounds-of-org-emphasis)
+              (helix-surround-add-pair ?* '("*" . "*") #'helix-surround--4-bounds-of-org-emphasis)
+              (helix-surround-add-pair ?_ '("_" . "_") #'helix-surround--4-bounds-of-org-emphasis)
+              (helix-surround-add-pair ?+ '("+" . "+") #'helix-surround--4-bounds-of-org-emphasis)
+              (helix-surround-add-pair ?= '("=" . "=") #'helix-surround--4-bounds-of-org-verbatim)
+              (helix-surround-add-pair ?~ '("~" . "~") #'helix-surround--4-bounds-of-org-verbatim)))
 
 (helix-keymap-set org-mode-map 'normal
   "m /"   #'helix-mark-inner-org-emphasis
