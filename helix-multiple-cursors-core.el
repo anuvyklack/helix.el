@@ -346,11 +346,13 @@ the original cursor, to inform about the lack of support."
         (cond (;; If it's a lambda, we can't know if it's supported or not -
                ;; so go ahead and assume it's ok.
                (not (symbolp command))
-               (helix-execute-command-for-all-fake-cursors command))
+               (helix-execute-command-for-all-fake-cursors command)
+               :exit)
               ((get command 'helix-mc--unsupported)
                (message "%S is not supported with multiple cursors%s"
                         command
-                        (get command 'helix-mc--unsupported)))
+                        (get command 'helix-mc--unsupported))
+               :exit)
               ((and command
                     (not (memq command helix-default-commands-to-run-once))
                     (not (memq command helix-commands-to-run-once))
