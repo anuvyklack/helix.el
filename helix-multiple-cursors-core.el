@@ -65,6 +65,13 @@ highlights the entire width of the window."
     (overlay-put overlay 'type 'additional-region)
     overlay))
 
+(defun helix--make-region-overlay (point mark)
+  "Create overlay to look like active region."
+  (let ((overlay (make-overlay mark point nil nil t)))
+    (overlay-put overlay 'face 'helix-mc-region-face)
+    (overlay-put overlay 'type 'additional-region)
+    overlay))
+
 (defvar helix-mc-cursor-specific-vars '(transient-mark-mode
                                         kill-ring
                                         kill-ring-yank-pointer
@@ -127,10 +134,10 @@ functionality into OVERLAY."
 
 (defvar helix--max-cursors-original nil
   "This variable maintains the original maximum number of cursors.
-When `helix-create-fake-cursor-from-point' is called and
-`helix-max-cursors' is overridden, this value serves as a backup
-so that `helix-max-cursors' can take on a new value. When
-`helix--remove-fake-cursors' is called, the values are reset.")
+When `helix-create-fake-cursor' is called and `helix-max-cursors' is
+overridden, this value serves as a backup so that `helix-max-cursors'
+can take on a new value. When `helix--remove-fake-cursors' is called,
+the values are reset.")
 
 (defvar helix--cursor-last-used-id 0
   "Last used cursor ID.")
@@ -140,13 +147,10 @@ so that `helix-max-cursors' can take on a new value. When
 IDs' are used to keep track of cursors for undo."
   (cl-incf helix--cursor-last-used-id))
 
-(defun helix-create-fake-cursor-from-point (&optional id)
-  "Add a fake cursor and possibly a fake active region overlay
-based on point and mark.
-
-Assign the ID to the new cursor, if specified.
-If NO-REGION is non-nil ignore active region and create fake
-cursor only for point.
+(defun helix-create-fake-cursor (point &optional mark id)
+  "Create a fake cursor at POINT position.
+If MARK is specified — a fake active region overlay between POINT and MARK
+will be added. The ID will be assigned to the new cursor, if specified.
 The current state saves in the overlay to be restored later."
   (unless helix--max-cursors-original
     (setq helix--max-cursors-original helix-max-cursors))
@@ -157,16 +161,36 @@ The current state saves in the overlay to be restored later."
           (setq helix-max-cursors (read-number "Enter a new, temporary maximum: "))
         (helix--remove-fake-cursors)
         (error "Aborted: too many cursors"))))
-  (let ((cursor (helix--make-cursor-overlay-at-point)))
-    (overlay-put cursor 'id (or id (helix--new-cursor-id)))
-    (overlay-put cursor 'type 'fake-cursor)
-    (overlay-put cursor 'priority 100)
-    (helix--store-point-state-in-overlay cursor)
-    (when (use-region-p)
-      (overlay-put cursor 'region-overlay
-                   (helix--make-region-overlay-between-point-and-mark)))
-    (helix-maybe-enable-multiple-cursors-mode)
-    cursor))
+  (let ((orig-point (point)))
+    (goto-char point)
+    (let ((cursor (helix--make-cursor-overlay-at-point)))
+      (overlay-put cursor 'id (or id (helix--new-cursor-id)))
+      (overlay-put cursor 'type 'fake-cursor)
+      (overlay-put cursor 'priority 100)
+      (helix--store-point-state-in-overlay cursor)
+      (when mark
+        (overlay-put cursor 'region-overlay
+                     (helix--make-region-overlay point mark)))
+      (helix-maybe-enable-multiple-cursors-mode)
+      (goto-char orig-point)
+      cursor)))
+
+(defun helix-create-fake-cursor-from-point (&optional id)
+  "Add a fake cursor and possibly a fake active region overlay
+based on point and mark.
+
+Assign the ID to the new cursor, if specified.
+The current state saves in the overlay to be restored later."
+  (helix-create-fake-cursor (point)
+                            (if (use-region-p) (mark))
+                            id))
+
+(defun helix-remove-fake-cursor (cursor)
+  "Delete fake CURSOR and disable `helix-multiple-cursors-mode'
+if no more fake cursors are remaining."
+  (helix--remove-fake-cursor cursor)
+  (when (eql 1 (helix-number-of-cursors))
+    (helix-disable-multiple-cursors-mode)))
 
 ;;; Undo functionality
 
@@ -200,8 +224,9 @@ which action is being undone."
 (defun helix-deactivate-cursor-after-undo (id)
   "Called when undoing to reinstate the real cursor after undoing a fake one."
   (when helix-mc--stored-state-for-undo
+    ;; (deactivate-mark)
     ;; Update fake cursor
-    (helix-create-fake-cursor-from-point id)
+    (helix-create-fake-cursor (point) nil id)
     ;; Restore real cursor
     (helix--restore-point-state-from-overlay helix-mc--stored-state-for-undo)
     (delete-overlay helix-mc--stored-state-for-undo)
@@ -249,7 +274,7 @@ in order they are follow in buffer."
   (declare (indent 1))
   (let ((real-cursor (make-symbol "real-cursor"))
         (overlays (make-symbol "overlays")))
-    `(let ((,real-cursor (helix-create-fake-cursor-from-point))
+    `(let ((,real-cursor (helix-create-fake-cursor (point)))
            (,overlays (sort (helix-all-fake-cursors)
                             #'helix--compare-by-overlay-start)))
        (dolist (,cursor ,overlays)
@@ -450,6 +475,7 @@ function to prevent it recursive calls.")
 
 (defun helix-disable-multiple-cursors-mode ()
   "Disable `helix-multiple-cursors-mode'."
+  (interactive)
   (when helix-multiple-cursors-mode
     (helix-multiple-cursors-mode -1)))
 

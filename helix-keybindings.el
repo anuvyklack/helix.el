@@ -74,7 +74,7 @@
   "v"   #'helix-extend-selection
   "x"   #'helix-mark-line
   "X"   #'helix-mark-line-upward
-  ","   #'helix-keep-primary-selection
+  ","   #'helix-disable-multiple-cursors-mode
   ";"   #'helix-collapse-selection
   "M-;" #'exchange-point-and-mark
   "g o" #'exchange-point-and-mark

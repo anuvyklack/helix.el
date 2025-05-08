@@ -341,13 +341,6 @@ Select visual lines when `visual-line-mode' is on."
       (helix-skip-chars " \t\r\n" dir)
       (helix-exchange-point-and-mark))))
 
-;; ;
-(defun helix-keep-primary-selection ()
-  "Disable `helix-multiple-cursors-mode' and run the corresponding hooks."
-  (interactive)
-  (helix-multiple-cursors-mode 0)
-  (run-hooks 'multiple-cursors-mode-disabled-hook))
-
 ;;; Match
 
 (defun helix-match-map-digit-argument (arg)

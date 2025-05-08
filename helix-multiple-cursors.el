@@ -52,14 +52,9 @@ already there."
     (when-let* ((pos (posn-point position))
                 ((numberp pos)))
       (if-let* ((cursor (helix-fake-cursor-at-pos pos)))
-          (progn
-            (helix--remove-fake-cursor cursor)
-            (when (eql 1 (helix-number-of-cursors))
-              (helix-disable-multiple-cursors-mode)))
-        (save-excursion
-          (deactivate-mark)
-          (goto-char pos)
-          (helix-create-fake-cursor-from-point))))))
+          (helix-remove-fake-cursor cursor)
+        ;; (deactivate-mark)
+        (helix-create-fake-cursor pos)))))
 
 ;; (defun helix-copy-cursor-down (&optional count)
 ;;   (or count (setq count 1))

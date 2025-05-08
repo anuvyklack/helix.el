@@ -384,10 +384,10 @@ cursors editing.")
   "Default set of commands to execute for all cursors.")
 
 (defvar helix-default-commands-to-run-once
-  '(helix-normal-state-escape    ;; ESC in normal state
+  '(helix-disable-multiple-cursors-mode ;; ,
+    helix-normal-state-escape    ;; ESC in normal state
     helix-normal-state           ;; ESC
     helix-toggle-cursor-on-click ;; M-mouse1
-    helix-keep-primary-selection ;; ,
     helix-extend-selection       ;; v
     helix-undo                   ;; u
     undo-redo                    ;; U
