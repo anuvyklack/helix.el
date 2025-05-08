@@ -345,26 +345,19 @@ the original cursor, to inform about the lack of support."
                   ((functionp command)))
         (cond (;; If it's a lambda, we can't know if it's supported or not -
                ;; so go ahead and assume it's ok.
-               (or (not (symbolp command))
-                   ;; Lambda registered by `smartrep' package
-                   (string-prefix-p "(" (symbol-name command)))
+               (not (symbolp command))
                (helix-execute-command-for-all-fake-cursors command))
               ((get command 'helix-mc--unsupported)
                (message "%S is not supported with multiple cursors%s"
                         command
                         (get command 'helix-mc--unsupported)))
-              ((progn
-                 ;; Smartrep `intern's commands into own obarray to help
-                 ;; `describe-bindings'. So, let's re-`intern' here to
-                 ;; make the command comparable by `eq'.
-                 (setq command (intern (symbol-name command)))
-                 (and command
-                      (not (memq command helix-default-commands-to-run-once))
-                      (not (memq command helix-commands-to-run-once))
-                      (or helix-mc-always-run-for-all
-                          (memq command helix-default-commands-to-run-for-all-cursors)
-                          (memq command helix-commands-to-run-for-all-cursors)
-                          (helix-mc-prompt-for-inclusion-in-whitelist command))))
+              ((and command
+                    (not (memq command helix-default-commands-to-run-once))
+                    (not (memq command helix-commands-to-run-once))
+                    (or helix-mc-always-run-for-all
+                        (memq command helix-default-commands-to-run-for-all-cursors)
+                        (memq command helix-commands-to-run-for-all-cursors)
+                        (helix-mc-prompt-for-inclusion-in-whitelist command)))
                (helix-execute-command-for-all-fake-cursors command)))))))
 
 (defun helix--remove-fake-cursors ()
