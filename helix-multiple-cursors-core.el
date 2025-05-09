@@ -753,28 +753,26 @@ and which for all to `helix-mc-list-file' file."
 
 (defun helix-overlapping-fake-regions (start end)
   "Return list with overlaping fake regions between START and END positions."
-  (->> (helix-fake-regions-in start end)
-       (helix-group-overlapping-overlays)
-       (cl-remove-if #'(lambda (x) (length= x 1)))))
+  (helix-overlapping-overlays
+   (helix-fake-regions-in start end)))
 
-(defun helix-group-overlapping-overlays (overlays)
+(defun helix-overlapping-overlays (overlays)
   "Group sorted overlays into connected components based on overlap.
 The input OVERLAYS must be sorted by their start positions."
-  (let ((groups ()))
-    (dolist (ov overlays (mapcar #'car groups))
-      (let* ((start (overlay-start ov))
-             (current-group (list ov))
-             (current-max (overlay-end ov))
-             remaining)
-        (dolist (group groups)
-          (if (< start (cdr group))
-              (progn
-                (setq current-group (append (car group) current-group))
-                (setq current-max (max current-max (cdr group))))
-            (push group remaining)))
-        (push (cons current-group current-max)
-              remaining)
-        (setq groups remaining)))))
+  (let ((result nil)
+        (current-group nil)
+        (current-end (point-min)))
+    (dolist (ov overlays)
+      (let ((start (overlay-start ov)))
+        (if (< start current-end)
+            (push ov current-group)
+          ;; else
+          (when (length> current-group 1)
+            (push (nreverse current-group) result))
+          (setq current-group (list ov)))
+        (setq current-end (max current-end
+                               (overlay-end ov)))))
+    (nreverse result)))
 
 ;;; Utils
 
