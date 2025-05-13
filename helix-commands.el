@@ -513,7 +513,7 @@ Following parameters are taken into account only when SEARCH argument is a cons
 cell with stirngs (LEFT . RIGHT) or a function, that returns such cons cell. If
 SEARCH is a function that returns list with 4 positions, they will be ignored.
 
-REGEXP?   - If non-nil than strings specified in SEARCH argument will be treated
+REGEXP?   - If non-nil then strings specified in SEARCH argument will be treated
             as regexp patterns, otherwise they will searched literally.
 BALANCED? - When non-nil all nested balanced LEFT RIGHT pairs will be skipped,
             else the first found pattern will be accepted.
