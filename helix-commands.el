@@ -32,7 +32,9 @@
 ;;; Movements
 
 ;; h
-(defun helix-backward-char (count)
+
+(helix-define-motion helix-backward-char (count)
+  "Move backward."
   (interactive "p")
   (if helix--extend-selection
       (or (region-active-p) (set-mark (point)))
@@ -40,7 +42,8 @@
   (backward-char count))
 
 ;; l
-(defun helix-forward-char (count)
+(helix-define-motion helix-forward-char (count)
+  "Move forward."
   (interactive "p")
   (if helix--extend-selection
       (or (region-active-p) (set-mark (point)))
@@ -48,7 +51,7 @@
   (forward-char count))
 
 ;; j
-(defun helix-next-line (count)
+(helix-define-motion helix-next-line (count)
   "Move to the next line."
   (interactive "p")
   (if helix--extend-selection
@@ -61,7 +64,7 @@
   (funcall-interactively 'next-line count))
 
 ;; k
-(defun helix-previous-line (count)
+(helix-define-motion helix-previous-line (count)
   "Move to the COUNT-th previous line."
   (interactive "p")
   (if helix--extend-selection
@@ -74,7 +77,7 @@
   (funcall-interactively 'previous-line count))
 
 ;; w
-(defun helix-forward-word-start (count &optional bigword)
+(helix-define-motion helix-forward-word-start (count &optional bigword)
   "Move to the COUNT-th next word start.
 If BIGWORD move over WORD-s."
   (interactive "p")
@@ -89,13 +92,13 @@ If BIGWORD move over WORD-s."
       (helix-skip-whitespaces))))
 
 ;; W
-(defun helix-forward-WORD-start (count)
+(helix-define-motion helix-forward-WORD-start (count)
   "Move to the COUNT-th next WORD start."
   (interactive "p")
   (helix-forward-word-start count :bigword))
 
 ;; b
-(defun helix-backward-word-start (count &optional bigword)
+(helix-define-motion helix-backward-word-start (count &optional bigword)
   "Move to the COUNT-th previous word start.
 If BIGWORD move over WORD-s."
   (interactive "p")
@@ -109,13 +112,13 @@ If BIGWORD move over WORD-s."
       (forward-thing thing -1))))
 
 ;; B
-(defun helix-backward-WORD-start (count)
+(helix-define-motion helix-backward-WORD-start (count)
   "Move to the COUNT-th previous WORD start."
   (interactive "p")
   (helix-backward-word-start count :bigword))
 
 ;; e
-(defun helix-forward-word-end (count &optional bigword)
+(helix-define-motion helix-forward-word-end (count &optional bigword)
   "Move to the COUNT-th next word end.
 If BIGWORD move over WORD-s."
   (interactive "p")
@@ -128,13 +131,13 @@ If BIGWORD move over WORD-s."
       (forward-thing thing))))
 
 ;; E
-(defun helix-forward-WORD-end (count)
+(helix-define-motion helix-forward-WORD-end (count)
   "Move COUNT-th next WORD end."
   (interactive "p")
   (helix-forward-word-end count :bigword))
 
 ;; gg
-(defun helix-goto-first-line (num)
+(helix-define-motion helix-goto-first-line (num)
   "Move point to the beginning of the buffer.
 With numeric arg NUM, put point NUM/10 of the way from the beginning.
 If the buffer is narrowed, this command uses the beginning of the
@@ -156,7 +159,7 @@ Push mark at previous position, unless extending selection."
     (recenter 0)))
 
 ;; G
-(defun helix-goto-last-line ()
+(helix-define-motion helix-goto-last-line ()
   "Move point the end of the buffer."
   (interactive)
   (if helix--extend-selection
@@ -168,7 +171,7 @@ Push mark at previous position, unless extending selection."
   (goto-char (point-max)))
 
 ;; gs
-(defun helix-beginning-of-line ()
+(helix-define-motion helix-beginning-of-line ()
   "Move point to beginning of current line.
 Use visual line when `visual-line-mode' is on."
   (interactive)
@@ -180,7 +183,7 @@ Use visual line when `visual-line-mode' is on."
     (beginning-of-line)))
 
 ;; gh
-(defun helix-first-non-blank ()
+(helix-define-motion helix-first-non-blank ()
   "Move point to beginning of current line skipping indentation.
 Use visual line when `visual-line-mode' is on."
   (interactive)
@@ -189,7 +192,7 @@ Use visual line when `visual-line-mode' is on."
   (backward-prefix-chars))
 
 ;; gl
-(defun helix-end-of-line ()
+(helix-define-motion helix-end-of-line ()
   "Move point to end of current line.
 Use visual line when `visual-line-mode' is on."
   (interactive)
@@ -201,7 +204,7 @@ Use visual line when `visual-line-mode' is on."
     (move-end-of-line 1)))
 
 ;; ]p
-(defun helix-forward-paragraph (count)
+(helix-define-motion helix-forward-paragraph (count)
   "Move to the end of the COUNT next paragraph."
   (interactive "p")
   (if helix--extend-selection
@@ -210,7 +213,7 @@ Use visual line when `visual-line-mode' is on."
   (forward-thing 'paragraph count))
 
 ;; [p
-(defun helix-backward-paragraph (count)
+(helix-define-motion helix-backward-paragraph (count)
   "Move to the beginning of the COUNT previous paragraph."
   (interactive "p")
   (setq count (- count))
@@ -275,7 +278,6 @@ With no region delete char before point with next conditions:
       (kill-region nil nil t)
     (delete-char -1))
   (setq helix--extend-selection nil))
-
 
 ;; u
 (defun helix-undo ()
