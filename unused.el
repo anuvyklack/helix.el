@@ -12,10 +12,6 @@
   "Return non-nil if COMMAND is implementing undo/redo functionality."
   (memq command helix-undo-commands))
 
-(defun overlay-live-p (overlay)
-  (if-let* ((buffer (overlay-buffer overlay)))
-      (buffer-live-p buffer)))
-
 (defun undo-helix-multiple-cursors-mode (cursors-data)
   (if helix-multiple-cursors-mode
       (helix-multiple-cursors-mode -1)

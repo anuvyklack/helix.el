@@ -373,11 +373,10 @@ desynchronization between real cursor and fake ones during `undo'."
     undo-list))
 
 (defun helix-cursor-with-id (id)
-  "Return the cursor with the given ID."
-  (cl-find-if #'(lambda (o)
-                  (and (helix-fake-cursor-p o)
-                       (= id (overlay-get o 'id))))
-              (overlays-in (point-min) (point-max))))
+  "Return the cursor with the given ID if it is stil alive."
+  (if-let* ((cursor (gethash id helix--cursors-table))
+            ((helix-overlay-live-p cursor)))
+      cursor))
 
 (defun helix-number-of-cursors ()
   "The number of cursors (real and fake) in the buffer."
@@ -661,6 +660,10 @@ and which for all to `helix-mc-list-file' file."
 (defun helix--compare-by-overlay-start (o1 o2)
   (< (overlay-start o1)
      (overlay-start o2)))
+
+(defun helix-overlay-live-p (overlay)
+  (if-let* ((buffer (overlay-buffer overlay)))
+      (buffer-live-p buffer)))
 
 (provide 'helix-multiple-cursors-core)
 ;;; helix-multiple-cursors-core.el ends here
