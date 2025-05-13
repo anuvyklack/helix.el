@@ -204,27 +204,30 @@ and bind it to CURSOR."
 
 ;;; Undo functionality
 
-(defmacro helix--add-fake-cursor-to-undo-list (id &rest body)
+(defmacro helix--add-fake-cursor-to-undo-list (cursor &rest body)
   "Make sure point is in the right place when undoing."
   (declare (indent defun) (debug (&rest form)))
-  (let ((deactivate-cursor (make-symbol "deactivate-cursor")))
-    `(let ((,deactivate-cursor `(apply helix-undo--deactivate-cursor ,,id)))
+  (let ((id (make-symbol "id"))
+        (deactivate-cursor (make-symbol "deactivate-cursor")))
+    `(let* ((,id (overlay-get ,cursor 'id))
+            (,deactivate-cursor `(apply helix-undo--deactivate-cursor ,,id)))
        (push ,deactivate-cursor buffer-undo-list)
        ,@body
        ;; If nothing has been added to the undo-list
        (if (eq (car buffer-undo-list) ,deactivate-cursor)
            (pop buffer-undo-list)
-         (push `(apply helix-undo--activate-cursor ,,id)
+         (push `(apply helix-undo--activate-cursor ,,id ,(point))
                buffer-undo-list)))))
 
 (defvar helix--point-state-during-undo nil
   "The variable to keep the state of the real cursor while undoing a fake one.")
 
 ;;;###autoload
-(defun helix-undo--activate-cursor (id)
+(defun helix-undo--activate-cursor (id pos)
   "Called when undoing to temporarily activate the fake cursor
 which action is being undone."
-  (when-let* ((cursor (helix-cursor-with-id id)))
+  (let ((cursor (or (helix-cursor-with-id id)
+                    (helix-create-fake-cursor pos nil id))))
     (setq helix--point-state-during-undo
           (helix--store-point-state
            (make-overlay (point) (point) nil nil t)))
@@ -237,14 +240,14 @@ which action is being undone."
   "Called when undoing to reinstate the real cursor after undoing a fake one."
   (when helix--point-state-during-undo
     ;; Update fake cursor
-    (when-let* ((cursor (helix-cursor-with-id id)))
-      (helix-set-fake-cursor cursor (point) (mark t)))
+    (helix-set-fake-cursor (helix-cursor-with-id id)
+                           (point) (mark t))
+    (push `(apply helix-undo--activate-cursor ,id ,(point))
+          buffer-undo-list)
     ;; Restore real cursor
     (helix--restore-point-state helix--point-state-during-undo)
     (delete-overlay helix--point-state-during-undo)
-    (setq helix--point-state-during-undo nil)
-    (push `(apply helix-undo--activate-cursor ,id)
-          buffer-undo-list)))
+    (setq helix--point-state-during-undo nil)))
 
 ;;; Executing commands
 
@@ -336,9 +339,8 @@ the original cursor, to inform about the lack of support."
 (defvar helix--executing-command-for-fake-cursor nil)
 
 (defun helix-execute-command-for-fake-cursor (cursor command)
-  (let ((helix--executing-command-for-fake-cursor t)
-        (id (overlay-get cursor 'id)))
-    (helix--add-fake-cursor-to-undo-list id
+  (let ((helix--executing-command-for-fake-cursor t))
+    (helix--add-fake-cursor-to-undo-list cursor
       (helix--restore-point-state cursor)
       (helix--execute-command command)
       (helix-set-fake-cursor cursor (point) (mark t)))))
