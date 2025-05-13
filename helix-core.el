@@ -236,7 +236,7 @@ according to the Helix STATE."
   "Create keybinding from KEY to DEFINITION for Helix STATE in KEYMAP.
 Accepts any number of KEY DEFINITION pairs.
 The defined keybindings will be active in specified Helix STATE.
-KEYMAP can be nil, than keybindings will be set in main STATE keymap.
+KEYMAP can be nil, then keybindings will be set in main STATE keymap.
 If STATE is nil this function will work like `keymap-set' with addition
 that multiple keybindings can be set at once.
 KEY, DEFINITION arguments are like those of `keymap-set'.
