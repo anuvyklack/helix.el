@@ -78,10 +78,8 @@ The current state is stored in the overlay for later retrieval."
       (overlay-put cursor 'id (or id (helix--new-cursor-id)))
       (overlay-put cursor 'type 'fake-cursor)
       (overlay-put cursor 'priority 100)
-      (helix--store-point-state-in-overlay cursor)
-      (when mark
-        (overlay-put cursor 'fake-region
-                     (helix--set-region-overlay cursor point mark)))
+      (helix--store-point-state cursor)
+      (helix--set-region-overlay cursor point mark)
       (puthash id cursor helix--cursors-table)
       cursor)))
 
@@ -93,14 +91,19 @@ Assign the ID to the new cursor, if specified.
 The current state is stored in the overlay for later retrieval."
   (helix-create-fake-cursor (point) (if (use-region-p) (mark)) id))
 
-(defun helix-move-fake-cursor (cursor point &optional mark)
+(defun helix-set-fake-cursor (cursor point &optional mark)
   (helix--set-cursor-overlay cursor point)
   (move-marker (overlay-get cursor 'point) point)
   (when mark
     (move-marker (overlay-get cursor 'mark) mark)
-    (if transient-mark-mode
+    (if (and mark mark-active)
         (helix--set-region-overlay cursor point mark)
-      (helix--delete-region-overlay cursor))))
+      (helix--delete-region-overlay cursor)))
+  (helix--store-point-state cursor point mark)
+  cursor)
+
+(defun helix-update-fake-cursor (cursor)
+  (helix-set-fake-cursor cursor (point) (mark t)))
 
 (defun helix-remove-fake-cursor (cursor)
   "Delete fake CURSOR and disable `helix-multiple-cursors-mode'
@@ -144,25 +147,24 @@ Return CURSOR."
 (defalias 'helix--move-cursor-overlay #'helix--set-cursor-overlay)
 
 (defun helix--set-region-overlay (cursor point mark)
-  "Set the region overlay of the CURSOR between POINT and MARK."
-  (let (region)
-    (if (setq region (overlay-get cursor 'fake-region))
-        (move-overlay region point mark)
-      ;; else
-      (setq region (make-overlay point mark nil nil t))
-      (overlay-put region 'face 'helix-mc-region-face)
-      (overlay-put region 'type 'fake-region)
-      (overlay-put region 'id (overlay-get cursor 'id)))
-    region))
+  "Set the overlay looking like active region between POINT and MARK
+and bind it to CURSOR."
+  (if mark
+      (if-let* ((region (overlay-get cursor 'fake-region)))
+          (move-overlay region point mark)
+        (let ((region (make-overlay point mark nil nil t)))
+          (overlay-put region 'face 'helix-mc-region-face)
+          (overlay-put region 'type 'fake-region)
+          (overlay-put region 'id (overlay-get cursor 'id))
+          (overlay-put cursor 'fake-region region)))))
 
 (defun helix--delete-region-overlay (cursor)
   "Remove the dependent region overlay for a given CURSOR overlay."
   (when-let* ((region (overlay-get cursor 'fake-region)))
     (delete-overlay region)))
 
-(defun helix--store-point-state-in-overlay (overlay &optional point mark)
-  "Store POINT, MARK and variables relevant to multiple cursors
-functionality into OVERLAY."
+(defun helix--store-point-state (overlay &optional point mark)
+  "Store POINT, MARK and variables relevant to fake cursor into OVERLAY."
   (or point (setq point (point)))
   (or mark (setq mark (mark t)))
   (let ((pnt-marker (or (overlay-get overlay 'point)
@@ -179,8 +181,8 @@ functionality into OVERLAY."
       (overlay-put overlay var (symbol-value var))))
   overlay)
 
-(defun helix--restore-point-state-from-overlay (overlay)
-  "Restore point, mark and saved variables from OVERLAY."
+(defun helix--restore-point-state (overlay)
+  "Restore point, mark and cursor variables saved in OVERLAY."
   (goto-char (overlay-get overlay 'point))
   (when-let* ((mark (overlay-get overlay 'mark)))
     (set-marker (mark-marker) mark))
@@ -190,7 +192,7 @@ functionality into OVERLAY."
 
 (defun helix-restore-point-from-fake-cursor (cursor)
   "Restore point, mark and saved variables from CURSOR overlay, and delete it."
-  (helix--restore-point-state-from-overlay cursor)
+  (helix--restore-point-state cursor)
   (helix--delete-fake-cursor cursor))
 
 (defun helix--delete-fake-cursor (cursor)
@@ -224,21 +226,21 @@ functionality into OVERLAY."
 which action is being undone."
   (when-let* ((cursor (helix-cursor-with-id id)))
     (setq helix--point-state-during-undo
-          (helix--store-point-state-in-overlay
+          (helix--store-point-state
            (make-overlay (point) (point) nil nil t)))
-    (helix-restore-point-from-fake-cursor cursor)
+    (helix--restore-point-state cursor)
+    ;; (deactivate-mark)
     (push `(apply helix-undo--deactivate-cursor ,id)
           buffer-undo-list)))
 
 (defun helix-undo--deactivate-cursor (id)
   "Called when undoing to reinstate the real cursor after undoing a fake one."
   (when helix--point-state-during-undo
-    ;; (deactivate-mark)
     ;; Update fake cursor
-    (helix-create-fake-cursor (point) nil id)
-    ;; (helix-move-fake-cursor (helix-cursor-with-id id) (point))
+    (when-let* ((cursor (helix-cursor-with-id id)))
+      (helix-set-fake-cursor cursor (point) (mark t)))
     ;; Restore real cursor
-    (helix--restore-point-state-from-overlay helix--point-state-during-undo)
+    (helix--restore-point-state helix--point-state-during-undo)
     (delete-overlay helix--point-state-during-undo)
     (setq helix--point-state-during-undo nil)
     (push `(apply helix-undo--activate-cursor ,id)
@@ -263,9 +265,9 @@ the data needed for multiple cursors functionality."
   (let ((state (make-symbol "point-state")))
     `(let ((,state (make-overlay (point) (point) nil nil t)))
        (overlay-put ,state 'type 'original-cursor)
-       (helix--store-point-state-in-overlay ,state)
+       (helix--store-point-state ,state)
        (save-excursion ,@body)
-       (helix--restore-point-state-from-overlay ,state)
+       (helix--restore-point-state ,state)
        (delete-overlay ,state))))
 
 (defun helix-all-fake-cursors ()
@@ -337,9 +339,9 @@ the original cursor, to inform about the lack of support."
   (let ((helix--executing-command-for-fake-cursor t)
         (id (overlay-get cursor 'id)))
     (helix--add-fake-cursor-to-undo-list id
-      (helix-restore-point-from-fake-cursor cursor)
+      (helix--restore-point-state cursor)
       (helix--execute-command command)
-      (helix-create-fake-cursor-from-point id))))
+      (helix-set-fake-cursor cursor (point) (mark t)))))
 
 (defun helix--execute-command (command)
   "Run COMMAND, simulating the parts of the command loop that
