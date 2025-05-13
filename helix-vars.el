@@ -482,11 +482,11 @@ cursors editing.")
   "Default set of commands to execute only once while multiple cursors are
 active.")
 
-(defvar helix-fake-cursor-specific-vars '(transient-mark-mode
-                                          kill-ring
+(defvar helix-fake-cursor-specific-vars '(kill-ring
                                           kill-ring-yank-pointer
+                                          ;; transient-mark-mode
                                           mark-ring
-                                          mark-active
+                                          ;; mark-active
                                           yank-undo-function
                                           temporary-goal-column
                                           dabbrev--abbrev-char-regexp
