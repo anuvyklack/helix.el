@@ -32,15 +32,15 @@ otherwise prepend it to the list.
      ,alist))
 
 (defmacro helix-with-restriction (restrictions &rest body)
-  "Execute BODY with the buffer narrowed to BEG and END.
+  "Execute BODY with the buffer narrowed to START and END.
 
-\(fn (BEG . END) BODY...)"
+\(fn (START . END) BODY...)"
   (declare (indent defun) (debug t))
-  (let ((beg (gensym "beg"))
+  (let ((start (gensym "start"))
         (end (gensym "end")))
-    `(cl-destructuring-bind (,beg . ,end) ,restrictions
+    `(cl-destructuring-bind (,start . ,end) ,restrictions
        (save-restriction
-         (narrow-to-region ,beg ,end)
+         (narrow-to-region ,start ,end)
          ,@body))))
 
 (defmacro helix-define-motion (motion args &rest body)
