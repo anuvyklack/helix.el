@@ -664,5 +664,11 @@ and which for all to `helix-mc-list-file' file."
   (if-let* ((buffer (overlay-buffer overlay)))
       (buffer-live-p buffer)))
 
+(defun helix-fake-cursor-at-pos (position)
+  "Return the fake cursor at POSITION, or nil if no one."
+  (-find #'(lambda (cursor)
+             (= position (overlay-get cursor 'point)))
+         (helix-fake-cursors-in position (1+ position))))
+
 (provide 'helix-multiple-cursors-core)
 ;;; helix-multiple-cursors-core.el ends here

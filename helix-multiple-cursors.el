@@ -29,12 +29,6 @@
                     (lambda (p &optional i k r h d m) (read i))))
            (repeat-complex-command 0))))))
 
-(defun helix-fake-cursor-at-pos (pos)
-  "Return the fake cursor at POS, or nil if no one."
-  (-find #'(lambda (cursor)
-             (eq pos (overlay-get cursor 'point)))
-         (helix-fake-cursors-in pos (1+ pos))))
-
 ;; (keymap-lookup nil "M-<down-mouse-1>")
 
 ;; M-right mouse
@@ -46,7 +40,7 @@ already there."
   ;; Use event-end in case called from mouse-drag-region.
   ;; If EVENT is a click, event-end and event-start give same value.
   (let ((position (event-end event)))
-    (when (not (windowp (posn-window position)))
+    (unless (windowp (posn-window position))
       (error "Position not in text area of window"))
     (select-window (posn-window position))
     (when-let* ((pos (posn-point position))
