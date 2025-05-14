@@ -1,10 +1,7 @@
 ;;; helix-multiple-cursors-core.el --- Multiple cursors for Helix -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2012-2025 Magnar Sveen
-;; Copyright (C)      2025 Yuriy Artemyev
-
-;; Authors: Magnar Sveen <magnars@gmail.com>
-;;          Yuriy Artemyev <anuvyklack@gmail.com>
+;; Authors: Yuriy Artemyev <anuvyklack@gmail.com>
+;; Maintainer: Yuriy Artemyev <anuvyklack@gmail.com>
 ;; Keywords: editing cursors
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -22,7 +19,9 @@
 
 ;;; Commentary:
 
-;; The core functionality for multiple cursors.
+;; The core functionality for multiple cursors. This module is heavily based
+;; on Magnar Sveen `multiple-cursors.el' package.
+;;
 ;; ID 0 is always coresponding to real cursor.
 
 ;;; Code:
