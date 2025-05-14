@@ -302,7 +302,6 @@ cursors editing.")
     helix-mark-line           ;; x
     helix-delete              ;; d
     helix-collapse-selection  ;; ;
-    helix-mc-keyboard-quit
     self-insert-command
     quoted-insert
     previous-line

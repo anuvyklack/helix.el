@@ -402,11 +402,6 @@ Disable `helix-multiple-cursors-mode' instead."
   (helix-for-each-fake-cursor cursor
     (helix--delete-fake-cursor cursor)))
 
-(defun helix-mc-keyboard-quit ()
-  "Exit `helix-multiple-cursors-mode'."
-  (interactive)
-  (helix-disable-multiple-cursors-mode))
-
 (defun helix-mc--maybe-set-killed-rectangle ()
   "Add the latest `kill-ring' entry for each cursor to `killed-rectangle'.
 So you can paste it in later with `yank-rectangle'."
