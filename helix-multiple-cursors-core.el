@@ -235,38 +235,34 @@ and bind it to CURSOR."
        ;; If nothing has been added to the undo-list
        (if (eq (car buffer-undo-list) ,deactivate-cursor)
            (pop buffer-undo-list)
-         (push `(apply helix-undo--activate-cursor ,,id ,(point))
+         (push `(apply helix-undo--activate-cursor ,,id)
                buffer-undo-list)))))
 
 (defvar helix--point-state-during-undo nil
   "The variable to keep the state of the real cursor while undoing a fake one.")
 
 ;;;###autoload
-(defun helix-undo--activate-cursor (id pos)
+(defun helix-undo--activate-cursor (id)
   "Called when undoing to temporarily activate the fake cursor
 which action is being undone."
-  (let ((cursor (or (helix-cursor-with-id id)
-                    (helix-create-fake-cursor pos nil id))))
-    (setq helix--point-state-during-undo
-          (helix--store-point-state
-           (make-overlay (point) (point) nil nil t)))
-    (helix--restore-point-state cursor)
-    ;; (deactivate-mark)
-    (push `(apply helix-undo--deactivate-cursor ,id)
-          buffer-undo-list)))
+  (setq helix--point-state-during-undo
+        (helix--store-point-state
+         (make-overlay (point) (point) nil nil t)))
+  (when-let* ((cursor (helix-cursor-with-id id)))
+    (helix--restore-point-state cursor))
+  (push `(apply helix-undo--deactivate-cursor ,id)
+        buffer-undo-list))
 
 (defun helix-undo--deactivate-cursor (id)
   "Called when undoing to reinstate the real cursor after undoing a fake one."
-  (when helix--point-state-during-undo
-    ;; Update fake cursor
-    (helix-set-fake-cursor (helix-cursor-with-id id)
-                           (point) (mark t))
-    (push `(apply helix-undo--activate-cursor ,id ,(point))
-          buffer-undo-list)
-    ;; Restore real cursor
-    (helix--restore-point-state helix--point-state-during-undo)
-    (delete-overlay helix--point-state-during-undo)
-    (setq helix--point-state-during-undo nil)))
+  ;; Update or create fake cursor
+  (helix-set-fake-cursor id (point) (mark t))
+  (push `(apply helix-undo--activate-cursor ,id)
+        buffer-undo-list)
+  ;; Restore real cursor
+  (helix--restore-point-state helix--point-state-during-undo)
+  (delete-overlay helix--point-state-during-undo)
+  (setq helix--point-state-during-undo nil))
 
 ;;; Executing commands
 
