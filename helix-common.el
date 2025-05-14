@@ -43,8 +43,10 @@ otherwise prepend it to the list.
          (narrow-to-region ,start ,end)
          ,@body))))
 
+;;; Motions
+
 (defmacro helix-define-motion (motion args &rest body)
-  "Macros to define motions.
+  "Macros to define Helix motions.
 
 \(fn MOTION (ARGS...) DOC BODY...)"
   (declare (indent defun)
@@ -68,11 +70,10 @@ otherwise prepend it to the list.
              ,(or doc "")
              ,@body))
        (when ',motion
+         (cl-pushnew ',motion helix--motion-command)
          (eval-after-load 'eldoc
            '(and (fboundp 'eldoc-add-command)
                  (eldoc-add-command ',motion)))))))
-
-;;; Motions
 
 (defun helix-forward-beginning-of-thing (thing &optional count skip-empty-lines)
   "Move to the beginning of next COUNT-th THING.

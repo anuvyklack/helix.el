@@ -16,9 +16,8 @@
 (require 'cl-lib)
 (require 'thingatpt)
 (require 's)
-(require 'multiple-cursors-core)
 (require 'helix-common)
-(require 'helix-vars)
+(require 'multiple-cursors-core)
 
 (defun helix-normal-state-escape ()
   "Command for ESC key in Helix Normal state."
@@ -32,7 +31,6 @@
 ;;; Movements
 
 ;; h
-
 (helix-define-motion helix-backward-char (count)
   "Move backward."
   (interactive "p")
