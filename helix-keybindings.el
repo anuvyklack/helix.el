@@ -222,15 +222,15 @@
 ;; Ingored
 
 (helix-keymap-set nil 'normal
-  "q"  #'ingnore
-  "\"" #'ingnore
-  "'"  #'ingnore
-  ;; "/" #'ingnore
-  ;; "n" #'ingnore
-  ;; "p" #'ingnore
-  ;; "f" #'ingnore
-  ;; "t" #'ingnore
-  ;; "o" #'ingnore
+  "q"  #'ignore
+  "\"" #'ignore
+  "'"  #'ignore
+  ;; "/" #'ignore
+  ;; "n" #'ignore
+  ;; "p" #'ignore
+  ;; "f" #'ignore
+  ;; "t" #'ignore
+  ;; "o" #'ignore
   )
 
 ;; (defun helix-general-o-fun ()
