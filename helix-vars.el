@@ -501,6 +501,10 @@ active.")
                                           dabbrev--last-table)
   "A list of vars that need to be tracked on a per-cursor basis.")
 
+(defvar helix--motion-command nil
+  "List of command, after which `helix-merge-overlapping-regions'
+should be invoked.")
+
 (defvar helix-mc--list-file-loaded nil
   "Non-nil when `helix-mc-list-file' file has already been loaded.")
 

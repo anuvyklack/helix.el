@@ -346,7 +346,11 @@ the original cursor, to inform about the lack of support."
            (helix-for-each-fake-cursor cursor
              (helix-execute-command-for-fake-cursor cursor command))))
          (helix--reset-input-cache)
-         (helix--remove-entries-that-move-point-from-current-step-in-undo-list))))
+         (helix--remove-entries-that-move-point-from-current-step-in-undo-list)
+         (when (and helix--extend-selection
+                    mark-active
+                    (memq command helix--motion-command))
+           (helix-merge-overlapping-regions)))))
 
 (defvar helix--executing-command-for-fake-cursor nil)
 
@@ -649,6 +653,94 @@ and which for all to `helix-mc-list-file' file."
     (helix-mc-dump-list 'helix-commands-to-run-for-all-cursors)
     (newline)
     (helix-mc-dump-list 'helix-commands-to-run-once)))
+
+;;; Merge overlapping regions
+
+(defun helix-merge-overlapping-regions ()
+  "Merge overlapping regions."
+  (let ((dir (helix-region-direction)))
+    (dolist (group (helix--overlapping-regions))
+      (let ((beg (point-max))
+            (end (point-min))
+            id rest real-cursor?)
+        (dolist (data group)
+          (pcase-let ((`(,i ,b ,e) data))
+            (when (< b beg)
+              (setq beg b)
+              (when (< dir 0)
+                (if (and id (/= id 0))
+                    (push id rest))
+                (setq id i)))
+            (when (> e end)
+              (setq end e)
+              (when (< 0 dir)
+                (if (and id (/= id 0))
+                    (push id rest))
+                (setq id i)))
+            (cond ((eql i 0)
+                   (setq real-cursor? t))
+                  ((and id (/= id i))
+                   (push i rest)))))
+        (let ((pnt (if (< dir 0) beg end))
+              (mrk (if (< dir 0) end beg)))
+          (pcase id
+            (0 (goto-char pnt)
+               (set-marker (mark-marker) mrk))
+            (_ (when-let* ((cursor (gethash id helix--cursors-table)))
+                 (cond (real-cursor?
+                        (helix-restore-point-from-fake-cursor cursor)
+                        (goto-char pnt)
+                        (set-marker (mark-marker) mrk))
+                       (t
+                        (helix-move-fake-cursor cursor pnt mrk)))))))
+        (dolist (id rest)
+          (when-let* ((cursor (gethash id helix--cursors-table)))
+            (helix--delete-fake-cursor cursor)))))
+    (unless (helix-any-fake-cursors-p)
+      (helix-disable-multiple-cursors-mode))))
+
+(defun helix--overlapping-regions ()
+  "Return the list of groups, where each group is a list of
+cons cells (ID . (START END)) denoting fake cursor ID and its
+region bounds. Inside each group, all regions are overlapping
+and sorted by starting position. ID 0 coresponds to the real
+cursor."
+  (let ((alist (helix--regions-positions))
+        result
+        current-group
+        (current-end (point-min)))
+    (dolist (item alist)
+      (pcase-let ((`(,_ ,start ,end) item))
+        (if (< start current-end)
+            (push item current-group)
+          ;; else
+          (when (length> current-group 1)
+            (push (nreverse current-group) result))
+          (setq current-group (list item)))
+        (setq current-end (max end current-end))))
+    (when (length> current-group 1)
+      (push (nreverse current-group) result))
+    (nreverse result)))
+
+(defun helix--regions-positions ()
+  "Return the alist with cons cells (ID . (START END)).
+\(START END) are bounds of regions. Alist is sorted by START.
+ID 0 coresponds to the real cursor."
+  (pcase-let* ((`(,start . ,end) (car (region-bounds)))
+               (alist (cons
+                       ;; Append real cursor with ID 0
+                       `(0 ,start ,end)
+                       (mapcar #'(lambda (cursor)
+                                   (let* ((id (overlay-get cursor 'id))
+                                          (pnt (overlay-get cursor 'point))
+                                          (mrk (overlay-get cursor 'mark))
+                                          (start (min pnt mrk))
+                                          (end   (max pnt mrk)))
+                                     `(,id ,start ,end)))
+                               (helix-all-fake-cursors))))
+               (alist (sort alist #'(lambda (a b)
+                                      (< (cl-second a) (cl-second b))))))
+    alist))
 
 ;;; Utils
 
