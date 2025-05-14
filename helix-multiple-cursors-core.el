@@ -192,8 +192,7 @@ and bind it to CURSOR."
         (mrk-marker (or (overlay-get overlay 'mark)
                         (overlay-put overlay 'mark (make-marker)))))
     (set-marker pnt-marker point)
-    (when mark
-      (set-marker mrk-marker mark)))
+    (set-marker mrk-marker (or mark point)))
   (dolist (var helix-fake-cursor-specific-vars)
     (when (boundp var)
       (overlay-put overlay var (symbol-value var))))
@@ -202,8 +201,7 @@ and bind it to CURSOR."
 (defun helix--restore-point-state (overlay)
   "Restore point, mark and cursor variables saved in OVERLAY."
   (goto-char (overlay-get overlay 'point))
-  (when-let* ((mark (overlay-get overlay 'mark)))
-    (set-marker (mark-marker) mark))
+  (set-marker (mark-marker) (overlay-get overlay 'mark))
   (dolist (var helix-fake-cursor-specific-vars)
     (when (boundp var)
       (set var (overlay-get overlay var)))))
