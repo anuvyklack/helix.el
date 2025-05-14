@@ -248,7 +248,7 @@
 
 ;;; Multiple cursors
 
-(keymap-set helix-multiple-cursors-map "C-g" #'helix-mc-keyboard-quit)
+(keymap-set helix-multiple-cursors-map "C-g" #'helix-disable-multiple-cursors-mode)
 ;; (keymap-set helix-multiple-cursors-map "C-:" #'helix-mc-repeat-command)
 (when (fboundp 'phi-search)
   (keymap-set helix-multiple-cursors-map "C-s" #'phi-search))
