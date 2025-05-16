@@ -45,50 +45,109 @@ already there."
     (select-window (posn-window position))
     (when-let* ((pos (posn-point position))
                 ((numberp pos)))
-      (if-let* ((cursor (helix-fake-cursor-at-pos pos)))
+      (if-let* ((cursor (helix-fake-cursor-at pos)))
           (helix-remove-fake-cursor cursor)
         ;; (deactivate-mark)
         (helix-create-fake-cursor pos)))))
 
-;; (defun helix-copy-cursor-down (&optional count)
-;;   (or count (setq count 1))
-;;   (let ((dir (if (< count 0) -1 1))
-;;         (count (abs count)))
-;;     (when (use-region-p)
-;;       (let ((region-dir   (helix-region-direction))
-;;             (num-of-lines (count-lines (point) (mark)))
-;;             (point-column (current-column))
-;;             (mark-column  (progn
-;;                             (helix-exchange-point-and-mark)
-;;                             (current-column))))
-;;
-;;         ;; (dotimes (i count))
-;;         ))
-;;     )
-;;   )
+;; C
+(defun helix-copy-selection-down ()
+  "Copy each selection COUNT times down."
+  (interactive)
+  (helix-execute-command-for-all-cursors #'helix-copy-cursor)
+  (when mark-active
+    (helix-merge-overlapping-regions)))
 
-;; (defun helix-mc-furthest-cursor-before-point ()
-;;   (let ((beg (if mark-active
-;;                  (min (mark) (point))
-;;                (point)))
-;;         furthest)
-;;     (helix-for-each-fake-cursor
-;;      (when (< (mc/cursor-beg cursor) beg)
-;;        (setq beg (mc/cursor-beg cursor))
-;;        (setq furthest cursor)))
-;;     furthest))
+;; M-c
+(defun helix-copy-selection-up (count)
+  "Copy each selection COUNT times up."
+  (interactive "p")
+  (let ((current-prefix-arg (* count -1)))
+    (helix-execute-command-for-all-cursors #'helix-copy-cursor))
+  (when mark-active
+    (helix-merge-overlapping-regions)))
 
-;; (defun helix-mc-furthest-cursor-after-point ()
-;;   (let ((end (if mark-active (max (mark) (point)) (point)))
-;;         furthest)
-;;     (helix-for-each-fake-cursor
-;;      (when (> (mc/cursor-end cursor) end)
-;;        (setq end (mc/cursor-end cursor))
-;;        (setq furthest cursor)))
-;;     furthest))
+(defun helix-copy-cursor (count)
+  "Copy point or region COUNT times up or down depending on
+the sign of the COUNT."
+  (interactive "p")
+  (cond ((use-region-p)
+         (helix-motion-loop (dir count)
+           (helix--copy-region dir)))
+        (t
+         (helix-motion-loop (dir count)
+           (helix--copy-cursor-1 dir)))))
 
-;; (defun helix-mc-first-cursor ())
-;; (defun helix-mc-last-cursor ())
+(defun helix--copy-cursor-1 (direction)
+  "Copy point toward the DIRECTION."
+  (or direction (setq direction 1))
+  (when-let* ((pos (save-excursion
+                     (let ((column (current-column))
+                           position)
+                       (cl-block nil
+                         (while (not position)
+                           (unless (zerop (forward-line direction))
+                             (cl-return))
+                           (when (eql (move-to-column column) column)
+                             (setq position (point)))))
+                       position)))
+              ((not (helix-fake-cursor-at pos))))
+    (helix-create-fake-cursor-from-point)
+    (goto-char pos)))
+
+(defun helix--copy-region (&optional direction)
+  "Copy region toward the DIRECTION."
+  (or direction (setq direction 1))
+  (pcase-let* ((region-dir (helix-region-direction))
+               (`(,beg . ,end) (car (region-bounds)))
+               (num-of-lines (count-lines beg end))
+               (beg-column (save-excursion
+                             (goto-char beg)
+                             (current-column)))
+               (end-column (save-excursion
+                             (goto-char end)
+                             (current-column))))
+    (when-let* ((bounds (save-excursion
+                          (goto-char (if (< direction 0) beg end))
+                          (helix--bounds-of-following-region
+                           beg-column end-column num-of-lines direction))))
+      (let (pnt mrk)
+        (if (< region-dir 0)
+            (pcase-setq `(,pnt . ,mrk) bounds)
+          (pcase-setq `(,mrk . ,pnt) bounds))
+        (if-let* ((cursor (helix-fake-cursor-at pnt))
+                  ((= mrk (overlay-get cursor 'mark))))
+            nil ;; Do nothing, since fake cursor is already there.
+          ;; else
+          (helix-create-fake-cursor-from-point)
+          (goto-char pnt)
+          (set-marker (mark-marker) mrk))))))
+
+(defun helix--bounds-of-following-region (start-column end-column number-of-lines direction)
+  "Return bounds of following region that starts at START-COLUMN
+ends at END-COLUMN spauns NUMBER-OF-LINES."
+  (when (< direction 0)
+    (pcase-setq `(,start-column . ,end-column)
+                (cons end-column start-column)))
+  (let (start end)
+    (cl-block nil
+      (while (not (and start end))
+        (unless (zerop (forward-line direction))
+          (cl-return))
+        (when (eql (move-to-column start-column)
+                   start-column)
+          (setq start (point))
+          (while (not end)
+            (unless (zerop (forward-line (* (1- number-of-lines)
+                                            direction)))
+              (cl-return))
+            (when (eql (move-to-column end-column)
+                       end-column)
+              (setq end (point)))))))
+    (if (and start end)
+        (if (< 0 direction)
+            (cons start end)
+          (cons end start)))))
 
 ;; (defun helix-mc-bound-cursor (direction)
 ;;   "Return the first fake cursor if DIRECTION is positive number /last
@@ -102,11 +161,6 @@ already there."
 ;;   )
 
 
-;; (current-column)
-;; (move-to-column)
-;; (count-lines)
-
-;; (helix-copy-cursor-forward)
 
 (provide 'helix-multiple-cursors)
 ;;; helix-multiple-cursors.el ends here

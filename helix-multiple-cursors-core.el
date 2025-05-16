@@ -222,7 +222,7 @@ and bind it to CURSOR."
 
 (defmacro helix--add-fake-cursor-to-undo-list (cursor &rest body)
   "Make sure point is in the right place when undoing."
-  (declare (indent defun) (debug (&rest form)))
+  (declare (indent defun) (debug t))
   (let ((id (make-symbol "id"))
         (deactivate-cursor (make-symbol "deactivate-cursor")))
     `(let* ((,id (overlay-get ,cursor 'id))
@@ -294,10 +294,12 @@ the data needed for multiple cursors functionality."
 
 (defmacro helix-for-each-fake-cursor (cursor &rest body)
   "Evaluate BODY with CURSOR bound to each fake cursor in turn."
-  (declare (indent 1) (debug (&rest form)))
-  `(dolist (,cursor (overlays-in (point-min) (point-max)))
-     (when (helix-fake-cursor-p ,cursor)
-       ,@body)))
+  (declare (indent 1) (debug t))
+  ;; We callect all fake-cursors first, because BODY make create fake cursors,
+  ;; like `helix-copy-cursor' does, and we want it to be executed only for
+  ;; original ones.
+  `(dolist (,cursor (helix-all-fake-cursors))
+     ,@body))
 
 (defmacro helix-for-each-cursor-ordered (cursor &rest body)
   "Evaluate BODY with CURSOR bound to each real or fake cursors
@@ -313,11 +315,14 @@ in order they are follow in buffer."
        (helix-restore-point-from-fake-cursor ,real-cursor))))
 
 (defun helix-execute-command-for-all-cursors (command)
-  "Call COMMAND interactively for the real cursor and all fake ones."
-  (call-interactively command)
-  (helix-execute-command-for-all-fake-cursors command))
+  "Call COMMAND interactively for all cursors: real and fake ones."
+  ;; Backward order needed, because COMMAND make create fake cursors, like
+  ;; `helix-copy-cursor' does, and we want COMMAND to be executed only for
+  ;; original ones.
+  (helix--execute-command-for-all-fake-cursors command)
+  (call-interactively command))
 
-(defun helix-execute-command-for-all-fake-cursors (command)
+(defun helix--execute-command-for-all-fake-cursors (command)
   "Call COMMAND interactively for each fake cursor.
 
 Internaly it moves point to the fake cursor, restore the environment
@@ -329,28 +334,29 @@ it will prompt for the proper action and then save that preference.
 
 Some commands are so unsupported that they are even prevented for
 the original cursor, to inform about the lack of support."
-  (cond ((get command 'helix-unsupported)
-         (message "%S is not supported with multiple cursors" command))
-        ((or
-          ;; If it's a lambda, we can't know if it's supported or not -
-          ;; so go ahead and assume it's ok.
-          (not (symbolp command))
-          (and (not (memq command helix-default-commands-to-run-once))
-               (not (memq command helix-commands-to-run-once))
-               (or helix-mc-always-run-for-all
-                   (memq command helix-default-commands-to-run-for-all-cursors)
-                   (memq command helix-commands-to-run-for-all-cursors)
-                   (helix--prompt-for-unknown-command command))))
-         (helix-save-window-scroll
-          (helix-save-excursion
-           (helix-for-each-fake-cursor cursor
-             (helix-execute-command-for-fake-cursor cursor command))))
-         (helix--reset-input-cache)
-         (helix--remove-entries-that-move-point-from-current-step-in-undo-list)
-         (when (and helix--extend-selection
-                    mark-active
-                    (memq command helix--motion-command))
-           (helix-merge-overlapping-regions)))))
+  (when helix-multiple-cursors-mode
+    (cond ((get command 'helix-unsupported)
+           (message "%S is not supported with multiple cursors" command))
+          ((or
+            ;; If it's a lambda, we can't know if it's supported or not -
+            ;; so go ahead and assume it's ok.
+            (not (symbolp command))
+            (and (not (memq command helix-default-commands-to-run-once))
+                 (not (memq command helix-commands-to-run-once))
+                 (or helix-mc-always-run-for-all
+                     (memq command helix-default-commands-to-run-for-all-cursors)
+                     (memq command helix-commands-to-run-for-all-cursors)
+                     (helix--prompt-for-unknown-command command))))
+           (helix-save-window-scroll
+            (helix-save-excursion
+             (helix-for-each-fake-cursor cursor
+               (helix-execute-command-for-fake-cursor cursor command))))
+           (helix--reset-input-cache)
+           (helix--remove-entries-that-move-point-from-current-step-in-undo-list)
+           (when (and helix--extend-selection
+                      mark-active
+                      (memq command helix--motion-command))
+             (helix-merge-overlapping-regions))))))
 
 (defvar helix--executing-command-for-fake-cursor nil)
 
@@ -475,10 +481,10 @@ lookup."
                       ;; commands that are also run in the command loop - we will
                       ;; handle those later instead.
                       ((functionp command)))
-            (helix-execute-command-for-all-fake-cursors command)
+            (helix--execute-command-for-all-fake-cursors command)
             ;; (helix-undo--restore-point-3)
             ))
-      (error (message "[Helix] error in `helix-execute-command-for-all-fake-cursors': %s"
+      (error (message "[Helix] error in `helix--execute-command-for-all-fake-cursors': %s"
                       (error-message-string error))))))
 
 ;;;###autoload
@@ -601,7 +607,7 @@ of all cursors when yanking."
 (define-advice execute-extended-command (:after (&rest _) multiple-cursors)
   "Execute selected command for all cursors."
   (when helix-multiple-cursors-mode
-    (helix-execute-command-for-all-fake-cursors this-command)))
+    (helix--execute-command-for-all-fake-cursors this-command)))
 
 ;;; Whitelists
 
@@ -742,6 +748,48 @@ ID 0 coresponds to the real cursor."
                                       (< (cl-second a) (cl-second b))))))
     alist))
 
+;;; Access fake cursors
+
+(defun helix-fake-regions-in (start end)
+  "Return a list of fake-cursors in START ... END region."
+  (cl-remove-if-not #'helix-fake-region-p
+                    (overlays-in start end)))
+
+(defun helix-fake-cursor-at (position)
+  "Return the fake cursor at POSITION, or nil if no one."
+  (-find #'(lambda (cursor)
+             (= position (overlay-get cursor 'point)))
+         (helix-fake-cursors-in position (1+ position))))
+
+(defun helix-next-fake-cursor (pos)
+  "Return the next fake cursor after the POS position."
+  (let (cursor)
+    (while (not (or cursor
+                    (eql pos (point-max))) )
+      (setq pos (next-overlay-change pos)
+            cursor (helix-fake-cursor-at pos)))
+    cursor))
+
+(defun helix-previous-fake-cursor (pos)
+  "Return the previous fake cursor before the POS position."
+  (let (cursor)
+    (while (not (or cursor
+                    (eql pos (point-min))) )
+      (setq pos (previous-overlay-change pos)
+            cursor (helix-fake-cursor-at pos)))
+    cursor))
+
+(defun helix-furthest-fake-cursor (direction)
+  (let ((comparator #'(lambda (a b)
+                        (> (overlay-get a 'point)
+                           (overlay-get b 'point)))))
+    (cond ((< direction 0)
+           (-some->> (helix-fake-cursors-in (point-min) (point))
+             (-min-by comparator)))
+          (t
+           (-some->> (helix-fake-cursors-in (point) (point-max))
+             (-max-by comparator))))))
+
 ;;; Utils
 
 (defun helix-fake-cursor-p (overlay)
@@ -751,10 +799,6 @@ ID 0 coresponds to the real cursor."
 (defun helix-fake-region-p (overlay)
   (eq (overlay-get overlay 'type)
       'fake-region))
-
-(defun helix-fake-regions-in (beg end)
-  (cl-remove-if-not #'helix-fake-region-p
-                    (overlays-in beg end)))
 
 (defun helix--overlays-overlap-p (o1 o2)
   (< (overlay-start o2)
@@ -767,12 +811,6 @@ ID 0 coresponds to the real cursor."
 (defun helix-overlay-live-p (overlay)
   (if-let* ((buffer (overlay-buffer overlay)))
       (buffer-live-p buffer)))
-
-(defun helix-fake-cursor-at-pos (position)
-  "Return the fake cursor at POSITION, or nil if no one."
-  (-find #'(lambda (cursor)
-             (= position (overlay-get cursor 'point)))
-         (helix-fake-cursors-in position (1+ position))))
 
 (provide 'helix-multiple-cursors-core)
 ;;; helix-multiple-cursors-core.el ends here
