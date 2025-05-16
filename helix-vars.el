@@ -302,6 +302,7 @@ cursors editing.")
     helix-mark-line           ;; x
     helix-delete              ;; d
     helix-collapse-selection  ;; ;
+    helix-copy-cursor
     self-insert-command
     quoted-insert
     previous-line
@@ -385,6 +386,8 @@ cursors editing.")
     helix-normal-state           ;; ESC
     helix-toggle-cursor-on-click ;; M-mouse1
     helix-extend-selection       ;; v
+    helix-copy-selection-down    ;; C
+    helix-copy-selection-up      ;; M-c
     helix-undo                   ;; u
     helix-redo                   ;; U
     keypad                       ;; SPC
