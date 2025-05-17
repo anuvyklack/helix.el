@@ -84,7 +84,7 @@ This is needed, for example, for `helix-word': two `helix-word's divided
 with empty lines, are considered adjoined when moving over them.
 
 Works only with THINGs, that returns the count of steps left to move."
-  (or count (setq count 1))
+  (unless count (setq count 1))
   (cond ((= count 0) 0)
         ((< count 0)
          (forward-thing thing count))
@@ -104,7 +104,7 @@ Works only with THINGs, that returns the count of steps left to move."
   "Move point toward the DIRECTION stopping after a char is not in CHARS string.
 Move backward when DIRECTION is negative number, forward — otherwise.
 Return t if point has moved."
-  (or direction (setq direction 1))
+  (unless direction (setq direction 1))
   (/= 0 (if (< direction 0)
             (skip-chars-backward chars)
           (skip-chars-forward chars))))
@@ -113,7 +113,7 @@ Return t if point has moved."
   "Move point toward the DIRECTION across whitespace.
 Move backward when DIRECTION is negative number, forward — otherwise.
 Return the distance traveled positive or negative depending on DIRECTION."
-  (or direction (setq direction 1))
+  (unless direction (setq direction 1))
   ;; Alternative: (helix-skip-chars " \t" dir)
   (if (< direction 0)
       (skip-syntax-backward " " (line-beginning-position))
@@ -130,7 +130,7 @@ Return the distance traveled positive or negative depending on DIRECTION."
   "Return the next after point char toward the direction.
 If DIRECTION is positive number get following char,
 negative — preceding char."
-  (or direction (setq direction 1))
+  (unless direction (setq direction 1))
   (if (< direction 0) (preceding-char) (following-char)))
 
 ;; (defun helix-skip-empty-lines (&optional direction)
@@ -140,7 +140,7 @@ negative — preceding char."
 ;;   ;;     (helix-skip-chars "\r\n" (or dir 1))
 ;;   ;;   (when (not helix-select-state-minor-mode)
 ;;   ;;     (set-mark (point))))
-;;   (or direction (setq direction 1))
+;;   (unless direction (setq direction 1))
 ;;   (let ((point-moved (helix-skip-chars "\r\n" direction)))
 ;;     (when (and point-moved
 ;;                (not helix-select-state-minor-mode))
@@ -179,7 +179,7 @@ on sign of COUNT.
 Word is:
 - sequence of characters matching `[[:word:]]'
 - sequence non-word non-whitespace characters matching `[^[:word:]\\n\\r\\t\\f ]'"
-  (or count (setq count 1))
+  (unless count (setq count 1))
   (helix-motion-loop (dir count)
     (helix-skip-chars "\r\n" dir)
     (helix-skip-whitespaces dir)
@@ -195,7 +195,7 @@ Returns the count of WORD left to move, positive or negative depending
 on sign of COUNT.
 
 WORD is any space separated sequence of characters."
-  (or count (setq count 1))
+  (unless count (setq count 1))
   (helix-motion-loop (dir count)
     (helix-skip-chars "\r\n" dir)
     (helix-skip-whitespaces dir)
@@ -246,7 +246,7 @@ like: `helix-word', `paragraph', `line'."
 ;;; Selection
 
 (defun helix-mark-inner-thing (thing &optional count)
-  (or count (setq count 1))
+  (unless count (setq count 1))
   (when (zerop count)
     (error "Cannot mark zero %s" thing))
   (let ((bounds (bounds-of-thing-at-point thing)))
@@ -431,7 +431,7 @@ else it will be searched literally.
 
 When REGEXP? is non-nil this function modifies the match data
 that `match-beginning', `match-end' and `match-data' access."
-  (or direction (setq direction 1))
+  (unless direction (setq direction 1))
   (cond ((and regexp? (< 0 direction))
          (looking-at str))
         ((and regexp? (< direction 0))
@@ -467,7 +467,7 @@ If BALANCED? is non-nil all nested LEFT RIGHT pairs on the way will
 be skipped.
 
 \(fn (LEFT . RIGHT) &optional SCOPE REGEXP? BALANCED?)"
-  (or direction (setq direction 1))
+  (unless direction (setq direction 1))
   (save-excursion
     (if balanced?
         (helix--search-out-balanced pair direction scope regexp?)
@@ -524,7 +524,7 @@ else it will be searched literally.
 
 When REGEXP? is non-nil this function modifies the match data
 that `match-beginning', `match-end' and `match-data' access."
-  (or direction (setq direction 1))
+  (unless direction (setq direction 1))
   (if regexp?
       (re-search-forward str bound t direction)
     (search-forward str bound t direction)))
@@ -687,7 +687,7 @@ right after the point."
 (defun helix-distance (x y) (abs (- y x)))
 
 (defun helix-skip-gap (thing &optional direction)
-  (or direction (setq direction 1))
+  (unless direction (setq direction 1))
   (when-let* ((bounds (helix-bounds-of-complement-of-thing-at-point thing)))
     (goto-char (if (< direction 0)
                    (car bounds)
