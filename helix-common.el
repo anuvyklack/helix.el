@@ -725,5 +725,14 @@ right after the point."
           (string-to-number (format-mode-line "%l"))))
     (string-to-number (format-mode-line "%l"))))
 
+(defun helix-set-region (start end &optional direction)
+  (unless direction (setq direction 1))
+  (cond ((< direction 0)
+         (goto-char start)
+         (set-mark end))
+        (t
+         (goto-char end)
+         (set-mark start))))
+
 (provide 'helix-common)
 ;;; helix-common.el ends here

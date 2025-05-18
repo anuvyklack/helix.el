@@ -92,6 +92,11 @@ If this value is nil, there is no ceiling."
   "List of minor-modes that does not work well with multiple cursors.
 They are temporarily disabled when there are multiple cursors.")
 
+(defcustom helix-regex-history-max 16
+  "Maximum length of regexp search ring before oldest elements are thrown away."
+  :type 'integer
+  :group 'helix)
+
 (defgroup helix-cjk nil
   "CJK support."
   :prefix "helix-cjk-"
@@ -271,6 +276,12 @@ Default value is 0 - scroll half the screen.")
 
 (defvar helix-window-map (make-sparse-keymap)
   "Keymap for window-related commands.")
+
+(defvar helix-regex-history nil
+  "List with used pcre regexes.")
+
+(with-eval-after-load 'savehist
+  (add-to-list 'savehist-additional-variables 'helix-regex-history))
 
 (defvar helix-multiple-cursors-map (make-sparse-keymap)
   "Transient keymap for `helix-multiple-cursors-mode'.

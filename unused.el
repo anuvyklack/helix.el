@@ -1,14 +1,5 @@
 ;;; -*- lexical-binding: t; -*-
 
-(defun helix-set-region (start end)
-  (let ((dir (helix-region-direction)))
-    (cond ((< dir 0)
-           (goto-char start)
-           (set-mark end))
-          (t
-           (goto-char end)
-           (set-mark start)))))
-
 (defun helix-refresh-fake-cursor (cursor)
   (let ((pnt (overlay-get cursor 'point))
         (mrk (overlay-get cursor 'mark)))
