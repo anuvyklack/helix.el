@@ -16,12 +16,11 @@
 
 (require 'helix-vars)
 (require 'helix-common)
-(require 'helix-commands)
-(require 'helix-multiple-cursors)
 (require 'helix-core)
+(require 'helix-multiple-cursors)
 (require 'helix-states)
 (require 'helix-search)
-(require 'helix-keybindings)
+(require 'helix-commands)
 (require 'helix-keybindings)
 (require 'helix-integration)
 

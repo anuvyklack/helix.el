@@ -254,10 +254,10 @@ list specifying various aspects of the state. To access a property,
 use `helix-state-property'.")
 
 (helix-defvar-local helix--extend-selection nil
-  "Extend selection")
+  "Extend selection.")
 
 (helix-defvar-local helix-selection-history nil
-  "The history of selections")
+  "The history of selections.")
 
 (helix-defvar-local helix--insert-pos nil
   "The location of the point where we last time switched to Insert state.")
