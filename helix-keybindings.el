@@ -76,6 +76,7 @@
   "X"   #'helix-mark-line-upward
   "C"   #'helix-copy-selection-down
   "M-c" #'helix-copy-selection-up
+  "s"   #'helix-select-regex
   ","   #'helix-disable-multiple-cursors-mode
   ";"   #'helix-collapse-selection
   "M-;" #'exchange-point-and-mark

@@ -20,6 +20,7 @@
 (require 'helix-multiple-cursors)
 (require 'helix-core)
 (require 'helix-states)
+(require 'helix-search)
 (require 'helix-keybindings)
 (require 'helix-keybindings)
 (require 'helix-integration)
