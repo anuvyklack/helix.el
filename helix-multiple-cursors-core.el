@@ -353,9 +353,10 @@ the original cursor, to inform about the lack of support."
                (helix-execute-command-for-fake-cursor cursor command))))
            (helix--reset-input-cache)
            (helix--remove-entries-that-move-point-from-current-step-in-undo-list)
-           (when (and helix--extend-selection
-                      mark-active
-                      (memq command helix--motion-command))
+           (when (and mark-active
+                      (or (and helix--extend-selection
+                               (memq command helix--motion-command))
+                          (memq command helix--merge-regions-commands)))
              (helix-merge-overlapping-regions))))))
 
 (defvar helix--executing-command-for-fake-cursor nil)
