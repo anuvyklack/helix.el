@@ -80,30 +80,31 @@
               (helix-surround-add-pair ?= '("=" . "=") #'helix-surround--4-bounds-of-org-verbatim)
               (helix-surround-add-pair ?~ '("~" . "~") #'helix-surround--4-bounds-of-org-verbatim)))
 
-(helix-keymap-set org-mode-map 'normal
-  "m /"   #'helix-mark-inner-org-emphasis
-  "m i /" #'helix-mark-inner-org-emphasis
-  "m a /" #'helix-mark-an-org-emphasis
+(with-eval-after-load 'org
+  (helix-keymap-set org-mode-map 'normal
+    "m /"   #'helix-mark-inner-org-emphasis
+    "m i /" #'helix-mark-inner-org-emphasis
+    "m a /" #'helix-mark-an-org-emphasis
 
-  "m *"   #'helix-mark-inner-org-emphasis
-  "m i *" #'helix-mark-inner-org-emphasis
-  "m a *" #'helix-mark-an-org-emphasis
+    "m *"   #'helix-mark-inner-org-emphasis
+    "m i *" #'helix-mark-inner-org-emphasis
+    "m a *" #'helix-mark-an-org-emphasis
 
-  "m _"   #'helix-mark-inner-org-emphasis
-  "m i _" #'helix-mark-inner-org-emphasis
-  "m a _" #'helix-mark-an-org-emphasis
+    "m _"   #'helix-mark-inner-org-emphasis
+    "m i _" #'helix-mark-inner-org-emphasis
+    "m a _" #'helix-mark-an-org-emphasis
 
-  "m +"   #'helix-mark-inner-org-emphasis
-  "m i +" #'helix-mark-inner-org-emphasis
-  "m a +" #'helix-mark-an-org-emphasis
+    "m +"   #'helix-mark-inner-org-emphasis
+    "m i +" #'helix-mark-inner-org-emphasis
+    "m a +" #'helix-mark-an-org-emphasis
 
-  "m ="   #'helix-mark-inner-org-verbatim
-  "m i =" #'helix-mark-inner-org-verbatim
-  "m a =" #'helix-mark-an-org-verbatim
+    "m ="   #'helix-mark-inner-org-verbatim
+    "m i =" #'helix-mark-inner-org-verbatim
+    "m a =" #'helix-mark-an-org-verbatim
 
-  "m ~"   #'helix-mark-inner-org-verbatim
-  "m i ~" #'helix-mark-inner-org-verbatim
-  "m a ~" #'helix-mark-an-org-verbatim)
+    "m ~"   #'helix-mark-inner-org-verbatim
+    "m i ~" #'helix-mark-inner-org-verbatim
+    "m a ~" #'helix-mark-an-org-verbatim))
 
 (provide 'helix-integration)
 ;;; helix-integration.el ends here
