@@ -16,7 +16,6 @@
 (require 'dash)
 (require 'helix-common)
 (require 'helix-multiple-cursors-core)
-(require 'helix-vars)
 
 (defun helix-mc-repeat-command ()
   "Run last command from variable `command-history' for every fake cursor."
@@ -159,8 +158,6 @@ ends at END-COLUMN spauns NUMBER-OF-LINES."
 ;; position. If its position is bigger than the positon of the point — return it.
 ;; Otherwise return nil."
 ;;   )
-
-
 
 (provide 'helix-multiple-cursors)
 ;;; helix-multiple-cursors.el ends here

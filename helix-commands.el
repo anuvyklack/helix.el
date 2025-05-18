@@ -17,7 +17,6 @@
 (require 'thingatpt)
 (require 's)
 (require 'helix-common)
-(require 'multiple-cursors-core)
 
 (defun helix-normal-state-escape ()
   "Command for ESC key in Helix Normal state."
