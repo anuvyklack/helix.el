@@ -116,6 +116,7 @@
 
   "i p" #'helix-mark-inner-paragraph
   "p"   #'helix-mark-inner-paragraph
+  "a p" #'helix-mark-a-paragraph
   "i w" #'helix-mark-inner-word
   "w"   #'helix-mark-inner-word
   "i W" #'helix-mark-inner-WORD

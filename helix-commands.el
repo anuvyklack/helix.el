@@ -379,6 +379,12 @@ Select visual lines when `visual-line-mode' is on."
 ;; mip
 (defun helix-mark-inner-paragraph (count)
   (interactive "p")
+  (helix-mark-inner-thing 'paragraph count)
+  (helix-trim-whitespaces-from-selection))
+
+;; map
+(defun helix-mark-a-paragraph (count)
+  (interactive "p")
   (helix-mark-inner-thing 'paragraph count))
 
 ;; mi"
