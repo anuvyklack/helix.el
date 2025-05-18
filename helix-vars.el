@@ -517,7 +517,11 @@ active.")
 
 (defvar helix--motion-command nil
   "List of command, after which `helix-merge-overlapping-regions'
-should be invoked.")
+would be invoked if `helix--extend-selection' is t.")
+
+(defvar helix--merge-regions-commands nil
+  "List of command, after which `helix-merge-overlapping-regions'
+would be invoked.")
 
 (defvar helix-mc--list-file-loaded nil
   "Non-nil when `helix-mc-list-file' file has already been loaded.")

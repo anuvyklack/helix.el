@@ -743,5 +743,10 @@ Rebalance all children of the deleted window's parent window."
       ;; any further children (then rebalancing is not necessary anyway)
       (ignore-errors (balance-windows parent)))))
 
+;; Merge overlapping regions after all `helix-mark-*' commands.
+(setq helix--merge-regions-commands
+      (append (apropos-internal "^helix-mark" 'commandp)
+              helix--merge-regions-commands))
+
 (provide 'helix-commands)
 ;;; helix-commands.el ends here
