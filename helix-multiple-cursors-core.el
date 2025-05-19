@@ -204,7 +204,9 @@ and bind it to CURSOR."
   (set-marker (mark-marker) (overlay-get overlay 'mark))
   (dolist (var helix-fake-cursor-specific-vars)
     (when (boundp var)
-      (set var (overlay-get overlay var)))))
+      (set var (overlay-get overlay var))))
+  (helix--delete-region-overlay overlay)
+  (delete-overlay overlay))
 
 (defun helix-restore-point-from-fake-cursor (cursor)
   "Restore point, mark and saved variables from CURSOR overlay, and delete it."
@@ -258,7 +260,6 @@ which action is being undone."
         buffer-undo-list)
   ;; Restore real cursor
   (helix--restore-point-state helix--point-state-during-undo)
-  (delete-overlay helix--point-state-during-undo)
   (setq helix--point-state-during-undo nil))
 
 ;;; Executing commands
@@ -282,8 +283,7 @@ the data needed for multiple cursors functionality."
        (overlay-put ,state 'type 'original-cursor)
        (helix--store-point-state ,state)
        (save-excursion ,@body)
-       (helix--restore-point-state ,state)
-       (delete-overlay ,state))))
+       (helix--restore-point-state ,state))))
 
 (defun helix-all-fake-cursors ()
   (helix-fake-cursors-in (point-min) (point-max)))
