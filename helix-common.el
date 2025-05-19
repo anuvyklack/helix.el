@@ -623,23 +623,23 @@ checks for beginning of line, positive — end of line."
     (eolp)))
 
 (defun helix-line-selected-p ()
-  "Check that the selection is a multiple of whole lines.
+  "Check if active region exactly spans whole line(s).
 Return symbol:
 - `line' — if logical lines are selected;
 - `visual-line' — if visual lines are selected;
 - nil — otherwise."
-  (if (use-region-p)
-      (cond ((and (bolp)
-                  (save-mark-and-excursion
-                    (helix-exchange-point-and-mark)
-                    (bolp)))
-             'line)
-            ((and visual-line-mode
-                  (helix-visual-bolp)
-                  (save-mark-and-excursion
-                    (helix-exchange-point-and-mark)
-                    (helix-visual-bolp)))
-             'visual-line))))
+  (when (use-region-p)
+    (save-mark-and-excursion
+      (let ((beg (region-beginning))
+            (end (region-end)))
+        (goto-char beg)
+        (cond ((and (bolp)
+                    (save-excursion (goto-char end) (eolp)))
+               'line)
+              ((and visual-line-mode
+                    (helix-visual-bolp)
+                    (save-excursion (goto-char end) (helix-eolp)))
+               'visual-line))))))
 
 (defun helilx-whitespace? (char)
   "Non-nil when CHAR belongs to whitespace syntax class."
