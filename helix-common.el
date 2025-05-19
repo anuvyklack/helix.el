@@ -568,7 +568,6 @@ is inside a string, return quote-mark character that bounds that string."
 
 (defalias 'helix--syntax-ppss-inside-string-p #'helix--syntax-ppss-string-quote-mark)
 
-
 ;;; Utils
 
 (defun helix-exchange-point-and-mark ()

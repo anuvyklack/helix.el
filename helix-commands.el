@@ -16,6 +16,7 @@
 (require 'cl-lib)
 (require 'thingatpt)
 (require 's)
+(require 'dash)
 (require 'helix-common)
 
 (defun helix-normal-state-escape ()
@@ -255,11 +256,6 @@ Use visual line when `visual-line-mode' is on."
     (delete-char -1))
   (helix-insert-state 1))
 
-(defun helix-collapse-selection ()
-  "Collapse region onto a single cursor."
-  (interactive)
-  (deactivate-mark))
-
 ;; - If point is surrounded by (balanced) whitespace and a brace delimiter
 ;; ({} [] ()), delete a space on either side of the cursor.
 ;; - If point is at BOL and surrounded by braces on adjacent lines,
@@ -282,6 +278,12 @@ With no region delete char before point."
         (t
          (delete-char -1)))
   (setq helix--extend-selection nil))
+
+;; ;
+(defun helix-collapse-selection ()
+  "Collapse region onto a single cursor."
+  (interactive)
+  (deactivate-mark))
 
 ;; u
 (defun helix-undo ()
