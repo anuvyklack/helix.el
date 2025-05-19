@@ -108,16 +108,21 @@ If REGEXP contains error return the list with one element: (START . END)
 i.e. bounds of original region."
   (save-excursion
     (goto-char start)
-    (let (result)
-      (condition-case nil
+    (condition-case nil
+        (let (result)
           (while (pcre-re-search-forward regexp end t)
-            (push (cons (match-beginning 0) (match-end 0))
-                  result))
-        (error
-         (setq result nil)))
-      (if result
-          (nreverse result)
-        (list (cons start end))))))
+            ;; Take the first match group content, if any, or the whole
+            ;; match string.
+            (let ((bounds (cons (or (match-beginning 1) (match-beginning 0))
+                                (or (match-end 1) (match-end 0)))))
+              ;; Signal if we stack in infinite loop.
+              ;; This can happen when regexp consists only of "^" or "$".
+              (when (equal bounds (car-safe result))
+                (signal 'error nil))
+              (push bounds result)))
+          (nreverse result))
+      (error
+       (list (cons start end))))))
 
 (provide 'helix-search)
 ;;; helix-search.el ends here
