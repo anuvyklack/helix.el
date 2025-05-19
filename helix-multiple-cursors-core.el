@@ -733,20 +733,19 @@ cursor."
   "Return the alist with cons cells (ID . (START END)).
 \(START END) are bounds of regions. Alist is sorted by START.
 ID 0 coresponds to the real cursor."
-  (pcase-let* ((`(,start . ,end) (car (region-bounds)))
-               (alist (cons
-                       ;; Append real cursor with ID 0
-                       `(0 ,start ,end)
-                       (mapcar #'(lambda (cursor)
-                                   (let* ((id (overlay-get cursor 'id))
-                                          (pnt (overlay-get cursor 'point))
-                                          (mrk (overlay-get cursor 'mark))
-                                          (start (min pnt mrk))
-                                          (end   (max pnt mrk)))
-                                     `(,id ,start ,end)))
-                               (helix-all-fake-cursors))))
-               (alist (sort alist #'(lambda (a b)
-                                      (< (cl-second a) (cl-second b))))))
+  (let* ((alist (cons
+                 ;; Append real cursor with ID 0
+                 `(0 ,(region-beginning) ,(region-end))
+                 (mapcar #'(lambda (cursor)
+                             (let* ((id  (overlay-get cursor 'id))
+                                    (pnt (overlay-get cursor 'point))
+                                    (mrk (overlay-get cursor 'mark))
+                                    (start (min pnt mrk))
+                                    (end   (max pnt mrk)))
+                               `(,id ,start ,end)))
+                         (helix-all-fake-cursors))))
+         (alist (sort alist #'(lambda (a b)
+                                (< (cl-second a) (cl-second b))))))
     alist))
 
 ;;; Access fake cursors
