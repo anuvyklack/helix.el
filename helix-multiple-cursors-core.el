@@ -78,7 +78,7 @@ The current state is stored in the overlay for later retrieval."
       (overlay-put cursor 'id (or id (helix--new-cursor-id)))
       (overlay-put cursor 'type 'fake-cursor)
       (overlay-put cursor 'priority 100)
-      (helix--store-point-state cursor)
+      (helix--store-point-state cursor point mark)
       (helix--set-region-overlay cursor point mark)
       (puthash id cursor helix--cursors-table)
       cursor)))
