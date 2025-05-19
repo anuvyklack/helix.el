@@ -247,9 +247,10 @@ Use visual line when `visual-line-mode' is on."
       (let ((line-selected? (helix-line-selected-p)))
         (kill-region nil nil t)
         (pcase line-selected?
-          ('line (save-excursion (newline))
-                 (indent-according-to-mode))
-          ('visual-line (save-excursion (insert " ")))))
+          ;; ('line (save-excursion (newline))
+          ;;        (indent-according-to-mode))
+          ('visual-line (insert " ")
+                        (backward-char))))
     ;; no region
     (delete-char -1))
   (helix-insert-state 1))
@@ -259,21 +260,27 @@ Use visual line when `visual-line-mode' is on."
   (interactive)
   (deactivate-mark))
 
+;; - If point is surrounded by (balanced) whitespace and a brace delimiter
+;; ({} [] ()), delete a space on either side of the cursor.
+;; - If point is at BOL and surrounded by braces on adjacent lines,
+;; collapse newlines:
+;; {
+;; |
+;; } => {|}
 ;; d
 (defun helix-delete ()
   "Delete text in region.
-With no region delete char before point with next conditions:
-- If point is surrounded by (balanced) whitespace and a brace delimiter
-  ({} [] ()), delete a space on either side of the cursor.
-- If point is at BOL and surrounded by braces on adjacent lines,
-  collapse newlines:
-  {
-  |
-  } => {|} "
+With no region delete char before point."
   (interactive)
-  (if (use-region-p)
-      (kill-region nil nil t)
-    (delete-char -1))
+  (cond ((use-region-p)
+         ;; If line selected — add newline symbol after it into active region.
+         (when (helix-line-selected-p)
+           (when (< (helix-region-direction) 0)
+             (helix-exchange-point-and-mark))
+           (forward-char))
+         (kill-region nil nil t))
+        (t
+         (delete-char -1)))
   (setq helix--extend-selection nil))
 
 ;; u
@@ -302,17 +309,42 @@ With no region delete char before point with next conditions:
 
 ;; x
 (defun helix-mark-line (count)
-  "Select COUNT lines.
-
-Select visual lines when `visual-line-mode' is on.
-Select upward if COUNT is negative.
-
-If current selection already consists of whole lines and COUNT is positive,
-expand the selection by COUNT lines upward if point is at the beginning
-of the region, or downward if at the end."
+  "Mark COUNT lines directionally, extending the active region.
+Uses visual lines if `visual-line-mode' is active, otherwise logical lines.
+Positive COUNT extends forward, negative extends backward.
+When no region exists, marks the current line first.
+Handles edge cases and direction transitions (forward<->backward)
+automatically."
   (interactive "p")
   (let* ((line (if visual-line-mode 'visual-line 'line))
-         (dir (helix-sign count)))
+         (motion-dir (helix-sign count))
+         (region-dir (helix-region-direction)))
+    (when (helix-mark-current-line)
+      (setq count (- count motion-dir)
+            region-dir 1))
+    (unless (zerop count)
+      (cond ((<= 0 region-dir motion-dir)
+             (forward-char)
+             (forward-thing line count)
+             (backward-char))
+            ((<= region-dir motion-dir 0)
+             (forward-thing line count))
+            ((< region-dir 0 motion-dir)
+             (forward-thing line count)
+             (helix-mark-current-line))
+            ((< motion-dir 0 region-dir)
+             (forward-thing line (1+ count))
+             (backward-char)
+             (and (helix-mark-current-line)
+                  (helix-exchange-point-and-mark)))))))
+
+(defun helix-mark-current-line ()
+  "Extend or create a line-wise selection, using visual/logical lines.
+When active region exists: expand selection to encompass full line(s),
+converting partial-line selections to whole lines.
+Without region: select current line (excludes trailing newline).
+Uses visual lines if `visual-line-mode' is active, otherwise logical lines."
+  (let ((line (if visual-line-mode 'visual-line 'line)))
     (cond ((use-region-p)
            (unless (helix-line-selected-p)
              (let ((b (region-beginning))
@@ -321,17 +353,14 @@ of the region, or downward if at the end."
                (set-mark (car (bounds-of-thing-at-point line))) ; left end
                (goto-char e)
                (goto-char (cdr (bounds-of-thing-at-point line))) ; right end
-               (setq count (- count dir))))
-           (let ((rd (helix-region-direction)))
-             (cond ((< rd 0 dir) (setq count (- count)))
-                   ((< dir 0 rd) (helix-exchange-point-and-mark))))
-           (forward-thing line count))
-          ;; no region
-          (t (let ((bounds (bounds-of-thing-at-point line)))
-               (set-mark (car bounds))
-               (goto-char (cdr bounds))
-               (if (< dir 0) (helix-exchange-point-and-mark))
-               (forward-thing line (- count dir)))))))
+               (backward-char)
+               1)))
+          (t ;; no region
+           (pcase-let ((`(,beg . ,end) (bounds-of-thing-at-point line)))
+             (set-mark beg)
+             (goto-char end)
+             (backward-char)
+             1)))))
 
 ;; X
 (defun helix-mark-line-upward (count)
@@ -560,38 +589,35 @@ lines and reindent the region."
   (when (use-region-p)
     (pcase-let*
         ((char (read-char "Insert pair: "))
-         (forward? (< (mark) (point)))
          (beg (region-beginning))
          (end (region-end))
-         (newline? (helix-line-selected-p))
-         (pair-or-fun (if-let ((spec (alist-get char helix-surround-alist)))
-                          (plist-get spec :insert)))
-         (`(,left . ,right) (cond ((and pair-or-fun (functionp pair-or-fun))
-                                   (funcall pair-or-fun))
-                                  (pair-or-fun)
-                                  (t (cons char char)))))
-      (when newline?
-        (setq left (s-trim left)
+         (dir (helix-region-direction))
+         (lines? (helix-line-selected-p))
+         (pair-or-fun-or-nil (-some->
+                                 (alist-get char helix-surround-alist)
+                               (plist-get :insert)))
+         (`(,left . ,right) (pcase pair-or-fun-or-nil
+                              ((and (pred functionp) fn)
+                               (funcall fn))
+                              ((and (pred consp) pair)
+                               pair)
+                              (_ (cons char char)))))
+      (when lines?
+        (setq left  (s-trim left)
               right (s-trim right)))
       (let ((deactivate-mark nil))
         (goto-char end)
-        (if newline?
-            (progn (helix-skip-whitespaces)
-                   (insert right)
-                   (newline-and-indent))
-          (insert right))
+        (when lines?
+          (helix-skip-whitespaces)
+          (newline-and-indent))
+        (insert right)
         (goto-char beg)
         (insert left)
-        (when newline?
+        (when lines?
           (newline-and-indent)))
       (let* ((new-beg (point))
              (new-end (+ end (- new-beg beg))))
-        (cond (forward?
-               (set-mark new-beg)
-               (goto-char new-end))
-              (t
-               (goto-char new-beg)
-               (set-mark new-end)))
+        (helix-set-region new-beg new-end dir)
         (indent-region new-beg new-end)))
     (setq helix--extend-selection nil)))
 
