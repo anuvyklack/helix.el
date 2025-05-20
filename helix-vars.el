@@ -526,9 +526,6 @@ would be invoked.")
 (defvar helix-mc--list-file-loaded nil
   "Non-nil when `helix-mc-list-file' file has already been loaded.")
 
-(helix-defvar-local helix--this-command nil
-  "The command that all fake cursors are currently executing.")
-
 (helix-defvar-local helix-mc-temporarily-disabled-minor-modes nil
   "The list of temporarily disabled minor-modes while there are
 multiple cursors.")

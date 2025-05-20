@@ -502,7 +502,6 @@ lookup."
         (add-hook 'post-command-hook 'helix--post-command-hook-function t t))
     (remove-hook 'post-command-hook 'helix--post-command-hook-function t)
     (remove-hook 'pre-command-hook 'helix--pre-commad-hook-function t)
-    (setq helix--this-command nil)
     (helix-mc--maybe-set-killed-rectangle)
     (helix--delete-fake-cursors)
     (helix-mc-enable-temporarily-disabled-minor-modes)))
