@@ -17,15 +17,15 @@
 (require 'helix-commands)
 
 (helix-define-state normal
-  "Default state for editable buffers."
+  "Normal state."
   :cursor 'bar)
 
 ;;;
 
 (helix-define-state insert
-  "Insert state"
+  "Insert state."
   :cursor 'box
-  (cond ((helix-state 'insert)
+  (cond (helix-insert-state
          (setq helix--region-was-active-on-insert (region-active-p))
          (deactivate-mark)
          (helix-extend-selection -1))
@@ -35,7 +35,7 @@
 ;;;
 
 (helix-define-state motion
-  "Motion state")
+  "Motion state.")
 
 ;;;
 

@@ -25,8 +25,7 @@
   (cond (helix--extend-selection
          (setq helix--extend-selection nil))
         (t
-         (helix-execute-command-for-all-cursors #'helix-collapse-selection))
-        ))
+         (helix-execute-command-for-all-cursors #'helix-collapse-selection))))
 
 ;;; Movements
 
