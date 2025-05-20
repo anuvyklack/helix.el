@@ -752,16 +752,19 @@ ID 0 coresponds to the real cursor."
             cursor (helix-fake-cursor-at position)))
     cursor))
 
-(defun helix-furthest-fake-cursor (direction)
-  (let ((comparator #'(lambda (a b)
-                        (> (overlay-get a 'point)
-                           (overlay-get b 'point)))))
-    (cond ((< direction 0)
-           (-some->> (helix-fake-cursors-in (point-min) (point))
-             (-min-by comparator)))
-          (t
-           (-some->> (helix-fake-cursors-in (point) (point-max))
-             (-max-by comparator))))))
+(defun helix-first-fake-cursor ()
+  "Return the first fake cursor in the buffer."
+  (-min-by #'(lambda (a b)
+               (> (overlay-get a 'point)
+                  (overlay-get b 'point)))
+           (helix-fake-cursors-in (point-min) (point))))
+
+(defun helix-last-fake-cursor ()
+  "Return the last fake cursor in the buffer."
+  (-max-by #'(lambda (a b)
+               (> (overlay-get a 'point)
+                  (overlay-get b 'point)))
+           (helix-fake-cursors-in (point) (point-max))))
 
 ;;; Utils
 
