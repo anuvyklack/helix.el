@@ -734,22 +734,22 @@ ID 0 coresponds to the real cursor."
              (= position (overlay-get cursor 'point)))
          (helix-fake-cursors-in position (1+ position))))
 
-(defun helix-next-fake-cursor (pos)
-  "Return the next fake cursor after the POS position."
+(defun helix-next-fake-cursor (position)
+  "Return the next fake cursor after the POSITION."
   (let (cursor)
     (while (not (or cursor
-                    (eql pos (point-max))) )
-      (setq pos (next-overlay-change pos)
-            cursor (helix-fake-cursor-at pos)))
+                    (eql position (point-max))) )
+      (setq position (next-overlay-change position)
+            cursor (helix-fake-cursor-at position)))
     cursor))
 
-(defun helix-previous-fake-cursor (pos)
-  "Return the previous fake cursor before the POS position."
+(defun helix-previous-fake-cursor (position)
+  "Return the first fake cursor before the POSITION."
   (let (cursor)
     (while (not (or cursor
-                    (eql pos (point-min))) )
-      (setq pos (previous-overlay-change pos)
-            cursor (helix-fake-cursor-at pos)))
+                    (eql position (point-min))) )
+      (setq position (previous-overlay-change position)
+            cursor (helix-fake-cursor-at position)))
     cursor))
 
 (defun helix-furthest-fake-cursor (direction)
