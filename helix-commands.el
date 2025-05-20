@@ -135,7 +135,7 @@ If BIGWORD move over WORD-s."
   (helix-forward-word-end count :bigword))
 
 ;; gg
-(helix-define-motion helix-goto-first-line (num)
+(defun helix-goto-first-line (num)
   "Move point to the beginning of the buffer.
 With numeric arg NUM, put point NUM/10 of the way from the beginning.
 If the buffer is narrowed, this command uses the beginning of the
@@ -154,10 +154,11 @@ Push mark at previous position, unless extending selection."
                            10))
                (point-min)))
   (if num (forward-line 1)
-    (recenter 0)))
+    (recenter 0))
+  (helix-disable-multiple-cursors-mode))
 
 ;; G
-(helix-define-motion helix-goto-last-line ()
+(defun helix-goto-last-line ()
   "Move point the end of the buffer."
   (interactive)
   (if helix--extend-selection
@@ -166,7 +167,8 @@ Push mark at previous position, unless extending selection."
     (set-marker (mark-marker) (point))
     (deactivate-mark))
   (push-mark)
-  (goto-char (point-max)))
+  (goto-char (point-max))
+  (helix-disable-multiple-cursors-mode))
 
 ;; gs
 (helix-define-motion helix-beginning-of-line ()
