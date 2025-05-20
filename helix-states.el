@@ -27,11 +27,10 @@
   :cursor 'box
   (cond ((helix-state 'insert)
          (setq helix--region-was-active-on-insert (region-active-p))
-         (deactivate-mark))
+         (deactivate-mark)
+         (helix-extend-selection -1))
         (t
-         (when helix--region-was-active-on-insert
-           (activate-mark 'no-tmm))
-         (setq helix--extend-selection nil))))
+         (when helix--region-was-active-on-insert (activate-mark)))))
 
 ;;;
 
