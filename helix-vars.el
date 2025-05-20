@@ -502,9 +502,10 @@ active.")
 
 (defvar helix-fake-cursor-specific-vars '(kill-ring
                                           kill-ring-yank-pointer
-                                          ;; transient-mark-mode
+                                          helix--extend-selection
+                                          transient-mark-mode
                                           mark-ring
-                                          ;; mark-active
+                                          mark-active
                                           yank-undo-function
                                           temporary-goal-column
                                           dabbrev--abbrev-char-regexp
