@@ -281,13 +281,7 @@ With no region delete char before point."
          (kill-region nil nil t))
         (t
          (delete-char -1)))
-  (setq helix--extend-selection nil))
-
-;; ;
-(defun helix-collapse-selection ()
-  "Collapse region onto a single cursor."
-  (interactive)
-  (deactivate-mark))
+  (helix-extend-selection -1))
 
 ;; u
 (defun helix-undo ()
@@ -308,10 +302,23 @@ With no region delete char before point."
 ;;; Selection
 
 ;; v
-(defun helix-extend-selection ()
-  "Toggle extend selection."
+(defun helix-extend-selection (&optional arg)
+  "Toggle extending selections.
+If ARG is nil or `toggle' — toggle extending selection.
+If ARG positive number — enable, negative — disable.
+Manages the internal `helix--extend-selection' flag."
   (interactive)
-  (setq helix--extend-selection (not helix--extend-selection)))
+  (setq helix--extend-selection (cond ((or (null arg)
+                                           (eq arg 'toggle))
+                                       (not helix--extend-selection))
+                                      ((> arg 0) t)
+                                      (t nil))))
+
+;; ;
+(defun helix-collapse-selection ()
+  "Collapse region onto a single cursor."
+  (interactive)
+  (deactivate-mark))
 
 ;; x
 (defun helix-mark-line (count)
@@ -650,7 +657,7 @@ lines and reindent the region."
              (new-end (+ end (- new-beg beg))))
         (helix-set-region new-beg new-end dir)
         (indent-region new-beg new-end)))
-    (setq helix--extend-selection nil)))
+    (helix-extend-selection -1)))
 
 ;; md
 (defun helix-surround-delete ()
