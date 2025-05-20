@@ -335,7 +335,8 @@ it will prompt for the proper action and then save that preference.
 Some commands are so unsupported that they are even prevented for
 the original cursor, to inform about the lack of support."
   (when helix-multiple-cursors-mode
-    (cond ((get command 'helix-unsupported)
+    (cond ((and (symbolp command)
+                (get command 'helix-unsupported))
            (message "%S is not supported with multiple cursors" command))
           ((or
             ;; If it's a lambda, we can't know if it's supported or not -
