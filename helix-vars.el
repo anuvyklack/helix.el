@@ -299,25 +299,53 @@ cursors editing.")
   "Commands to execute only once while multiple cursors are active.")
 
 (defvar helix-default-commands-to-run-for-all-cursors
-  '(helix-insert              ;; i
-    helix-append              ;; a
-    helix-backward-char       ;; h
-    helix-next-line           ;; j
-    helix-previous-line       ;; k
-    helix-forward-char        ;; l
-    helix-forward-word-start  ;; w
-    helix-backward-word-start ;; b
-    helix-forward-word-end    ;; e
-    helix-forward-WORD-start  ;; W
-    helix-backward-WORD-start ;; B
-    helix-forward-WORD-end    ;; E
-    helix-first-non-blank     ;; gh
-    helix-end-of-line         ;; gl
-    helix-mark-line           ;; x
-    helix-delete              ;; d
-    helix-extend-selection    ;; v
-    helix-collapse-selection  ;; ;
-    helix-copy-cursor
+  '(helix-backward-char            ;; h
+    helix-next-line                ;; j
+    helix-previous-line            ;; k
+    helix-forward-char             ;; l
+    helix-forward-word-start       ;; w
+    helix-backward-word-start      ;; b
+    helix-forward-word-end         ;; e
+    helix-forward-WORD-start       ;; W
+    helix-backward-WORD-start      ;; B
+    helix-forward-WORD-end         ;; E
+    helix-beginning-of-line        ;; gs
+    helix-first-non-blank          ;; gh
+    helix-end-of-line              ;; gl
+    helix-forward-paragraph        ;; ]p or }}
+    helix-backward-paragraph       ;; [p or {{
+    helix-insert                   ;; i
+    helix-append                   ;; a
+    helix-change                   ;; c
+    helix-delete                   ;; d
+    helix-mark-line                ;; x
+    helix-mark-line-upward         ;; X
+    helix-select-regex             ;; s
+    helix-split-region             ;; S
+    helix-split-region-on-newline  ;; M-s
+    helix-extend-selection         ;; v
+    helix-collapse-selection       ;; ;
+    helix-trim-whitespaces-from-selection ;; _
+    helix-surround                 ;; ms
+    helix-mark-inner-word          ;; miw
+    helix-mark-inner-WORD          ;; miW
+    helix-mark-inner-paragraph     ;; mip
+    helix-mark-a-paragraph         ;; map
+    helix-mark-inner-double-quoted ;; mi"
+    helix-mark-a-double-quoted     ;; ma"
+    helix-mark-inner-single-quoted ;; mi'
+    helix-mark-a-single-quoted     ;; ma'
+    helix-mark-inner-back-quoted   ;; mi`
+    helix-mark-a-back-quoted       ;; ma`
+    helix-mark-inner-paren         ;; mi( mi)
+    helix-mark-a-paren             ;; ma( ma)
+    helix-mark-inner-bracket       ;; mi[ mi]
+    helix-mark-a-bracket           ;; ma[ ma]
+    helix-mark-inner-curly         ;; mi{ mi}
+    helix-mark-a-curly             ;; ma{ ma}
+    helix-mark-inner-angle         ;; mi< mi>
+    helix-mark-an-angle            ;; ma< ma>
+    helix-copy-cursor              ;; C inner command
     self-insert-command
     quoted-insert
     previous-line
