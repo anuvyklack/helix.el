@@ -593,17 +593,19 @@ See the defaul value of `helix-surround-alist' variable for examples."
                                                      (char-to-string char))
                                                (bounds-of-thing-at-point 'defun))
       ;; else
-      (if-let* ((pair-or-fun (plist-get spec :search))
-                (list-or-pair (if (functionp pair-or-fun)
-                                  (funcall pair-or-fun)
-                                pair-or-fun))
-                ((consp list-or-pair)))
-          (if (length= list-or-pair 4)
-              list-or-pair
-            (helix-4-bounds-of-surrounded-at-point list-or-pair
-                                                   (bounds-of-thing-at-point 'defun)
-                                                   (plist-get spec :regexp)
-                                                   (plist-get spec :balanced)))))))
+      (when-let* ((list-or-pair (pcase (plist-get spec :search)
+                                  ((and (pred functionp) fn)
+                                   (funcall fn))
+                                  ((and (pred consp) lop)
+                                   lop))))
+        (pcase list-or-pair
+          ((and list (guard (length= list 4)))
+           list)
+          (pair
+           (helix-4-bounds-of-surrounded-at-point pair
+                                                  (bounds-of-thing-at-point 'defun)
+                                                  (plist-get spec :regexp)
+                                                  (plist-get spec :balanced))))))))
 
 ;; ms
 (defun helix-surround ()
