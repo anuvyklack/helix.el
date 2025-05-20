@@ -396,6 +396,8 @@ cursors editing.")
     helix-normal-state-escape    ;; ESC in normal state
     helix-normal-state           ;; ESC
     helix-toggle-cursor-on-click ;; M-mouse1
+    helix-goto-first-line        ;; gg
+    helix-goto-last-line         ;; G
     helix-extend-selection       ;; v
     helix-copy-selection-down    ;; C
     helix-copy-selection-up      ;; M-c
