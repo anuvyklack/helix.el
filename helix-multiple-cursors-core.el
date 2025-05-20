@@ -223,19 +223,27 @@ and bind it to CURSOR."
 ;;; Undo functionality
 
 (defmacro helix--add-fake-cursor-to-undo-list (cursor &rest body)
-  "Make sure point is in the right place when undoing."
+  "CURSOR position management during undo."
   (declare (indent defun) (debug t))
-  (let ((id (make-symbol "id"))
-        (deactivate-cursor (make-symbol "deactivate-cursor")))
-    `(let* ((,id (overlay-get ,cursor 'id))
-            (,deactivate-cursor `(apply helix-undo--deactivate-cursor ,,id)))
-       (push ,deactivate-cursor buffer-undo-list)
-       ,@body
-       ;; If nothing has been added to the undo-list
-       (if (eq (car buffer-undo-list) ,deactivate-cursor)
-           (pop buffer-undo-list)
-         (push `(apply helix-undo--activate-cursor ,,id)
-               buffer-undo-list)))))
+  (let ((id (make-symbol "id")))
+    `(let ((,id (overlay-get ,cursor 'id)))
+       ;; ID 0 is for real cursor, so ignore it.
+       (if (eql ,id 0)
+           (progn ,@body)
+         (helix--add-fake-cursor-to-undo-list-1 ,id ,@body)))))
+
+(defmacro helix--add-fake-cursor-to-undo-list-1 (id &rest body)
+  "CURSOR position management during undo."
+  (declare (indent defun) (debug t))
+  (let ((deactivate (make-symbol "deactivate-cursor")))
+    `(let* ((,deactivate `(apply helix-undo--deactivate-cursor ,,id)))
+       (push ,deactivate buffer-undo-list)
+       (prog1 (progn ,@body)
+         ;; If nothing has been added to the undo-list
+         (if (eq (car buffer-undo-list) ,deactivate)
+             (pop buffer-undo-list)
+           (push `(apply helix-undo--activate-cursor ,,id)
+                 buffer-undo-list))))))
 
 (defvar helix--point-state-during-undo nil
   "The variable to keep the state of the real cursor while undoing a fake one.")
@@ -303,18 +311,14 @@ the data needed for multiple cursors functionality."
   `(dolist (,cursor (helix-all-fake-cursors))
      ,@body))
 
-(defmacro helix-for-each-cursor-ordered (cursor &rest body)
-  "Evaluate BODY with CURSOR bound to each real or fake cursors
-in order they are follow in buffer."
-  (declare (indent 1) (debug (&rest form)))
-  (let ((real-cursor (make-symbol "real-cursor"))
-        (cursors (make-symbol "cursors")))
-    `(let ((,real-cursor (helix--create-fake-cursor-1 (point) (mark t) 0))
-           (,cursors (sort (helix-all-fake-cursors)
-                           #'helix--compare-by-overlay-start)))
-       (dolist (,cursor ,cursors)
-         ,@body)
-       (helix-restore-point-from-fake-cursor ,real-cursor))))
+(defmacro helix-with-real-cursor-as-fake (&rest body)
+  "Temporarily create a fake-cursor for real one with ID 0
+during BODY evaluation."
+  (declare (debug (&rest form)))
+  (let ((real-cursor (make-symbol "real-cursor")))
+    `(let ((,real-cursor (helix--create-fake-cursor-1 (point) (mark t) 0)))
+       (prog1 (progn ,@body)
+         (helix-restore-point-from-fake-cursor ,real-cursor)))))
 
 (defun helix-execute-command-for-all-cursors (command)
   "Call COMMAND interactively for all cursors: real and fake ones."
@@ -408,14 +412,16 @@ Disable `helix-multiple-cursors-mode' instead."
 (defun helix-mc--maybe-set-killed-rectangle ()
   "Add the latest `kill-ring' entry for each cursor to `killed-rectangle'.
 So you can paste it in later with `yank-rectangle'."
-  (let (helix-max-cursors)
-    (let ((entries (let (lst)
-                     (helix-for-each-cursor-ordered cursor
+  (let ((entries (helix-with-real-cursor-as-fake
+                   (let ((cursors (sort (helix-all-fake-cursors)
+                                        #'helix--compare-by-overlay-start))
+                         result)
+                     (dolist (cursor cursors)
                        (push (car (overlay-get cursor 'kill-ring))
-                             lst))
-                     (nreverse lst))))
-      (unless (helix-all-elements-are-the-same-p entries)
-        (setq killed-rectangle entries)))))
+                             result))
+                     (nreverse result)))))
+    (unless (helix-all-elements-are-the-same-p entries)
+      (setq killed-rectangle entries))))
 
 (defun helix-mc-temporarily-disable-minor-mode (mode)
   "If MODE is available and turned on, remember that and turn it off."

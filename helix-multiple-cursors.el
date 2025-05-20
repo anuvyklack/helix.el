@@ -150,5 +150,79 @@ ends at END-COLUMN spauns NUMBER-OF-LINES."
 ;; Otherwise return nil."
 ;;   )
 
+;; (
+(defun helix-rotate-selections-backward (count)
+  "Rotate main selection backward COUNT times."
+  (interactive "p")
+  (when helix-multiple-cursors-mode
+    (dotimes (_ count)
+      (let* ((cursor (or (helix-previous-fake-cursor (point))
+                         (helix-last-fake-cursor)))
+             (id (overlay-get cursor 'id)))
+        (helix-create-fake-cursor-from-point id)
+        (helix-restore-point-from-fake-cursor cursor)))))
+
+;; )
+(defun helix-rotate-selections-forward (count)
+  "Rotate main selection forward COUNT times."
+  (interactive "p")
+  (when helix-multiple-cursors-mode
+    (dotimes (_ count)
+      (let* ((cursor (or (helix-next-fake-cursor (point))
+                         (helix-first-fake-cursor)))
+             (id (overlay-get cursor 'id)))
+        (helix-create-fake-cursor-from-point id)
+        (helix-restore-point-from-fake-cursor cursor)))))
+
+;; M-(
+(defun helix-rotate-selections-content-backward (count)
+  "Rotate selections content backward COUNT times."
+  (interactive "p")
+  (when (and helix-multiple-cursors-mode
+             (use-region-p))
+    (dotimes (_ count)
+      (helix-with-single-undo-step
+        (helix-with-real-cursor-as-fake
+          (let ((cursors (-> (helix-all-fake-cursors)
+                             (sort #'helix--compare-by-overlay-start)
+                             (nreverse))))
+            (helix--rotate-selections-content cursors)))))))
+
+;; M-)
+(defun helix-rotate-selections-content-forward (count)
+  "Rotate selections content forward COUNT times."
+  (interactive "p")
+  (when (and helix-multiple-cursors-mode
+             (use-region-p))
+    (dotimes (_ count)
+      (helix-with-single-undo-step
+        (helix-with-real-cursor-as-fake
+          (let ((cursors (-> (helix-all-fake-cursors)
+                             (sort #'helix--compare-by-overlay-start))))
+            (helix--rotate-selections-content cursors)))))))
+
+(defun helix--rotate-selections-content (cursors)
+  "Rotate regions content for all CURSORS in the order they are in list."
+  (let* ((first-cursor (car cursors))
+         (content (buffer-substring (overlay-get first-cursor 'point)
+                                    (overlay-get first-cursor 'mark))))
+    (dolist (cursor (cdr cursors))
+      (setq content (helix--replace-fake-region-content cursor content)))
+    (helix--replace-fake-region-content first-cursor content)))
+
+(defun helix--replace-fake-region-content (cursor content)
+  "Replace the CURSORs region content with CONTENT.
+Return the replaced substring."
+  (helix--add-fake-cursor-to-undo-list cursor
+    (helix--restore-point-state cursor)
+    (let ((dir (helix-region-direction))
+          (new-content (buffer-substring (point) (mark)))
+          (deactivate-mark nil))
+      (delete-region (point) (mark))
+      (insert content)
+      (when (< dir 0) (helix-exchange-point-and-mark))
+      (helix-move-fake-cursor cursor (point) (mark t))
+      new-content)))
+
 (provide 'helix-multiple-cursors)
 ;;; helix-multiple-cursors.el ends here

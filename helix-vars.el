@@ -427,16 +427,18 @@ cursors editing.")
 
 (defvar helix-default-commands-to-run-once
   '(helix-disable-multiple-cursors-mode ;; ,
-    helix-normal-state-escape    ;; ESC in normal state
-    helix-normal-state           ;; ESC
-    helix-toggle-cursor-on-click ;; M-mouse1
-    helix-goto-first-line        ;; gg
-    helix-goto-last-line         ;; G
-    helix-copy-selection-down    ;; C
-    helix-copy-selection-up      ;; M-c
-    helix-undo                   ;; u
-    helix-redo                   ;; U
-    keypad                       ;; SPC
+    helix-normal-state-escape           ;; ESC in normal state
+    helix-normal-state                  ;; ESC
+    helix-toggle-cursor-on-click        ;; M-mouse1
+    helix-goto-first-line               ;; gg
+    helix-goto-last-line                ;; G
+    helix-rotate-selections-backward    ;; (
+    helix-rotate-selections-forward     ;; )
+    helix-rotate-selections-content-backward ;; M-(
+    helix-rotate-selections-content-forward  ;; M-)
+    helix-undo                          ;; u
+    helix-redo                          ;; U
+    keypad                              ;; SPC
     tab-next
     tab-previous
     ;; helix-mc-edit-lines
