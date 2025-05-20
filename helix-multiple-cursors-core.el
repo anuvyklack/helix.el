@@ -324,6 +324,8 @@ in order they are follow in buffer."
   (helix-with-single-undo-step
     (helix--execute-command-for-all-fake-cursors command)
     (call-interactively command))
+  (when (helix-merge-regions-p command)
+    (helix-merge-overlapping-regions))
   (helix--reset-input-cache))
 
 (defun helix--execute-command-for-all-fake-cursors (command)
@@ -355,12 +357,7 @@ the original cursor, to inform about the lack of support."
            (helix-save-window-scroll
             (helix-save-excursion
              (helix-for-each-fake-cursor cursor
-               (helix-execute-command-for-fake-cursor cursor command))))
-           (when (and mark-active
-                      (or (and helix--extend-selection
-                               (memq command helix--motion-command))
-                          (memq command helix--merge-regions-commands)))
-             (helix-merge-overlapping-regions))))))
+               (helix-execute-command-for-fake-cursor cursor command))))))))
 
 (defvar helix--executing-command-for-fake-cursor nil)
 
@@ -441,6 +438,7 @@ The COMMAND should be executed for fake cursors first, because it can
 create fake cursors itself, like `helix-copy-cursor' does, and we want
 COMMAND to be executed only for original ones."
   (unless helix--executing-command-for-fake-cursor
+    (setq helix--this-command this-command)
     (helix--single-undo-step-beginning)
     ;; Wrap in `condition-case' to protect this function, because the function
     ;; throwing the error is deleted from `pre-command-hook'.
@@ -457,6 +455,8 @@ COMMAND to be executed only for original ones."
 (defun helix--post-command-hook-function ()
   (unless helix--executing-command-for-fake-cursor
     (helix--single-undo-step-end)
+    (when (helix-merge-regions-p helix--this-command)
+      (helix-merge-overlapping-regions))
     (helix--reset-input-cache)))
 
 ;;;###autoload
@@ -635,6 +635,13 @@ and which for all to `helix-mc-list-file' file."
     (helix-mc-dump-list 'helix-commands-to-run-once)))
 
 ;;; Merge overlapping regions
+
+(defun helix-merge-regions-p (command)
+  "Return non-nil if regions need to be merged after COMMAND."
+  (and mark-active
+       (or (and helix--extend-selection
+                (memq command helix--motion-command))
+           (memq command helix--merge-regions-commands))))
 
 (defun helix-merge-overlapping-regions ()
   "Merge overlapping regions."
