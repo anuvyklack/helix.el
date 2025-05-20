@@ -76,6 +76,10 @@
   "X"   #'helix-mark-line-upward
   "C"   #'helix-copy-selection-down
   "M-c" #'helix-copy-selection-up
+  "("   #'helix-rotate-selections-backward
+  ")"   #'helix-rotate-selections-forward
+  "M-(" #'helix-rotate-selections-content-backward
+  "M-)" #'helix-rotate-selections-content-forward
   "s"   #'helix-select-regex
   ","   #'helix-disable-multiple-cursors-mode
   ";"   #'helix-collapse-selection
