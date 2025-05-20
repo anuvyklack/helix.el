@@ -286,9 +286,11 @@ the data needed for multiple cursors functionality."
        (helix--restore-point-state ,state))))
 
 (defun helix-all-fake-cursors ()
+  "Return list with all fake cursors in current buffer."
   (helix-fake-cursors-in (point-min) (point-max)))
 
 (defun helix-fake-cursors-in (start end)
+  "Return list of fake cursors between START...END buffer positions."
   (cl-remove-if-not #'helix-fake-cursor-p
                     (overlays-in start end)))
 
@@ -780,6 +782,7 @@ ID 0 coresponds to the real cursor."
      (overlay-start o2)))
 
 (defun helix-overlay-live-p (overlay)
+  "Return non-nil if OVERLAY is not deleted from buffer."
   (if-let* ((buffer (overlay-buffer overlay)))
       (buffer-live-p buffer)))
 

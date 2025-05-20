@@ -26,6 +26,9 @@
 ;;; Org mode
 
 (declare-function org-in-regexp "org")
+(defvar org-emph-re)
+(defvar org-verbatim-re)
+(defvar org-mode-map)
 
 (defun helix-mark-inner-org-emphasis ()
   (interactive)
