@@ -505,13 +505,15 @@ in the command loop, and the fake cursors can pick up on those instead."
 (defvar helix--input-cache nil)
 
 (defmacro helix--advice-to-cache-input (fn-name)
-  "Advise `read-char' like command to cache users input to use
-for all fake cursors.
+  "Advice function to cache users input to use it for all cursors.
 
-The FN-NAME command must have PROMPT first argument, that will be
-used as a hash key, to distinguish different calls of FN-NAME within
-one command. So calls with equal PROMPT or without it wouldn't be
-distinguished."
+Should be used with interactive input command to create advice around it,
+to cache users responses and use it for all cursors.
+
+FN-NAME should be an interactive function taking PROMPT as first argument,
+like `read-char' or `read-from-minibuffer'. This PROMPT will be used as
+a hash key, to distinguish different calls of FN-NAME within one command.
+Calls with equal PROMPT or without it would be undistinguishable."
   `(define-advice ,fn-name (:around (orig-fun &rest args) multiple-cursors)
      "Cache the users input to use it with multiple cursors."
      (if (not (bound-and-true-p helix-multiple-cursors-mode))
@@ -531,8 +533,8 @@ distinguished."
 
 (helix--advice-to-cache-input read-char)
 (helix--advice-to-cache-input read-quoted-char)
-(helix--advice-to-cache-input register-read-with-preview) ; used by insert-register
-(helix--advice-to-cache-input read-char-from-minibuffer)  ; used by zap-to-char
+(helix--advice-to-cache-input read-char-from-minibuffer)
+(helix--advice-to-cache-input register-read-with-preview)  ; used by read-string
 
 (defmacro helix-unsupported-command (command)
   "Adds command to list of unsupported commands and prevents it
