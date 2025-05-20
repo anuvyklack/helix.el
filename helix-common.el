@@ -568,6 +568,66 @@ is inside a string, return quote-mark character that bounds that string."
 
 (defalias 'helix--syntax-ppss-inside-string-p #'helix--syntax-ppss-string-quote-mark)
 
+;;; Single undo step
+
+(defvar helix--in-single-undo-step nil
+  "Non-nil while we are in the single undo step.")
+
+(defvar helix--undo-list-pointer nil
+  "Stores the start of the current undo step in `buffer-undo-list'.")
+
+(defun helix--single-undo-step-beginning ()
+  "Initiate atomic undo step.
+All following buffer modifications are grouped together as a single
+action. The step is terminated with `helix--single-undo-step-end'."
+  (unless (or helix--in-single-undo-step
+              (helix-undo-command-p this-command))
+    (setq helix--in-single-undo-step t)
+    (unless (null (car-safe buffer-undo-list))
+      (undo-boundary))
+    (setq helix--undo-list-pointer buffer-undo-list)))
+
+(defvar helix-multiple-cursors-mode)
+
+(defun helix--single-undo-step-end ()
+  "Finalize atomic undo step started by `helix--single-undo-step-beginning'."
+  (unless (or (eq buffer-undo-list helix--undo-list-pointer)
+              (null helix--undo-list-pointer)
+              (eq buffer-undo-list t))
+    (let ((undo-list buffer-undo-list))
+      (while (and (consp undo-list)
+                  (eq (car undo-list) nil))
+        (setq undo-list (cdr undo-list)))
+      (let ((equiv (gethash (car undo-list)
+                            undo-equiv-table)))
+        ;; Remove undo boundaries from `buffer-undo-list' withing current undo
+        ;; step. If multiple cursors are active, also remove entries that move
+        ;; point to prevent desynchronization between real cursor and fake ones
+        ;; during `undo'.
+        (let ((predicate (if helix-multiple-cursors-mode
+                             #'(lambda (i) (or (numberp i) (null i)))
+                           #'null)))
+          (setq undo-list (helix-destructive-filter predicate
+                                                    undo-list
+                                                    helix--undo-list-pointer)))
+        ;; Restore "undo" status of the tip of `buffer-undo-list'.
+        (when equiv
+          (puthash (car undo-list) equiv
+                   undo-equiv-table)))
+      (setq buffer-undo-list undo-list)))
+  (setq helix--in-single-undo-step nil
+        helix--undo-list-pointer nil))
+
+(defmacro helix-with-single-undo-step (&rest body)
+  "Execute BODY and record all modifications as a single undo step."
+  (declare (indent defun) (debug t))
+  `(progn
+     (helix--single-undo-step-beginning)
+     (unwind-protect
+         (progn
+           ,@body)
+       (helix--single-undo-step-end))))
+
 ;;; Utils
 
 (defun helix-exchange-point-and-mark ()
@@ -732,6 +792,33 @@ right after the point."
         (t
          (goto-char end)
          (set-mark start))))
+
+(defun helix-undo-command-p (command)
+  "Return non-nil if COMMAND is implementing undo/redo functionality."
+  (memq command helix-undo-commands))
+
+(defun helix-destructive-filter (predicate list &optional pointer)
+  "Destructively remove elements in LIST that satisfy PREDICATE
+between start and POINTER.
+
+Returns the modified list, which may have a new starting element
+if removals occur at the beginning of the list, therefore, assign
+the returned list to the original symbol like this:
+
+  (setq foo (helix-destructive-filter #\\='predicate foo))"
+  (let ((tail list)
+        elem head)
+    (while (and tail (not (eq tail pointer)))
+      (setq elem (car tail))
+      (cond ((funcall predicate elem)
+             (setq tail (cdr tail))
+             (if head
+                 (setcdr head tail)
+               (setq list tail)))
+            (t
+             (setq head tail
+                   tail (cdr tail)))))
+    list))
 
 (provide 'helix-common)
 ;;; helix-common.el ends here

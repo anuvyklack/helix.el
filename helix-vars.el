@@ -283,6 +283,9 @@ Default value is 0 - scroll half the screen.")
 (with-eval-after-load 'savehist
   (add-to-list 'savehist-additional-variables 'helix-regex-history))
 
+(defvar helix-undo-commands '(helix-undo helix-redo undo undo-redo)
+  "Commands that implement undo/redo functionality.")
+
 (defvar helix-multiple-cursors-map (make-sparse-keymap)
   "Transient keymap for `helix-multiple-cursors-mode'.
 It is active while there are multiple cursors.
