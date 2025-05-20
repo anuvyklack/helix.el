@@ -954,7 +954,7 @@ lines and reindent the region."
       (when lines?
         (setq left  (s-trim left)
               right (s-trim right)))
-      (let ((deactivate-mark nil))
+      (let ((deactivate-mark nil)) ;; To not deactivate-mark after insertion
         (goto-char end)
         (when lines?
           (helix-skip-whitespaces)
