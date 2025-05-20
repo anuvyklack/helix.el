@@ -22,7 +22,11 @@
 (require 'helix-search)
 (require 'helix-commands)
 (require 'helix-keybindings)
-(require 'helix-integration)
+;; (require 'helix-integration)
+(require 'pcre)
+
+(defconst helix-directory load-file-name
+  "The directory from which Helix has been loaded.")
 
 (provide 'helix)
 ;;; helix.el ends here
