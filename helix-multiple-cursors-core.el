@@ -316,11 +316,13 @@ in order they are follow in buffer."
 
 (defun helix-execute-command-for-all-cursors (command)
   "Call COMMAND interactively for all cursors: real and fake ones."
-  ;; Backward order needed, because COMMAND make create fake cursors, like
-  ;; `helix-copy-cursor' does, and we want COMMAND to be executed only for
-  ;; original ones.
-  (helix--execute-command-for-all-fake-cursors command)
-  (call-interactively command))
+  ;; First execute COMMAND for fake cursors, because it can create fake
+  ;; cursors itself, like `helix-copy-cursor' does, and we want COMMAND
+  ;; to be executed only for original ones.
+  (helix-with-single-undo-step
+    (helix--execute-command-for-all-fake-cursors command)
+    (call-interactively command))
+  (helix--reset-input-cache))
 
 (defun helix--execute-command-for-all-fake-cursors (command)
   "Call COMMAND interactively for each fake cursor.
@@ -352,8 +354,6 @@ the original cursor, to inform about the lack of support."
             (helix-save-excursion
              (helix-for-each-fake-cursor cursor
                (helix-execute-command-for-fake-cursor cursor command))))
-           (helix--reset-input-cache)
-           (helix--remove-entries-that-move-point-from-current-step-in-undo-list)
            (when (and mark-active
                       (or (and helix--extend-selection
                                (memq command helix--motion-command))
@@ -379,26 +379,6 @@ makes sense for fake cursors."
       (call-interactively command))
     (run-hooks 'post-command-hook)
     (when deactivate-mark (deactivate-mark))))
-
-(defun helix--remove-entries-that-move-point-from-current-step-in-undo-list ()
-  "Remove all \"move point to POSITION\" entries from `buffer-undo-list',
-within the current undo step (until the first nil boundary), to prevent
-desynchronization between real cursor and fake ones during `undo'."
-  (let* ((undo-list buffer-undo-list)
-         (equiv (gethash (car undo-list)
-                         undo-equiv-table))
-         (it undo-list))
-    (while (cadr it)
-      ;; Remove POSITION entry: we set the cdr of current node
-      ;; to the cdr of next node, effectively removing next node.
-      (when (numberp (cadr it))
-        (setcdr it (cddr it)))
-      (setq it (cdr it)))
-    ;; Restore "undo" status of the tip of `buffer-undo-list'.
-    (when equiv
-      (puthash (car undo-list) equiv
-               undo-equiv-table))
-    undo-list))
 
 (defun helix-cursor-with-id (id)
   "Return the cursor with the given ID if it is stil alive."
@@ -453,41 +433,29 @@ So you can paste it in later with `yank-rectangle'."
         helix-mc-temporarily-disabled-minor-modes)
   (setq helix-mc-temporarily-disabled-minor-modes nil))
 
-(defvar helix--undo-list-pointer nil
-  "Store the beginning of the undo step.")
-
 (defun helix--pre-commad-hook-function ()
-  "Used with `pre-command-hook' to store the original command being run.
-Since that cannot be reliably determined in the `post-command-hook'.
-
-Specifically, `this-original-command' isn't always right, because it
-could have been remapped. And certain modes (cua comes to mind) will
-change their remapping based on state. So a command that changes the
-state will afterwards not be recognized through the `command-remapping'
-lookup."
+  "Called from `pre-command-hook' to execute COMMAND for fake cursors.
+The COMMAND should be executed for fake cursors first, because it can
+create fake cursors itself, like `helix-copy-cursor' does, and we want
+COMMAND to be executed only for original ones."
   (unless helix--executing-command-for-fake-cursor
-    (setq helix--this-command (or (command-remapping this-original-command)
-                                  this-original-command))))
+    (helix--single-undo-step-beginning)
+    ;; Wrap in `condition-case' to protect this function, because the function
+    ;; throwing the error is deleted from `pre-command-hook'.
+    (condition-case error
+        ;; TODO: Skip keyboard macros, since they will generate
+        ;; actual commands that are also run in the command loop.
+        ;; Need to handle these!
+        (when (functionp this-command)
+          (helix--execute-command-for-all-fake-cursors this-command))
+      (error
+       (message "[Helix] error in `helix--execute-command-for-all-fake-cursors': %s"
+                (error-message-string error))))))
 
 (defun helix--post-command-hook-function ()
   (unless helix--executing-command-for-fake-cursor
-    ;; Wrap in `condition-case' to protect `post-command-hook'.
-    (condition-case error
-        (progn
-          ;; (helix-undo--store-point-3)
-          (when-let* ((this-original-command)
-                      (command (or helix--this-command
-                                   (command-remapping this-original-command)
-                                   this-original-command))
-                      ;; Skip keyboard macros, since they will generate actual
-                      ;; commands that are also run in the command loop - we will
-                      ;; handle those later instead.
-                      ((functionp command)))
-            (helix--execute-command-for-all-fake-cursors command)
-            ;; (helix-undo--restore-point-3)
-            ))
-      (error (message "[Helix] error in `helix--execute-command-for-all-fake-cursors': %s"
-                      (error-message-string error))))))
+    (helix--single-undo-step-end)
+    (helix--reset-input-cache)))
 
 ;;;###autoload
 (define-minor-mode helix-multiple-cursors-mode
