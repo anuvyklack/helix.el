@@ -18,6 +18,8 @@
 (require 's)
 (require 'dash)
 (require 'helix-common)
+(require 'helix-multiple-cursors-core)
+(require 'helix-search)
 
 (defun helix-normal-state-escape ()
   "Command for ESC key in Helix Normal state."
@@ -372,6 +374,26 @@ Uses visual lines if `visual-line-mode' is active, otherwise logical lines."
 Select visual lines when `visual-line-mode' is on."
   (interactive "p")
   (helix-mark-line (- count)))
+
+;; s
+(defun helix-select-regex (start end)
+  "Enter PCRE regexp and create cursors for all matching regions in START...END."
+  (interactive "r")
+  (helix-search-and-select #'helix-pcre-all-matches start end))
+
+;; S
+(defun helix-split-region (start end)
+  (interactive "r")
+  (helix-search-and-select #'helix-pcre-all-inverted-matches start end))
+
+;; M-s
+(defun helix-split-region-on-newline (start end)
+  (interactive "r")
+  (unless (use-region-p)
+    (user-error "No active selection"))
+  (-> (helix-pcre-all-matches ".+$" start end)
+      (helix-create-cursors))
+  (helix-extend-selection -1))
 
 ;; _
 (defun helix-trim-whitespaces-from-selection ()

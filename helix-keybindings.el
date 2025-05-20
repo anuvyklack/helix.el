@@ -77,6 +77,8 @@
   "C"   #'helix-copy-selection-down
   "M-c" #'helix-copy-selection-up
   "s"   #'helix-select-regex
+  "S"   #'helix-split-region
+  "M-s" #'helix-split-region-on-newline
   ","   #'helix-disable-multiple-cursors-mode
   ";"   #'helix-collapse-selection
   "M-;" #'exchange-point-and-mark

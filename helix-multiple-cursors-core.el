@@ -130,6 +130,16 @@ if no more fake cursors are remaining."
   (unless (helix-any-fake-cursors-p)
     (helix-disable-multiple-cursors-mode)))
 
+(defun helix-create-cursors (regions)
+  "Create cursor with active region for each element in REGIONS.
+REGIONS is a list of cons cells (START . END) with bounds of regions."
+  (pcase-let ((`(,beg . ,end) (car regions)))
+    (set-mark beg)
+    (goto-char end))
+  (dolist (bounds (cdr regions))
+    (pcase-let ((`(,beg . ,end) bounds))
+      (helix-create-fake-cursor end beg))))
+
 (defun helix--set-cursor-overlay (cursor position)
   "Move CURSOR overlay to POSITION.
 If CURSOR is nil — create new fake cursor overlay at POSITION.
