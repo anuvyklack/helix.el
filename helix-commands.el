@@ -565,6 +565,21 @@ See the defaul value of `helix-surround-alist' variable for examples."
                         :balanced balanced?))
         helix-surround-alist))
 
+(defun helix-surround-insert--read-char ()
+  "Read char from minibuffer and return (LEFT . RIGHT) pair to surround with."
+  (let* ((char (read-char "surround: "))
+         (pair-or-fun-or-nil (-some->
+                                 (alist-get char helix-surround-alist)
+                               (plist-get :insert))))
+    (pcase pair-or-fun-or-nil
+      ((and (pred functionp) fn)
+       (funcall fn))
+      ((and (pred consp) pair)
+       pair)
+      (_ (cons char char)))))
+
+(helix--advice-to-cache-input helix-surround-insert--read-char)
+
 (defun helix-surround--get-4-bounds (char)
   (let ((spec (alist-get char helix-surround-alist)))
     (if (not spec)
@@ -591,21 +606,11 @@ If the region consist of full lines, insert delimiters on separate
 lines and reindent the region."
   (interactive)
   (when (use-region-p)
-    (pcase-let*
-        ((char (read-char "Insert pair: "))
-         (beg (region-beginning))
-         (end (region-end))
-         (dir (helix-region-direction))
-         (lines? (helix-line-selected-p))
-         (pair-or-fun-or-nil (-some->
-                                 (alist-get char helix-surround-alist)
-                               (plist-get :insert)))
-         (`(,left . ,right) (pcase pair-or-fun-or-nil
-                              ((and (pred functionp) fn)
-                               (funcall fn))
-                              ((and (pred consp) pair)
-                               pair)
-                              (_ (cons char char)))))
+    (pcase-let* ((`(,left . ,right) (helix-surround-insert--read-char))
+                 (beg (region-beginning))
+                 (end (region-end))
+                 (dir (helix-region-direction))
+                 (lines? (helix-line-selected-p)))
       (when lines?
         (setq left  (s-trim left)
               right (s-trim right)))

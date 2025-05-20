@@ -315,6 +315,7 @@ cursors editing.")
     helix-end-of-line         ;; gl
     helix-mark-line           ;; x
     helix-delete              ;; d
+    helix-extend-selection    ;; v
     helix-collapse-selection  ;; ;
     helix-copy-cursor
     self-insert-command
@@ -401,7 +402,6 @@ cursors editing.")
     helix-toggle-cursor-on-click ;; M-mouse1
     helix-goto-first-line        ;; gg
     helix-goto-last-line         ;; G
-    helix-extend-selection       ;; v
     helix-copy-selection-down    ;; C
     helix-copy-selection-up      ;; M-c
     helix-undo                   ;; u
@@ -502,9 +502,10 @@ active.")
 
 (defvar helix-fake-cursor-specific-vars '(kill-ring
                                           kill-ring-yank-pointer
-                                          ;; transient-mark-mode
+                                          helix--extend-selection
+                                          transient-mark-mode
                                           mark-ring
-                                          ;; mark-active
+                                          mark-active
                                           yank-undo-function
                                           temporary-goal-column
                                           dabbrev--abbrev-char-regexp
