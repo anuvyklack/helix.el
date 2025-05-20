@@ -82,6 +82,10 @@
   "M-(" #'helix-rotate-selections-content-backward
   "M-)" #'helix-rotate-selections-content-forward
   "s"   #'helix-select-regex
+  "S"   #'helix-split-region
+  "M-s" #'helix-split-region-on-newline
+  "K"   #'helix-keep-selections
+  "M-K" #'helix-remove-selections
   ","   #'helix-disable-multiple-cursors-mode
   ";"   #'helix-collapse-selection
   "M-;" #'exchange-point-and-mark
