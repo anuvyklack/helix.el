@@ -43,7 +43,7 @@ rendered or shift text."
   :type '(boolean)
   :group 'helix)
 
-(defface helix-mc-region-face
+(defface helix-region-face
   '((t :inherit region))
   "The face used for fake regions."
   :group 'helix)
@@ -436,6 +436,8 @@ cursors editing.")
     helix-rotate-selections-forward     ;; )
     helix-rotate-selections-content-backward ;; M-(
     helix-rotate-selections-content-forward  ;; M-)
+    helix-keep-selections               ;; K
+    helix-remove-selections             ;; M-K
     helix-undo                          ;; u
     helix-redo                          ;; U
     keypad                              ;; SPC

@@ -130,6 +130,16 @@ if no more fake cursors are remaining."
   (unless (helix-any-fake-cursors-p)
     (helix-disable-multiple-cursors-mode)))
 
+(defun helix-create-cursors (regions)
+  "Create cursor with active region for each element in REGIONS.
+REGIONS is a list of cons cells (START . END) with bounds of regions."
+  (pcase-let ((`(,beg . ,end) (car regions)))
+    (set-mark beg)
+    (goto-char end))
+  (dolist (bounds (cdr regions))
+    (pcase-let ((`(,beg . ,end) bounds))
+      (helix-create-fake-cursor end beg))))
+
 (defun helix--set-cursor-overlay (cursor position)
   "Move CURSOR overlay to POSITION.
 If CURSOR is nil — create new fake cursor overlay at POSITION.
@@ -171,7 +181,7 @@ and bind it to CURSOR."
       (if-let* ((region (overlay-get cursor 'fake-region)))
           (move-overlay region point mark)
         (let ((region (make-overlay point mark nil nil t)))
-          (overlay-put region 'face 'helix-mc-region-face)
+          (overlay-put region 'face 'helix-region-face)
           (overlay-put region 'type 'fake-region)
           (overlay-put region 'id (overlay-get cursor 'id))
           (overlay-put cursor 'fake-region region)))))
@@ -313,12 +323,19 @@ the data needed for multiple cursors functionality."
 
 (defmacro helix-with-real-cursor-as-fake (&rest body)
   "Temporarily create a fake-cursor for real one with ID 0
-during BODY evaluation."
-  (declare (debug (&rest form)))
+during BODY evaluation. Restore it if it is still alive."
+  (declare (indent 0) (debug (&rest form)))
   (let ((real-cursor (make-symbol "real-cursor")))
     `(let ((,real-cursor (helix--create-fake-cursor-1 (point) (mark t) 0)))
        (prog1 (progn ,@body)
-         (helix-restore-point-from-fake-cursor ,real-cursor)))))
+         (cond ((helix-overlay-live-p ,real-cursor)
+                (helix-restore-point-from-fake-cursor ,real-cursor)
+                (unless (helix-any-fake-cursors-p)
+                  (helix-disable-multiple-cursors-mode)))
+               ((helix-any-fake-cursors-p)
+                (helix-restore-point-from-fake-cursor (helix-first-fake-cursor)))
+               (t
+                (helix-disable-multiple-cursors-mode)))))))
 
 (defun helix-execute-command-for-all-cursors (command)
   "Call COMMAND interactively for all cursors: real and fake ones."
@@ -770,14 +787,14 @@ ID 0 coresponds to the real cursor."
   (-min-by #'(lambda (a b)
                (> (overlay-get a 'point)
                   (overlay-get b 'point)))
-           (helix-fake-cursors-in (point-min) (point))))
+           (helix-fake-cursors-in (point-min) (point-max))))
 
 (defun helix-last-fake-cursor ()
   "Return the last fake cursor in the buffer."
   (-max-by #'(lambda (a b)
                (> (overlay-get a 'point)
                   (overlay-get b 'point)))
-           (helix-fake-cursors-in (point) (point-max))))
+           (helix-fake-cursors-in (point-min) (point-max))))
 
 ;;; Utils
 

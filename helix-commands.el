@@ -18,6 +18,8 @@
 (require 's)
 (require 'dash)
 (require 'helix-common)
+(require 'helix-multiple-cursors-core)
+(require 'helix-search)
 
 (defun helix-normal-state-escape ()
   "Command for ESC key in Helix Normal state."
@@ -386,6 +388,38 @@ Select visual lines when `visual-line-mode' is on."
   (goto-char (point-min))
   (set-mark (point-max)))
 
+;; s
+(defun helix-select-regex (start end)
+  "Enter PCRE regexp and create cursors for all matching regions in START...END."
+  (interactive "r")
+  (helix-search-and-select #'helix-pcre-all-matches start end))
+
+;; S
+(defun helix-split-region (start end)
+  (interactive "r")
+  (helix-search-and-select #'helix-pcre-all-inverted-matches start end))
+
+;; M-s
+(defun helix-split-region-on-newline (start end)
+  (interactive "r")
+  (unless (use-region-p)
+    (user-error "No active selection"))
+  (-> (helix-pcre-all-matches ".+$" start end)
+      (helix-create-cursors))
+  (helix-extend-selection -1))
+
+;; K
+(defun helix-keep-selections ()
+  "Keep selections matching the regexp."
+  (interactive)
+  (helix-filter-selections))
+
+;; M-K
+(defun helix-remove-selections ()
+  "Remove selections matching the regexp."
+  (interactive)
+  (helix-filter-selections t))
+
 ;; _
 (defun helix-trim-whitespaces-from-selection ()
   "Trim whitespaces and newlines from the both ends of the current selection."
@@ -606,13 +640,13 @@ See the defaul value of `helix-surround-alist' variable for examples."
                                   ((and (pred consp) lop)
                                    lop))))
         (pcase list-or-pair
-          ((and list (guard (length= list 4)))
-           list)
-          (pair
+          ((and (pred -cons-pair?) pair)
            (helix-4-bounds-of-surrounded-at-point pair
                                                   (bounds-of-thing-at-point 'defun)
                                                   (plist-get spec :regexp)
-                                                  (plist-get spec :balanced))))))))
+                                                  (plist-get spec :balanced)))
+          ((and list (guard (length= list 4)))
+           list))))))
 
 ;; ms
 (defun helix-surround ()
