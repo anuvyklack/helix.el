@@ -308,11 +308,11 @@ the data needed for multiple cursors functionality."
 in order they are follow in buffer."
   (declare (indent 1) (debug (&rest form)))
   (let ((real-cursor (make-symbol "real-cursor"))
-        (overlays (make-symbol "overlays")))
+        (cursors (make-symbol "cursors")))
     `(let ((,real-cursor (helix--create-fake-cursor-1 (point) (mark t) 0))
-           (,overlays (sort (helix-all-fake-cursors)
-                            #'helix--compare-by-overlay-start)))
-       (dolist (,cursor ,overlays)
+           (,cursors (sort (helix-all-fake-cursors)
+                           #'helix--compare-by-overlay-start)))
+       (dolist (,cursor ,cursors)
          ,@body)
        (helix-restore-point-from-fake-cursor ,real-cursor))))
 
