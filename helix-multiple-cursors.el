@@ -50,34 +50,24 @@ already there."
         (helix-create-fake-cursor pos)))))
 
 ;; C
-(defun helix-copy-selection-down ()
-  "Copy each selection COUNT times down."
-  (interactive)
-  (helix-execute-command-for-all-cursors #'helix-copy-cursor)
-  (when mark-active
-    (helix-merge-overlapping-regions)))
+(defun helix-copy-selection-down (count)
+  "Copy point and region COUNT times down if COUNT is positive,
+of up if negative."
+  (interactive "p")
+  (if (use-region-p)
+      (helix-motion-loop (dir count)
+        (helix--copy-region dir))
+    ;; else
+    (helix-motion-loop (dir count)
+      (helix--copy-cursor dir))))
 
 ;; M-c
 (defun helix-copy-selection-up (count)
   "Copy each selection COUNT times up."
   (interactive "p")
-  (let ((current-prefix-arg (* count -1)))
-    (helix-execute-command-for-all-cursors #'helix-copy-cursor))
-  (when mark-active
-    (helix-merge-overlapping-regions)))
+  (helix-copy-selection-down (- count)))
 
-(defun helix-copy-cursor (count)
-  "Copy point or region COUNT times up or down depending on
-the sign of the COUNT."
-  (interactive "p")
-  (cond ((use-region-p)
-         (helix-motion-loop (dir count)
-           (helix--copy-region dir)))
-        (t
-         (helix-motion-loop (dir count)
-           (helix--copy-cursor-1 dir)))))
-
-(defun helix--copy-cursor-1 (direction)
+(defun helix--copy-cursor (direction)
   "Copy point toward the DIRECTION."
   (or direction (setq direction 1))
   (when-let* ((pos (save-excursion
@@ -116,13 +106,14 @@ the sign of the COUNT."
           (pcase-setq `(,mrk . ,pnt) bounds))
         (if-let* ((cursor (helix-fake-cursor-at pnt))
                   ((= mrk (overlay-get cursor 'mark))))
-            nil ;; Do nothing, since fake cursor is already there.
+            nil ;; Do nothing, since fake cursor is already at target position.
           ;; else
           (helix-create-fake-cursor-from-point)
           (goto-char pnt)
           (set-marker (mark-marker) mrk))))))
 
-(defun helix--bounds-of-following-region (start-column end-column number-of-lines direction)
+(defun helix--bounds-of-following-region
+    (start-column end-column number-of-lines direction)
   "Return bounds of following region that starts at START-COLUMN
 ends at END-COLUMN spauns NUMBER-OF-LINES."
   (when (< direction 0)
