@@ -74,6 +74,7 @@
   "v"   #'helix-extend-selection
   "x"   #'helix-mark-line
   "X"   #'helix-mark-line-upward
+  "%"   #'helix-select-all
   "C"   #'helix-copy-selection-down
   "M-c" #'helix-copy-selection-up
   "("   #'helix-rotate-selections-backward

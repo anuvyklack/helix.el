@@ -379,6 +379,13 @@ Select visual lines when `visual-line-mode' is on."
   (interactive "p")
   (helix-mark-line (- count)))
 
+;; %
+(defun helix-select-all ()
+  (interactive)
+  (helix-disable-multiple-cursors-mode)
+  (goto-char (point-min))
+  (set-mark (point-max)))
+
 ;; _
 (defun helix-trim-whitespaces-from-selection ()
   "Trim whitespaces and newlines from the both ends of the current selection."
