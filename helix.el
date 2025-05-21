@@ -24,5 +24,10 @@
 (require 'helix-keybindings)
 (require 'helix-integration)
 
+;; Merge overlapping regions after all `helix-mark-*' commands.
+(setq helix--merge-regions-commands
+      (append (apropos-internal "^helix-mark" 'commandp)
+              helix--merge-regions-commands))
+
 (provide 'helix)
 ;;; helix.el ends here
