@@ -181,11 +181,10 @@ ends at END-COLUMN spauns NUMBER-OF-LINES."
   (when (and helix-multiple-cursors-mode
              (use-region-p))
     (dotimes (_ count)
-      (helix-with-single-undo-step
-        (helix-with-real-cursor-as-fake
-          (let ((cursors (-> (helix-all-fake-cursors t)
-                             (nreverse))))
-            (helix--rotate-selections-content cursors)))))))
+      (helix-with-real-cursor-as-fake
+        (let ((cursors (-> (helix-all-fake-cursors t)
+                           (nreverse))))
+          (helix--rotate-selections-content cursors))))))
 
 ;; M-)
 (defun helix-rotate-selections-content-forward (count)
@@ -194,10 +193,9 @@ ends at END-COLUMN spauns NUMBER-OF-LINES."
   (when (and helix-multiple-cursors-mode
              (use-region-p))
     (dotimes (_ count)
-      (helix-with-single-undo-step
-        (helix-with-real-cursor-as-fake
-          (let ((cursors (helix-all-fake-cursors t)))
-            (helix--rotate-selections-content cursors)))))))
+      (helix-with-real-cursor-as-fake
+        (let ((cursors (helix-all-fake-cursors t)))
+          (helix--rotate-selections-content cursors))))))
 
 (defun helix--rotate-selections-content (cursors)
   "Rotate regions content for all CURSORS in the order they are in list."
