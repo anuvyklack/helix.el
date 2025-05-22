@@ -320,7 +320,7 @@ If SORT is non-nil sort the list."
   "Evaluate BODY with CURSOR bound to each fake cursor in turn."
   (declare (indent 1) (debug t))
   ;; We callect all fake-cursors first, because BODY make create fake cursors,
-  ;; like `helix-copy-cursor' does, and we want it to be executed only for
+  ;; like `helix-copy-selection' does, and we want it to be executed only for
   ;; original ones.
   `(dolist (,cursor (helix-all-fake-cursors))
      ,@body))
@@ -344,14 +344,14 @@ during BODY evaluation. Restore it if it is still alive."
 (defun helix-execute-command-for-all-cursors (command)
   "Call COMMAND interactively for all cursors: real and fake ones."
   ;; First execute COMMAND for fake cursors, because it can create fake
-  ;; cursors itself, like `helix-copy-cursor' does, and we want COMMAND
+  ;; cursors itself, like `helix-copy-selection' does, and we want COMMAND
   ;; to be executed only for original ones.
-  (helix-with-single-undo-step
-    (helix--execute-command-for-all-fake-cursors command)
-    (call-interactively command))
-  (when (helix-merge-regions-p command)
-    (helix-merge-overlapping-regions))
-  (helix--reset-input-cache))
+  (helix--execute-command-for-all-fake-cursors command)
+  (call-interactively command)
+  (when helix-multiple-cursors-mode
+    (when (helix-merge-regions-p command)
+      (helix-merge-overlapping-regions))
+    (helix--reset-input-cache)))
 
 (defun helix--execute-command-for-all-fake-cursors (command)
   "Call COMMAND interactively for each fake cursor.
@@ -461,7 +461,7 @@ So you can paste it in later with `yank-rectangle'."
 (defun helix--pre-commad-hook-function ()
   "Called from `pre-command-hook' to execute COMMAND for fake cursors.
 The COMMAND should be executed for fake cursors first, because it can
-create fake cursors itself, like `helix-copy-cursor' does, and we want
+create fake cursors itself, like `helix-copy-selection' does, and we want
 COMMAND to be executed only for original ones."
   (unless helix--executing-command-for-fake-cursor
     (setq helix--this-command this-command)
