@@ -345,7 +345,7 @@ cursors editing.")
     helix-mark-a-curly             ;; ma{ ma}
     helix-mark-inner-angle         ;; mi< mi>
     helix-mark-an-angle            ;; ma< ma>
-    helix-copy-selection-down      ;; C
+    helix-copy-selection           ;; C
     helix-copy-selection-up        ;; M-c
     helix-copy-cursor              ;; C inner command
     helix--asterisk-1              ;; * inner command
@@ -564,7 +564,7 @@ active.")
   "List of command, after which `helix-merge-overlapping-regions'
 would be invoked if `helix--extend-selection' is t.")
 
-(defvar helix--merge-regions-commands '(helix-copy-selection-down
+(defvar helix--merge-regions-commands '(helix-copy-selection
                                         helix-copy-selection-up)
   "List of command, after which `helix-merge-overlapping-regions'
 would be invoked.")
