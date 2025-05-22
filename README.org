@@ -13,3 +13,9 @@
 
 - Match (or mark) commands accept numeric arguments:
   =m2ip= or =2mip= — mark 2 paragraphs.
+
+* Known problems
+
+- If command modify buffer only for some cursors, like ~helix-align-selection~
+  does: it inserts spaces only in front of some selections to align them,
+  then on undo cursors positions will desynchronize.
