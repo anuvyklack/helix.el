@@ -348,6 +348,8 @@ cursors editing.")
     helix-copy-selection-down      ;; C
     helix-copy-selection-up        ;; M-c
     helix-copy-cursor              ;; C inner command
+    helix--asterisk-1              ;; * inner command
+    helix--meta-asterisk-1         ;; M-* inner command
     self-insert-command
     quoted-insert
     previous-line
@@ -441,6 +443,8 @@ cursors editing.")
     helix-align-selections              ;; &
     helix-undo                          ;; u
     helix-redo                          ;; U
+    helix-asterisk                      ;; *
+    helix-meta-asterisk                 ;; M-*
     keypad                              ;; SPC
     tab-next
     tab-previous

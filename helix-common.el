@@ -820,5 +820,9 @@ the returned list to the original symbol like this:
                    tail (cdr tail)))))
     list))
 
+(defun helix-pcre-regexp-quote (string)
+  "Return a regexp string which matches exactly STRING and nothing else."
+  (replace-regexp-in-string "[].^$*+?()[{\\\\|-]" "\\\\\\&" string t))
+
 (provide 'helix-common)
 ;;; helix-common.el ends here

@@ -17,6 +17,7 @@
 (require 'thingatpt)
 (require 's)
 (require 'dash)
+(require 'pcre)
 (require 'helix-common)
 (require 'helix-multiple-cursors-core)
 (require 'helix-search)
@@ -465,6 +466,62 @@ Select visual lines when `visual-line-mode' is on."
                   (t
                    (insert str))))
           (helix-move-fake-cursor cursor (point) (mark t)))))))
+
+;;; Search
+
+(defvar helix--asterisk-string nil
+  "Inner variable for `helix-asterisk' command.")
+
+;; *
+(defun helix-asterisk ()
+  (interactive)
+  (setq helix--asterisk-string nil)
+  (helix-execute-command-for-all-cursors #'helix--asterisk-1)
+  (set-register "/" helix--asterisk-string)
+  (message "register / set to %s" helix--asterisk-string))
+
+;; M-*
+(defun helix-meta-asterisk ()
+  (interactive)
+  (setq helix--asterisk-string nil)
+  (helix-execute-command-for-all-cursors #'helix--meta-asterisk-1)
+  (set-register "/" helix--asterisk-string)
+  (message "register / set to %s" helix--asterisk-string))
+
+(defun helix--asterisk-1 (beg end)
+  (interactive "r")
+  (when (use-region-p)
+    (let* ((open-word-boundary
+            (cond ((eql beg (pos-bol))
+                   (->> (buffer-substring-no-properties beg (1+ beg))
+                        (pcre-string-match "\\w")))
+                  (t
+                   (->> (buffer-substring-no-properties (1- beg) (1+ beg))
+                        (pcre-string-match "[^\\w]\\w")))))
+           (close-word-boundary
+            (cond ((eql end (pos-eol))
+                   (->> (buffer-substring-no-properties (1- end) end)
+                        (pcre-string-match "\\w")))
+                  (t
+                   (->> (buffer-substring-no-properties (1- end) (1+ end))
+                        (pcre-string-match "\\w[^\\w]")))))
+           (string (-> (buffer-substring-no-properties (point) (mark))
+                       (helix-pcre-regexp-quote))))
+      (setq helix--asterisk-string
+            (concat helix--asterisk-string
+                    (if helix--asterisk-string "|")
+                    (if open-word-boundary "\\b")
+                    string
+                    (if close-word-boundary "\\b"))))))
+
+(defun helix--meta-asterisk-1 ()
+  (interactive)
+  (when (use-region-p)
+    (setq helix--asterisk-string
+          (concat helix--asterisk-string
+                  (if helix--asterisk-string "|")
+                  (-> (buffer-substring-no-properties (point) (mark))
+                      (helix-pcre-regexp-quote))))))
 
 ;;; Match
 
