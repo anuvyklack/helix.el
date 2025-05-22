@@ -91,6 +91,7 @@
   "M-;" #'exchange-point-and-mark
   "g o" #'exchange-point-and-mark
   "_"   #'helix-trim-whitespaces-from-selection
+  "&"   #'helix-align-selections
 
   ;; Scrolling
   "C-b" #'helix-smooth-scroll-page-up

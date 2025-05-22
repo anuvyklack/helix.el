@@ -438,6 +438,7 @@ cursors editing.")
     helix-rotate-selections-content-forward  ;; M-)
     helix-keep-selections               ;; K
     helix-remove-selections             ;; M-K
+    helix-align-selections              ;; &
     helix-undo                          ;; u
     helix-redo                          ;; U
     keypad                              ;; SPC

@@ -14,6 +14,7 @@
 ;;; Code:
 
 (require 'dash)
+(require 's)
 (require 'helix-common)
 (require 'helix-multiple-cursors-core)
 
