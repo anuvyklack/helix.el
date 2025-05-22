@@ -431,6 +431,41 @@ Select visual lines when `visual-line-mode' is on."
       (helix-skip-chars " \t\r\n" dir)
       (helix-exchange-point-and-mark))))
 
+;; &
+(defun helix-align-selections ()
+  "Align selections."
+  (interactive)
+  (helix-with-real-cursor-as-fake
+    ;; Filter cursors to remain only the first on each line.
+    (let ((cursors (let ((current-line 0)) ;; Line numbers start from 1
+                     (-remove #'(lambda (cursor)
+                                  (let* ((pnt (overlay-get cursor 'point))
+                                         (line (line-number-at-pos pnt)))
+                                    (or (eql line current-line)
+                                        (ignore
+                                         (setq current-line line)))))
+                              (helix-all-fake-cursors t))))
+          (column 0))
+      ;; Define the column
+      (dolist (cursor cursors)
+        (goto-char (overlay-get cursor 'point))
+        (setq column (max column (current-column))))
+      ;; Align
+      (dolist (cursor cursors)
+        (goto-char (overlay-get cursor 'point))
+        (unless (eql (current-column) column)
+          (helix--restore-point-state cursor)
+          (let ((deactivate-mark nil) ;; To not deactivate-mark after insertion
+                (str (s-repeat (- column (current-column)) " ")))
+            (cond ((and (use-region-p)
+                        (> (helix-region-direction) 0))
+                   (helix-exchange-point-and-mark)
+                   (insert str)
+                   (helix-exchange-point-and-mark))
+                  (t
+                   (insert str))))
+          (helix-move-fake-cursor cursor (point) (mark t)))))))
+
 ;;; Match
 
 (defun helix-match-map-digit-argument (arg)
