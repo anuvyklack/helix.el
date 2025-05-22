@@ -303,9 +303,13 @@ the data needed for multiple cursors functionality."
        (save-excursion ,@body)
        (helix--restore-point-state ,state))))
 
-(defun helix-all-fake-cursors ()
-  "Return list with all fake cursors in current buffer."
-  (helix-fake-cursors-in (point-min) (point-max)))
+(defun helix-all-fake-cursors (&optional sort)
+  "Return list with all fake cursors in current buffer.
+If SORT is non-nil sort the list."
+  (let ((cursors (helix-fake-cursors-in (point-min) (point-max))))
+    (if sort
+        (sort cursors #'helix--compare-by-overlay-start)
+      cursors)))
 
 (defun helix-fake-cursors-in (start end)
   "Return list of fake cursors between START...END buffer positions."
@@ -430,8 +434,7 @@ Disable `helix-multiple-cursors-mode' instead."
   "Add the latest `kill-ring' entry for each cursor to `killed-rectangle'.
 So you can paste it in later with `yank-rectangle'."
   (let ((entries (helix-with-real-cursor-as-fake
-                   (let ((cursors (sort (helix-all-fake-cursors)
-                                        #'helix--compare-by-overlay-start))
+                   (let ((cursors (helix-all-fake-cursors t))
                          result)
                      (dolist (cursor cursors)
                        (push (car (overlay-get cursor 'kill-ring))
