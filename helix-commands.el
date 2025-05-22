@@ -505,15 +505,16 @@ of up if negative."
 (defun helix--copy-region (&optional direction)
   "Copy region toward the DIRECTION."
   (or direction (setq direction 1))
-  (pcase-let* ((region-dir (helix-region-direction))
-               (`(,beg . ,end) (car (region-bounds)))
-               (num-of-lines (count-lines beg end))
-               (beg-column (save-excursion
-                             (goto-char beg)
-                             (current-column)))
-               (end-column (save-excursion
-                             (goto-char end)
-                             (current-column))))
+  (let* ((region-dir (helix-region-direction))
+         (beg (region-beginning))
+         (end (region-end))
+         (num-of-lines (count-lines beg end))
+         (beg-column (save-excursion
+                       (goto-char beg)
+                       (current-column)))
+         (end-column (save-excursion
+                       (goto-char end)
+                       (current-column))))
     (when-let* ((bounds (save-excursion
                           (goto-char (if (< direction 0) beg end))
                           (helix--bounds-of-following-region
@@ -545,13 +546,12 @@ ends at END-COLUMN spauns NUMBER-OF-LINES."
         (when (eql (move-to-column start-column)
                    start-column)
           (setq start (point))
-          (while (not end)
-            (unless (zerop (forward-line (* (1- number-of-lines)
-                                            direction)))
-              (cl-return))
-            (when (eql (move-to-column end-column)
-                       end-column)
-              (setq end (point)))))))
+          (unless (zerop (forward-line (* (1- number-of-lines)
+                                          direction)))
+            (cl-return))
+          (when (eql (move-to-column end-column)
+                     end-column)
+            (setq end (point))))))
     (if (and start end)
         (if (< 0 direction)
             (cons start end)
