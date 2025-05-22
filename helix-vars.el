@@ -427,24 +427,38 @@ cursors editing.")
   "Default set of commands to execute for all cursors.")
 
 (defvar helix-default-commands-to-run-once
-  '(helix-disable-multiple-cursors-mode ;; ,
-    helix-normal-state-escape           ;; ESC in normal state
-    helix-normal-state                  ;; ESC
-    helix-toggle-cursor-on-click        ;; M-mouse1
-    helix-goto-first-line               ;; gg
-    helix-goto-last-line                ;; G
-    helix-rotate-selections-backward    ;; (
-    helix-rotate-selections-forward     ;; )
+  '(helix-smooth-scroll-up                   ;; C-u
+    helix-smooth-scroll-down                 ;; C-d
+    helix-smooth-scroll-page-up              ;; C-b
+    helix-smooth-scroll-page-down            ;; C-f
+    helix-scroll-line-down                   ;; C-e
+    helix-smooth-scroll-line-down            ;; C-e
+    helix-mix-scroll-line-down               ;; C-e
+    helix-scroll-line-up                     ;; C-y
+    helix-smooth-scroll-line-up              ;; C-y
+    helix-mix-scroll-line-up                 ;; C-y
+    helix-smooth-scroll-line-to-center       ;; zz
+    helix-smooth-scroll-line-not-to-very-top ;; zz
+    helix-smooth-scroll-line-to-top          ;; zt
+    helix-smooth-scroll-line-to-bottom       ;; zb
+    helix-disable-multiple-cursors-mode      ;; ,
+    helix-normal-state-escape                ;; ESC in normal state
+    helix-normal-state                       ;; ESC
+    helix-toggle-cursor-on-click             ;; M-mouse1
+    helix-goto-first-line                    ;; gg
+    helix-goto-last-line                     ;; G
+    helix-rotate-selections-backward         ;; (
+    helix-rotate-selections-forward          ;; )
     helix-rotate-selections-content-backward ;; M-(
     helix-rotate-selections-content-forward  ;; M-)
-    helix-keep-selections               ;; K
-    helix-remove-selections             ;; M-K
-    helix-align-selections              ;; &
-    helix-undo                          ;; u
-    helix-redo                          ;; U
-    helix-asterisk                      ;; *
-    helix-meta-asterisk                 ;; M-*
-    keypad                              ;; SPC
+    helix-keep-selections                    ;; K
+    helix-remove-selections                  ;; M-K
+    helix-align-selections                   ;; &
+    helix-undo                               ;; u
+    helix-redo                               ;; U
+    helix-asterisk                           ;; *
+    helix-meta-asterisk                      ;; M-*
+    keypad                                   ;; SPC
     tab-next
     tab-previous
     ;; helix-mc-edit-lines
