@@ -17,7 +17,7 @@
 (require 'thingatpt)
 (require 's)
 (require 'dash)
-(require 'pcre)
+(require 'pcre2el)
 (require 'helix-common)
 (require 'helix-multiple-cursors-core)
 (require 'helix-search)
@@ -393,19 +393,20 @@ Select visual lines when `visual-line-mode' is on."
 (defun helix-select-regex (start end)
   "Enter PCRE regexp and create cursors for all matching regions in START...END."
   (interactive "r")
-  (helix-search-and-select #'helix-pcre-all-matches start end))
+  (helix-search-and-select #'helix-regexp-matches-bounds start end))
 
 ;; S
 (defun helix-split-region (start end)
   (interactive "r")
-  (helix-search-and-select #'helix-pcre-all-inverted-matches start end))
+  (helix-search-and-select #'helix-regexp-inverted-matches-bounds start end))
 
 ;; M-s
 (defun helix-split-region-on-newline (start end)
   (interactive "r")
   (unless (use-region-p)
     (user-error "No active selection"))
-  (-> (helix-pcre-all-matches ".+$" start end)
+  ;; ".+$" is equal in pcre and elisp regexp syntax.
+  (-> (helix-regexp-matches-bounds ".+$" start end)
       (helix-create-cursors))
   (helix-extend-selection -1))
 
@@ -637,7 +638,7 @@ Return the replaced substring."
   (interactive)
   (setq helix--asterisk-string nil)
   (helix-execute-command-for-all-cursors #'helix--asterisk-1)
-  (set-register "/" helix--asterisk-string)
+  (set-register '/ helix--asterisk-string)
   (message "register / set to %s" helix--asterisk-string))
 
 ;; M-*
@@ -651,22 +652,23 @@ Return the replaced substring."
 (defun helix--asterisk-1 (beg end)
   (interactive "r")
   (when (use-region-p)
-    (let* ((open-word-boundary
+    (let* ((quote (if helix-use-pcre-regex #'rxt-quote-pcre #'regexp-quote))
+           (open-word-boundary
             (cond ((eql beg (pos-bol))
                    (->> (buffer-substring-no-properties beg (1+ beg))
-                        (pcre-string-match "\\w")))
+                        (string-match-p "[[:word:]]")))
                   (t
                    (->> (buffer-substring-no-properties (1- beg) (1+ beg))
-                        (pcre-string-match "[^\\w]\\w")))))
+                        (string-match-p "[^[:word:]][[:word:]]")))))
            (close-word-boundary
             (cond ((eql end (pos-eol))
                    (->> (buffer-substring-no-properties (1- end) end)
-                        (pcre-string-match "\\w")))
+                        (string-match-p "[[:word:]]")))
                   (t
                    (->> (buffer-substring-no-properties (1- end) (1+ end))
-                        (pcre-string-match "\\w[^\\w]")))))
-           (string (-> (buffer-substring-no-properties (point) (mark))
-                       (helix-pcre-regexp-quote))))
+                        (string-match-p "[[:word:]][^[:word:]]")))))
+           (string (->> (buffer-substring-no-properties (point) (mark))
+                        (funcall quote))))
       (setq helix--asterisk-string
             (concat helix--asterisk-string
                     (if helix--asterisk-string "|")
@@ -677,11 +679,48 @@ Return the replaced substring."
 (defun helix--meta-asterisk-1 ()
   (interactive)
   (when (use-region-p)
-    (setq helix--asterisk-string
-          (concat helix--asterisk-string
-                  (if helix--asterisk-string "|")
-                  (-> (buffer-substring-no-properties (point) (mark))
-                      (helix-pcre-regexp-quote))))))
+    (let ((quote (if helix-use-pcre-regex #'rxt-quote-pcre #'regexp-quote)))
+      (setq helix--asterisk-string
+            (concat helix--asterisk-string
+                    (if helix--asterisk-string
+                        (if helix-use-pcre-regex "|" "\\|"))
+                    (->> (buffer-substring-no-properties (point) (mark))
+                         (funcall quote)))))))
+
+;; n
+(defun helix-search-next (count)
+  (interactive "p")
+  (let ((region-dir (if (use-region-p) (helix-region-direction) 1))
+        (cursor (when helix--extend-selection
+                  (helix-create-fake-cursor-from-point))))
+    (condition-case nil
+        (if-let* ((regexp (get-register '/)))
+            (let ((regexp (if helix-use-pcre-regex
+                              (pcre-to-elisp regexp)
+                            regexp)))
+              (unless (eql (helix-sign count)
+                           region-dir)
+                (helix-exchange-point-and-mark))
+              (re-search-forward regexp nil nil count)
+              (let ((bounds (cons (or (match-beginning 1) (match-beginning 0))
+                                  (or (match-end 1) (match-end 0))))
+                    pnt mrk)
+                (if (< region-dir 0)
+                    (pcase-setq `(,pnt . , mrk) bounds)
+                  (pcase-setq `(,mrk . , pnt) bounds))
+                (goto-char pnt)
+                (set-mark mrk)))
+          ;; else
+          (message "register / is empty")
+          (signal 'error nil))
+      (error (when cursor
+               (helix-restore-point-from-fake-cursor cursor))
+             (helix-ensure-region-direction region-dir)))))
+
+;; N
+(defun helix-search-previous (count)
+  (interactive "p")
+  (helix-search-next (- count)))
 
 ;;; Match
 

@@ -793,6 +793,14 @@ right after the point."
          (goto-char end)
          (set-mark start))))
 
+(defun helix-ensure-region-direction (direction)
+  "Exchange point and mark if region direction mismatch DIRECTION.
+DIRECTION should be 1 or -1."
+  (when (and (use-region-p)
+             (not (eql (helix-region-direction)
+                       direction)))
+    (helix-exchange-point-and-mark)))
+
 (defun helix-undo-command-p (command)
   "Return non-nil if COMMAND is implementing undo/redo functionality."
   (memq command helix-undo-commands))
@@ -819,10 +827,6 @@ the returned list to the original symbol like this:
              (setq head tail
                    tail (cdr tail)))))
     list))
-
-(defun helix-pcre-regexp-quote (string)
-  "Return a regexp string which matches exactly STRING and nothing else."
-  (replace-regexp-in-string "[].^$*+?()[{\\\\|-]" "\\\\\\&" string t))
 
 (provide 'helix-common)
 ;;; helix-common.el ends here

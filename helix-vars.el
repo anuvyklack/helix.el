@@ -21,6 +21,16 @@
   :type 'boolean
   :group 'helix)
 
+(defcustom helix-use-pcre-regex t
+  "Maximum length of regexp search ring before oldest elements are thrown away."
+  :type 'integer
+  :group 'helix)
+
+(defcustom helix-regex-history-max 16
+  "Maximum length of regexp search ring before oldest elements are thrown away."
+  :type 'integer
+  :group 'helix)
+
 (defface helix-mc-cursor-face
   '((t (:inverse-video t)))
   "The face used for fake cursors."
@@ -54,6 +64,7 @@ rendered or shift text."
   "What to display in the mode line while `helix-multiple-cursors-mode' is active."
   :type '(sexp)
   :group 'helix)
+
 (put 'helix-mc-mode-line 'risky-local-variable t)
 
 (defcustom helix-mc-list-file (locate-user-emacs-file ".helix-mc-lists.el")
@@ -91,11 +102,6 @@ If this value is nil, there is no ceiling."
                                            jedi-mode)
   "List of minor-modes that does not work well with multiple cursors.
 They are temporarily disabled when there are multiple cursors.")
-
-(defcustom helix-regex-history-max 16
-  "Maximum length of regexp search ring before oldest elements are thrown away."
-  :type 'integer
-  :group 'helix)
 
 (defgroup helix-cjk nil
   "CJK support."
@@ -458,6 +464,8 @@ cursors editing.")
     helix-redo                               ;; U
     helix-asterisk                           ;; *
     helix-meta-asterisk                      ;; M-*
+    helix-search-next                        ;; n
+    helix-search-previous                    ;; N
     keypad                                   ;; SPC
     tab-next
     tab-previous
