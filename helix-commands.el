@@ -13,11 +13,11 @@
 ;;
 ;;; Code:
 
-(require 'cl-lib)
-(require 'thingatpt)
 (require 's)
 (require 'dash)
 (require 'pcre2el)
+(require 'cl-lib)
+(require 'thingatpt)
 (require 'helix-common)
 (require 'helix-multiple-cursors-core)
 (require 'helix-search)
@@ -392,25 +392,60 @@ Select visual lines when `visual-line-mode' is on."
   (set-mark (point-max)))
 
 ;; s
-(defun helix-select-regex (start end)
-  "Enter PCRE regexp and create cursors for all matching regions in START...END."
-  (interactive "r")
-  (helix-search-and-select #'helix-regexp-matches-bounds start end))
+(defun helix-select-regex (&optional invert)
+  "Interactively enter regexp and create cursors for all matching regions
+withing active selections.
+If INVERT is non-nil — select complements to regions that match to regexp."
+  (interactive)
+  (cond (helix-multiple-cursors-mode
+         (let* ((real-cursor (helix--create-fake-cursor-1 (point) (mark t) 0))
+                (cursors (helix-all-fake-cursors))
+                regions)
+           (dolist (cursor cursors)
+             (when (overlay-get cursor 'mark-active)
+               (let ((point (overlay-get cursor 'point))
+                     (mark  (overlay-get cursor 'mark)))
+                 (push (cons (min point mark)
+                             (max point mark))
+                       regions)))
+             (helix-remove-fake-cursor-from-buffer cursor))
+           (if (helix-select-in-regions (nreverse regions) invert)
+               (helix-extend-selection -1)
+             ;; Else restore original cursors
+             (mapc #'helix-restore-fake-cursor-in-buffer cursors)
+             (helix-restore-point-from-fake-cursor real-cursor))))
+        (t
+         (let ((dir (helix-region-direction))
+               (beg (region-beginning))
+               (end (region-end)))
+           (if (helix-select-in-regions (region-bounds) invert)
+               (helix-extend-selection -1)
+             ;; Else restore original region
+             (helix-set-region beg end dir))))))
 
 ;; S
-(defun helix-split-region (start end)
-  (interactive "r")
-  (helix-search-and-select #'helix-regexp-inverted-matches-bounds start end))
+(defun helix-split-region ()
+  "Interactively enter regexp and create cursors for complements to
+all regions that match to regexp withing active selections."
+  (interactive)
+  (helix-select-regex t))
 
 ;; M-s
-(defun helix-split-region-on-newline (start end)
-  (interactive "r")
-  (unless (use-region-p)
-    (user-error "No active selection"))
-  ;; ".+$" is equal in pcre and elisp regexp syntax.
-  (-> (helix-regexp-matches-bounds ".+$" start end)
-      (helix-create-cursors))
-  (helix-extend-selection -1))
+(defun helix-split-region-on-newline ()
+  (interactive)
+  (let (any?)
+    (helix-execute-command-for-all-cursors
+     #'(lambda (start end)
+         (interactive "r")
+         (when-let* (((use-region-p))
+                     (regions (helix-regexp-match-regions ".+$" start end)))
+           (helix-create-cursors regions)
+           (setq any? t))))
+    (when any?
+      (helix-execute-command-for-all-cursors
+       #'(lambda ()
+           (interactive)
+           (helix-extend-selection -1))))))
 
 ;; K
 (defun helix-keep-selections ()
@@ -566,10 +601,11 @@ ends at END-COLUMN spauns NUMBER-OF-LINES."
   (interactive "p")
   (when helix-multiple-cursors-mode
     (dotimes (_ count)
-      (let ((cursor (or (helix-previous-fake-cursor (point))
-                        (helix-last-fake-cursor))))
-        (helix-create-fake-cursor-from-point)
-        (helix-restore-point-from-fake-cursor cursor)))))
+      (let ((scroll-conservatively 0))
+        (let ((cursor (or (helix-previous-fake-cursor (point))
+                          (helix-last-fake-cursor))))
+          (helix-create-fake-cursor-from-point)
+          (helix-restore-point-from-fake-cursor cursor))))))
 
 ;; )
 (defun helix-rotate-selections-forward (count)
@@ -577,10 +613,11 @@ ends at END-COLUMN spauns NUMBER-OF-LINES."
   (interactive "p")
   (when helix-multiple-cursors-mode
     (dotimes (_ count)
-      (let ((cursor (or (helix-next-fake-cursor (point))
-                        (helix-first-fake-cursor))))
-        (helix-create-fake-cursor-from-point)
-        (helix-restore-point-from-fake-cursor cursor)))))
+      (let ((scroll-conservatively 0))
+        (let ((cursor (or (helix-next-fake-cursor (point))
+                          (helix-first-fake-cursor))))
+          (helix-create-fake-cursor-from-point)
+          (helix-restore-point-from-fake-cursor cursor))))))
 
 ;; M-(
 (defun helix-rotate-selections-content-backward (count)
@@ -630,26 +667,34 @@ Return the replaced substring."
 
 ;;; Search
 
-(defvar helix--asterisk-string nil
-  "Inner variable for `helix-asterisk' command.")
+;; /
+(defun helix-search-forward ()
+  (interactive)
+  (helix-search-interactively))
+
+;; ?
+(defun helix-search-backward ()
+  (interactive)
+  (helix-search-interactively -1))
+
+(defvar helix--construct-search-pattern-strings nil
+  "Inner variable for `helix-construct-search-pattern' command.")
 
 ;; *
-(defun helix-asterisk ()
+(defun helix-construct-search-pattern ()
+  "Construct search pattern from all current selection and store it to / register.
+Auto-detect word boundaries at the beginning and end of the search pattern."
   (interactive)
-  (setq helix--asterisk-string nil)
-  (helix-execute-command-for-all-cursors #'helix--asterisk-1)
-  (set-register '/ helix--asterisk-string)
-  (message "register / set to %s" helix--asterisk-string))
+  (setq helix--construct-search-pattern-strings nil)
+  (helix-execute-command-for-all-cursors #'helix--construct-search-pattern-1)
+  (let* ((strings (nreverse (-uniq helix--construct-search-pattern-strings)))
+         (separator (if helix-use-pcre-regex "|" "\\|"))
+         (pattern (apply #'concat (-interpose separator strings))))
+    (set-register '/ pattern)
+    (message "Register / set: %s" pattern)
+    (helix-flash-search-pattern)))
 
-;; M-*
-(defun helix-meta-asterisk ()
-  (interactive)
-  (setq helix--asterisk-string nil)
-  (helix-execute-command-for-all-cursors #'helix--meta-asterisk-1)
-  (set-register "/" helix--asterisk-string)
-  (message "register / set to %s" helix--asterisk-string))
-
-(defun helix--asterisk-1 (beg end)
+(defun helix--construct-search-pattern-1 (beg end)
   (interactive "r")
   (when (use-region-p)
     (let* ((quote (if helix-use-pcre-regex #'rxt-quote-pcre #'regexp-quote))
@@ -669,56 +714,54 @@ Return the replaced substring."
                         (string-match-p "[[:word:]][^[:word:]]")))))
            (string (->> (buffer-substring-no-properties (point) (mark))
                         (funcall quote))))
-      (setq helix--asterisk-string
-            (concat helix--asterisk-string
-                    (if helix--asterisk-string "|")
-                    (if open-word-boundary "\\b")
+      (push (concat (if open-word-boundary "\\b")
                     string
-                    (if close-word-boundary "\\b"))))))
+                    (if close-word-boundary "\\b"))
+            helix--construct-search-pattern-strings))))
 
-(defun helix--meta-asterisk-1 ()
+;; M-*
+(defun helix-construct-search-pattern-no-bounds ()
+  "Construct search pattern from all current selection and store it to / register.
+Do not auto-detect word boundaries in the search pattern."
+  (interactive)
+  (setq helix--construct-search-pattern-strings nil)
+  (helix-execute-command-for-all-cursors
+   #'helix--construct-search-pattern-no-bounds-1)
+  (let* ((strings (reverse helix--construct-search-pattern-strings))
+         (separator (if helix-use-pcre-regex "|" "\\|"))
+         (result (apply #'concat (-interpose separator strings))))
+    (set-register '/ result)
+    (message "Register / set: %s" result)
+    (helix-flash-search-pattern)))
+
+(defun helix--construct-search-pattern-no-bounds-1 ()
   (interactive)
   (when (use-region-p)
     (let ((quote (if helix-use-pcre-regex #'rxt-quote-pcre #'regexp-quote)))
-      (setq helix--asterisk-string
-            (concat helix--asterisk-string
-                    (if helix--asterisk-string
-                        (if helix-use-pcre-regex "|" "\\|"))
-                    (->> (buffer-substring-no-properties (point) (mark))
-                         (funcall quote)))))))
+      (push (->> (buffer-substring-no-properties (point) (mark))
+                 (funcall quote))
+            helix--construct-search-pattern-strings))))
 
 ;; n
 (defun helix-search-next (count)
+  "Select next COUNT search match."
   (interactive "p")
-  (let ((region-dir (if (use-region-p) (helix-region-direction) 1))
-        (cursor (when helix--extend-selection
-                  (helix-create-fake-cursor-from-point))))
-    (condition-case nil
-        (if-let* ((regexp (get-register '/)))
-            (let ((regexp (if helix-use-pcre-regex
-                              (pcre-to-elisp regexp)
-                            regexp)))
-              (unless (eql (helix-sign count)
-                           region-dir)
-                (helix-exchange-point-and-mark))
-              (re-search-forward regexp nil nil count)
-              (let ((bounds (cons (or (match-beginning 1) (match-beginning 0))
-                                  (or (match-end 1) (match-end 0))))
-                    pnt mrk)
-                (if (< region-dir 0)
-                    (pcase-setq `(,pnt . , mrk) bounds)
-                  (pcase-setq `(,mrk . , pnt) bounds))
-                (goto-char pnt)
-                (set-mark mrk)))
-          ;; else
-          (message "register / is empty")
-          (signal 'error nil))
-      (error (when cursor
-               (helix-restore-point-from-fake-cursor cursor))
-             (helix-ensure-region-direction region-dir)))))
+  (let ((regexp (helix-search-pattern))
+        (region-dir (if (use-region-p) (helix-region-direction) 1))
+        (scroll-conservatively 0))
+    (helix-motion-loop (dir count)
+      (when (save-excursion (helix-re-search-with-wrap regexp dir))
+        (-let (((beg . end) (helix-match-bounds)))
+          (when helix--extend-selection
+            (helix-create-fake-cursor-from-point))
+          (helix-set-region beg end region-dir)))))
+  (when helix-multiple-cursors-mode
+    (helix-merge-overlapping-regions))
+  (helix-flash-search-pattern))
 
 ;; N
 (defun helix-search-previous (count)
+  "Select previous COUNT search match."
   (interactive "p")
   (helix-search-next (- count)))
 

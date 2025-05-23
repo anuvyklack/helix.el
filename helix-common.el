@@ -14,6 +14,8 @@
 ;;; Code:
 
 (require 'cl-lib)
+(require 'dash)
+(provide 'pcre2el)
 (require 'helix-vars)
 (require 'thingatpt)
 
@@ -32,7 +34,7 @@ otherwise prepend it to the list.
      ,alist))
 
 (defmacro helix-with-restriction (restrictions &rest body)
-  "Execute BODY with the buffer narrowed to START and END.
+  "Evaluate BODY with the buffer narrowed to START and END.
 
 \(fn (START . END) BODY...)"
   (declare (indent defun) (debug t))
@@ -42,6 +44,14 @@ otherwise prepend it to the list.
        (save-restriction
          (narrow-to-region ,start ,end)
          ,@body))))
+
+(defmacro helix-with-deactivate-mark (&rest body)
+  "Evaluate BODY with mark temporary deactivated."
+  (declare (debug t))
+  `(prog2
+       (deactivate-mark)
+       (progn ,@body)
+     (activate-mark)))
 
 ;;; Motions
 
@@ -796,10 +806,10 @@ right after the point."
 (defun helix-ensure-region-direction (direction)
   "Exchange point and mark if region direction mismatch DIRECTION.
 DIRECTION should be 1 or -1."
-  (when (and (use-region-p)
-             (not (eql (helix-region-direction)
-                       direction)))
-    (helix-exchange-point-and-mark)))
+  (when (use-region-p)
+    (unless (eql (helix-region-direction)
+                 direction)
+      (helix-exchange-point-and-mark))))
 
 (defun helix-undo-command-p (command)
   "Return non-nil if COMMAND is implementing undo/redo functionality."
@@ -827,6 +837,21 @@ the returned list to the original symbol like this:
              (setq head tail
                    tail (cdr tail)))))
     list))
+
+(defun helix-pcre-to-elisp (regexp)
+  "Convert PCRE REGEXP into Elisp one if Helix configured to use PCRE."
+  (if helix-use-pcre-regex
+      (pcre-to-elisp regexp)
+    regexp))
+
+(defun helix-match-bounds ()
+  "Return cons cell with bounds of the first match group in `match-data'.
+If there were no match groups in the last used regexp — return the bounds
+of the full regexp match."
+  (cond ((match-beginning 1)
+         (cons (match-beginning 1) (match-end 1)))
+        (t
+         (cons (match-beginning 0) (match-end 0)))))
 
 (provide 'helix-common)
 ;;; helix-common.el ends here

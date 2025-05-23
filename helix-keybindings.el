@@ -92,8 +92,10 @@
   "g o" #'exchange-point-and-mark
   "_"   #'helix-trim-whitespaces-from-selection
   "&"   #'helix-align-selections
-  "*"   #'helix-asterisk
-  "M-*" #'helix-meta-asterisk
+  "/"   #'helix-search-forward
+  "?"   #'helix-search-backward
+  "*"   #'helix-construct-search-pattern
+  "M-*" #'helix-construct-search-pattern-no-bounds
   "n"   #'helix-search-next
   "N"   #'helix-search-previous
 
@@ -104,7 +106,7 @@
   "C-u" #'helix-smooth-scroll-up
   "C-e" #'helix-mix-scroll-line-down
   "C-y" #'helix-mix-scroll-line-up
-  ;; "z z" #'helix-smooth-scroll-line-to-center)
+  ;; "z z" #'helix-smooth-scroll-line-to-center
   "z z" #'helix-smooth-scroll-line-not-to-very-top
   "z t" #'helix-smooth-scroll-line-to-top
   "z b" #'helix-smooth-scroll-line-to-bottom)
@@ -243,7 +245,6 @@
   "q"  #'ignore
   "\"" #'ignore
   "'"  #'ignore
-  ;; "/" #'ignore
   ;; "n" #'ignore
   ;; "p" #'ignore
   ;; "f" #'ignore
