@@ -1,3 +1,0 @@
-[submodule "emacs-pcre"]
-	path = emacs-pcre
-	url = https://github.com/syohex/emacs-pcre.git
