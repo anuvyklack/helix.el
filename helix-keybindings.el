@@ -94,6 +94,8 @@
   "&"   #'helix-align-selections
   "*"   #'helix-asterisk
   "M-*" #'helix-meta-asterisk
+  "n"   #'helix-search-next
+  "N"   #'helix-search-previous
 
   ;; Scrolling
   "C-b" #'helix-smooth-scroll-page-up

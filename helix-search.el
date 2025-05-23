@@ -17,7 +17,7 @@
 (require 'dash)
 (require 'helix-common)
 (require 'helix-multiple-cursors-core)
-(require 'pcre)
+(require 'pcre2el)
 
 (declare-function helix-extend-selection "helix-commands")
 
@@ -34,8 +34,8 @@
 (defvar helix-search--function nil
   "Function that takes 3 arguments: REGEXP, START, END, and return
 list of cons cells with bounds of regions that match the REGEXP withing
-START...END. Tipical examples are: `helix-pcre-all-matches' and
-`helix-pcre-all-inverted-matches'")
+START...END. Tipical examples are: `helix-regexp-matches-bounds' and
+`helix-regexp-inverted-matches-bounds'")
 
 (defvar helix-search--regions-bounds nil
   "List of cons cells (START . END) with bounds of regions, that
@@ -57,12 +57,12 @@ START...END. Tipical examples are: `helix-pcre-all-matches' and
     (add-hook 'minibuffer-exit-hook #'helix--end-search-session)
     (deactivate-mark)
     (condition-case nil
-        (let ((regexp (helix-read-pcre-regex "select: ")))
-          (if (string-empty-p regexp)
+        (let ((raw-regexp (helix-read-regex "select: ")))
+          (if (string-empty-p raw-regexp)
               ;; Restore region if search string is empty.
               (helix-set-region start end dir)
             ;; else
-            (set-register "/" regexp)
+            (set-register '/ raw-regexp)
             (helix-create-cursors helix-search--regions-bounds)
             (helix-extend-selection -1)))
       (quit ;; Restore region if quit from minibuffer.
@@ -70,7 +70,7 @@ START...END. Tipical examples are: `helix-pcre-all-matches' and
     (remove-hook 'minibuffer-setup-hook #'helix--start-search-session)
     (remove-hook 'minibuffer-exit-hook #'helix--end-search-session)))
 
-(defun helix-read-pcre-regex (prompt)
+(defun helix-read-regex (prompt)
   (let ((history-add-new-input nil)
         (history-delete-duplicates t))
     (let ((regex (read-string prompt nil 'helix-regex-history)))
@@ -93,7 +93,8 @@ START...END. Tipical examples are: `helix-pcre-all-matches' and
 (defun helix--search-highlight (_ _ _)
   "Highlight current matches during search session."
   (mapc #'delete-overlay helix-search--regions-overlays)
-  (let ((regex (minibuffer-contents))
+  (let ((regex (let ((r (minibuffer-contents)))
+                 (if helix-use-pcre-regex (pcre-to-elisp r) r)))
         result)
     (with-minibuffer-selected-window
       (setq helix-search--regions-bounds (funcall helix-search--function regex))
@@ -104,7 +105,7 @@ START...END. Tipical examples are: `helix-pcre-all-matches' and
                 (overlay-put ov 'face 'helix-region-face)
                 (push ov result)))))))
 
-(defun helix-pcre-all-matches (regexp start end)
+(defun helix-regexp-matches-bounds (regexp start end)
   "Return list with bounds of regions that match REGEXP within START...END.
 If REGEXP contains an error return the list with one element: (START . END)
 i.e. bounds of original region."
@@ -112,7 +113,7 @@ i.e. bounds of original region."
     (goto-char start)
     (condition-case nil
         (let (result)
-          (while (pcre-re-search-forward regexp end t)
+          (while (re-search-forward regexp end t)
             ;; Take the first match group content, if any, or the whole
             ;; match string.
             (let ((bounds (cons (or (match-beginning 1) (match-beginning 0))
@@ -126,8 +127,8 @@ i.e. bounds of original region."
       (error
        (list (cons start end))))))
 
-(defun helix-pcre-all-inverted-matches (regex beg end)
-  (-> (helix-pcre-all-matches regex beg end)
+(defun helix-regexp-inverted-matches-bounds (regex beg end)
+  (-> (helix-regexp-matches-bounds regex beg end)
       (helix-search--invert-matches beg end)))
 
 (defun helix-search--invert-matches (regions start end)
@@ -186,19 +187,22 @@ If INVERT is non-nil — remove selections that match regexp"
         (deactivate-mark)
         (mapc #'delete-overlay cursors)
         (condition-case nil
-            (let* ((regexp (helix-read-pcre-regex (if invert "remove: " "keep: ")))
+            (let* ((raw-regexp (helix-read-regex (if invert "remove: " "keep: ")))
+                   (regexp (if helix-use-pcre-regex
+                               (pcre-to-elisp raw-regexp)
+                             raw-regexp))
                    flags)
               (cond ((or (string-empty-p regexp)
                          (progn
                            (setq flags (dolist (str strings (nreverse flags))
-                                         (push (if (pcre-string-match-p regexp str) t)
+                                         (push (if (string-match-p regexp str) t)
                                                flags)))
                            (when invert
                              (setq flags (mapcar #'not flags)))
                            (not (-contains? flags t))))
                      (signal 'quit nil))
                     (t
-                     (set-register "/" regexp)
+                     (set-register '/ raw-regexp)
                      (--each (-zip-lists cursors flags)
                        (pcase-let ((`(,cursor ,flag) it))
                          (if flag
@@ -223,7 +227,8 @@ If INVERT is non-nil — remove selections that match regexp"
 
 (defun helix--filter-highlight (_ _ _)
   "Highlight current matches during filter session."
-  (let ((regexp (minibuffer-contents))
+  (let ((regexp (let ((r (minibuffer-contents)))
+                  (if helix-use-pcre-regex (pcre-to-elisp r) r)))
         (regions helix-filter--regions)
         (strings helix-filter--regions-strings)
         flags)
@@ -231,7 +236,7 @@ If INVERT is non-nil — remove selections that match regexp"
         (cond ((or (string-empty-p regexp)
                    (progn
                      (setq flags (dolist (str strings (nreverse flags))
-                                   (push (if (pcre-string-match-p regexp str) t)
+                                   (push (if (string-match-p regexp str) t)
                                          flags)))
                      (when helix-filter--invert
                        (setq flags (mapcar #'not flags)))
