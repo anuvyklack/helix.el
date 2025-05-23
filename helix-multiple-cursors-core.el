@@ -132,14 +132,17 @@ if no more fake cursors are remaining."
     (helix-disable-multiple-cursors-mode)))
 
 (defun helix-create-cursors (regions)
-  "Create cursor with active region for each element in REGIONS.
-REGIONS is a list of cons cells (START . END) with bounds of regions."
-  (pcase-let ((`(,beg . ,end) (car regions)))
-    (set-mark beg)
-    (goto-char end))
-  (dolist (bounds (cdr regions))
-    (pcase-let ((`(,beg . ,end) bounds))
-      (helix-create-fake-cursor end beg))))
+  "Create set of active REGIONS.
+REGIONS should be a list of cons cells (START . END) with bounds of regions.
+The real region will be set for the first element in REGIONS,
+and fake one for others."
+  (when regions
+    (-let (((beg . end) (car regions)))
+      (set-mark beg)
+      (goto-char end))
+    (--each (cdr regions)
+      (-let (((mark . point) it))
+        (helix-create-fake-cursor point mark)))))
 
 (defun helix--set-cursor-overlay (cursor position)
   "Move CURSOR overlay to POSITION.
@@ -160,15 +163,15 @@ Return CURSOR."
                           (make-overlay pos (1+ pos) nil t nil)))))
       (cond ((and helix-mc-match-cursor-style
                   (helix-cursor-is-bar-p))
-             (overlay-put cursor 'before-string (propertize "|" 'face 'helix-mc-cursor-bar-face))
+             (overlay-put cursor 'before-string (propertize "|" 'face 'helix-fake-cursor-bar))
              (overlay-put cursor 'after-string nil)
              (overlay-put cursor 'face nil))
             ((eolp)
-             (overlay-put cursor 'after-string (propertize " " 'face 'helix-mc-cursor-face))
+             (overlay-put cursor 'after-string (propertize " " 'face 'helix-fake-cursor))
              (overlay-put cursor 'before-string nil)
              (overlay-put cursor 'face nil))
             (t
-             (overlay-put cursor 'face 'helix-mc-cursor-face)
+             (overlay-put cursor 'face 'helix-fake-cursor)
              (overlay-put cursor 'before-string nil)
              (overlay-put cursor 'after-string nil)))
       cursor)))
@@ -184,6 +187,7 @@ and bind it to CURSOR."
         (let ((region (make-overlay point mark nil nil t)))
           (overlay-put region 'face 'helix-region-face)
           (overlay-put region 'type 'fake-region)
+          (overlay-put region 'priority 99)
           (overlay-put region 'id (overlay-get cursor 'id))
           (overlay-put cursor 'fake-region region)))))
 
@@ -232,6 +236,16 @@ and bind it to CURSOR."
   (set-marker (overlay-get cursor 'mark) nil)
   (helix--delete-region-overlay cursor)
   (delete-overlay cursor))
+
+(defun helix-remove-fake-cursor-from-buffer (cursor)
+  (helix--delete-region-overlay cursor)
+  (delete-overlay cursor)
+  cursor)
+
+(defun helix-restore-fake-cursor-in-buffer (cursor)
+  (let ((point (overlay-get cursor 'point))
+        (mark  (overlay-get cursor 'mark)))
+    (helix-set-fake-cursor cursor point mark)))
 
 ;;; Undo functionality
 

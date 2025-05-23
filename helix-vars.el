@@ -31,16 +31,6 @@
   :type 'integer
   :group 'helix)
 
-(defface helix-mc-cursor-face
-  '((t (:inverse-video t)))
-  "The face used for fake cursors."
-  :group 'helix)
-
-(defface helix-mc-cursor-bar-face
-  `((t (:height 1 :background ,(face-attribute 'cursor :background))))
-  "The face used for fake cursors if the cursor-type is bar."
-  :group 'helix)
-
 (defcustom helix-mc-match-cursor-style nil
   "If non-nil, attempt to match the cursor style that the user
 has selected. Namely, use vertical bars the user has configured
@@ -51,6 +41,24 @@ If nil, just use standard rectangle cursors for all fake cursors.
 In some modes/themes, the bar fake cursors are either not
 rendered or shift text."
   :type '(boolean)
+  :group 'helix)
+
+(defface helix-fake-cursor
+  '((t (:inverse-video t)))
+  "The face used for fake cursors."
+  :group 'helix)
+
+(defface helix-fake-cursor-bar
+  `((t (:height 1 :background ,(face-attribute 'cursor :background))))
+  "The face used for fake cursors if the cursor-type is bar."
+  :group 'helix)
+
+;; (defface helix-search '((t :inherit isearch))
+;;   "Face for interactive search."
+;;   :group 'helix)
+
+(defface helix-lazy-highlight '((t :inherit lazy-highlight))
+  "Face for highlighting all matches in interactive search."
   :group 'helix)
 
 (defface helix-region-face
@@ -102,6 +110,53 @@ If this value is nil, there is no ceiling."
                                            jedi-mode)
   "List of minor-modes that does not work well with multiple cursors.
 They are temporarily disabled when there are multiple cursors.")
+
+(defcustom helix-update-highlight-delay 0.02
+  "Time in seconds of idle before updating search highlighting.
+Setting this to a period shorter than that of keyboard's repeat
+rate allows highlights to update while scrolling."
+  :type 'number
+  :group 'helix)
+
+(defvar helix-keep-search-highlight-commands
+  '(helix-extend-selection
+    helix-rotate-selections-forward
+    helix-rotate-selections-backward
+    helix-search-next
+    helix-search-previous
+    ;; scrolling
+    helix-smooth-scroll-page-up
+    helix-smooth-scroll-page-down
+    helix-smooth-scroll-down
+    helix-smooth-scroll-up
+    helix-mix-scroll-line-down
+    helix-mix-scroll-line-up
+    helix-scroll-line-down
+    helix-scroll-line-up
+    helix-smooth-scroll-line-to-center
+    helix-smooth-scroll-line-not-to-very-top
+    helix-smooth-scroll-line-to-top
+    helix-smooth-scroll-line-to-bottom
+    pixel-scroll-precision
+    pixel-scroll-start-momentum
+    ;; switch windows
+    helix-window-split
+    helix-window-vsplit
+    helix-window-delete
+    helix-window-delete
+    helix-window-left
+    helix-window-down
+    helix-window-up
+    helix-window-right
+    helix-window-left
+    helix-window-down
+    helix-window-up
+    helix-window-right
+    helix-move-window-left
+    helix-move-window-down
+    helix-move-window-up
+    helix-move-window-right)
+  "List of commands which should preserve search highlight overlays.")
 
 (defgroup helix-cjk nil
   "CJK support."
@@ -326,9 +381,6 @@ cursors editing.")
     helix-delete                   ;; d
     helix-mark-line                ;; x
     helix-mark-line-upward         ;; X
-    helix-select-regex             ;; s
-    helix-split-region             ;; S
-    helix-split-region-on-newline  ;; M-s
     helix-extend-selection         ;; v
     helix-collapse-selection       ;; ;
     helix-trim-whitespaces-from-selection ;; _
@@ -353,8 +405,8 @@ cursors editing.")
     helix-mark-an-angle            ;; ma< ma>
     helix-copy-selection           ;; C
     helix-copy-selection-up        ;; M-c
-    helix--asterisk-1              ;; * inner command
-    helix--meta-asterisk-1         ;; M-* inner command
+    helix--construct-search-pattern-1 ;; * inner command
+    helix--construct-search-pattern-no-bounds-1 ;; M-* inner command
     self-insert-command
     quoted-insert
     previous-line
@@ -457,13 +509,18 @@ cursors editing.")
     helix-rotate-selections-forward          ;; )
     helix-rotate-selections-content-backward ;; M-(
     helix-rotate-selections-content-forward  ;; M-)
+    helix-select-regex                       ;; s
+    helix-split-region                       ;; S
+    helix-split-region-on-newline            ;; M-s
     helix-keep-selections                    ;; K
     helix-remove-selections                  ;; M-K
     helix-align-selections                   ;; &
     helix-undo                               ;; u
     helix-redo                               ;; U
-    helix-asterisk                           ;; *
-    helix-meta-asterisk                      ;; M-*
+    helix-search-forward                     ;; /
+    helix-search-backward                    ;; ?
+    helix-construct-search-pattern           ;; *
+    helix-construct-search-pattern-no-bounds ;; M-*
     helix-search-next                        ;; n
     helix-search-previous                    ;; N
     keypad                                   ;; SPC
