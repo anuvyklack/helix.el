@@ -564,10 +564,9 @@ ends at END-COLUMN spauns NUMBER-OF-LINES."
   (interactive "p")
   (when helix-multiple-cursors-mode
     (dotimes (_ count)
-      (let* ((cursor (or (helix-previous-fake-cursor (point))
-                         (helix-last-fake-cursor)))
-             (id (overlay-get cursor 'id)))
-        (helix-create-fake-cursor-from-point id)
+      (let ((cursor (or (helix-previous-fake-cursor (point))
+                        (helix-last-fake-cursor))))
+        (helix-create-fake-cursor-from-point)
         (helix-restore-point-from-fake-cursor cursor)))))
 
 ;; )
@@ -576,10 +575,9 @@ ends at END-COLUMN spauns NUMBER-OF-LINES."
   (interactive "p")
   (when helix-multiple-cursors-mode
     (dotimes (_ count)
-      (let* ((cursor (or (helix-next-fake-cursor (point))
-                         (helix-first-fake-cursor)))
-             (id (overlay-get cursor 'id)))
-        (helix-create-fake-cursor-from-point id)
+      (let ((cursor (or (helix-next-fake-cursor (point))
+                        (helix-first-fake-cursor))))
+        (helix-create-fake-cursor-from-point)
         (helix-restore-point-from-fake-cursor cursor)))))
 
 ;; M-(
