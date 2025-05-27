@@ -26,9 +26,10 @@
 
 ;;; Code:
 
-(require 'cl-lib)
-(require 'rect)
 (require 'dash)
+(require 'cl-lib)
+(require 'subr-x)
+(require 'rect)
 (require 'helix-common)
 
 ;;; Fake cursor
@@ -225,6 +226,8 @@ and bind it to CURSOR."
 
 (defun helix--delete-fake-cursor (cursor)
   "Delete CURSOR overlay."
+  (remhash (overlay-get cursor 'id)
+           helix--cursors-table)
   (set-marker (overlay-get cursor 'point) nil)
   (set-marker (overlay-get cursor 'mark) nil)
   (helix--delete-region-overlay cursor)
@@ -306,15 +309,17 @@ the data needed for multiple cursors functionality."
 (defun helix-all-fake-cursors (&optional sort)
   "Return list with all fake cursors in current buffer.
 If SORT is non-nil sort the list."
-  (let ((cursors (helix-fake-cursors-in (point-min) (point-max))))
+  (let ((cursors (hash-table-values helix--cursors-table)))
     (if sort
-        (sort cursors #'helix--compare-by-overlay-start)
+        (sort cursors #'(lambda (c1 c2)
+                          (< (overlay-get c1 'point)
+                             (overlay-get c2 'point))))
       cursors)))
 
 (defun helix-fake-cursors-in (start end)
-  "Return list of fake cursors between START...END buffer positions."
-  (cl-remove-if-not #'helix-fake-cursor-p
-                    (overlays-in start end)))
+  "Return list of fake cursors within START...END buffer positions."
+  (-filter #'helix-fake-cursor-p
+           (overlays-in start end)))
 
 (defmacro helix-for-each-fake-cursor (cursor &rest body)
   "Evaluate BODY with CURSOR bound to each fake cursor in turn."
@@ -412,13 +417,11 @@ makes sense for fake cursors."
 
 (defun helix-number-of-cursors ()
   "The number of cursors (real and fake) in the buffer."
-  (1+ (cl-count-if #'helix-fake-cursor-p
-                   (overlays-in (point-min) (point-max)))))
+  (1+ (hash-table-count helix--cursors-table)))
 
 (defun helix-any-fake-cursors-p ()
   "Return non-nil if currently there are any fake cursors in the buffer."
-  (cl-find-if #'helix-fake-cursor-p
-              (overlays-in (point-min) (point-max))))
+  (not (hash-table-empty-p helix--cursors-table)))
 
 (defun helix--delete-fake-cursors ()
   "Remove all fake cursors.
@@ -763,9 +766,8 @@ ID 0 coresponds to the real cursor."
 
 (defun helix-fake-cursor-at (position)
   "Return the fake cursor at POSITION, or nil if no one."
-  (-find #'(lambda (cursor)
-             (= position (overlay-get cursor 'point)))
-         (helix-fake-cursors-in position (1+ position))))
+  (--find (= position (overlay-get it 'point))
+          (helix-fake-cursors-in position (1+ position))))
 
 (defun helix-next-fake-cursor (position)
   "Return the next fake cursor after the POSITION."
@@ -790,14 +792,14 @@ ID 0 coresponds to the real cursor."
   (-min-by #'(lambda (a b)
                (> (overlay-get a 'point)
                   (overlay-get b 'point)))
-           (helix-fake-cursors-in (point-min) (point-max))))
+           (helix-all-fake-cursors)))
 
 (defun helix-last-fake-cursor ()
   "Return the last fake cursor in the buffer."
   (-max-by #'(lambda (a b)
                (> (overlay-get a 'point)
                   (overlay-get b 'point)))
-           (helix-fake-cursors-in (point-min) (point-max))))
+           (helix-all-fake-cursors)))
 
 ;;; Utils
 
