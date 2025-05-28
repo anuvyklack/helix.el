@@ -151,12 +151,14 @@ Push mark at previous position, unless extending selection."
     (set-marker (mark-marker) (point))
     (deactivate-mark))
   (push-mark)
-  (goto-char (if num (+ (point-min)
-                        (/ (* (- (point-max) (point-min))
-                              (prefix-numeric-value num))
-                           10))
+  (goto-char (if num
+                 (+ (point-min)
+                    (/ (* (- (point-max) (point-min))
+                          (prefix-numeric-value num))
+                       10))
                (point-min)))
-  (if num (forward-line 1)
+  (if num
+      (forward-line 1)
     (recenter 0)))
 
 ;; G
