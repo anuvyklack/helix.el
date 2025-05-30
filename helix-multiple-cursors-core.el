@@ -37,7 +37,8 @@
 (defvar helix--cursor-last-used-id 0
   "Last used cursor ID.")
 
-(defconst helix--cursors-table (make-hash-table :test 'eql :weakness t)
+(helix-defvar-local helix--cursors-table
+  (make-hash-table :test 'eql :weakness t)
   "Table mapping fake cursors IDs to cursors overlays.")
 
 (defun helix--new-cursor-id ()
@@ -502,8 +503,9 @@ COMMAND to be executed only for original ones."
 
 ;;;###autoload
 (define-minor-mode helix-multiple-cursors-mode
-  "Minor mode, which is active when there are multiple cursors."
-  :init-value nil
+  "Minor mode, which is active when there are multiple cursors in the buffer."
+  :global nil
+  :interactive nil
   :lighter helix-mc-mode-line
   :keymap helix-multiple-cursors-map
   (if helix-multiple-cursors-mode
