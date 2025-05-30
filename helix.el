@@ -22,7 +22,7 @@
 (require 'helix-search)
 (require 'helix-commands)
 (require 'helix-keybindings)
-(require 'helix-integration)
+;; (require 'helix-integration)
 
 ;; Merge overlapping regions after all `helix-mark-*' commands.
 (setq helix--merge-regions-commands

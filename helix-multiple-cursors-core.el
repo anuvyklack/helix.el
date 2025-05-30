@@ -146,6 +146,14 @@ for others."
       (-let (((mark . point) it))
         (helix-create-fake-cursor point mark)))))
 
+(defun helix-create-fake-cursors (regions)
+  "Create set of fake active REGIONS.
+REGIONS should be a list of cons cells (START . END) with bounds of regions."
+  (when regions
+    (--each regions
+      (-let (((mark . point) it))
+        (helix-create-fake-cursor point mark)))))
+
 (defun helix--set-cursor-overlay (cursor position)
   "Move CURSOR overlay to POSITION.
 If CURSOR is nil — create new fake cursor overlay at POSITION.
@@ -531,7 +539,7 @@ and fake cursors are present in the buffer."
     (helix-multiple-cursors-mode -1)))
 
 (defun helix-maybe-disable-multiple-cursors-mode ()
-  "Disable `helix-multiple-cursors-mode' if no fake cursors in the buffer."
+  "Disable `helix-multiple-cursors-mode' if no more fake cursors in the buffer."
   (unless (helix-any-fake-cursors-p)
     (helix-disable-multiple-cursors-mode)))
 
@@ -771,10 +779,10 @@ ID 0 coresponds to the real cursor."
 
 ;;; Access fake cursors
 
-(defun helix-fake-regions-in (start end)
-  "Return a list of fake-cursors in START ... END region."
-  (cl-remove-if-not #'helix-fake-region-p
-                    (overlays-in start end)))
+;; (defun helix-fake-regions-in (start end)
+;;   "Return a list of fake-cursors in START ... END region."
+;;   (cl-remove-if-not #'helix-fake-region-p
+;;                     (overlays-in start end)))
 
 (defun helix-fake-cursor-at (position)
   "Return the fake cursor at POSITION, or nil if no one."
