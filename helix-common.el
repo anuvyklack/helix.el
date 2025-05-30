@@ -55,36 +55,6 @@ otherwise prepend it to the list.
 
 ;;; Motions
 
-(defmacro helix-define-motion (motion args &rest body)
-  "Macros to define Helix motions.
-
-\(fn MOTION (ARGS...) DOC BODY...)"
-  (declare (indent defun)
-           (doc-string 3)
-           (debug (&define name lambda-list
-                           [&optional stringp]
-                           def-body)))
-  ;; collect docstring
-  (let ((doc (when (< 1 (length body))
-               (pcase (car body)
-                 ((and 'format f)
-                  (apply (car f) (cdr f)))
-                 ((and (pred stringp) doc)
-                  doc)))))
-    (when doc (pop body))
-    ;; macro expansion
-    `(progn
-       ;; the compiler does not recognize `defun' inside `let'
-       ,(when (and motion body)
-          `(defun ,motion (,@args)
-             ,(or doc "")
-             ,@body))
-       (when ',motion
-         (cl-pushnew ',motion helix--motion-command)
-         (eval-after-load 'eldoc
-           '(and (fboundp 'eldoc-add-command)
-                 (eldoc-add-command ',motion)))))))
-
 (defun helix-forward-beginning-of-thing (thing &optional count skip-empty-lines)
   "Move to the beginning of next COUNT-th THING.
 Move backward if COUNT is negative.

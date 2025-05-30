@@ -1,5 +1,35 @@
 ;;; -*- lexical-binding: t; -*-
 
+(defmacro helix-define-motion (motion args &rest body)
+  "Macros to define Helix motions.
+
+\(fn MOTION (ARGS...) DOC BODY...)"
+  (declare (indent defun)
+           (doc-string 3)
+           (debug (&define name lambda-list
+                           [&optional stringp]
+                           def-body)))
+  ;; collect docstring
+  (let ((doc (when (< 1 (length body))
+               (pcase (car body)
+                 ((and 'format f)
+                  (apply (car f) (cdr f)))
+                 ((and (pred stringp) doc)
+                  doc)))))
+    (when doc (pop body))
+    ;; macro expansion
+    `(progn
+       ;; the compiler does not recognize `defun' inside `let'
+       ,(when (and motion body)
+          `(defun ,motion (,@args)
+             ,(or doc "")
+             ,@body))
+       (when ',motion
+         (cl-pushnew ',motion helix--motion-command)
+         (eval-after-load 'eldoc
+           '(and (fboundp 'eldoc-add-command)
+                 (eldoc-add-command ',motion)))))))
+
 (defun helix-refresh-fake-cursor (cursor)
   (let ((pnt (overlay-get cursor 'point))
         (mrk (overlay-get cursor 'mark)))

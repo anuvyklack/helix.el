@@ -638,14 +638,27 @@ active.")
                                           dabbrev--last-table)
   "A list of vars that need to be tracked on a per-cursor basis.")
 
-(defvar helix--motion-command nil
-  "List of command, after which `helix-merge-overlapping-regions'
-would be invoked if `helix--extend-selection' is t.")
-
-(defvar helix--merge-regions-commands '(helix-copy-selection
-                                        helix-copy-selection-up)
+(defvar helix--merge-regions-commands '(helix-first-non-blank   ;; gh
+                                        helix-beginning-of-line ;; gs
+                                        helix-end-of-line       ;; gl
+                                        helix-copy-selection    ;; C
+                                        helix-copy-selection-up ;; M-c
+                                        )
   "List of command, after which `helix-merge-overlapping-regions'
 would be invoked.")
+
+(defvar helix--motion-command '(helix-backward-char       ;; h
+                                helix-forward-char        ;; l
+                                helix-next-line           ;; j
+                                helix-previous-line       ;; k
+                                helix-forward-word-start  ;; w
+                                helix-forward-WORD-start  ;; W
+                                helix-backward-word-start ;; b
+                                helix-backward-WORD-start ;; B
+                                helix-forward-word-end    ;; e
+                                helix-forward-WORD-end)   ;; E
+  "List of command, after which `helix-merge-overlapping-regions'
+will be invoked if `helix--extend-selection' is t.")
 
 (defvar helix-mc--list-file-loaded nil
   "Non-nil when `helix-mc-list-file' file has already been loaded.")
