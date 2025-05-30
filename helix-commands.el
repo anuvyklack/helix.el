@@ -591,6 +591,15 @@ ends at END-COLUMN spauns NUMBER-OF-LINES."
             (cons start end)
           (cons end start)))))
 
+;; M-,
+(defun helix-delete-main-cursor ()
+  "Delete main cursor."
+  (interactive)
+  (when helix-multiple-cursors-mode
+    (helix-restore-point-from-fake-cursor (or (helix-next-fake-cursor)
+                                              (helix-first-fake-cursor)))
+    (helix-maybe-disable-multiple-cursors-mode)))
+
 ;; (
 (defun helix-rotate-selections-backward (count)
   "Rotate main selection backward COUNT times."
