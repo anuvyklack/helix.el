@@ -72,7 +72,7 @@ The current state is stored in the overlay for later retrieval."
     (helix-maybe-enable-multiple-cursors-mode)))
 
 (defun helix--create-fake-cursor-1 (point &optional mark id)
-  (or id (setq id (helix--new-cursor-id)))
+  (unless id (setq id (helix--new-cursor-id)))
   (save-excursion
     (goto-char point)
     (let ((cursor (helix--set-cursor-overlay nil (point))))
@@ -114,15 +114,17 @@ CURSOR-OR-ID can be either:
 
 If MARK is passed a fake active region overlay between POINT and MARK
 will be set."
-  (let* ((id (if (numberp cursor-or-id)
-                 cursor-or-id))
-         (cursor (if id (gethash id helix--cursors-table)
-                   cursor-or-id)))
-    (if cursor
-        (progn
-          (helix-move-fake-cursor cursor point mark)
-          (helix-maybe-enable-multiple-cursors-mode))
-      (helix-create-fake-cursor point mark id))))
+  (let (id cursor)
+    (cond ((numberp cursor-or-id)
+           (setq id cursor-or-id
+                 cursor (gethash id helix--cursors-table)))
+          ((helix-fake-cursor-p cursor-or-id)
+           (setq cursor cursor-or-id)))
+    (cond (cursor
+           (helix-move-fake-cursor cursor point mark)
+           (helix-maybe-enable-multiple-cursors-mode))
+          (t
+           (helix-create-fake-cursor point mark id)))))
 
 (defun helix-remove-fake-cursor (cursor)
   "Delete fake CURSOR and disable `helix-multiple-cursors-mode'
@@ -198,12 +200,12 @@ and bind it to CURSOR."
 
 (defun helix--store-point-state (overlay &optional point mark)
   "Store POINT, MARK and variables relevant to fake cursor into OVERLAY."
-  (or point (setq point (point)))
-  (or mark (setq mark (mark t)))
+  (unless point (setq point (point)))
+  (unless mark (setq mark (mark t)))
   (let ((pnt-marker (or (overlay-get overlay 'point)
-                        (let ((m (make-marker)))
-                          (set-marker-insertion-type m t)
-                          (overlay-put overlay 'point m))))
+                        (let ((marker (make-marker)))
+                          (set-marker-insertion-type marker t)
+                          (overlay-put overlay 'point marker))))
         (mrk-marker (or (overlay-get overlay 'mark)
                         (overlay-put overlay 'mark (make-marker)))))
     (set-marker pnt-marker point)
@@ -689,7 +691,7 @@ and which for all to `helix-mc-list-file' file."
 (defun helix-merge-overlapping-regions ()
   "Merge overlapping regions."
   (let ((dir (helix-region-direction)))
-    (dolist (group (helix--overlapping-regions))
+    (dolist (group-or-overlapping-regions (helix--overlapping-regions))
       (let ((beg (point-max))
             (end (point-min))
             id delete real-cursor?)
@@ -722,7 +724,7 @@ and which for all to `helix-mc-list-file' file."
                         (set-marker (mark-marker) mrk))
                        (t
                         (helix-move-fake-cursor cursor pnt mrk)))))))
-        (dolist (id rest)
+        (dolist (id delete)
           (when-let* ((cursor (gethash id helix--cursors-table)))
             (helix--delete-fake-cursor cursor)))))
     (unless (helix-any-fake-cursors-p)

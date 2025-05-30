@@ -385,6 +385,8 @@ cursors editing.")
     helix-collapse-selection       ;; ;
     helix-trim-whitespaces-from-selection ;; _
     helix-surround                 ;; ms
+    helix-surround-delete          ;; md
+    helix-surround-change          ;; mc mr
     helix-mark-inner-word          ;; miw
     helix-mark-inner-WORD          ;; miW
     helix-mark-inner-paragraph     ;; mip
