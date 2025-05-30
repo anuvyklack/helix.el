@@ -292,8 +292,6 @@ With no region delete char before point."
   (deactivate-mark)
   (undo-only))
 
-(defvar helix--point-marker (make-marker))
-
 ;; U
 (defun helix-redo ()
   "Cancel current region then redo."
@@ -441,10 +439,9 @@ all regions that match to regexp withing active selections."
            (helix-create-cursors ranges)
            (setq any? t))))
     (when any?
-      (helix-execute-command-for-all-cursors
-       #'(lambda ()
-           (interactive)
-           (helix-extend-selection -1))))))
+      (helix-execute-command-for-all-cursors #'(lambda ()
+                                                 (interactive)
+                                                 (helix-extend-selection -1))))))
 
 ;; K
 (defun helix-keep-selections ()
@@ -524,7 +521,7 @@ of up if negative."
 
 (defun helix--copy-cursor (direction)
   "Copy point toward the DIRECTION."
-  (or direction (setq direction 1))
+  (unless direction (setq direction 1))
   (when-let* ((pos (save-excursion
                      (let ((column (current-column))
                            position)
@@ -541,7 +538,7 @@ of up if negative."
 
 (defun helix--copy-region (&optional direction)
   "Copy region toward the DIRECTION."
-  (or direction (setq direction 1))
+  (unless direction (setq direction 1))
   (let* ((region-dir (helix-region-direction))
          (beg (region-beginning))
          (end (region-end))
@@ -996,7 +993,7 @@ lines and reindent the region."
       (when lines?
         (setq left  (s-trim left)
               right (s-trim right)))
-      (let ((deactivate-mark nil))
+      (let ((deactivate-mark nil)) ;; To not deactivate-mark after insertion
         (goto-char end)
         (when lines?
           (helix-skip-whitespaces)

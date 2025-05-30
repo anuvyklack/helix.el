@@ -257,7 +257,7 @@ Shift with Ctrl, you must write \"C-S-k\"."
       (string-join (reverse keypad--keys) " ")))
 
 (defun keypad--C-x-or-C-c? ()
-  (if-let* ((first-key (car (last keypad--keys))))
+  (if-let* ((first-key (-last-item keypad--keys)))
       (member first-key '("C-x" "C-c"))))
 
 (defun keypad--meta-keybindings-available-p ()
