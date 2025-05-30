@@ -87,6 +87,7 @@
   "K"   #'helix-keep-selections
   "M-K" #'helix-remove-selections
   ","   #'helix-disable-multiple-cursors-mode
+  "M-," #'helix-delete-main-cursor
   ";"   #'helix-collapse-selection
   "M-;" #'exchange-point-and-mark
   "g o" #'exchange-point-and-mark

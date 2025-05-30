@@ -507,6 +507,7 @@ cursors editing.")
     helix-toggle-cursor-on-click             ;; M-mouse1
     helix-goto-first-line                    ;; gg
     helix-goto-last-line                     ;; G
+    helix-delete-main-cursor                 ;; M-,
     helix-rotate-selections-backward         ;; (
     helix-rotate-selections-forward          ;; )
     helix-rotate-selections-content-backward ;; M-(
