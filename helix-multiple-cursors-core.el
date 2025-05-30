@@ -453,13 +453,9 @@ Disable `helix-multiple-cursors-mode' instead."
   "Add the latest `kill-ring' entry for each cursor to `killed-rectangle'.
 So you can paste it in later with `yank-rectangle'."
   (let ((entries (helix-with-real-cursor-as-fake
-                   (let ((cursors (helix-all-fake-cursors t))
-                         result)
-                     (dolist (cursor cursors)
-                       (push (car (overlay-get cursor 'kill-ring))
-                             result))
-                     (nreverse result)))))
-    (unless (helix-all-elements-are-the-same-p entries)
+                   (--map (car (overlay-get it 'kill-ring))
+                          (helix-all-fake-cursors :sort)))))
+    (unless (helix-all-elements-are-equal-p entries)
       (setq killed-rectangle entries))))
 
 (defun helix-mc-temporarily-disable-minor-mode (mode)
@@ -473,8 +469,8 @@ So you can paste it in later with `yank-rectangle'."
         helix-mc-unsupported-minor-modes))
 
 (defun helix-mc-enable-temporarily-disabled-minor-modes ()
-  (mapc #'(lambda (mode) (funcall mode 1))
-        helix-mc-temporarily-disabled-minor-modes)
+  (--each helix-mc-temporarily-disabled-minor-modes
+    (funcall it 1))
   (setq helix-mc-temporarily-disabled-minor-modes nil))
 
 (defun helix--pre-commad-hook-function ()

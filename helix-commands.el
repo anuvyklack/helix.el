@@ -369,7 +369,7 @@ Uses visual lines if `visual-line-mode' is active, otherwise logical lines."
                (backward-char)
                1)))
           (t ;; no region
-           (pcase-let ((`(,beg . ,end) (bounds-of-thing-at-point line)))
+           (-let (((beg . end) (bounds-of-thing-at-point line)))
              (set-mark beg)
              (goto-char end)
              (backward-char)
