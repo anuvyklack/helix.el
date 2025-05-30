@@ -253,7 +253,7 @@ and bind it to CURSOR."
 
 (defmacro helix--add-fake-cursor-to-undo-list (cursor &rest body)
   "CURSOR position management during undo."
-  (declare (indent defun) (debug t))
+  (declare (indent defun) (debug (symbolp &rest form)))
   (let ((id (make-symbol "id")))
     `(let ((,id (overlay-get ,cursor 'id)))
        ;; ID 0 is for real cursor, so ignore it.
@@ -263,7 +263,7 @@ and bind it to CURSOR."
 
 (defmacro helix--add-fake-cursor-to-undo-list-1 (id &rest body)
   "CURSOR position management during undo."
-  (declare (indent defun) (debug t))
+  (declare (indent defun) (debug (symbolp &rest form)))
   (let ((deactivate (make-symbol "deactivate-cursor")))
     `(let* ((,deactivate `(apply helix-undo--deactivate-cursor ,,id)))
        (push ,deactivate buffer-undo-list)
@@ -339,7 +339,7 @@ If SORT is non-nil sort the list."
 
 (defmacro helix-for-each-fake-cursor (cursor &rest body)
   "Evaluate BODY with CURSOR bound to each fake cursor in turn."
-  (declare (indent 1) (debug t))
+  (declare (indent 1) (debug (symbolp &rest form)))
   ;; We callect all fake-cursors first, because BODY make create fake cursors,
   ;; like `helix-copy-selection' does, and we want it to be executed only for
   ;; original ones.
