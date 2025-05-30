@@ -131,8 +131,7 @@ will be set."
   "Delete fake CURSOR and disable `helix-multiple-cursors-mode'
 if no more fake cursors are remaining."
   (helix--delete-fake-cursor cursor)
-  (unless (helix-any-fake-cursors-p)
-    (helix-disable-multiple-cursors-mode)))
+  (helix-maybe-disable-multiple-cursors-mode))
 
 (defun helix-create-cursors (ranges)
   "Create set of active regions.
@@ -355,13 +354,10 @@ during BODY evaluation. Restore it if it is still alive."
     `(let ((,real-cursor (helix--create-fake-cursor-1 (point) (mark t) 0)))
        (prog1 (progn ,@body)
          (cond ((helix-overlay-live-p ,real-cursor)
-                (helix-restore-point-from-fake-cursor ,real-cursor)
-                (unless (helix-any-fake-cursors-p)
-                  (helix-disable-multiple-cursors-mode)))
+                (helix-restore-point-from-fake-cursor ,real-cursor))
                ((helix-any-fake-cursors-p)
-                (helix-restore-point-from-fake-cursor (helix-first-fake-cursor)))
-               (t
-                (helix-disable-multiple-cursors-mode)))))))
+                (helix-restore-point-from-fake-cursor (helix-first-fake-cursor))))
+         (helix-maybe-disable-multiple-cursors-mode)))))
 
 (defun helix-execute-command-for-all-cursors (command)
   "Call COMMAND interactively for all cursors: real and fake ones."
@@ -533,6 +529,11 @@ and fake cursors are present in the buffer."
   (interactive)
   (when helix-multiple-cursors-mode
     (helix-multiple-cursors-mode -1)))
+
+(defun helix-maybe-disable-multiple-cursors-mode ()
+  "Disable `helix-multiple-cursors-mode' if no fake cursors in the buffer."
+  (unless (helix-any-fake-cursors-p)
+    (helix-disable-multiple-cursors-mode)))
 
 ;;; Integration with other packages
 
@@ -725,8 +726,7 @@ and which for all to `helix-mc-list-file' file."
         (dolist (id delete)
           (when-let* ((cursor (gethash id helix--cursors-table)))
             (helix--delete-fake-cursor cursor)))))
-    (unless (helix-any-fake-cursors-p)
-      (helix-disable-multiple-cursors-mode))))
+    (helix-maybe-disable-multiple-cursors-mode)))
 
 (defun helix--overlapping-regions ()
   "Return the list of groups, where each group is a list of
