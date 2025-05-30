@@ -781,8 +781,9 @@ ID 0 coresponds to the real cursor."
   (--find (= position (overlay-get it 'point))
           (helix-fake-cursors-in position (1+ position))))
 
-(defun helix-next-fake-cursor (position)
+(defun helix-next-fake-cursor (&optional position)
   "Return the next fake cursor after the POSITION."
+  (unless position (setq position (point)))
   (let (cursor)
     (while (not (or cursor
                     (eql position (point-max))) )
