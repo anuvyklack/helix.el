@@ -14,6 +14,9 @@
 - Match (or mark) commands accept numeric arguments:
   =m2ip= or =2mip= — mark 2 paragraphs.
 
+- Right after search backward with =?= command, =n= and =N= are swaped: =n= will
+  repeat search backward, =N= — forward, like in Vim.
+
 * Known problems
 
 - If command modify buffer only for some cursors, like ~helix-align-selection~
