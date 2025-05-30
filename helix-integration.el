@@ -16,6 +16,22 @@
 (require 'helix-core)
 (require 'helix-commands)
 
+;;; Eldoc
+
+(eval-after-load 'eldoc
+  ;; Add motion commands to the `eldoc-message-commands' obarray.
+  (eldoc-add-command 'helix-backward-char       ;; h
+                     'helix-forward-char        ;; l
+                     'helix-next-line           ;; j
+                     'helix-previous-line       ;; k
+                     'helix-forward-word-start  ;; w
+                     'helix-forward-WORD-start  ;; W
+                     'helix-backward-word-start ;; b
+                     'helix-backward-WORD-start ;; B
+                     'helix-forward-word-end    ;; e
+                     'helix-forward-WORD-end    ;; E
+                     ))
+
 ;;; Lisp
 
 (add-hook 'lisp-mode-hook

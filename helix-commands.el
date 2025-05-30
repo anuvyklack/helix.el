@@ -33,7 +33,7 @@
 ;;; Movements
 
 ;; h
-(helix-define-motion helix-backward-char (count)
+(defun helix-backward-char (count)
   "Move backward."
   (interactive "p")
   (if helix--extend-selection
@@ -42,7 +42,7 @@
   (backward-char count))
 
 ;; l
-(helix-define-motion helix-forward-char (count)
+(defun helix-forward-char (count)
   "Move forward."
   (interactive "p")
   (if helix--extend-selection
@@ -51,7 +51,7 @@
   (forward-char count))
 
 ;; j
-(helix-define-motion helix-next-line (count)
+(defun helix-next-line (count)
   "Move to the next line."
   (interactive "p")
   (if helix--extend-selection
@@ -64,7 +64,7 @@
   (funcall-interactively 'next-line count))
 
 ;; k
-(helix-define-motion helix-previous-line (count)
+(defun helix-previous-line (count)
   "Move to the COUNT-th previous line."
   (interactive "p")
   (if helix--extend-selection
@@ -77,7 +77,7 @@
   (funcall-interactively 'previous-line count))
 
 ;; w
-(helix-define-motion helix-forward-word-start (count &optional bigword)
+(defun helix-forward-word-start (count &optional bigword)
   "Move to the COUNT-th next word start.
 If BIGWORD move over WORD-s."
   (interactive "p")
@@ -92,13 +92,13 @@ If BIGWORD move over WORD-s."
       (helix-skip-whitespaces))))
 
 ;; W
-(helix-define-motion helix-forward-WORD-start (count)
+(defun helix-forward-WORD-start (count)
   "Move to the COUNT-th next WORD start."
   (interactive "p")
   (helix-forward-word-start count :bigword))
 
 ;; b
-(helix-define-motion helix-backward-word-start (count &optional bigword)
+(defun helix-backward-word-start (count &optional bigword)
   "Move to the COUNT-th previous word start.
 If BIGWORD move over WORD-s."
   (interactive "p")
@@ -112,13 +112,13 @@ If BIGWORD move over WORD-s."
       (forward-thing thing -1))))
 
 ;; B
-(helix-define-motion helix-backward-WORD-start (count)
+(defun helix-backward-WORD-start (count)
   "Move to the COUNT-th previous WORD start."
   (interactive "p")
   (helix-backward-word-start count :bigword))
 
 ;; e
-(helix-define-motion helix-forward-word-end (count &optional bigword)
+(defun helix-forward-word-end (count &optional bigword)
   "Move to the COUNT-th next word end.
 If BIGWORD move over WORD-s."
   (interactive "p")
@@ -131,7 +131,7 @@ If BIGWORD move over WORD-s."
       (forward-thing thing))))
 
 ;; E
-(helix-define-motion helix-forward-WORD-end (count)
+(defun helix-forward-WORD-end (count)
   "Move COUNT-th next WORD end."
   (interactive "p")
   (helix-forward-word-end count :bigword))
@@ -175,7 +175,7 @@ Push mark at previous position, unless extending selection."
   (goto-char (point-max)))
 
 ;; gs
-(helix-define-motion helix-beginning-of-line ()
+(defun helix-beginning-of-line ()
   "Move point to beginning of current line.
 Use visual line when `visual-line-mode' is on."
   (interactive)
@@ -187,7 +187,7 @@ Use visual line when `visual-line-mode' is on."
     (beginning-of-line)))
 
 ;; gh
-(helix-define-motion helix-first-non-blank ()
+(defun helix-first-non-blank ()
   "Move point to beginning of current line skipping indentation.
 Use visual line when `visual-line-mode' is on."
   (interactive)
@@ -196,7 +196,7 @@ Use visual line when `visual-line-mode' is on."
   (backward-prefix-chars))
 
 ;; gl
-(helix-define-motion helix-end-of-line ()
+(defun helix-end-of-line ()
   "Move point to end of current line.
 Use visual line when `visual-line-mode' is on."
   (interactive)
@@ -208,7 +208,7 @@ Use visual line when `visual-line-mode' is on."
     (move-end-of-line 1)))
 
 ;; ]p
-(helix-define-motion helix-forward-paragraph (count)
+(defun helix-forward-paragraph (count)
   "Move to the end of the COUNT next paragraph."
   (interactive "p")
   (if helix--extend-selection
@@ -217,7 +217,7 @@ Use visual line when `visual-line-mode' is on."
   (forward-thing 'paragraph count))
 
 ;; [p
-(helix-define-motion helix-backward-paragraph (count)
+(defun helix-backward-paragraph (count)
   "Move to the beginning of the COUNT previous paragraph."
   (interactive "p")
   (setq count (- count))
