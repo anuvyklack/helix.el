@@ -25,12 +25,10 @@
 (cl-defstruct (helix-highlight (:constructor helix-highlight-create)
                                (:type vector) (:copier nil) (:predicate nil))
   (regexp nil :type string)
-  (face nil :read-only t)
-  (regions nil :documentation "List with bounds of regions in which the highlighting is performed.")
-  (direction nil :documentation "1 — forward, -1 — backward, nil — both ways.")
-  (invert nil :documentation "Invert overlays."
-          :type bool :read-only t)
   (buffer nil :read-only t)
+  (face nil :read-only t)
+  (ranges nil :documentation "List of ranges in which the highlighting is performed.")
+  (invert nil :type bool :read-only t :documentation "Invert overlays.")
   (overlays nil :documentation "The active overlays of the highlight."))
 
 (defun helix-highlight-delete (hl)
@@ -39,28 +37,20 @@
 
 (defun helix-highlight-update (hl)
   (let ((buffer (or (helix-highlight-buffer hl)
-                    (current-buffer)))
-        (direction (helix-highlight-direction hl)))
+                    (current-buffer))))
     (with-current-buffer buffer
       (if-let* ((regexp (helix-highlight-regexp hl))
                 ((not (string-empty-p regexp)))
-                (search-ranges
-                 (or (helix-highlight-regions hl)
-                     (let (ranges)
-                       (dolist (win (get-buffer-window-list buffer))
-                         (when-let* (((window-live-p win))
-                                     (beg (pcase direction
-                                            (1 (max (window-start) (point)))
-                                            (_ (window-start))))
-                                     (end (pcase direction
-                                            (-1 (min (point) (window-end)))
-                                            (_ (window-end))))
-                                     ((< beg end)))
-                           (push (cons beg end) ranges)))
-                       (nreverse ranges))))
+                (search-ranges (or (helix-highlight-ranges hl)
+                                   (let (ranges)
+                                     (dolist (win (get-buffer-window-list buffer))
+                                       (when (window-live-p win)
+                                         (push (cons (window-start) (window-end))
+                                               ranges)))
+                                     (nreverse ranges))))
                 (regions (let ((invert (helix-highlight-invert hl)))
                            (-mapcat (-lambda ((beg . end))
-                                      (helix-regexp-match-regions
+                                      (helix-regexp-match-ranges
                                        regexp beg end invert))
                                     search-ranges))))
           ;; do
@@ -82,39 +72,39 @@
         (mapc #'delete-overlay (helix-highlight-overlays hl))
         nil))))
 
-(defun helix-regexp-match-regions (regexp start end &optional invert)
-  "Return list with bounds of regions that match REGEXP within START...END.
-If INVERT is non-nil return list with complements of regions that match REGEXP."
+(defun helix-regexp-match-ranges (regexp start end &optional invert)
+  "Return list of ranges that match REGEXP within START...END positions.
+If INVERT is non-nil return list with complements of ranges that match REGEXP."
   (save-excursion
     (goto-char start)
     (ignore-errors
-      (let (regions)
+      (let (ranges)
         (condition-case nil
             (while (re-search-forward regexp end t)
               (let ((bounds (helix-match-bounds)))
                 ;; Signal if we stack in infinite loop. This happens, for
                 ;; example, when regexp consists only of "^" or "$".
-                (when (equal bounds (car-safe regions))
+                (when (equal bounds (car-safe ranges))
                   (signal 'error nil))
-                (push bounds regions)))
+                (push bounds ranges)))
           (error
-           (setq regions nil)))
-        (when regions
-          (setq regions (nreverse regions))
+           (setq ranges nil)))
+        (when ranges
+          (setq ranges (nreverse ranges))
           (if invert
-              (helix--invert-regions regions start end)
-            regions))))))
+              (helix--invert-ranges ranges start end)
+            ranges))))))
 
-(defun helix--invert-regions (regions start end)
-  "Return the list with complements to REGIONS withing START...END.
-REGIONS is a list of cons cells with positions (START . END)."
-  (when regions
+(defun helix--invert-ranges (ranges start end)
+  "Return the list with complements to RANGES withing START...END positions.
+RANGES is a list of cons cells with positions (START . END)."
+  (when ranges
     (let (result)
-      (-let (((r-start . r-end) (car regions)))
+      (-let (((r-start . r-end) (car ranges)))
         (unless (eql r-start start)
           (push (cons start r-start) result)
           (setq start r-end)))
-      (dolist (bounds (cdr regions))
+      (dolist (bounds (cdr ranges))
         (-let (((r-start . r-end) bounds))
           (push (cons start r-start) result)
           (setq start r-end)))
@@ -122,9 +112,9 @@ REGIONS is a list of cons cells with positions (START . END)."
         (push (cons start end) result))
       (nreverse result))))
 
-(defun helix-highlight-entire-regions (hl)
-  (--each (helix-highlight-regions hl)
-    (-let* (((beg . end) it)
+(defun helix-highlight-entire-ranges (hl)
+  (dolist (range (helix-highlight-ranges hl))
+    (-let* (((beg . end) range)
             (ov (make-overlay beg end)))
       (overlay-put ov 'face (helix-highlight-face hl))
       (push ov (helix-highlight-overlays hl)))))
@@ -277,33 +267,33 @@ If nothing found, wrap around the buffer and search up to the point."
 (defvar helix-select--hl nil
   "`helix-highlight' object for interactive select sessions.")
 
-(defun helix-select-in-regions (regions &optional invert)
+(defun helix-select-interactively-in (ranges &optional invert)
   (unless (use-region-p)
     (user-error "No active selection"))
   (setq helix-select--hl (helix-highlight-create :buffer (current-buffer)
                                                  :face 'helix-region-face
-                                                 :regions regions
+                                                 :ranges ranges
                                                  :invert invert))
   (helix-with-deactivate-mark
    (when-let* ((pattern (condition-case nil
                             (minibuffer-with-setup-hook #'helix-select--start-session
                               (helix-read-regexp "select: "))
                           (quit)))
-               ((string pattern))
+               ((stringp pattern))
                ((not (string-empty-p pattern)))
                (regexp (helix-pcre-to-elisp pattern))
-               (new-regions (-mapcat (-lambda ((beg . end))
-                                       (helix-regexp-match-regions
-                                        regexp beg end invert))
-                                     regions)))
+               (region-ranges (-mapcat (-lambda ((beg . end))
+                                         (helix-regexp-match-ranges
+                                          regexp beg end invert))
+                                       ranges)))
      (set-register '/ pattern)
-     (helix-create-cursors new-regions)
+     (helix-create-cursors region-ranges)
      :success)))
 
 (defun helix-select--start-session ()
   "Start interactive select minibuffer session."
   (with-minibuffer-selected-window
-    (helix-highlight-entire-regions helix-select--hl))
+    (helix-highlight-entire-ranges helix-select--hl))
   (add-hook 'after-change-functions #'helix-select--update-highlight nil t)
   (add-hook 'minibuffer-exit-hook #'helix-select--stop-session nil t))
 
@@ -330,7 +320,7 @@ If nothing found, wrap around the buffer and search up to the point."
             (helix-pcre-to-elisp)))
     (with-minibuffer-selected-window
       (or (helix-highlight-update hl)
-          (helix-highlight-entire-regions hl)))))
+          (helix-highlight-entire-ranges hl)))))
 
 ;;; Filter
 
@@ -419,8 +409,8 @@ If INVERT is non-nil — remove selections that match regexp"
                (if flag
                    (overlay-put overlay 'face 'helix-region-face)
                  (overlay-put overlay 'face nil)))))
-          (t (--each regions-overlays
-               (overlay-put it 'face 'helix-region-face))))))
+          (t (dolist (ov regions-overlays)
+               (overlay-put ov 'face 'helix-region-face))))))
 
 (provide 'helix-search)
 ;;; helix-search.el ends here

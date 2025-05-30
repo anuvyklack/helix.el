@@ -400,16 +400,16 @@ If INVERT is non-nil — select complements to regions that match to regexp."
   (cond (helix-multiple-cursors-mode
          (let* ((real-cursor (helix--create-fake-cursor-1 (point) (mark t) 0))
                 (cursors (helix-all-fake-cursors))
-                regions)
+                ranges)
            (dolist (cursor cursors)
              (when (overlay-get cursor 'mark-active)
                (let ((point (overlay-get cursor 'point))
                      (mark  (overlay-get cursor 'mark)))
                  (push (cons (min point mark)
                              (max point mark))
-                       regions)))
+                       ranges)))
              (helix-remove-fake-cursor-from-buffer cursor))
-           (if (helix-select-in-regions (nreverse regions) invert)
+           (if (helix-select-interactively-in (nreverse ranges) invert)
                (helix-extend-selection -1)
              ;; Else restore original cursors
              (mapc #'helix-restore-fake-cursor-in-buffer cursors)
@@ -418,7 +418,7 @@ If INVERT is non-nil — select complements to regions that match to regexp."
          (let ((dir (helix-region-direction))
                (beg (region-beginning))
                (end (region-end)))
-           (if (helix-select-in-regions (region-bounds) invert)
+           (if (helix-select-interactively-in (region-bounds) invert)
                (helix-extend-selection -1)
              ;; Else restore original region
              (helix-set-region beg end dir))))))
@@ -438,8 +438,8 @@ all regions that match to regexp withing active selections."
      #'(lambda (start end)
          (interactive "r")
          (when-let* (((use-region-p))
-                     (regions (helix-regexp-match-regions ".+$" start end)))
-           (helix-create-cursors regions)
+                     (ranges (helix-regexp-match-ranges ".+$" start end)))
+           (helix-create-cursors ranges)
            (setq any? t))))
     (when any?
       (helix-execute-command-for-all-cursors
