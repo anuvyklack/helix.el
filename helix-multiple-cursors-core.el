@@ -131,16 +131,16 @@ if no more fake cursors are remaining."
   (unless (helix-any-fake-cursors-p)
     (helix-disable-multiple-cursors-mode)))
 
-(defun helix-create-cursors (regions)
-  "Create set of active REGIONS.
-REGIONS should be a list of cons cells (START . END) with bounds of regions.
-The real region will be set for the first element in REGIONS,
-and fake one for others."
-  (when regions
-    (-let (((beg . end) (car regions)))
+(defun helix-create-cursors (ranges)
+  "Create set of active regions.
+RANGES is a list of cons cells (START . END) with bounds of regions.
+The real region will be set for the first range in RANGES, and fake one
+for others."
+  (when ranges
+    (-let (((beg . end) (car ranges)))
       (set-mark beg)
       (goto-char end))
-    (--each (cdr regions)
+    (--each (cdr ranges)
       (-let (((mark . point) it))
         (helix-create-fake-cursor point mark)))))
 
@@ -692,25 +692,24 @@ and which for all to `helix-mc-list-file' file."
     (dolist (group (helix--overlapping-regions))
       (let ((beg (point-max))
             (end (point-min))
-            id rest real-cursor?)
-        (dolist (data group)
-          (pcase-let ((`(,i ,b ,e) data))
+            id delete real-cursor?)
+        (dolist (region-data group-or-overlapping-regions)
+          ;; rid - region id, b - region beginning, e - region end
+          (pcase-let ((`(,rid ,b ,e) region-data))
             (when (< b beg)
               (setq beg b)
               (when (< dir 0)
-                (if (and id (/= id 0))
-                    (push id rest))
-                (setq id i)))
+                (if id (push id delete))
+                (setq id rid)))
             (when (> e end)
               (setq end e)
               (when (< 0 dir)
-                (if (and id (/= id 0))
-                    (push id rest))
-                (setq id i)))
-            (cond ((eql i 0)
+                (if id (push id delete))
+                (setq id rid)))
+            (cond ((eql rid 0)
                    (setq real-cursor? t))
-                  ((and id (/= id i))
-                   (push i rest)))))
+                  ((/= id rid)
+                   (push rid delete)))))
         (let ((pnt (if (< dir 0) beg end))
               (mrk (if (< dir 0) end beg)))
           (pcase id
@@ -735,7 +734,7 @@ cons cells (ID . (START END)) denoting fake cursor ID and its
 region bounds. Inside each group, all regions are overlapping
 and sorted by starting position. ID 0 coresponds to the real
 cursor."
-  (let ((alist (helix--regions-positions))
+  (let ((alist (helix--regions-ranges))
         result
         current-group
         (current-end (point-min)))
@@ -752,7 +751,7 @@ cursor."
       (push (nreverse current-group) result))
     (nreverse result)))
 
-(defun helix--regions-positions ()
+(defun helix--regions-ranges ()
   "Return the alist with cons cells (ID . (START END)).
 \(START END) are bounds of regions. Alist is sorted by START.
 ID 0 coresponds to the real cursor."
@@ -766,10 +765,9 @@ ID 0 coresponds to the real cursor."
                                     (start (min pnt mrk))
                                     (end   (max pnt mrk)))
                                `(,id ,start ,end)))
-                         (helix-all-fake-cursors))))
-         (alist (sort alist #'(lambda (a b)
-                                (< (cl-second a) (cl-second b))))))
-    alist))
+                         (helix-all-fake-cursors)))))
+    (sort alist #'(lambda (a b)
+                    (< (-second-item a) (-second-item b))))))
 
 ;;; Access fake cursors
 
