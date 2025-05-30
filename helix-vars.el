@@ -643,9 +643,12 @@ active.")
                                         helix-end-of-line       ;; gl
                                         helix-copy-selection    ;; C
                                         helix-copy-selection-up ;; M-c
-                                        )
+                                        helix-search-forward    ;; /
+                                        helix-search-backward   ;; ?
+                                        helix-search-next       ;; n
+                                        helix-search-previous)  ;; N
   "List of command, after which `helix-merge-overlapping-regions'
-would be invoked.")
+will be invoked.")
 
 (defvar helix--motion-command '(helix-backward-char       ;; h
                                 helix-forward-char        ;; l
@@ -669,6 +672,9 @@ will be invoked if `helix--extend-selection' is t.")
 (helix-defvar-local helix-mc-temporarily-disabled-minor-modes nil
   "The list of temporarily disabled minor-modes while there are
 multiple cursors.")
+
+(defvar helix--construct-search-pattern-strings nil
+  "Inner variable for `helix-construct-search-pattern' command.")
 
 (provide 'helix-vars)
 ;;; helix-vars.el ends here

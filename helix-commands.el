@@ -667,17 +667,41 @@ Return the replaced substring."
 ;;; Search
 
 ;; /
-(defun helix-search-forward ()
-  (interactive)
-  (helix-search-interactively))
+(defun helix-search-forward (count)
+  (interactive "p")
+  (when (helix-search-interactively)
+    (setq helix-search--direction 1)
+    (helix-search-next count)))
 
 ;; ?
-(defun helix-search-backward ()
-  (interactive)
-  (helix-search-interactively -1))
+(defun helix-search-backward (count)
+  (interactive "p")
+  (when (helix-search-interactively -1)
+    (setq helix-search--direction -1)
+    (helix-search-next count)))
 
-(defvar helix--construct-search-pattern-strings nil
-  "Inner variable for `helix-construct-search-pattern' command.")
+;; n
+(defun helix-search-next (count)
+  "Select next COUNT search match."
+  (interactive "p")
+  (if helix-search--direction
+      (setq count (* count helix-search--direction)))
+  (let ((regexp (helix-search-pattern))
+        (region-dir (if (use-region-p) (helix-region-direction) 1))
+        (scroll-conservatively 0))
+    (helix-motion-loop (dir count)
+      (when (save-excursion (helix-re-search-with-wrap regexp dir))
+        (-let (((beg . end) (helix-match-bounds)))
+          (when (and helix--extend-selection (use-region-p))
+            (helix-create-fake-cursor-from-point))
+          (helix-set-region beg end region-dir)))))
+  (helix-flash-search-pattern))
+
+;; N
+(defun helix-search-previous (count)
+  "Select previous COUNT search match."
+  (interactive "p")
+  (helix-search-next (- count)))
 
 ;; *
 (defun helix-construct-search-pattern ()
@@ -740,30 +764,6 @@ Do not auto-detect word boundaries in the search pattern."
       (push (->> (buffer-substring-no-properties (point) (mark))
                  (funcall quote))
             helix--construct-search-pattern-strings))))
-
-;; n
-(defun helix-search-next (count)
-  "Select next COUNT search match."
-  (interactive "p")
-  (let ((regexp (helix-search-pattern))
-        (region-dir (if (use-region-p) (helix-region-direction) 1))
-        (scroll-conservatively 0))
-    (helix-motion-loop (dir count)
-      (when (save-excursion (helix-re-search-with-wrap regexp dir))
-        (-let (((beg . end) (helix-match-bounds)))
-          (when helix--extend-selection
-            (helix-create-fake-cursor-from-point))
-          (helix-set-region beg end region-dir)))))
-  (when helix-multiple-cursors-mode
-    (helix-merge-overlapping-regions))
-  (helix-flash-search-pattern))
-
-;; N
-(defun helix-search-previous (count)
-  "Select previous COUNT search match."
-  (interactive "p")
-  (helix-search-next (- count)))
-
 ;;; Match
 
 (defun helix-match-map-digit-argument (arg)
