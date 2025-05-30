@@ -30,7 +30,10 @@
                      'helix-backward-WORD-start ;; B
                      'helix-forward-word-end    ;; e
                      'helix-forward-WORD-end    ;; E
-                     ))
+                     'helix-search-forward      ;; /
+                     'helix-search-backward     ;; ?
+                     'helix-search-next         ;; n
+                     'helix-search-previous))   ;; N
 
 ;;; Lisp
 

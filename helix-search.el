@@ -42,34 +42,31 @@
       (if-let* ((regexp (helix-highlight-regexp hl))
                 ((not (string-empty-p regexp)))
                 (search-ranges (or (helix-highlight-ranges hl)
-                                   (let (ranges)
-                                     (dolist (win (get-buffer-window-list buffer))
-                                       (when (window-live-p win)
-                                         (push (cons (window-start) (window-end))
-                                               ranges)))
-                                     (nreverse ranges))))
-                (regions (let ((invert (helix-highlight-invert hl)))
-                           (-mapcat (-lambda ((beg . end))
-                                      (helix-regexp-match-ranges
-                                       regexp beg end invert))
-                                    search-ranges))))
+                                   (-map #'(lambda (win)
+                                             (if (window-live-p win)
+                                                 (cons (window-start win)
+                                                       (window-end win))))
+                                         (get-buffer-window-list buffer))))
+                (ranges (let ((invert (helix-highlight-invert hl)))
+                          (-mapcat (-lambda ((beg . end))
+                                     (helix-regexp-match-ranges regexp beg end invert))
+                                   search-ranges))))
           ;; do
           (let ((face (helix-highlight-face hl))
-                (old-overlays (helix-highlight-overlays hl))
-                new-overlays)
-            (mapc #'delete-overlay old-overlays)
-            (--each regions
-              (-let (((beg . end) it)
-                     ov)
-                (cond ((setq ov (pop old-overlays))
-                       (move-overlay ov beg end))
-                      ((setq ov (make-overlay beg end))
-                       (overlay-put ov 'face face)))
-                (push ov new-overlays)))
-            (setf (helix-highlight-overlays hl) new-overlays)
+                (old-overlays (helix-highlight-overlays hl)))
+            (setf (helix-highlight-overlays hl)
+                  (-map (-lambda ((beg . end))
+                          (let (ov)
+                            (cond ((setq ov (pop old-overlays))
+                                   (move-overlay ov beg end))
+                                  ((setq ov (make-overlay beg end))
+                                   (overlay-put ov 'face face)))
+                            ov))
+                        ranges))
+            (-each old-overlays #'delete-overlay)
             :success)
         ;; else
-        (mapc #'delete-overlay (helix-highlight-overlays hl))
+        (-each (helix-highlight-overlays hl) #'delete-overlay)
         nil))))
 
 (defun helix-regexp-match-ranges (regexp start end &optional invert)
@@ -149,13 +146,11 @@ If nothing found, wrap around the buffer and search up to the point."
         (if (re-search-forward regexp point t direction)
             (message "Wrapped around buffer")))))
 
-(defvar helix--minibuffer-session-timer nil)
-
+(defvar helix-search--timer nil)
 (defvar helix-search--buffer nil)
 (defvar helix-search--point nil)
-(defvar helix-search--overlay nil)
+(defvar helix-search--overlay nil "Main overlay that will become next search.")
 (defvar helix-search--direction nil "1 or -1.")
-(defvar helix-search--timer nil)
 (helix-defvar-local helix-search--hl nil "The `helix-highlight' object for interactive search sessions.")
 
 (defun helix-search-interactively (&optional direction)
@@ -166,16 +161,13 @@ If nothing found, wrap around the buffer and search up to the point."
         helix-search--direction direction
         helix-search--hl (helix-highlight-create :buffer (current-buffer)
                                                  :face 'helix-lazy-highlight))
-  (let ((region-dir (if (use-region-p) (helix-region-direction) 1)))
-    (when-let*
-        ((pattern (condition-case nil
-                      (minibuffer-with-setup-hook #'helix-search--start-session
-                        (helix-read-regexp (if (< 0 direction) "/ " "? ")))
-                    (quit)))
-         ((not (string-empty-p pattern)))
-         (regexp (helix-pcre-to-elisp pattern)))
-      (set-register '/ pattern)
-      :success)))
+  (save-excursion
+    (if-let* ((pattern (condition-case nil
+                           (minibuffer-with-setup-hook #'helix-search--start-session
+                             (helix-read-regexp (if (< 0 direction) "/ " "? ")))
+                         (quit)))
+              ((not (string-empty-p pattern))))
+        (set-register '/ pattern))))
 
 (defun helix-search--start-session ()
   "Start interactive search."
@@ -190,14 +182,15 @@ If nothing found, wrap around the buffer and search up to the point."
                      #'helix-search--do-update)))
 
 (defun helix-search--do-update ()
-  (let ((regexp (-some-> (minibuffer-contents-no-properties)
-                  (helix-pcre-to-elisp))))
+  (let ((pattern (minibuffer-contents-no-properties)))
     (with-current-buffer helix-search--buffer
       (let ((dir helix-search--direction)
             (hl helix-search--hl)
             (scroll-conservatively 0))
         (goto-char helix-search--point)
-        (if (helix-re-search-with-wrap regexp dir)
+        (if-let* (((not (string-empty-p pattern)))
+                  (regexp (helix-pcre-to-elisp pattern))
+                  ((helix-re-search-with-wrap regexp dir)))
             (-let* (((beg . end) (helix-match-bounds)))
               (goto-char (if (< dir 0) beg end))
               (if helix-search--overlay
@@ -210,6 +203,8 @@ If nothing found, wrap around the buffer and search up to the point."
               (setf (helix-highlight-regexp hl) regexp)
               (helix-highlight-update hl))
           ;; else
+          (when helix-search--overlay
+            (delete-overlay helix-search--overlay))
           (helix-highlight-delete hl))))))
 
 (defun helix-search--stop-session ()
@@ -238,19 +233,20 @@ If nothing found, wrap around the buffer and search up to the point."
                                                    :face 'helix-lazy-highlight))
     (helix-highlight-update helix-search--hl)
     (add-hook 'pre-command-hook  #'helix-flash-search-pattern--cleanup-hook nil t)
-    (add-hook 'post-command-hook #'helix-flash-search-pattern--update-hook nil t)))
+    (add-hook 'post-command-hook #'helix-flash-search-pattern--update nil t)))
 
 (defun helix-flash-search-pattern--cleanup-hook ()
   (unless (memq this-command helix-keep-search-highlight-commands)
+    (setq helix-search--direction nil)
     (when helix-search--timer
       (cancel-timer helix-search--timer))
     (when helix-search--hl
       (helix-highlight-delete helix-search--hl)
       (setq helix-search--hl nil))
     (remove-hook 'pre-command-hook  #'helix-flash-search-pattern--cleanup-hook t)
-    (remove-hook 'post-command-hook #'helix-flash-search-pattern--update-hook t)))
+    (remove-hook 'post-command-hook #'helix-flash-search-pattern--update t)))
 
-(defun helix-flash-search-pattern--update-hook (&optional _ _ _)
+(defun helix-flash-search-pattern--update (&optional _ _ _)
   (when helix-search--timer
     (cancel-timer helix-search--timer))
   (setq helix-search--timer
@@ -260,7 +256,7 @@ If nothing found, wrap around the buffer and search up to the point."
 (defun helix-flash-search-pattern--do-update ()
   (if helix-search--hl
       (helix-highlight-update helix-search--hl)
-    (remove-hook 'post-command-hook #'helix-flash-search-pattern--update-hook t)))
+    (remove-hook 'post-command-hook #'helix-flash-search-pattern--update t)))
 
 ;;; Select
 
@@ -294,26 +290,26 @@ If nothing found, wrap around the buffer and search up to the point."
   "Start interactive select minibuffer session."
   (with-minibuffer-selected-window
     (helix-highlight-entire-ranges helix-select--hl))
-  (add-hook 'after-change-functions #'helix-select--update-highlight nil t)
+  (add-hook 'after-change-functions #'helix-select--update nil t)
   (add-hook 'minibuffer-exit-hook #'helix-select--stop-session nil t))
 
 (defun helix-select--stop-session ()
   "Stop interactive select minibuffer session."
-  (when helix--minibuffer-session-timer
-    (cancel-timer helix--minibuffer-session-timer)
-    (setq helix--minibuffer-session-timer nil))
+  (when helix-search--timer
+    (cancel-timer helix-search--timer)
+    (setq helix-search--timer nil))
   (when helix-select--hl
     (helix-highlight-delete helix-select--hl)
     (setq helix-select--hl nil)))
 
-(defun helix-select--update-highlight (_ _ _)
-  (when helix--minibuffer-session-timer
-    (cancel-timer helix--minibuffer-session-timer))
-  (setq helix--minibuffer-session-timer
+(defun helix-select--update (_ _ _)
+  (when helix-search--timer
+    (cancel-timer helix-search--timer))
+  (setq helix-search--timer
         (run-at-time helix-update-highlight-delay nil
-                     #'helix-select--do-update-highlight)))
+                     #'helix-select--do-update)))
 
-(defun helix-select--do-update-highlight ()
+(defun helix-select--do-update ()
   (let ((hl helix-select--hl))
     (setf (helix-highlight-regexp hl)
           (-some-> (minibuffer-contents-no-properties)
@@ -324,9 +320,9 @@ If nothing found, wrap around the buffer and search up to the point."
 
 ;;; Filter
 
-(defvar helix-filter-selections--regions-overlays nil "List of fake regions overlays.")
-(defvar helix-filter-selections--regions-contents nil "List of fake regions content.")
-(defvar helix-filter-selections--invert nil)
+(defvar helix-filter--regions-overlays nil "List of fake regions overlays.")
+(defvar helix-filter--regions-contents nil "List of fake regions content.")
+(defvar helix-filter--invert nil)
 
 (defun helix-filter-selections (&optional invert)
   "Keep selections that match regexp.
@@ -343,24 +339,23 @@ If INVERT is non-nil — remove selections that match regexp"
                                         (overlay-get cursor 'point)
                                         (overlay-get cursor 'mark)))
                                    cursors)))
-      (setq helix-filter-selections--regions-overlays regions-overlays
-            helix-filter-selections--regions-contents regions-contents
-            helix-filter-selections--invert invert)
+      (setq helix-filter--regions-overlays regions-overlays
+            helix-filter--regions-contents regions-contents
+            helix-filter--invert invert)
       (deactivate-mark)
-      (mapc #'delete-overlay cursors)
+      (-each cursors #'delete-overlay)
       (if-let* ((pattern (condition-case nil
-                             (minibuffer-with-setup-hook #'helix-filter-selections--start-session
+                             (minibuffer-with-setup-hook #'helix-filter--start-session
                                (helix-read-regexp (if invert "remove: " "keep: ")))
                            (quit)))
                 ((not (string-empty-p pattern)))
                 (regexp (helix-pcre-to-elisp pattern))
-                (flags (unless (string-empty-p regexp)
-                         (let ((flags (-map #'(lambda (str)
-                                                (if (string-match regexp str) t))
-                                            helix-filter-selections--regions-contents)))
-                           (if helix-filter-selections--invert
-                               (-map #'not flags)
-                             flags))))
+                (flags (let ((flags (-map #'(lambda (str)
+                                              (if (string-match regexp str) t))
+                                          helix-filter--regions-contents)))
+                         (if helix-filter--invert
+                             (-map #'not flags)
+                           flags)))
                 ((-contains? flags t)))
           (--each (-zip-lists cursors flags)
             (-let (((cursor flag) it))
@@ -375,42 +370,43 @@ If INVERT is non-nil — remove selections that match regexp"
           (overlay-put (overlay-get cursor 'fake-region)
                        'face 'helix-region-face))))))
 
-(defun helix-filter-selections--start-session ()
-  (add-hook 'after-change-functions #'helix-filter-selections--update-hook nil t)
-  (add-hook 'minibuffer-exit-hook #'helix-filter-selections--stop-session nil t))
+(defun helix-filter--start-session ()
+  (add-hook 'after-change-functions #'helix-filter--update-hook nil t)
+  (add-hook 'minibuffer-exit-hook #'helix-filter--stop-session nil t))
 
-(defun helix-filter-selections--stop-session ()
-  (when helix--minibuffer-session-timer
-    (cancel-timer helix--minibuffer-session-timer)
-    (setq helix--minibuffer-session-timer nil)))
+(defun helix-filter--stop-session ()
+  (when helix-search--timer
+    (cancel-timer helix-search--timer)
+    (setq helix-search--timer nil)))
 
-(defun helix-filter-selections--update-hook (_ _ _)
-  (when helix--minibuffer-session-timer
-    (cancel-timer helix--minibuffer-session-timer))
-  (setq helix--minibuffer-session-timer
-        (run-at-time helix--minibuffer-session-timer nil
-                     #'helix-filter-selections--do-update)))
+(defun helix-filter--update-hook (_ _ _)
+  (when helix-search--timer
+    (cancel-timer helix-search--timer))
+  (setq helix-search--timer
+        (run-at-time helix-search--timer nil
+                     #'helix-filter--do-update)))
 
-(defun helix-filter-selections--do-update ()
+(defun helix-filter--do-update ()
   "Highlight current matches during filtering selections session."
-  (let* ((regexp (-some-> (minibuffer-contents-no-properties)
-                   (helix-pcre-to-elisp)))
-         (regions-overlays helix-filter-selections--regions-overlays)
-         (flags (unless (string-empty-p regexp)
-                  (let ((flags (-map #'(lambda (str)
-                                         (if (string-match regexp str) t))
-                                     helix-filter-selections--regions-contents)))
-                    (if helix-filter-selections--invert
-                        (-map #'not flags)
-                      flags)))))
-    (cond ((and flags (-contains? flags t))
+  (when-let* ((pattern (minibuffer-contents-no-properties))
+              ((not (string-empty-p pattern)))
+              (regexp (helix-pcre-to-elisp pattern))
+              (regions-overlays helix-filter--regions-overlays)
+              (flags (let ((flags (-map #'(lambda (str)
+                                            (if (string-match regexp str) t))
+                                        helix-filter--regions-contents)))
+                       (if helix-filter--invert
+                           (-map #'not flags)
+                         flags))))
+    (cond ((-contains? flags t)
            (--each (-zip-lists regions-overlays flags)
              (-let (((overlay flag) it))
                (if flag
                    (overlay-put overlay 'face 'helix-region-face)
                  (overlay-put overlay 'face nil)))))
-          (t (dolist (ov regions-overlays)
-               (overlay-put ov 'face 'helix-region-face))))))
+          (t
+           (dolist (ov regions-overlays)
+             (overlay-put ov 'face 'helix-region-face))))))
 
 (provide 'helix-search)
 ;;; helix-search.el ends here
