@@ -15,9 +15,9 @@
 
 (require 'cl-lib)
 (require 'dash)
+(require 'thingatpt)
 (provide 'pcre2el)
 (require 'helix-vars)
-(require 'thingatpt)
 
 ;;; Macros
 
@@ -819,6 +819,27 @@ of the full regexp match."
          (cons (match-beginning 1) (match-end 1)))
         (t
          (cons (match-beginning 0) (match-end 0)))))
+
+(defun helix-collect-positions (fun &optional start end)
+  "Consecutively call FUN and collect point positions after each invocation.
+Finish as soon as point moves outside of START END buffer positions.
+FUN on each invocation should move point."
+  (unless start (setq start (window-start)))
+  (unless end (setq end (window-end)))
+  (save-excursion
+    (let ((win (get-buffer-window))
+          (old-point (point))
+          positions)
+      (while (ignore-errors
+               (let ((this-command fun)
+                     (last-command fun))
+                 (call-interactively fun))
+               (and (not (eql (point) old-point))
+                    (<= start (point) end)))
+        (push (cons (point) win)
+              positions)
+        (setq old-point (point)))
+      (nreverse positions))))
 
 (provide 'helix-common)
 ;;; helix-common.el ends here
