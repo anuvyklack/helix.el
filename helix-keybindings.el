@@ -70,12 +70,13 @@
   "g k" #'helix-avy-previous-line
 
   ;; Changes
-  "i" #'helix-insert
-  "a" #'helix-append
-  "c" #'helix-change
-  "d" #'helix-delete
-  "u" #'helix-undo
-  "U" #'helix-redo
+  "i"   #'helix-insert
+  "a"   #'helix-append
+  "c"   #'helix-change
+  "d"   #'helix-delete
+  "u"   #'helix-undo
+  "U"   #'helix-redo
+  "J"   #'helix-join-line
 
   ;; Selections
   "<escape>" #'helix-normal-state-escape

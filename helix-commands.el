@@ -395,6 +395,16 @@ With no region delete char before point."
   (deactivate-mark)
   (undo-redo))
 
+;; J
+(defun helix-join-line ()
+  "Join selected lines."
+  (interactive)
+  (cond ((use-region-p)
+         (save-mark-and-excursion
+           (let ((deactivate-mark nil))
+             (join-line nil (region-beginning) (region-end)))))
+        (t (join-line t))))
+
 ;;; Selections
 
 ;; v
