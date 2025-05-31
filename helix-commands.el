@@ -22,6 +22,7 @@
 (require 'helix-multiple-cursors-core)
 (require 'helix-search)
 (require 'avy)
+(require 'evil-matchit)
 
 (defun helix-normal-state-escape ()
   "Command for ESC key in Helix Normal state."
@@ -1003,6 +1004,14 @@ Do not auto-detect word boundaries in the search pattern."
       (pcase-let ((`(,l ,_ ,_ ,r) bounds))
         (set-mark l)
         (goto-char r)))))
+
+;; mm
+(defun helix-jump-to-match-item ()
+  "Jump between matching items."
+  (interactive)
+  (unless helix--extend-selection
+    (deactivate-mark))
+  (evilmi-jump-items-native))
 
 ;;; Surround
 
