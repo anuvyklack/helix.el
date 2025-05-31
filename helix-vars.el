@@ -380,6 +380,8 @@ cursors editing.")
     helix-change                   ;; c
     helix-delete                   ;; d
     helix-join-line                ;; J
+    helix-downcase                 ;; `   gu
+    helix-upcase                   ;; M-` gU
     helix-mark-line                ;; x
     helix-mark-line-upward         ;; X
     helix-extend-selection         ;; v

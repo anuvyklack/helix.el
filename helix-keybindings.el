@@ -77,6 +77,10 @@
   "u"   #'helix-undo
   "U"   #'helix-redo
   "J"   #'helix-join-line
+  "`"   #'helix-downcase
+  "M-`" #'helix-upcase
+  "g u" #'helix-downcase
+  "g U" #'helix-upcase
 
   ;; Selections
   "<escape>" #'helix-normal-state-escape

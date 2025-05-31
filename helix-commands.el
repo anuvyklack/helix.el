@@ -405,6 +405,22 @@ With no region delete char before point."
              (join-line nil (region-beginning) (region-end)))))
         (t (join-line t))))
 
+;; ` gu
+(defun helix-downcase (start end)
+  "Convert text in selection to lower case."
+  (interactive "r")
+  (when (use-region-p)
+    (let ((deactivate-mark nil))
+      (downcase-region start end))))
+
+;; M-` gU
+(defun helix-upcase (start end)
+  "Convert text in selection to upper case."
+  (interactive "r")
+  (when (use-region-p)
+    (let ((deactivate-mark nil))
+      (upcase-region start end))))
+
 ;;; Selections
 
 ;; v
