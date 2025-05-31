@@ -379,6 +379,7 @@ cursors editing.")
     helix-append                   ;; a
     helix-change                   ;; c
     helix-delete                   ;; d
+    helix-join-line                ;; J
     helix-mark-line                ;; x
     helix-mark-line-upward         ;; X
     helix-extend-selection         ;; v
