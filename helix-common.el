@@ -841,5 +841,16 @@ FUN on each invocation should move point."
         (setq old-point (point)))
       (nreverse positions))))
 
+(defun helix-invert-case-in-region (start end)
+  "Invert case of characters within START...END buffer positions."
+  (goto-char start)
+  (while (< start end)
+    (let ((char (following-char)))
+      (delete-char 1)
+      (insert-char (if (eq (upcase char) char)
+                       (downcase char)
+                     (upcase char))))
+    (setq start (1+ start))))
+
 (provide 'helix-common)
 ;;; helix-common.el ends here

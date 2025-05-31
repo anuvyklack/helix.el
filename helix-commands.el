@@ -417,6 +417,36 @@ With no region delete char before point."
     (set-marker beg nil)
     (set-marker end nil)))
 
+;; ~
+(defun helix-invert-case ()
+  "Invert case of characters."
+  (interactive)
+  (if (use-region-p)
+      (let ((dir (helix-region-direction))
+            (beg (copy-marker (region-beginning) nil))
+            (end (copy-marker (region-end) t))
+            (deactivate-mark nil))
+        (helix-invert-case-in-region beg end)
+        (helix-set-region beg end dir))
+    ;; else
+    (helix-invert-case-in-region (point) (1+ (point)))))
+
+;; ` or gu
+(defun helix-downcase (start end)
+  "Convert text in selection to lower case."
+  (interactive "r")
+  (when (use-region-p)
+    (let ((deactivate-mark nil))
+      (downcase-region start end))))
+
+;; M-` or gU
+(defun helix-upcase (start end)
+  "Convert text in selection to upper case."
+  (interactive "r")
+  (when (use-region-p)
+    (let ((deactivate-mark nil))
+      (upcase-region start end))))
+
 ;;; Selections
 
 ;; v
