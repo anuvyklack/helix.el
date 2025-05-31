@@ -384,6 +384,7 @@ cursors editing.")
     helix-extend-selection         ;; v
     helix-collapse-selection       ;; ;
     helix-trim-whitespaces-from-selection ;; _
+    helix-jump-to-match-item       ;; mm
     helix-surround                 ;; ms
     helix-surround-delete          ;; md
     helix-surround-change          ;; mc mr
