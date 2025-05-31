@@ -526,6 +526,12 @@ cursors editing.")
     helix-construct-search-pattern-no-bounds ;; M-*
     helix-search-next                        ;; n
     helix-search-previous                    ;; N
+    helix-avy-word-forward                   ;; gw
+    helix-avy-word-backward                  ;; gb
+    helix-avy-WORD-forward                   ;; gW
+    helix-avy-WORD-backward                  ;; gB
+    helix-avy-next-line                      ;; gj
+    helix-avy-previous-line                  ;; gk
     keypad                                   ;; SPC
     tab-next
     tab-previous
