@@ -139,6 +139,8 @@
   "8"   #'helix-match-map-digit-argument
   "9"   #'helix-match-map-digit-argument
 
+  "m"   #'helix-jump-to-match-item
+
   "i p" #'helix-mark-inner-paragraph
   "p"   #'helix-mark-inner-paragraph
   "a p" #'helix-mark-a-paragraph
