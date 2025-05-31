@@ -21,6 +21,7 @@
 (require 'helix-common)
 (require 'helix-multiple-cursors-core)
 (require 'helix-search)
+(require 'avy)
 
 (defun helix-normal-state-escape ()
   "Command for ESC key in Helix Normal state."
@@ -225,6 +226,100 @@ Use visual line when `visual-line-mode' is on."
       (or (region-active-p) (set-mark (point)))
     (set-mark (point)))
   (forward-thing 'paragraph count))
+
+;;; Easymotion / Avy
+
+;; gw
+(defun helix-avy-word-forward ()
+  "Move to a word start after the point, choosing it with Avy."
+  (interactive)
+  (helix-disable-multiple-cursors-mode)
+  (let ((mark (and helix--extend-selection
+                   (not (region-active-p))
+                   (point)))
+        (avy-all-windows nil))
+    (when (-> (avy--regex-candidates avy-goto-word-0-regexp
+                                     (point) (window-end nil t))
+              (avy-process))
+      (cond (mark (set-mark mark))
+            ((not helix--extend-selection)
+             (set-mark (point))))
+      (forward-thing 'helix-word))))
+
+;; gb
+(defun helix-avy-word-backward ()
+  "Move to a word start before the point, choosing it with Avy."
+  (interactive)
+  (helix-disable-multiple-cursors-mode)
+  (let ((mark (and helix--extend-selection
+                   (not (region-active-p))
+                   (point)))
+        (avy-all-windows nil))
+    (when (-> (avy--regex-candidates avy-goto-word-0-regexp
+                                     (window-start) (point))
+              (nreverse)
+              (avy-process))
+      (cond (mark (set-mark mark))
+            ((not helix--extend-selection)
+             (set-mark (point))
+             (forward-thing 'helix-word))))))
+
+;; gW
+(defun helix-avy-WORD-forward ()
+  "Move to a WORD start after the point, choosing it with Avy."
+  (interactive)
+  (helix-disable-multiple-cursors-mode)
+  (let ((mark (and helix--extend-selection
+                   (not (region-active-p))
+                   (point)))
+        (avy-all-windows nil))
+    (when (-> (avy--regex-candidates "[^ \r\n\t]+"
+                                     (point) (window-end nil t))
+              (avy-process))
+      (cond (mark (set-mark mark))
+            ((not helix--extend-selection)
+             (set-mark (point))))
+      (forward-thing 'helix-WORD))))
+
+;; gB
+(defun helix-avy-WORD-backward ()
+  "Move to a WORD start before the point, choosing it with Avy."
+  (interactive)
+  (helix-disable-multiple-cursors-mode)
+  (let ((mark (and helix--extend-selection
+                   (not (region-active-p))
+                   (point)))
+        (avy-all-windows nil))
+    (when (-> (avy--regex-candidates "[^ \r\n\t]+"
+                                     (window-start) (point))
+              (nreverse)
+              (avy-process))
+      (cond (mark (set-mark mark))
+            ((not helix--extend-selection)
+             (set-mark (point))
+             (forward-thing 'helix-WORD))))))
+
+;; gj
+(defun helix-avy-next-line ()
+  "Move to a next line, choosing it with Avy."
+  (interactive)
+  (helix-disable-multiple-cursors-mode)
+  (unless helix--extend-selection
+    (deactivate-mark))
+  (let ((temporary-goal-column (current-column)))
+    (-> (helix-collect-positions #'next-line)
+        (avy-process))))
+
+;; gk
+(defun helix-avy-previous-line ()
+  "Move to a previous line, choosing it with Avy."
+  (interactive)
+  (helix-disable-multiple-cursors-mode)
+  (unless helix--extend-selection
+    (deactivate-mark))
+  (let ((temporary-goal-column (current-column)))
+    (-> (helix-collect-positions #'previous-line)
+        (avy-process))))
 
 ;;; Changes
 

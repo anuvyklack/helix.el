@@ -61,6 +61,14 @@
   "}"   #'helix-forward-paragraph
   "{"   #'helix-backward-paragraph
 
+  ;; Easymotion / Avy
+  "g w" #'helix-avy-word-forward
+  "g b" #'helix-avy-word-backward
+  "g W" #'helix-avy-WORD-forward
+  "g B" #'helix-avy-WORD-backward
+  "g j" #'helix-avy-next-line
+  "g k" #'helix-avy-previous-line
+
   ;; Changes
   "i" #'helix-insert
   "a" #'helix-append
