@@ -748,6 +748,24 @@ ends at END-COLUMN spauns NUMBER-OF-LINES."
                                               (helix-first-fake-cursor)))
     (helix-maybe-disable-multiple-cursors-mode)))
 
+;; M-minus
+(defun helix-merge-selections ()
+  "Merge all cursors into single selection."
+  (interactive)
+  (when helix-multiple-cursors-mode
+    (let ((beg (let ((cursor (helix-first-fake-cursor)))
+                 (min (overlay-get cursor 'point)
+                      (overlay-get cursor 'mark)
+                      (point)
+                      (if (use-region-p) (mark) most-positive-fixnum))))
+          (end (let ((cursor (helix-last-fake-cursor)))
+                 (max (overlay-get cursor 'point)
+                      (overlay-get cursor 'mark)
+                      (point)
+                      (if (use-region-p) (mark) 0)))))
+      (helix-disable-multiple-cursors-mode)
+      (helix-set-region beg end 1))))
+
 ;; (
 (defun helix-rotate-selections-backward (count)
   "Rotate main selection backward COUNT times."
