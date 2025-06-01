@@ -507,12 +507,13 @@ cursors editing.")
     helix-smooth-scroll-line-to-top          ;; zt
     helix-smooth-scroll-line-to-bottom       ;; zb
     helix-disable-multiple-cursors-mode      ;; ,
+    helix-delete-main-cursor                 ;; M-,
+    helix-merge-selections                   ;; M-minus
     helix-normal-state-escape                ;; ESC in normal state
     helix-normal-state                       ;; ESC
     helix-toggle-cursor-on-click             ;; M-mouse1
     helix-goto-first-line                    ;; gg
     helix-goto-last-line                     ;; G
-    helix-delete-main-cursor                 ;; M-,
     helix-rotate-selections-backward         ;; (
     helix-rotate-selections-forward          ;; )
     helix-rotate-selections-content-backward ;; M-(
