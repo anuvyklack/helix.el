@@ -102,6 +102,7 @@
   "M-K" #'helix-remove-selections
   ","   #'helix-disable-multiple-cursors-mode
   "M-," #'helix-delete-main-cursor
+  "M--" #'helix-merge-selections
   ";"   #'helix-collapse-selection
   "M-;" #'exchange-point-and-mark
   "g o" #'exchange-point-and-mark
