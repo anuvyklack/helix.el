@@ -125,7 +125,11 @@
   ;; "z z" #'helix-smooth-scroll-line-to-center
   "z z" #'helix-smooth-scroll-line-not-to-very-top
   "z t" #'helix-smooth-scroll-line-to-top
-  "z b" #'helix-smooth-scroll-line-to-bottom)
+  "z b" #'helix-smooth-scroll-line-to-bottom
+
+  ;;; Misc
+  "g f" #'find-file-at-point
+  "g x" #'browse-url-at-point)
 
 (keymap-global-unset "M-<down-mouse-1>")
 (helix-keymap-set nil 'normal "M-<mouse-1>" #'helix-toggle-cursor-on-click)
