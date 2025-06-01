@@ -186,7 +186,7 @@ Use visual line when `visual-line-mode' is on."
     (set-mark (point)))
   (if visual-line-mode
       (beginning-of-visual-line)
-    (beginning-of-line)))
+    (move-beginning-of-line nil)))
 
 ;; gh
 (defun helix-first-non-blank ()
@@ -207,7 +207,13 @@ Use visual line when `visual-line-mode' is on."
     (set-mark (point)))
   (if visual-line-mode
       (end-of-visual-line)
-    (move-end-of-line 1)))
+    (move-end-of-line 1)
+    ;; "Stick" cursor to the end of line after moving to it. Vertical
+    ;; motions right after "gl" will place point at the end of each line.
+    ;; Do this only when `visual-line-mode' is not active.
+    (when (eolp)
+      (setq temporary-goal-column most-positive-fixnum
+            this-command 'next-line))))
 
 ;; ]p
 (defun helix-forward-paragraph (count)
