@@ -538,6 +538,8 @@ cursors editing.")
     helix-avy-WORD-backward                  ;; gB
     helix-avy-next-line                      ;; gj
     helix-avy-previous-line                  ;; gk
+    find-file-at-point                       ;; gf
+    browse-url-at-point                      ;; gx
     keypad                                   ;; SPC
     tab-next
     tab-previous
