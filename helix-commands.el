@@ -410,7 +410,8 @@ With no region delete char before point."
   (interactive)
   (cond ((use-region-p)
          ;; If line selected — add newline symbol after it into active region.
-         (when (helix-line-selected-p)
+         (when (and (not (helix-blank-line-p))
+                    (helix-line-selected-p))
            (when (< (helix-region-direction) 0)
              (helix-exchange-point-and-mark))
            (forward-char))
@@ -511,9 +512,12 @@ automatically."
             region-dir 1))
     (unless (zerop count)
       (cond ((<= 0 region-dir motion-dir)
-             (forward-char)
-             (forward-thing line count)
-             (backward-char))
+             (if (helix-blank-line-p)
+                 (forward-char)
+               ;; else
+               (forward-char)
+               (forward-thing line count)
+               (backward-char)))
             ((<= region-dir motion-dir 0)
              (forward-thing line count))
             ((< region-dir 0 motion-dir)
@@ -546,7 +550,8 @@ Uses visual lines if `visual-line-mode' is active, otherwise logical lines."
            (-let (((beg . end) (bounds-of-thing-at-point line)))
              (set-mark beg)
              (goto-char end)
-             (backward-char)
+             (unless (eql (1+ beg) end)
+               (backward-char))
              1)))))
 
 ;; X
