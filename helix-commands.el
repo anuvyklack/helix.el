@@ -348,6 +348,38 @@ Use visual line when `visual-line-mode' is on."
     (helix-exchange-point-and-mark))
   (helix-insert-state 1))
 
+;; o
+(defun helix-open-below ()
+  "Insert a new line below point and switch to Insert state."
+  (interactive)
+  (helix-insert-newline-below)
+  (unwind-protect
+      (indent-according-to-mode)
+    (helix-insert-state 1)))
+
+;; O
+(defun helix-open-above ()
+  "Insert a new line above point and switch to Insert state."
+  (interactive)
+  (helix-insert-newline-above)
+  (unwind-protect
+      (indent-according-to-mode)
+    (helix-insert-state 1)))
+
+;; ] SPC
+(defun helix-add-blank-line-below ()
+  "Add blank line below."
+  (interactive)
+  (save-excursion
+    (helix-insert-newline-below)))
+
+;; [ SPC
+(defun helix-add-blank-line-above ()
+  "Add blank line above."
+  (interactive)
+  (save-excursion
+    (helix-insert-newline-above)))
+
 ;; c
 (defun helix-change ()
   "Delete region and enter Insert state."
