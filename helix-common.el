@@ -701,6 +701,10 @@ Return symbol:
   ;; Alternative: (memq char '(?\s ?\t))
   )
 
+(defun helix-blank-line-p ()
+  "Return t if point is in blank line."
+  (and (bolp) (eolp)))
+
 (defun helix-comment-at-point-p ()
   "Return non-nil if point is inside a comment, or comment starts
 right after the point."
