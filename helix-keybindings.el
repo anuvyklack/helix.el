@@ -72,6 +72,8 @@
   ;; Changes
   "i"   #'helix-insert
   "a"   #'helix-append
+  "o"   #'helix-open-below
+  "O"   #'helix-open-above
   "c"   #'helix-change
   "d"   #'helix-delete
   "u"   #'helix-undo
@@ -127,9 +129,11 @@
   "z t" #'helix-smooth-scroll-line-to-top
   "z b" #'helix-smooth-scroll-line-to-bottom
 
-  ;;; Misc
+  ;; Misc
   "g f" #'find-file-at-point
-  "g x" #'browse-url-at-point)
+  "g x" #'browse-url-at-point
+  "] SPC" #'helix-add-blank-line-below
+  "[ SPC" #'helix-add-blank-line-above)
 
 (keymap-global-unset "M-<down-mouse-1>")
 (helix-keymap-set nil 'normal "M-<mouse-1>" #'helix-toggle-cursor-on-click)
