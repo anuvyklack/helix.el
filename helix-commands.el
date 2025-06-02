@@ -662,14 +662,18 @@ all regions that match to regexp withing active selections."
   "Align selections."
   (interactive)
   (helix-with-real-cursor-as-fake
-    (let* (;; Filter cursors to remain only the first on each line.
+    (let* (rest-cursors
+           ;; Filter cursors to remain only the first on each line.
            ;; Line numbers start from 1, so 0 is out of scope.
            (cursors (let ((current-line 0))
                       (-remove #'(lambda (cursor)
-                                   (let ((line (line-number-at-pos
-                                                (overlay-get cursor 'point))))
-                                     (or (eql line current-line)
-                                         (ignore (setq current-line line)))))
+                                   (let* ((line (line-number-at-pos
+                                                 (overlay-get cursor 'point)))
+                                          (same-line? (eql line current-line)))
+                                     (if same-line?
+                                         (push cursor rest-cursors)
+                                       (setq current-line line))
+                                     same-line?))
                                (helix-all-fake-cursors t))))
            (column (-reduce-from #'(lambda (column cursor)
                                      (goto-char (overlay-get cursor 'point))
@@ -677,19 +681,33 @@ all regions that match to regexp withing active selections."
                                  0 cursors)))
       ;; Align
       (dolist (cursor cursors)
-        (goto-char (overlay-get cursor 'point))
-        (unless (eql (current-column) column)
-          (helix--restore-point-state cursor)
-          (let ((deactivate-mark nil) ;; To not deactivate-mark after insertion
-                (str (s-repeat (- column (current-column)) " ")))
-            (cond ((and (use-region-p)
-                        (> (helix-region-direction) 0))
-                   (helix-exchange-point-and-mark)
-                   (insert str)
-                   (helix-exchange-point-and-mark))
-                  (t
-                   (insert str))))
-          (helix-move-fake-cursor cursor (point) (mark t)))))))
+        (helix--add-fake-cursor-to-undo-list cursor
+          (goto-char (overlay-get cursor 'point))
+          (if (eql (current-column) column)
+              ;; Add placeholder for anchor cursor to `buffer-undo-list',
+              ;; because if during command evaluating for a fake cursor nothing
+              ;; have been added to undo-list, the fake cursor won't be stored,
+              ;; and wouldn't be restored during undo.
+              (push '(apply cdr nil) buffer-undo-list)
+            ;; else
+            (helix--restore-point-state cursor)
+            (let ((deactivate-mark nil) ;; To not deactivate-mark after insertion
+                  (str (s-repeat (- column (current-column)) " ")))
+              (cond ((and (use-region-p)
+                          (> (helix-region-direction) 0))
+                     (helix-exchange-point-and-mark)
+                     (insert str)
+                     (helix-exchange-point-and-mark))
+                    (t
+                     (insert str))))
+            (helix-move-fake-cursor cursor (point) (mark t)))))
+      ;; Add rest cursors to `buffer-undo-list'.
+      (dolist (cursor rest-cursors)
+        (helix--add-fake-cursor-to-undo-list cursor
+          ;; Move point to a fake-cursor position, because it will be stored in
+          ;; `buffer-undo-list' by `helix--add-fake-cursor-to-undo-list' macro.
+          (goto-char (overlay-get cursor 'point))
+          (push '(apply cdr nil) buffer-undo-list))))))
 
 ;; C
 (defun helix-copy-selection (count)
@@ -871,7 +889,7 @@ Return the replaced substring."
     (helix--restore-point-state cursor)
     (let ((dir (helix-region-direction))
           (new-content (buffer-substring (point) (mark)))
-          (deactivate-mark nil)) ;; To not deactivate-mark after insertion
+          (deactivate-mark nil)) ;; Don't deactivate-mark after insertion
       (delete-region (point) (mark))
       (insert content)
       (when (< dir 0) (helix-exchange-point-and-mark))
