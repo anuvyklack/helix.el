@@ -37,13 +37,26 @@ otherwise prepend it to the list.
   "Evaluate BODY with the buffer narrowed to START and END.
 
 \(fn (START . END) BODY...)"
-  (declare (indent defun) (debug t))
+  (declare (indent defun) (debug (form &rest form)))
   (let ((start (gensym "start"))
         (end (gensym "end")))
-    `(cl-destructuring-bind (,start . ,end) ,restrictions
+    `(-let (((,start . ,end) ,restrictions))
        (save-restriction
          (narrow-to-region ,start ,end)
          ,@body))))
+
+(defmacro helix-narrow-to-field (&rest body)
+  "Evaluated BODY with buffer narrowed to the current field."
+  (declare (indent defun) (debug t))
+  `(helix-with-restriction (cons (field-beginning) (field-end))
+     ,@body))
+
+(defmacro helix-save-goal-column (&rest body)
+  "Restore the goal column after execution of BODY."
+  (declare (indent defun) (debug t))
+  `(let ((goal-column goal-column)
+         (temporary-goal-column temporary-goal-column))
+     ,@body))
 
 (defmacro helix-with-deactivate-mark (&rest body)
   "Evaluate BODY with mark temporary deactivated."
@@ -608,7 +621,7 @@ action. The step is terminated with `helix--single-undo-step-end'."
            ,@body)
        (helix--single-undo-step-end))))
 
-;;; Utils
+;;; Miscellaneous
 
 (defun helix-exchange-point-and-mark ()
   "Exchange point and mark without activating the region."
@@ -851,6 +864,23 @@ FUN on each invocation should move point."
                        (downcase char)
                      (upcase char))))
     (setq start (1+ start))))
+
+(defun helix-insert-newline-above ()
+  "Insert a new line above point and place point in that line
+with regard to indentation."
+  (helix-narrow-to-field
+    (beginning-of-line)
+    (insert (if use-hard-newlines hard-newline "\n"))
+    (forward-line -1)
+    (back-to-indentation)))
+
+(defun helix-insert-newline-below ()
+  "Insert a new line below point and place point in that line
+with regard to indentation."
+  (helix-narrow-to-field
+    (end-of-line)
+    (insert (if use-hard-newlines hard-newline "\n"))
+    (back-to-indentation)))
 
 (provide 'helix-common)
 ;;; helix-common.el ends here
