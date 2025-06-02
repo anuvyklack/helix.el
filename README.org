@@ -16,9 +16,3 @@
 
 - Right after search backward with =?= command, =n= and =N= are swaped: =n= will
   repeat search backward, =N= — forward, like in Vim.
-
-* Known problems
-
-- If command modify buffer only for some cursors, like ~helix-align-selection~
-  does: it inserts spaces only in front of some selections to align them,
-  then on undo cursors positions will desynchronize.

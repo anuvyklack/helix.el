@@ -574,7 +574,8 @@ is inside a string, return quote-mark character that bounds that string."
 All following buffer modifications are grouped together as a single
 action. The step is terminated with `helix--single-undo-step-end'."
   (unless (or helix--in-single-undo-step
-              (helix-undo-command-p this-command))
+              (helix-undo-command-p this-command)
+              (memq buffer-undo-list '(nil t)))
     (setq helix--in-single-undo-step t)
     (unless (null (car-safe buffer-undo-list))
       (undo-boundary))
@@ -584,9 +585,8 @@ action. The step is terminated with `helix--single-undo-step-end'."
 
 (defun helix--single-undo-step-end ()
   "Finalize atomic undo step started by `helix--single-undo-step-beginning'."
-  (unless (or (eq buffer-undo-list helix--undo-list-pointer)
-              (null helix--undo-list-pointer)
-              (eq buffer-undo-list t))
+  (unless (or (not helix--in-single-undo-step)
+              (eq buffer-undo-list helix--undo-list-pointer))
     (let ((undo-list buffer-undo-list))
       (while (and (consp undo-list)
                   (eq (car undo-list) nil))

@@ -254,31 +254,29 @@ and bind it to CURSOR."
 (defmacro helix--add-fake-cursor-to-undo-list (cursor &rest body)
   "CURSOR position management during undo."
   (declare (indent defun) (debug (symbolp &rest form)))
-  (let ((id (make-symbol "id")))
+  (let ((id (make-symbol "id"))
+        (point (make-symbol "point"))
+        (deactivate (make-symbol "deactivate-cursor")))
     `(let ((,id (overlay-get ,cursor 'id)))
-       ;; ID 0 is for real cursor, so ignore it.
        (if (eql ,id 0)
-           (progn ,@body)
-         (helix--add-fake-cursor-to-undo-list-1 ,id ,@body)))))
-
-(defmacro helix--add-fake-cursor-to-undo-list-1 (id &rest body)
-  "CURSOR position management during undo."
-  (declare (indent defun) (debug (symbolp &rest form)))
-  (let ((deactivate (make-symbol "deactivate-cursor")))
-    `(let* ((,deactivate `(apply helix-undo--deactivate-cursor ,,id)))
-       (push ,deactivate buffer-undo-list)
-       (prog1 (progn ,@body)
-         ;; If nothing has been added to the undo-list
-         (if (eq (car buffer-undo-list) ,deactivate)
-             (pop buffer-undo-list)
-           (push `(apply helix-undo--activate-cursor ,,id)
-                 buffer-undo-list))))))
+           (progn ,@body) ;; ID 0 is for real cursor, so skip it.
+         ;; else
+         (let* ((,point (marker-position (overlay-get ,cursor 'point)))
+                (,deactivate `(apply helix-undo--deactivate-cursor ,,id ,,point)))
+           (push ,deactivate buffer-undo-list)
+           (prog1 (progn ,@body)
+             ;; If nothing has been added to the undo-list
+             (if (eq (car buffer-undo-list) ,deactivate)
+                 (pop buffer-undo-list)
+               ;; (let ((,point (marker-position (overlay-get ,cursor 'point)))))
+               (push `(apply helix-undo--activate-cursor ,,id ,(point))
+                     buffer-undo-list))))))))
 
 (defvar helix--point-state-during-undo nil
   "The variable to keep the state of the real cursor while undoing a fake one.")
 
 ;;;###autoload
-(defun helix-undo--activate-cursor (id)
+(defun helix-undo--activate-cursor (id point)
   "Called when undoing to temporarily activate the fake cursor
 which action is being undone."
   (setq helix--point-state-during-undo
@@ -286,15 +284,16 @@ which action is being undone."
          (make-overlay (point) (point) nil nil t)))
   (when-let* ((cursor (helix-cursor-with-id id)))
     (helix--restore-point-state cursor))
-  (push `(apply helix-undo--deactivate-cursor ,id)
+  (goto-char point)
+  (push `(apply helix-undo--deactivate-cursor ,id ,point)
         buffer-undo-list))
 
-(defun helix-undo--deactivate-cursor (id)
+(defun helix-undo--deactivate-cursor (id point)
   "Called when undoing to reinstate the real cursor after undoing a fake one."
-  ;; Update or create fake cursor
-  (helix-set-fake-cursor id (point) (mark t))
-  (push `(apply helix-undo--activate-cursor ,id)
+  (push `(apply helix-undo--activate-cursor ,id ,point)
         buffer-undo-list)
+  ;; Update or create fake cursor
+  (helix-set-fake-cursor id point (mark t))
   ;; Restore real cursor
   (helix--restore-point-state helix--point-state-during-undo)
   (setq helix--point-state-during-undo nil))
@@ -470,7 +469,18 @@ So you can paste it in later with `yank-rectangle'."
     (funcall it 1))
   (setq helix-mc-temporarily-disabled-minor-modes nil))
 
-(defun helix--pre-commad-hook-function ()
+(defun helix--undo-step-start (position)
+  (push `(apply helix--undo-step-end ,position)
+        buffer-undo-list))
+
+(defun helix--undo-step-end (position)
+  (goto-char position)
+  (push `(apply helix--undo-step-start ,position) buffer-undo-list))
+
+(defvar helix--undo-step-end nil)
+(defvar helix--remove-post-command-hook nil)
+
+(defun helix--pre-commad-hook ()
   "Called from `pre-command-hook' to execute COMMAND for fake cursors.
 The COMMAND should be executed for fake cursors first, because it can
 create fake cursors itself, like `helix-copy-selection' does, and we want
@@ -478,6 +488,9 @@ COMMAND to be executed only for original ones."
   (unless helix--executing-command-for-fake-cursor
     (setq helix--this-command this-command)
     (helix--single-undo-step-beginning)
+    (when helix--in-single-undo-step
+      (push (setq helix--undo-step-end `(apply helix--undo-step-end ,(point)))
+            buffer-undo-list))
     ;; Wrap in `condition-case' to protect this function, because the function
     ;; throwing the error is deleted from `pre-command-hook'.
     (condition-case error
@@ -490,12 +503,24 @@ COMMAND to be executed only for original ones."
        (message "[Helix] error in `helix--execute-command-for-all-fake-cursors': %s"
                 (error-message-string error))))))
 
-(defun helix--post-command-hook-function ()
-  (unless helix--executing-command-for-fake-cursor
-    (helix--single-undo-step-end)
+(defun helix--post-command-hook ()
+  (when (and (not helix--executing-command-for-fake-cursor)
+             helix--in-single-undo-step)
+    (while (eq (car buffer-undo-list) nil)
+      (pop buffer-undo-list))
+    (if (equal (car buffer-undo-list) helix--undo-step-end)
+        (pop buffer-undo-list)
+      ;; else
+      (push `(apply helix--undo-step-start ,(point))
+            buffer-undo-list))
+    (helix--single-undo-step-end))
+  (when helix-multiple-cursors-mode
     (when (helix-merge-regions-p helix--this-command)
       (helix-merge-overlapping-regions))
-    (helix--reset-input-cache)))
+    (helix--reset-input-cache))
+  (when helix--remove-post-command-hook
+    (remove-hook 'post-command-hook 'helix--post-command-hook t)
+    (setq helix--remove-post-command-hook nil)))
 
 ;;;###autoload
 (define-minor-mode helix-multiple-cursors-mode
@@ -508,10 +533,13 @@ COMMAND to be executed only for original ones."
       (progn
         (helix-mc-load-lists) ;; Lazy-load the user's list file
         (helix-mc-temporarily-disable-unsupported-minor-modes)
-        (add-hook 'pre-command-hook 'helix--pre-commad-hook-function nil t)
-        (add-hook 'post-command-hook 'helix--post-command-hook-function t t))
-    (remove-hook 'post-command-hook 'helix--post-command-hook-function t)
-    (remove-hook 'pre-command-hook 'helix--pre-commad-hook-function t)
+        (helix--pre-commad-hook)
+        (add-hook 'pre-command-hook 'helix--pre-commad-hook nil t)
+        (add-hook 'post-command-hook 'helix--post-command-hook t t))
+    ;; Execute `helix--post-command-hook' one last time and remove it.
+    (setq helix--remove-post-command-hook t)
+    ;; (remove-hook 'post-command-hook 'helix--post-command-hook t)
+    (remove-hook 'pre-command-hook 'helix--pre-commad-hook t)
     (setq helix--this-command nil)
     (helix-mc--maybe-set-killed-rectangle)
     (helix--delete-fake-cursors)
