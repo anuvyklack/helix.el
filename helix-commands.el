@@ -662,20 +662,19 @@ all regions that match to regexp withing active selections."
   "Align selections."
   (interactive)
   (helix-with-real-cursor-as-fake
-    ;; Filter cursors to remain only the first on each line.
-    (let ((cursors (let ((current-line 0)) ;; Line numbers start from 1
-                     (-remove #'(lambda (cursor)
-                                  (let* ((pnt (overlay-get cursor 'point))
-                                         (line (line-number-at-pos pnt)))
-                                    (or (eql line current-line)
-                                        (ignore
-                                         (setq current-line line)))))
-                              (helix-all-fake-cursors t))))
-          (column 0))
-      ;; Define the column
-      (dolist (cursor cursors)
-        (goto-char (overlay-get cursor 'point))
-        (setq column (max column (current-column))))
+    (let* (;; Filter cursors to remain only the first on each line.
+           ;; Line numbers start from 1, so 0 is out of scope.
+           (cursors (let ((current-line 0))
+                      (-remove #'(lambda (cursor)
+                                   (let ((line (line-number-at-pos
+                                                (overlay-get cursor 'point))))
+                                     (or (eql line current-line)
+                                         (ignore (setq current-line line)))))
+                               (helix-all-fake-cursors t))))
+           (column (-reduce-from #'(lambda (column cursor)
+                                     (goto-char (overlay-get cursor 'point))
+                                     (max column (current-column)))
+                                 0 cursors)))
       ;; Align
       (dolist (cursor cursors)
         (goto-char (overlay-get cursor 'point))
