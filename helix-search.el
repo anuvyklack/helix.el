@@ -283,6 +283,7 @@ If nothing found, wrap around the buffer and search up to the point."
                                           regexp beg end invert))
                                        ranges)))
      (set-register '/ pattern)
+     (setq helix--extend-selection nil)
      (helix-create-cursors region-ranges)
      :success)))
 
