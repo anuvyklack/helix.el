@@ -367,6 +367,12 @@ during BODY evaluation. Restore it if it is still alive."
                 (helix-restore-point-from-fake-cursor (helix-first-fake-cursor))))
          (helix-maybe-disable-multiple-cursors-mode)))))
 
+(defmacro helix-execute-for-all-cursors (&rest body)
+  (declare (indent defun) (debug (form &rest form)))
+  `(helix-execute-command-for-all-cursors
+    #'(lambda () (interactive)
+        ,@body)))
+
 (defun helix-execute-command-for-all-cursors (command)
   "Call COMMAND interactively for all cursors: real and fake ones."
   ;; First execute COMMAND for fake cursors, because it can create fake
