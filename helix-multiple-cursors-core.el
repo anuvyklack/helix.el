@@ -146,39 +146,48 @@ for others."
       (-let (((mark . point) it))
         (helix-create-fake-cursor point mark)))))
 
-(defun helix--set-cursor-overlay (cursor position)
-  "Move CURSOR overlay to POSITION.
-If CURSOR is nil — create new fake cursor overlay at POSITION.
+(defun helix--set-cursor-overlay (cursor pos)
+  "Move CURSOR overlay to position POS, and set it FACE.
+If CURSOR is nil — create new fake cursor overlay at POS.
 Return CURSOR."
   (save-excursion
-    (goto-char position)
-    (let* ((pos position)
-           ;; Special case for end of line, because overlay over
-           ;; a newline highlights the entire width of the window.
-           (cursor (cond ((and cursor (eolp))
-                          (move-overlay cursor pos pos))
-                         (cursor
-                          (move-overlay cursor pos (1+ pos)))
-                         ((eolp)
-                          (make-overlay pos pos nil t nil))
-                         (t
-                          (make-overlay pos (1+ pos) nil t nil)))))
+    (goto-char pos)
+    ;; Special case for end of line, because overlay over
+    ;; a newline highlights the entire width of the window.
+    (setq cursor (cond ((and cursor (eolp))
+                        (move-overlay cursor pos pos))
+                       (cursor
+                        (move-overlay cursor pos (1+ pos)))
+                       ((eolp)
+                        (make-overlay pos pos nil t nil))
+                       (t
+                        (make-overlay pos (1+ pos) nil t nil))))
+    (let ((face (if helix--extend-selection
+                    'helix-fake-cursor-extend-selection
+                  'helix-fake-cursor)))
       (cond ((and helix-mc-match-cursor-style
                   (helix-cursor-is-bar-p))
-             (overlay-put cursor 'before-string (propertize "|" 'face 'helix-fake-cursor-bar))
+             (overlay-put cursor 'before-string (propertize "|" 'face face))
              (overlay-put cursor 'after-string nil)
              (overlay-put cursor 'face nil))
             ((eolp)
-             (overlay-put cursor 'after-string (propertize " " 'face 'helix-fake-cursor))
+             (overlay-put cursor 'after-string (propertize " " 'face face))
              (overlay-put cursor 'before-string nil)
              (overlay-put cursor 'face nil))
             (t
-             (overlay-put cursor 'face 'helix-fake-cursor)
+             (overlay-put cursor 'face face)
              (overlay-put cursor 'before-string nil)
-             (overlay-put cursor 'after-string nil)))
-      cursor)))
+             (overlay-put cursor 'after-string nil))))
+    cursor))
 
 (defalias 'helix--move-cursor-overlay #'helix--set-cursor-overlay)
+
+(defun helix--set-cursor-face (cursor &optional face)
+  (unless face (setq face 'helix-fake-cursor))
+  (cond ((overlay-get cursor 'after-string)
+         (overlay-put cursor 'after-string (propertize " " 'face face)))
+        (t
+         (overlay-put cursor 'face face))))
 
 (defun helix--set-region-overlay (cursor point mark)
   "Set the overlay looking like active region between POINT and MARK
