@@ -608,17 +608,15 @@ all regions that match to regexp withing active selections."
 (defun helix-split-region-on-newline ()
   (interactive)
   (let (any?)
-    (helix-execute-command-for-all-cursors
-     #'(lambda (start end)
-         (interactive "r")
-         (when-let* (((use-region-p))
-                     (ranges (helix-regexp-match-ranges ".+$" start end)))
-           (helix-create-cursors ranges)
-           (setq any? t))))
+    (helix-execute-for-all-cursors
+      (when-let* (((use-region-p))
+                  (ranges (helix-regexp-match-ranges
+                           ".+$" (region-beginning) (region-end))))
+        (helix-create-cursors ranges)
+        (setq any? t)))
     (when any?
-      (helix-execute-command-for-all-cursors #'(lambda ()
-                                                 (interactive)
-                                                 (helix-extend-selection -1))))))
+      (helix-execute-for-all-cursors
+        (setq helix--extend-selection nil)))))
 
 ;; K
 (defun helix-keep-selections ()
@@ -926,39 +924,38 @@ Return the replaced substring."
   "Construct search pattern from all current selection and store it to / register.
 Auto-detect word boundaries at the beginning and end of the search pattern."
   (interactive)
-  (setq helix--construct-search-pattern-strings nil)
-  (helix-execute-command-for-all-cursors #'helix--construct-search-pattern-1)
-  (let* ((strings (nreverse (-uniq helix--construct-search-pattern-strings)))
-         (separator (if helix-use-pcre-regex "|" "\\|"))
-         (pattern (apply #'concat (-interpose separator strings))))
-    (set-register '/ pattern)
-    (message "Register / set: %s" pattern)
-    (helix-flash-search-pattern)))
-
-(defun helix--construct-search-pattern-1 (beg end)
-  (interactive "r")
-  (when (use-region-p)
-    (let* ((quote (if helix-use-pcre-regex #'rxt-quote-pcre #'regexp-quote))
-           (open-word-boundary
-            (cond ((eql beg (pos-bol))
-                   (->> (buffer-substring-no-properties beg (1+ beg))
-                        (string-match-p "[[:word:]]")))
-                  (t
-                   (->> (buffer-substring-no-properties (1- beg) (1+ beg))
-                        (string-match-p "[^[:word:]][[:word:]]")))))
-           (close-word-boundary
-            (cond ((eql end (pos-eol))
-                   (->> (buffer-substring-no-properties (1- end) end)
-                        (string-match-p "[[:word:]]")))
-                  (t
-                   (->> (buffer-substring-no-properties (1- end) (1+ end))
-                        (string-match-p "[[:word:]][^[:word:]]")))))
-           (string (->> (buffer-substring-no-properties (point) (mark))
-                        (funcall quote))))
-      (push (concat (if open-word-boundary "\\b")
-                    string
-                    (if close-word-boundary "\\b"))
-            helix--construct-search-pattern-strings))))
+  (let (search-patterns)
+    (helix-execute-for-all-cursors
+      (when (use-region-p)
+        (let* ((beg (region-beginning))
+               (end (region-end))
+               (quote (if helix-use-pcre-regex #'rxt-quote-pcre #'regexp-quote))
+               (open-word-boundary
+                (cond ((eql beg (pos-bol))
+                       (->> (buffer-substring-no-properties beg (1+ beg))
+                            (string-match-p "[[:word:]]")))
+                      (t
+                       (->> (buffer-substring-no-properties (1- beg) (1+ beg))
+                            (string-match-p "[^[:word:]][[:word:]]")))))
+               (close-word-boundary
+                (cond ((eql end (pos-eol))
+                       (->> (buffer-substring-no-properties (1- end) end)
+                            (string-match-p "[[:word:]]")))
+                      (t
+                       (->> (buffer-substring-no-properties (1- end) (1+ end))
+                            (string-match-p "[[:word:]][^[:word:]]")))))
+               (string (->> (buffer-substring-no-properties (point) (mark))
+                            (funcall quote))))
+          (push (concat (if open-word-boundary "\\b")
+                        string
+                        (if close-word-boundary "\\b"))
+                search-patterns))))
+    (let* ((strings (nreverse (-uniq search-patterns)))
+           (separator (if helix-use-pcre-regex "|" "\\|"))
+           (pattern (apply #'concat (-interpose separator strings))))
+      (set-register '/ pattern)
+      (message "Register / set: %s" pattern)
+      (helix-flash-search-pattern))))
 
 ;; M-*
 (defun helix-construct-search-pattern-no-bounds ()
