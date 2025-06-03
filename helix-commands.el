@@ -597,19 +597,17 @@ If INVERT is non-nil — select complements to regions that match to regexp."
                                               (max point mark)))))
                               cursors)))
            (-each cursors #'helix-remove-fake-cursor-from-buffer)
-           (if (helix-select-interactively-in ranges invert)
-               (helix-extend-selection -1)
-             ;; Else restore original cursors
-             (-each cursors #'helix-restore-fake-cursor-in-buffer)
-             (helix-restore-point-from-fake-cursor real-cursor))))
+           (or (helix-select-interactively-in ranges invert)
+               (progn ;; Restore original cursors
+                 (-each cursors #'helix-restore-fake-cursor-in-buffer)
+                 (helix-restore-point-from-fake-cursor real-cursor)))))
         (t
          (let ((dir (helix-region-direction))
                (beg (region-beginning))
                (end (region-end)))
-           (if (helix-select-interactively-in (region-bounds) invert)
-               (helix-extend-selection -1)
-             ;; Else restore original region
-             (helix-set-region beg end dir))))))
+           (or (helix-select-interactively-in (region-bounds) invert)
+               ;; Restore original region
+               (helix-set-region beg end dir))))))
 
 ;; S
 (defun helix-split-region ()

@@ -48,10 +48,15 @@ rendered or shift text."
   "The face used for fake cursors."
   :group 'helix)
 
-(defface helix-fake-cursor-bar
-  `((t (:height 1 :background ,(face-attribute 'cursor :background))))
-  "The face used for fake cursors if the cursor-type is bar."
+(defface helix-fake-cursor-extend-selection
+  '((t (:background "orange")))
+  "The face used for fake cursors."
   :group 'helix)
+
+;; (defface helix-fake-cursor-bar
+;;   `((t (:height 1 :background ,(face-attribute 'cursor :background))))
+;;   "The face used for fake cursors if the cursor-type is bar."
+;;   :group 'helix)
 
 ;; (defface helix-search '((t :inherit isearch))
 ;;   "Face for interactive search."
