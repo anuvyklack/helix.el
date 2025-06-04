@@ -452,8 +452,8 @@ action. The step is terminated with `helix--single-undo-step-end'."
                               undo-equiv-table)))
           ;; Remove undo boundaries from `buffer-undo-list' withing current undo
           ;; step. If multiple cursors are active, also remove entries that move
-          ;; point to prevent desynchronization between real cursor and fake ones
-          ;; during `undo'.
+          ;; point during `undo'. We handle positions manually to synchronize
+          ;; real cursor with fake ones during `undo',
           (let ((predicate (if helix-multiple-cursors-mode
                                #'(lambda (i) (or (numberp i) (null i)))
                              #'null)))
@@ -499,36 +499,45 @@ The cursor must be active when the execution thread enters this macro."
 
 ;;;; Manage undo list during undo/redo
 
-;; `helix--undo-step-start' and `helix--undo-step-end' functions
-;; manage real cursor postion during undo/redo.
 (defun helix--undo-step-start (position)
+  "This function always called from `buffer-undo-list' during undo
+by `primitive-undo' function and manages real cursor POSITION."
   (push `(apply helix--undo-step-end ,position)
         buffer-undo-list))
 
 (defun helix--undo-step-end (position)
+  "This function always called from `buffer-undo-list' during undo
+by `primitive-undo' function and manages real cursor POSITION."
   (goto-char position)
   (push `(apply helix--undo-step-start ,position) buffer-undo-list))
 
-;; `helix-undo--activate-cursor' and `helix-undo--deactivate-cursor' functions
-;; manage fake cursor position during undo/redo.
-(defun helix-undo--activate-cursor (id point)
-  "Called when undoing to temporarily activate the fake cursor
-which action is being undone."
+(defun helix-undo--activate-cursor (id position)
+  "This function always called from `buffer-undo-list' during undo
+by `primitive-undo' function. It activates the fake cursor with ID
+which action is being undone, place point into POSITION, and
+push onto `buffer-undo-list'`helix-undo--deactivate-cursor' function
+which during redo (which mechanically is the same undo) will place
+this fake cursor into POSITION and deactivate it."
   (setq helix--point-state-during-undo
         (helix--store-point-state
          (make-overlay (point) (point) nil nil t)))
   (when-let* ((cursor (helix-cursor-with-id id)))
     (helix--restore-point-state cursor))
-  (goto-char point)
-  (push `(apply helix-undo--deactivate-cursor ,id ,point)
+  (goto-char position)
+  (push `(apply helix-undo--deactivate-cursor ,id ,position)
         buffer-undo-list))
 
-(defun helix-undo--deactivate-cursor (id point)
-  "Called when undoing to reinstate the real cursor after undoing a fake one."
-  (push `(apply helix-undo--activate-cursor ,id ,point)
+(defun helix-undo--deactivate-cursor (id position)
+  "This function always called from `buffer-undo-list' during undo
+by `primitive-undo' function. It set fake cursor with ID that was
+activated by `helix-undo--activate-cursor' function to POSITION,
+deactivates it, and push onto `buffer-undo-list'`helix-undo--activate-cursor'
+function which during redo (which mechanically is the same undo) will
+activate this fake cursor and place it place into POSITION."
+  (push `(apply helix-undo--activate-cursor ,id ,position)
         buffer-undo-list)
   ;; Update or create fake cursor
-  (helix-set-fake-cursor id point (mark t))
+  (helix-set-fake-cursor id position (mark t))
   ;; Restore real cursor
   (helix--restore-point-state helix--point-state-during-undo)
   (setq helix--point-state-during-undo nil))
@@ -536,7 +545,7 @@ which action is being undone."
 ;;; Executing commands for real and fake cursors
 
 (defmacro helix-save-window-scroll (&rest body)
-  "Save the window scroll position, execute BODY, restore it."
+  "Save the window scroll position, evaluate BODY, restore it."
   (let ((win-start (make-symbol "win-start"))
         (win-hscroll (make-symbol "win-hscroll")))
     `(let ((,win-start (set-marker (make-marker) (window-start)))
@@ -557,6 +566,8 @@ the data needed for multiple cursors functionality."
        (helix--restore-point-state ,state))))
 
 (defmacro helix-with-fake-cursor (cursor &rest body)
+  "Move point to the fake CURSOR, restore the environment from it,
+evaluate BODY, update fake CURSOR."
   (declare (indent defun) (debug (symbolp &rest form)))
   `(let ((helix--executing-command-for-fake-cursor t))
      (helix--restore-point-state ,cursor)
