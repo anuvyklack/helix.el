@@ -380,8 +380,6 @@ cursors editing.")
     helix-end-of-line              ;; gl
     helix-forward-paragraph        ;; ]p or }}
     helix-backward-paragraph       ;; [p or {{
-    helix-insert                   ;; i
-    helix-append                   ;; a
     helix-change                   ;; c
     helix-delete                   ;; d
     helix-join-line                ;; J
@@ -495,7 +493,11 @@ cursors editing.")
   "Default set of commands to execute for all cursors.")
 
 (defvar helix-default-commands-to-run-once
-  '(helix-smooth-scroll-up                   ;; C-u
+  '(helix-insert                             ;; i
+    helix-append                             ;; a
+    helix-open-below                         ;; o
+    helix-open-above                         ;; O
+    helix-smooth-scroll-up                   ;; C-u
     helix-smooth-scroll-down                 ;; C-d
     helix-smooth-scroll-page-up              ;; C-b
     helix-smooth-scroll-page-down            ;; C-f

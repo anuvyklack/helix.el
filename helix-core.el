@@ -110,7 +110,7 @@ cursor, or a list of the above." state-name))
        ;; (push helix-global-keymaps-alist ',keymap)
        ;; state variable
        (helix-defvar-local ,variable nil
-         ,(format "Non nil if current Helix state is %s." state-name))
+         ,(format "Non nil if Helix is in %s." state-name))
        ;; state function
        (defun ,statefun (&optional arg)
          ,(format "Switch Helix into %s.
