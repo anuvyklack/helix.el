@@ -608,14 +608,14 @@ all regions that match to regexp withing active selections."
 (defun helix-split-region-on-newline ()
   (interactive)
   (let (any?)
-    (helix-execute-for-all-cursors
+    (helix-with-each-cursor
       (when-let* (((use-region-p))
                   (ranges (helix-regexp-match-ranges
                            ".+$" (region-beginning) (region-end))))
         (helix-create-cursors ranges)
         (setq any? t)))
     (when any?
-      (helix-execute-for-all-cursors
+      (helix-with-each-cursor
         (setq helix--extend-selection nil)))))
 
 ;; K
@@ -665,17 +665,16 @@ all regions that match to regexp withing active selections."
                                  0 cursors)))
       ;; Align
       (dolist (cursor cursors)
-        (helix--add-fake-cursor-to-undo-list cursor
-          (goto-char (overlay-get cursor 'point))
+        (helix-with-fake-cursor cursor
           (if (eql (current-column) column)
               ;; Add placeholder for anchor cursor to `buffer-undo-list',
-              ;; because if during command evaluating for a fake cursor nothing
-              ;; have been added to undo-list, the fake cursor won't be stored,
-              ;; and wouldn't be restored during undo.
+              ;; because if during command evaluating with a fake cursor active
+              ;; nothing have been added to undo-list, the fake cursor position
+              ;; wouldn't be stored in `buffer-undo-list', and wouldn't be
+              ;; restored during undo.
               (push '(apply cdr nil) buffer-undo-list)
             ;; else
-            (helix--restore-point-state cursor)
-            (let ((deactivate-mark nil) ;; To not deactivate-mark after insertion
+            (let ((deactivate-mark nil) ;; Don't deactivate mark after insertion.
                   (str (s-repeat (- column (current-column)) " ")))
               (cond ((and (use-region-p)
                           (> (helix-region-direction) 0))
@@ -683,14 +682,10 @@ all regions that match to regexp withing active selections."
                      (insert str)
                      (helix-exchange-point-and-mark))
                     (t
-                     (insert str))))
-            (helix-move-fake-cursor cursor (point) (mark t)))))
+                     (insert str)))))))
       ;; Add rest cursors to `buffer-undo-list'.
       (dolist (cursor rest-cursors)
-        (helix--add-fake-cursor-to-undo-list cursor
-          ;; Move point to a fake-cursor position, because it will be stored in
-          ;; `buffer-undo-list' by `helix--add-fake-cursor-to-undo-list' macro.
-          (goto-char (overlay-get cursor 'point))
+        (helix-with-fake-cursor cursor
           (push '(apply cdr nil) buffer-undo-list))))))
 
 ;; C
@@ -924,12 +919,12 @@ Return the replaced substring."
   "Construct search pattern from all current selection and store it to / register.
 Auto-detect word boundaries at the beginning and end of the search pattern."
   (interactive)
-  (let (search-patterns)
-    (helix-execute-for-all-cursors
+  (let ((quote (if helix-use-pcre-regex #'rxt-quote-pcre #'regexp-quote))
+        patterns)
+    (helix-with-each-cursor
       (when (use-region-p)
         (let* ((beg (region-beginning))
                (end (region-end))
-               (quote (if helix-use-pcre-regex #'rxt-quote-pcre #'regexp-quote))
                (open-word-boundary
                 (cond ((eql beg (pos-bol))
                        (->> (buffer-substring-no-properties beg (1+ beg))
@@ -949,12 +944,12 @@ Auto-detect word boundaries at the beginning and end of the search pattern."
           (push (concat (if open-word-boundary "\\b")
                         string
                         (if close-word-boundary "\\b"))
-                search-patterns))))
-    (let* ((strings (nreverse (-uniq search-patterns)))
-           (separator (if helix-use-pcre-regex "|" "\\|"))
-           (pattern (apply #'concat (-interpose separator strings))))
-      (set-register '/ pattern)
-      (message "Register / set: %s" pattern)
+                patterns))))
+    (setq patterns (nreverse (-uniq patterns)))
+    (let* ((separator (if helix-use-pcre-regex "|" "\\|"))
+           (result (apply #'concat (-interpose separator patterns))))
+      (set-register '/ result)
+      (message "Register / set: %s" result)
       (helix-flash-search-pattern))))
 
 ;; M-*
@@ -962,23 +957,19 @@ Auto-detect word boundaries at the beginning and end of the search pattern."
   "Construct search pattern from all current selection and store it to / register.
 Do not auto-detect word boundaries in the search pattern."
   (interactive)
-  (setq helix--construct-search-pattern-strings nil)
-  (helix-execute-command-for-all-cursors
-   #'helix--construct-search-pattern-no-bounds-1)
-  (let* ((strings (reverse helix--construct-search-pattern-strings))
-         (separator (if helix-use-pcre-regex "|" "\\|"))
-         (result (apply #'concat (-interpose separator strings))))
-    (set-register '/ result)
-    (message "Register / set: %s" result)
-    (helix-flash-search-pattern)))
+  (let ((quote (if helix-use-pcre-regex #'rxt-quote-pcre #'regexp-quote))
+        patterns)
+    (helix-with-each-cursor
+      (when (use-region-p)
+        (push (funcall quote (buffer-substring-no-properties (point) (mark)))
+              patterns)))
+    (setq patterns (nreverse patterns))
+    (let* ((separator (if helix-use-pcre-regex "|" "\\|"))
+           (result (apply #'concat (-interpose separator patterns))))
+      (set-register '/ result)
+      (message "Register / set: %s" result)
+      (helix-flash-search-pattern))))
 
-(defun helix--construct-search-pattern-no-bounds-1 ()
-  (interactive)
-  (when (use-region-p)
-    (let ((quote (if helix-use-pcre-regex #'rxt-quote-pcre #'regexp-quote)))
-      (push (->> (buffer-substring-no-properties (point) (mark))
-                 (funcall quote))
-            helix--construct-search-pattern-strings))))
 ;;; Match
 
 (defun helix-match-map-digit-argument (arg)
