@@ -405,23 +405,21 @@ action. The step is terminated with `helix--single-undo-step-end'."
 ;;        (helix--single-undo-step-end))))
 
 (defmacro helix--add-fake-cursor-to-undo-list (cursor &rest body)
-  "Evaluate BODY with handling `buffer-undo-list' for fake CURSOR."
+  "Evaluate BODY with handling `buffer-undo-list' for fake CURSOR.
+The cursor must be active when the execution thread enters this macro."
   (declare (indent defun) (debug (symbolp &rest form)))
   (let ((id (make-symbol "id"))
-        (point (make-symbol "point"))
         (deactivate (make-symbol "deactivate-cursor")))
     `(let ((,id (overlay-get ,cursor 'id)))
        (if (eql ,id 0)
            (progn ,@body) ;; ID 0 is for real cursor, so skip it.
          ;; else
-         (let* ((,point (marker-position (overlay-get ,cursor 'point)))
-                (,deactivate `(apply helix-undo--deactivate-cursor ,,id ,,point)))
+         (let* ((,deactivate `(apply helix-undo--deactivate-cursor ,,id ,(point))))
            (push ,deactivate buffer-undo-list)
            (prog1 (progn ,@body)
              ;; If nothing has been added to the undo-list
              (if (eq (car buffer-undo-list) ,deactivate)
                  (pop buffer-undo-list)
-               ;; (let ((,point (marker-position (overlay-get ,cursor 'point)))))
                (push `(apply helix-undo--activate-cursor ,,id ,(point))
                      buffer-undo-list))))))))
 
@@ -511,11 +509,11 @@ Restore it after BODY evaluation if it is still alive."
 (defmacro helix-with-fake-cursor (cursor &rest body)
   (declare (indent defun) (debug (symbolp &rest form)))
   `(let ((helix--executing-command-for-fake-cursor t))
+     (helix--restore-point-state ,cursor)
      (helix--add-fake-cursor-to-undo-list ,cursor
-       (helix--restore-point-state ,cursor)
-       (ignore-errors
-         ,@body)
-       (helix-move-fake-cursor ,cursor (point) (mark t)))))
+       (unwind-protect
+           (progn ,@body)
+         (helix-move-fake-cursor ,cursor (point) (mark t))))))
 
 (defun helix-execute-command-for-all-cursors (command)
   "Call COMMAND interactively for all cursors: real and fake ones."
@@ -562,10 +560,10 @@ the original cursor, to inform about the lack of support."
 
 (defun helix-execute-command-for-fake-cursor (cursor command)
   (let ((helix--executing-command-for-fake-cursor t))
+    (helix--restore-point-state cursor)
     (helix--add-fake-cursor-to-undo-list cursor
-      (helix--restore-point-state cursor)
-      (helix--execute-command command)
-      (helix-move-fake-cursor cursor (point) (mark t)))))
+      (helix--execute-command command))
+    (helix-move-fake-cursor cursor (point) (mark t))))
 
 (defun helix--execute-command (command)
   "Run COMMAND, simulating the parts of the command loop that
