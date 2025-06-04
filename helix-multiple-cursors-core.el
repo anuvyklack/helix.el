@@ -258,6 +258,80 @@ for others."
         (mark  (overlay-get cursor 'mark)))
     (helix-set-fake-cursor cursor point mark)))
 
+;;; Access fake cursors
+
+(defun helix-all-fake-cursors (&optional sort)
+  "Return list with all fake cursors in current buffer.
+If SORT is non-nil sort cursors in order they are located in buffer."
+  (let ((cursors (hash-table-values helix--cursors-table)))
+    (if sort
+        (sort cursors #'(lambda (c1 c2)
+                          (< (overlay-get c1 'point)
+                             (overlay-get c2 'point))))
+      cursors)))
+
+(defun helix-fake-cursors-in (start end)
+  "Return list of fake cursors within START...END buffer positions."
+  (-filter #'helix-fake-cursor-p
+           (overlays-in start end)))
+
+;; (defun helix-fake-regions-in (start end)
+;;   "Return a list of fake-cursors in START ... END region."
+;;   (cl-remove-if-not #'helix-fake-region-p
+;;                     (overlays-in start end)))
+
+(defun helix-cursor-with-id (id)
+  "Return the cursor with the given ID if it is stil alive."
+  (if-let* ((cursor (gethash id helix--cursors-table))
+            ((helix-overlay-live-p cursor)))
+      cursor))
+
+(defun helix-fake-cursor-at (position)
+  "Return the fake cursor at POSITION, or nil if no one."
+  (--find (= position (overlay-get it 'point))
+          (helix-fake-cursors-in position (1+ position))))
+
+(defun helix-next-fake-cursor (&optional position)
+  "Return the next fake cursor after the POSITION."
+  (unless position (setq position (point)))
+  (let (cursor)
+    (while (not (or cursor
+                    (eql position (point-max))) )
+      (setq position (next-overlay-change position)
+            cursor (helix-fake-cursor-at position)))
+    cursor))
+
+(defun helix-previous-fake-cursor (position)
+  "Return the first fake cursor before the POSITION."
+  (let (cursor)
+    (while (not (or cursor
+                    (eql position (point-min))) )
+      (setq position (previous-overlay-change position)
+            cursor (helix-fake-cursor-at position)))
+    cursor))
+
+(defun helix-first-fake-cursor ()
+  "Return the first fake cursor in the buffer."
+  (-min-by #'(lambda (a b)
+               (> (overlay-get a 'point)
+                  (overlay-get b 'point)))
+           (helix-all-fake-cursors)))
+
+(defun helix-last-fake-cursor ()
+  "Return the last fake cursor in the buffer."
+  (-max-by #'(lambda (a b)
+               (> (overlay-get a 'point)
+                  (overlay-get b 'point)))
+           (helix-all-fake-cursors)))
+
+(defun helix-number-of-cursors ()
+  "The number of cursors (real and fake) in the buffer."
+  (1+ (hash-table-count helix--cursors-table)))
+
+(defun helix-any-fake-cursors-p ()
+  "Return non-nil if currently there are any fake cursors in the buffer."
+  (not (hash-table-empty-p helix--cursors-table)))
+
 ;;; Minor mode
 
 (defun helix--pre-commad-hook ()
@@ -482,18 +556,14 @@ the data needed for multiple cursors functionality."
        (save-excursion ,@body)
        (helix--restore-point-state ,state))))
 
-(defmacro helix-with-real-cursor-as-fake (&rest body)
-  "Temporarily create a fake-cursor for real one with ID 0.
-Restore it after BODY evaluation if it is still alive."
-  (declare (indent 0) (debug t))
-  (let ((real-cursor (make-symbol "real-cursor")))
-    `(let ((,real-cursor (helix--create-fake-cursor-1 (point) (mark t) 0)))
-       (prog1 (progn ,@body)
-         (cond ((helix-overlay-live-p ,real-cursor)
-                (helix-restore-point-from-fake-cursor ,real-cursor))
-               ((helix-any-fake-cursors-p)
-                (helix-restore-point-from-fake-cursor (helix-first-fake-cursor))))
-         (helix-maybe-disable-multiple-cursors-mode)))))
+(defmacro helix-with-fake-cursor (cursor &rest body)
+  (declare (indent defun) (debug (symbolp &rest form)))
+  `(let ((helix--executing-command-for-fake-cursor t))
+     (helix--restore-point-state ,cursor)
+     (helix--add-fake-cursor-to-undo-list ,cursor
+       (unwind-protect
+           (progn ,@body)
+         (helix-move-fake-cursor ,cursor (point) (mark t))))))
 
 (defmacro helix-with-each-cursor (&rest body)
   (declare (indent 0) (debug t))
@@ -505,15 +575,6 @@ Restore it after BODY evaluation if it is still alive."
            ,@body))))
      ;; Finaly execute for real cursor
      ,@body))
-
-(defmacro helix-with-fake-cursor (cursor &rest body)
-  (declare (indent defun) (debug (symbolp &rest form)))
-  `(let ((helix--executing-command-for-fake-cursor t))
-     (helix--restore-point-state ,cursor)
-     (helix--add-fake-cursor-to-undo-list ,cursor
-       (unwind-protect
-           (progn ,@body)
-         (helix-move-fake-cursor ,cursor (point) (mark t))))))
 
 (defun helix-execute-command-for-all-cursors (command)
   "Call COMMAND interactively for all cursors: real and fake ones."
@@ -530,12 +591,9 @@ Restore it after BODY evaluation if it is still alive."
 (defun helix--execute-command-for-all-fake-cursors (command)
   "Call COMMAND interactively for each fake cursor.
 
-Internaly it moves point to the fake cursor, restore the environment
-from it, execute COMMAND, update fake cursor.
-
-It uses two lists of commands to know what to do: the `run-once'list
-and the `run-for-all' list. If a command is in neither of these lists,
-it will prompt for the proper action and then save that preference.
+Two lists of commands are used: the `run-once' list and the `run-for-all'
+list. If a command is in neither of these lists, the user will be prompt
+for the proper action and then the choice will be saved.
 
 Some commands are so unsupported that they are even prevented for
 the original cursor, to inform about the lack of support."
@@ -556,142 +614,32 @@ the original cursor, to inform about the lack of support."
            (helix-save-window-scroll
             (helix-save-excursion
              (dolist (cursor (helix-all-fake-cursors))
-               (helix-execute-command-for-fake-cursor cursor command))))))))
-
-(defun helix-execute-command-for-fake-cursor (cursor command)
-  (let ((helix--executing-command-for-fake-cursor t))
-    (helix--restore-point-state cursor)
-    (helix--add-fake-cursor-to-undo-list cursor
-      (helix--execute-command command))
-    (helix-move-fake-cursor cursor (point) (mark t))))
+               (helix-with-fake-cursor cursor
+                 (helix--execute-command command)))))))))
 
 (defun helix--execute-command (command)
   "Run COMMAND, simulating the parts of the command loop that
-makes sense for fake cursors."
+makes sense for fake cursor."
   (setq this-command command)
-  (ignore-errors
-    (run-hooks 'pre-command-hook)
-    (unless (eq this-command 'ignore)
-      (call-interactively command))
-    (run-hooks 'post-command-hook)
-    (when deactivate-mark (deactivate-mark))))
+  ;; (ignore-errors)
+  (run-hooks 'pre-command-hook)
+  (unless (eq this-command 'ignore)
+    (call-interactively command))
+  (run-hooks 'post-command-hook)
+  (when deactivate-mark (deactivate-mark)))
 
-(defun helix-mc--maybe-set-killed-rectangle ()
-  "Add the latest `kill-ring' entry for each cursor to `killed-rectangle'.
-So you can paste it in later with `yank-rectangle'."
-  (let ((entries (helix-with-real-cursor-as-fake
-                   (-map #'(lambda (cursor)
-                             (-first-item (overlay-get cursor 'kill-ring)))
-                         (helix-all-fake-cursors :sort)))))
-    (unless (helix-all-elements-are-equal-p entries)
-      (setq killed-rectangle entries))))
-
-(defun helix-mc-temporarily-disable-minor-mode (mode)
-  "If MODE is available and turned on, remember that and turn it off."
-  (when (and (boundp mode) (symbol-value mode))
-    (push mode helix-mc-temporarily-disabled-minor-modes)
-    (funcall mode -1)))
-
-(defun helix-mc-temporarily-disable-unsupported-minor-modes ()
-  (mapc #'helix-mc-temporarily-disable-minor-mode
-        helix-mc-unsupported-minor-modes))
-
-(defun helix-mc-enable-temporarily-disabled-minor-modes ()
-  (dolist (mode helix-mc-temporarily-disabled-minor-modes)
-    (funcall mode 1))
-  (setq helix-mc-temporarily-disabled-minor-modes nil))
-
-;;; Integration with other packages
-
-(add-hook 'after-revert-hook 'helix-disable-multiple-cursors-mode)
-
-(define-advice execute-kbd-macro (:around (orig-fun &rest args) multiple-cursors)
-  "`execute-kbd-macro' should never be run for fake cursors.
-The real cursor will execute the keyboard macro, resulting in new commands
-in the command loop, and the fake cursors can pick up on those instead."
-  (unless helix--executing-command-for-fake-cursor
-    (apply orig-fun args)))
-
-;; Intercept some reading commands so you won't have to
-;; answer them for every single cursor
-(defvar helix--input-cache nil)
-
-(defmacro helix--advice-to-cache-input (fn-name)
-  "Advice function to cache users input to use it for all cursors.
-
-Should be used with interactive input command to create advice around it,
-to cache users responses and use it for all cursors.
-
-FN-NAME should be an interactive function taking PROMPT as first argument,
-like `read-char' or `read-from-minibuffer'. This PROMPT will be used as
-a hash key, to distinguish different calls of FN-NAME within one command.
-Calls with equal PROMPT or without it would be undistinguishable."
-  `(define-advice ,fn-name (:around (orig-fun &rest args) multiple-cursors)
-     "Cache the users input to use it with multiple cursors."
-     (if (not (bound-and-true-p helix-multiple-cursors-mode))
-         (apply orig-fun args)
-       (let* (;; Use PROMPT argument as a hash key to distinguish different
-              ;; calls of `read-char' like functions within one command.
-              (prompt (car args))
-              (key (list ,(symbol-name fn-name) prompt))
-              (value (alist-get key helix--input-cache nil nil #'equal)))
-         (unless value
-           (setq value (apply orig-fun args))
-           (push (cons key value) helix--input-cache))
-         value))))
-
-(defun helix--reset-input-cache ()
-  (setq helix--input-cache nil))
-
-(helix--advice-to-cache-input read-char)
-(helix--advice-to-cache-input read-quoted-char)
-(helix--advice-to-cache-input read-char-from-minibuffer)
-(helix--advice-to-cache-input register-read-with-preview)  ; used by read-string
-
-(defmacro helix-unsupported-command (command)
-  "Adds command to list of unsupported commands and prevents it
-from being executed if in `helix-multiple-cursors-mode'."
-  `(progn
-     (put ',command 'helix-unsupported t)
-     (define-advice ,command (:around (orig-fun &rest args)
-                                      multiples-cursors-unsupported)
-       "Don't execute an unsupported command while multiple cursors are active."
-       (unless (and helix-multiple-cursors-mode
-                    (called-interactively-p 'any))
-         (apply orig-fun args)))))
-
-;; Commands that don't work with multiple-cursors
-(helix-unsupported-command isearch-forward)
-(helix-unsupported-command isearch-backward)
-
-(define-advice current-kill (:before (n &optional _do-not-move) multiple-cursors)
-  "Make sure pastes from other programs are added to `kill-ring's
-of all cursors when yanking."
-  (when-let* ((interprogram-paste (and (eql n 0)
-                                       interprogram-paste-function
-                                       (funcall interprogram-paste-function))))
-    ;; Add interprogram-paste to normal kill ring, just like current-kill
-    ;; usually does for itself. We have to do the work for it though, since
-    ;; the funcall only returns something once. It is not a pure function.
-    (let ((interprogram-cut-function nil))
-      (if (listp interprogram-paste)
-          (mapc 'kill-new (reverse interprogram-paste))
-        (kill-new interprogram-paste))
-      ;; And then add interprogram-paste to the kill-rings
-      ;; of all the other cursors too.
-      (dolist (cursor (helix-all-fake-cursors))
-        (let ((kill-ring (overlay-get cursor 'kill-ring))
-              (kill-ring-yank-pointer (overlay-get cursor 'kill-ring-yank-pointer)))
-          (if (listp interprogram-paste)
-              (mapc 'kill-new (nreverse interprogram-paste))
-            (kill-new interprogram-paste))
-          (overlay-put cursor 'kill-ring kill-ring)
-          (overlay-put cursor 'kill-ring-yank-pointer kill-ring-yank-pointer))))))
-
-(define-advice execute-extended-command (:after (&rest _) multiple-cursors)
-  "Execute selected command for all cursors."
-  (when helix-multiple-cursors-mode
-    (helix--execute-command-for-all-fake-cursors this-command)))
+(defmacro helix-with-real-cursor-as-fake (&rest body)
+  "Temporarily create a fake-cursor for real one with ID 0.
+Restore it after BODY evaluation if it is still alive."
+  (declare (indent 0) (debug t))
+  (let ((real-cursor (make-symbol "real-cursor")))
+    `(let ((,real-cursor (helix--create-fake-cursor-1 (point) (mark t) 0)))
+       (prog1 (progn ,@body)
+         (cond ((helix-overlay-live-p ,real-cursor)
+                (helix-restore-point-from-fake-cursor ,real-cursor))
+               ((helix-any-fake-cursors-p)
+                (helix-restore-point-from-fake-cursor (helix-first-fake-cursor))))
+         (helix-maybe-disable-multiple-cursors-mode)))))
 
 ;;; Whitelists
 
@@ -836,79 +784,124 @@ ID 0 coresponds to the real cursor."
     (sort alist #'(lambda (a b)
                     (< (-second-item a) (-second-item b))))))
 
-;;; Access fake cursors
+;;; Other functions
 
-(defun helix-all-fake-cursors (&optional sort)
-  "Return list with all fake cursors in current buffer.
-If SORT is non-nil sort cursors in order they are located in buffer."
-  (let ((cursors (hash-table-values helix--cursors-table)))
-    (if sort
-        (sort cursors #'(lambda (c1 c2)
-                          (< (overlay-get c1 'point)
-                             (overlay-get c2 'point))))
-      cursors)))
+(defun helix-mc--maybe-set-killed-rectangle ()
+  "Add the latest `kill-ring' entry for each cursor to `killed-rectangle'.
+So you can paste it in later with `yank-rectangle'."
+  (let ((entries (helix-with-real-cursor-as-fake
+                   (-map #'(lambda (cursor)
+                             (-first-item (overlay-get cursor 'kill-ring)))
+                         (helix-all-fake-cursors :sort)))))
+    (unless (helix-all-elements-are-equal-p entries)
+      (setq killed-rectangle entries))))
 
-(defun helix-fake-cursors-in (start end)
-  "Return list of fake cursors within START...END buffer positions."
-  (-filter #'helix-fake-cursor-p
-           (overlays-in start end)))
+(defun helix-mc-temporarily-disable-minor-mode (mode)
+  "If MODE is available and turned on, remember that and turn it off."
+  (when (and (boundp mode) (symbol-value mode))
+    (push mode helix-mc-temporarily-disabled-minor-modes)
+    (funcall mode -1)))
 
-;; (defun helix-fake-regions-in (start end)
-;;   "Return a list of fake-cursors in START ... END region."
-;;   (cl-remove-if-not #'helix-fake-region-p
-;;                     (overlays-in start end)))
+(defun helix-mc-temporarily-disable-unsupported-minor-modes ()
+  (mapc #'helix-mc-temporarily-disable-minor-mode
+        helix-mc-unsupported-minor-modes))
 
-(defun helix-cursor-with-id (id)
-  "Return the cursor with the given ID if it is stil alive."
-  (if-let* ((cursor (gethash id helix--cursors-table))
-            ((helix-overlay-live-p cursor)))
-      cursor))
+(defun helix-mc-enable-temporarily-disabled-minor-modes ()
+  (dolist (mode helix-mc-temporarily-disabled-minor-modes)
+    (funcall mode 1))
+  (setq helix-mc-temporarily-disabled-minor-modes nil))
 
-(defun helix-fake-cursor-at (position)
-  "Return the fake cursor at POSITION, or nil if no one."
-  (--find (= position (overlay-get it 'point))
-          (helix-fake-cursors-in position (1+ position))))
+;;; Integration with other Emacs functionality
 
-(defun helix-next-fake-cursor (&optional position)
-  "Return the next fake cursor after the POSITION."
-  (unless position (setq position (point)))
-  (let (cursor)
-    (while (not (or cursor
-                    (eql position (point-max))) )
-      (setq position (next-overlay-change position)
-            cursor (helix-fake-cursor-at position)))
-    cursor))
+(add-hook 'after-revert-hook 'helix-disable-multiple-cursors-mode)
 
-(defun helix-previous-fake-cursor (position)
-  "Return the first fake cursor before the POSITION."
-  (let (cursor)
-    (while (not (or cursor
-                    (eql position (point-min))) )
-      (setq position (previous-overlay-change position)
-            cursor (helix-fake-cursor-at position)))
-    cursor))
+(define-advice execute-kbd-macro (:around (orig-fun &rest args) multiple-cursors)
+  "`execute-kbd-macro' should never be run for fake cursors.
+The real cursor will execute the keyboard macro, resulting in new commands
+in the command loop, and the fake cursors can pick up on those instead."
+  (unless helix--executing-command-for-fake-cursor
+    (apply orig-fun args)))
 
-(defun helix-first-fake-cursor ()
-  "Return the first fake cursor in the buffer."
-  (-min-by #'(lambda (a b)
-               (> (overlay-get a 'point)
-                  (overlay-get b 'point)))
-           (helix-all-fake-cursors)))
+;; Intercept some reading commands so you won't have to
+;; answer them for every single cursor
+(defvar helix--input-cache nil)
 
-(defun helix-last-fake-cursor ()
-  "Return the last fake cursor in the buffer."
-  (-max-by #'(lambda (a b)
-               (> (overlay-get a 'point)
-                  (overlay-get b 'point)))
-           (helix-all-fake-cursors)))
+(defmacro helix--advice-to-cache-input (fn-name)
+  "Advice function to cache users input to use it for all cursors.
 
-(defun helix-number-of-cursors ()
-  "The number of cursors (real and fake) in the buffer."
-  (1+ (hash-table-count helix--cursors-table)))
+Should be used with interactive input command to create advice around it,
+to cache users responses and use it for all cursors.
 
-(defun helix-any-fake-cursors-p ()
-  "Return non-nil if currently there are any fake cursors in the buffer."
-  (not (hash-table-empty-p helix--cursors-table)))
+FN-NAME should be an interactive function taking PROMPT as first argument,
+like `read-char' or `read-from-minibuffer'. This PROMPT will be used as
+a hash key, to distinguish different calls of FN-NAME within one command.
+Calls with equal PROMPT or without it would be undistinguishable."
+  `(define-advice ,fn-name (:around (orig-fun &rest args) multiple-cursors)
+     "Cache the users input to use it with multiple cursors."
+     (if (not (bound-and-true-p helix-multiple-cursors-mode))
+         (apply orig-fun args)
+       (let* (;; Use PROMPT argument as a hash key to distinguish different
+              ;; calls of `read-char' like functions within one command.
+              (prompt (car args))
+              (key (list ,(symbol-name fn-name) prompt))
+              (value (alist-get key helix--input-cache nil nil #'equal)))
+         (unless value
+           (setq value (apply orig-fun args))
+           (push (cons key value) helix--input-cache))
+         value))))
+
+(defun helix--reset-input-cache ()
+  (setq helix--input-cache nil))
+
+(helix--advice-to-cache-input read-char)
+(helix--advice-to-cache-input read-quoted-char)
+(helix--advice-to-cache-input read-char-from-minibuffer)
+(helix--advice-to-cache-input register-read-with-preview)  ; used by read-string
+
+(defmacro helix-unsupported-command (command)
+  "Adds command to list of unsupported commands and prevents it
+from being executed if in `helix-multiple-cursors-mode'."
+  `(progn
+     (put ',command 'helix-unsupported t)
+     (define-advice ,command (:around (orig-fun &rest args)
+                                      multiples-cursors-unsupported)
+       "Don't execute an unsupported command while multiple cursors are active."
+       (unless (and helix-multiple-cursors-mode
+                    (called-interactively-p 'any))
+         (apply orig-fun args)))))
+
+;; Commands that don't work with multiple-cursors
+(helix-unsupported-command isearch-forward)
+(helix-unsupported-command isearch-backward)
+
+(define-advice current-kill (:before (n &optional _do-not-move) multiple-cursors)
+  "Make sure pastes from other programs are added to `kill-ring's
+of all cursors when yanking."
+  (when-let* ((interprogram-paste (and (eql n 0)
+                                       interprogram-paste-function
+                                       (funcall interprogram-paste-function))))
+    ;; Add interprogram-paste to normal kill ring, just like current-kill
+    ;; usually does for itself. We have to do the work for it though, since
+    ;; the funcall only returns something once. It is not a pure function.
+    (let ((interprogram-cut-function nil))
+      (if (listp interprogram-paste)
+          (mapc 'kill-new (reverse interprogram-paste))
+        (kill-new interprogram-paste))
+      ;; And then add interprogram-paste to the kill-rings
+      ;; of all the other cursors too.
+      (dolist (cursor (helix-all-fake-cursors))
+        (let ((kill-ring (overlay-get cursor 'kill-ring))
+              (kill-ring-yank-pointer (overlay-get cursor 'kill-ring-yank-pointer)))
+          (if (listp interprogram-paste)
+              (mapc 'kill-new (nreverse interprogram-paste))
+            (kill-new interprogram-paste))
+          (overlay-put cursor 'kill-ring kill-ring)
+          (overlay-put cursor 'kill-ring-yank-pointer kill-ring-yank-pointer))))))
+
+(define-advice execute-extended-command (:after (&rest _) multiple-cursors)
+  "Execute selected command for all cursors."
+  (when helix-multiple-cursors-mode
+    (helix--execute-command-for-all-fake-cursors this-command)))
 
 ;;; Utils
 
