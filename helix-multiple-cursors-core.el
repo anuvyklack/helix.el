@@ -345,15 +345,6 @@ If SORT is non-nil sort the list."
   (-filter #'helix-fake-cursor-p
            (overlays-in start end)))
 
-(defmacro helix-for-each-fake-cursor (cursor &rest body)
-  "Evaluate BODY with CURSOR bound to each fake cursor in turn."
-  (declare (indent 1) (debug (symbolp &rest form)))
-  ;; We callect all fake-cursors first, because BODY make create fake cursors,
-  ;; like `helix-copy-selection' does, and we want it to be executed only for
-  ;; original ones.
-  `(dolist (,cursor (helix-all-fake-cursors))
-     ,@body))
-
 (defmacro helix-with-real-cursor-as-fake (&rest body)
   "Temporarily create a fake-cursor for real one with ID 0
 during BODY evaluation. Restore it if it is still alive."
@@ -427,7 +418,7 @@ the original cursor, to inform about the lack of support."
                      (helix--prompt-for-unknown-command command))))
            (helix-save-window-scroll
             (helix-save-excursion
-             (helix-for-each-fake-cursor cursor
+             (dolist (cursor (helix-all-fake-cursors))
                (helix-execute-command-for-fake-cursor cursor command))))))))
 
 (defvar helix--executing-command-for-fake-cursor nil)
@@ -471,8 +462,7 @@ Disable `helix-multiple-cursors-mode' instead."
   (when helix--max-cursors-original
     (setq helix-max-cursors helix--max-cursors-original
           helix--max-cursors-original nil))
-  (helix-for-each-fake-cursor cursor
-    (helix--delete-fake-cursor cursor)))
+  (mapc #'helix--delete-fake-cursor (helix-all-fake-cursors)))
 
 (defun helix-mc--maybe-set-killed-rectangle ()
   "Add the latest `kill-ring' entry for each cursor to `killed-rectangle'.
@@ -660,7 +650,7 @@ of all cursors when yanking."
         (kill-new interprogram-paste))
       ;; And then add interprogram-paste to the kill-rings
       ;; of all the other cursors too.
-      (helix-for-each-fake-cursor cursor
+      (dolist (cursor (helix-all-fake-cursors))
         (let ((kill-ring (overlay-get cursor 'kill-ring))
               (kill-ring-yank-pointer (overlay-get cursor 'kill-ring-yank-pointer)))
           (if (listp interprogram-paste)
