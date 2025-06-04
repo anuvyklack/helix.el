@@ -109,10 +109,9 @@ If this value is nil, there is no ceiling."
   :type '(boolean)
   :group 'helix)
 
-(defvar helix-mc-unsupported-minor-modes '(company-mode
-                                           auto-complete-mode
-                                           flyspell-mode
-                                           jedi-mode)
+(defvar helix-mc-unsupported-minor-modes '(corfu-mode
+                                           company-mode
+                                           flyspell-mode)
   "List of minor-modes that does not work well with multiple cursors.
 They are temporarily disabled when there are multiple cursors.")
 
