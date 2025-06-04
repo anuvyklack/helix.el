@@ -14,7 +14,8 @@
 ;;; Code:
 
 (require 'helix-core)
-(require 'helix-commands)
+(require 'helix-multiple-cursors-core)
+;; (require 'helix-commands)
 
 (helix-define-state normal
   "Normal state."
@@ -27,10 +28,13 @@
   :cursor 'box
   (cond (helix-insert-state
          (setq helix--region-was-active-on-insert (region-active-p))
-         (deactivate-mark)
-         (helix-extend-selection -1))
+         (when helix--extend-selection
+           (helix-with-each-cursor
+             (setq helix--extend-selection nil))))
         (t
-         (when helix--region-was-active-on-insert (activate-mark)))))
+         (when helix--region-was-active-on-insert
+           (helix-with-each-cursor
+             (activate-mark))))))
 
 ;;;
 
