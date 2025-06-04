@@ -17,7 +17,6 @@
 (require 'helix-core)
 (require 'helix-states)
 (require 'keypad)
-(require 'helix-multiple-cursors)
 
 ;;; Normal state
 
