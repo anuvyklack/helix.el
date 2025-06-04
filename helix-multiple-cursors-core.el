@@ -342,17 +342,20 @@ want COMMAND to be executed only for original ones."
   (unless helix--executing-command-for-fake-cursor
     (setq helix--this-command this-command)
     (helix--single-undo-step-beginning)
-    ;; Wrap in `condition-case' to protect this function, because the function
-    ;; throwing the error is deleted from `pre-command-hook'.
-    (condition-case error
-        ;; TODO: Skip keyboard macros, since they will generate
-        ;; actual commands that are also run in the command loop.
-        ;; Need to handle these!
-        (when (functionp this-command)
-          (helix--execute-command-for-all-fake-cursors this-command))
-      (error
-       (message "[Helix] error in `helix--execute-command-for-all-fake-cursors': %s"
-                (error-message-string error))))))
+    ;; Restore initial value of `this-command' after execution of command for all
+    ;; fake cursors, because some functions (like `kill-region') may change it.
+    (let ((this-command this-command))
+      ;; Wrap in `condition-case' to protect this function, because the function
+      ;; throwing the error is deleted from `pre-command-hook'.
+      (condition-case error
+          ;; TODO: Skip keyboard macros, since they will generate
+          ;; actual commands that are also run in the command loop.
+          ;; Need to handle these!
+          (when (functionp this-command)
+            (helix--execute-command-for-all-fake-cursors this-command))
+        (error
+         (message "[Helix] error in `helix--execute-command-for-all-fake-cursors': %s"
+                  (error-message-string error)))))))
 
 (defun helix--post-command-hook ()
   (unless helix--executing-command-for-fake-cursor
