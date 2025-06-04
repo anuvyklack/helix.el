@@ -867,15 +867,13 @@ ends at END-COLUMN spauns NUMBER-OF-LINES."
 (defun helix--replace-fake-region-content (cursor content)
   "Replace the CURSORs region content with CONTENT.
 Return the replaced substring."
-  (helix--add-fake-cursor-to-undo-list cursor
-    (helix--restore-point-state cursor)
+  (helix-with-fake-cursor cursor
     (let ((dir (helix-region-direction))
-          (new-content (buffer-substring (point) (mark)))
-          (deactivate-mark nil)) ;; Don't deactivate-mark after insertion
+          (deactivate-mark nil) ;; Do not deactivate mark after insertion.
+          (new-content (buffer-substring (point) (mark))))
       (delete-region (point) (mark))
       (insert content)
       (when (< dir 0) (helix-exchange-point-and-mark))
-      (helix-move-fake-cursor cursor (point) (mark t))
       new-content)))
 
 ;;; Search
