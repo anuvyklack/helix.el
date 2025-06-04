@@ -18,17 +18,6 @@
 (require 'helix-common)
 (require 'helix-multiple-cursors-core)
 
-(defun helix-mc-repeat-command ()
-  "Run last command from variable `command-history' for every fake cursor."
-  (interactive)
-  (when (or helix-mc-always-repeat-command
-            (y-or-n-p (format "[mc] repeat complex command: %s? " (caar command-history))))
-    (helix-execute-command-for-all-fake-cursors
-     #'(lambda () (interactive)
-         (cl-letf (((symbol-function 'read-from-minibuffer)
-                    (lambda (p &optional i k r h d m) (read i))))
-           (repeat-complex-command 0))))))
-
 ;; (keymap-lookup nil "M-<down-mouse-1>")
 
 ;; M-right mouse
