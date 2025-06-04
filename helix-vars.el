@@ -417,8 +417,6 @@ cursors editing.")
     helix-mark-an-angle            ;; ma< ma>
     helix-copy-selection           ;; C
     helix-copy-selection-up        ;; M-c
-    helix--construct-search-pattern-1 ;; * inner command
-    helix--construct-search-pattern-no-bounds-1 ;; M-* inner command
     self-insert-command
     quoted-insert
     previous-line
@@ -694,9 +692,6 @@ will be invoked if `helix--extend-selection' is t.")
 (helix-defvar-local helix-mc-temporarily-disabled-minor-modes nil
   "The list of temporarily disabled minor-modes while there are
 multiple cursors.")
-
-(defvar helix--construct-search-pattern-strings nil
-  "Inner variable for `helix-construct-search-pattern' command.")
 
 (provide 'helix-vars)
 ;;; helix-vars.el ends here

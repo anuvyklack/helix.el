@@ -367,11 +367,25 @@ during BODY evaluation. Restore it if it is still alive."
                 (helix-restore-point-from-fake-cursor (helix-first-fake-cursor))))
          (helix-maybe-disable-multiple-cursors-mode)))))
 
-(defmacro helix-execute-for-all-cursors (&rest body)
-  (declare (indent defun) (debug (form &rest form)))
-  `(helix-execute-command-for-all-cursors
-    #'(lambda () (interactive)
-        ,@body)))
+(defmacro helix-with-each-cursor (&rest body)
+  (declare (indent 0) (debug t))
+  `(progn
+     (helix-save-window-scroll
+      (helix-save-excursion
+       (dolist (cursor (helix-all-fake-cursors))
+         (helix-with-fake-cursor cursor
+           ,@body))))
+     ;; Finaly execute for real cursor
+     ,@body))
+
+(defmacro helix-with-fake-cursor (cursor &rest body)
+  (declare (indent defun) (debug (symbolp &rest form)))
+  `(let ((helix--executing-command-for-fake-cursor t))
+     (helix--add-fake-cursor-to-undo-list ,cursor
+       (helix--restore-point-state ,cursor)
+       (ignore-errors
+         ,@body)
+       (helix-move-fake-cursor ,cursor (point) (mark t)))))
 
 (defun helix-execute-command-for-all-cursors (command)
   "Call COMMAND interactively for all cursors: real and fake ones."
