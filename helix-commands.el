@@ -334,37 +334,39 @@ Use visual line when `visual-line-mode' is on."
 (defun helix-insert ()
   "Switch to Insert state before region."
   (interactive)
-  (when (and (use-region-p)
-             (< (mark) (point)))
-    (helix-exchange-point-and-mark))
+  (helix-with-each-cursor
+    (when (and (use-region-p)
+               (< (mark) (point)))
+      (helix-exchange-point-and-mark)))
   (helix-insert-state 1))
 
 ;; a
 (defun helix-append ()
   "Switch to Insert state after region."
   (interactive)
-  (when (and (use-region-p)
-             (< (point) (mark)))
-    (helix-exchange-point-and-mark))
+  (helix-with-each-cursor
+    (when (and (use-region-p)
+               (< (point) (mark)))
+      (helix-exchange-point-and-mark)))
   (helix-insert-state 1))
 
 ;; o
 (defun helix-open-below ()
   "Insert a new line below point and switch to Insert state."
   (interactive)
-  (helix-insert-newline-below)
-  (unwind-protect
-      (indent-according-to-mode)
-    (helix-insert-state 1)))
+  (helix-with-each-cursor
+    (helix-insert-newline-below)
+    (indent-according-to-mode))
+  (helix-insert-state 1))
 
 ;; O
 (defun helix-open-above ()
   "Insert a new line above point and switch to Insert state."
   (interactive)
-  (helix-insert-newline-above)
-  (unwind-protect
-      (indent-according-to-mode)
-    (helix-insert-state 1)))
+  (helix-with-each-cursor
+    (helix-insert-newline-above)
+    (indent-according-to-mode))
+  (helix-insert-state 1))
 
 ;; ] SPC
 (defun helix-add-blank-line-below ()
@@ -418,7 +420,8 @@ With no region delete char before point."
          (kill-region nil nil t))
         (t
          (delete-char -1)))
-  (helix-extend-selection -1))
+  ;; (helix-extend-selection -1)
+  (setq helix--extend-selection nil))
 
 ;; u
 (defun helix-undo ()
@@ -498,8 +501,8 @@ Manages the internal `helix--extend-selection' flag."
   (setq helix--extend-selection (cond ((or (null arg)
                                            (eq arg 'toggle))
                                        (not helix--extend-selection))
-                                      ((> arg 0) t)
-                                      (t nil))))
+                                      ((< arg 0) nil)
+                                      (t t))))
 
 ;; ;
 (defun helix-collapse-selection ()
