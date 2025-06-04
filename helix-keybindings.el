@@ -41,6 +41,10 @@
   "9" #'digit-argument
 
   ;; Motions
+  "<left>"  #'helix-backward-char
+  "<down>"  #'helix-next-line
+  "<up>"    #'helix-previous-line
+  "<right>" #'helix-forward-char
   "h"   #'helix-backward-char
   "j"   #'helix-next-line
   "k"   #'helix-previous-line

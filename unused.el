@@ -30,17 +30,28 @@
            '(and (fboundp 'eldoc-add-command)
                  (eldoc-add-command ',motion)))))))
 
+(defun helix-create-fake-cursors (regions)
+  "Create set of fake active REGIONS.
+REGIONS should be a list of cons cells (START . END) with bounds of regions."
+  (when regions
+    (--each regions
+      (-let (((mark . point) it))
+        (helix-create-fake-cursor point mark)))))
+
 (defun helix-refresh-fake-cursor (cursor)
   (let ((pnt (overlay-get cursor 'point))
         (mrk (overlay-get cursor 'mark)))
     (helix-move-fake-cursor cursor pnt mrk)))
 
+(defun helix--set-cursor-face (cursor &optional face)
+  (unless face (setq face 'helix-fake-cursor))
+  (cond ((overlay-get cursor 'after-string)
+         (overlay-put cursor 'after-string (propertize " " 'face face)))
+        (t
+         (overlay-put cursor 'face face))))
+
 (defvar helix-undo-commands '(helix-undo helix-redo undo-redo undo)
   "Commands that implementing undo/redo functionality.")
-
-(defun helix-undo-command-p (command)
-  "Return non-nil if COMMAND is implementing undo/redo functionality."
-  (memq command helix-undo-commands))
 
 (defun undo-helix-multiple-cursors-mode (cursors-data)
   (if helix-multiple-cursors-mode

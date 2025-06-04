@@ -493,7 +493,8 @@ cursors editing.")
   "Default set of commands to execute for all cursors.")
 
 (defvar helix-default-commands-to-run-once
-  '(helix-insert                             ;; i
+  '(execute-extended-command                 ;; M-x
+    helix-insert                             ;; i
     helix-append                             ;; a
     helix-open-below                         ;; o
     helix-open-above                         ;; O
@@ -590,13 +591,12 @@ cursors editing.")
     ;; helix-mc-skip-to-previous-like-this
     ;; rrm/switch-to-multiple-cursors
     ;; mc-hide-unmatched-lines-mode
-    helix-mc-repeat-command
+    ;; helix-mc-repeat-command
     save-buffer
     ido-exit-minibuffer
     ivy-done
     exit-minibuffer
     minibuffer-complete-and-exit
-    execute-extended-command
     eval-expression
     undo
     redo

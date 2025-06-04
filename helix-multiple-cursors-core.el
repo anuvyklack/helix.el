@@ -19,8 +19,8 @@
 
 ;;; Commentary:
 
-;; The core functionality for multiple cursors. This module is heavily based
-;; on Magnar Sveen `multiple-cursors.el' package.
+;; The core functionality for multiple cursors. This module is based on
+;; Magnar Sveen `multiple-cursors.el' package.
 ;;
 ;; ID 0 is always coresponding to real cursor.
 
@@ -439,8 +439,9 @@ Disable `helix-multiple-cursors-mode' instead."
   "Add the latest `kill-ring' entry for each cursor to `killed-rectangle'.
 So you can paste it in later with `yank-rectangle'."
   (let ((entries (helix-with-real-cursor-as-fake
-                   (--map (car (overlay-get it 'kill-ring))
-                          (helix-all-fake-cursors :sort)))))
+                   (-map #'(lambda (cursor)
+                             (-first-item (overlay-get cursor 'kill-ring)))
+                         (helix-all-fake-cursors :sort)))))
     (unless (helix-all-elements-are-equal-p entries)
       (setq killed-rectangle entries))))
 
@@ -455,8 +456,8 @@ So you can paste it in later with `yank-rectangle'."
         helix-mc-unsupported-minor-modes))
 
 (defun helix-mc-enable-temporarily-disabled-minor-modes ()
-  (--each helix-mc-temporarily-disabled-minor-modes
-    (funcall it 1))
+  (dolist (mode helix-mc-temporarily-disabled-minor-modes)
+    (funcall mode 1))
   (setq helix-mc-temporarily-disabled-minor-modes nil))
 
 (defun helix--undo-step-start (position)
@@ -502,7 +503,10 @@ COMMAND to be executed only for original ones."
 
 ;;;###autoload
 (define-minor-mode helix-multiple-cursors-mode
-  "Minor mode, which is active when there are multiple cursors in the buffer."
+  "Minor mode, which is active when there are multiple cursors in the buffer.
+You don't need to activate it manually: it is activated automatically when
+you create first fake cursor with `helix-create-fake-cursor', and disabled
+when you delete last one with `helix-remove-fake-cursor'."
   :global nil
   :interactive nil
   :lighter helix-mc-mode-line
@@ -539,7 +543,7 @@ and fake cursors are present in the buffer."
     (helix-multiple-cursors-mode -1)))
 
 (defun helix-maybe-disable-multiple-cursors-mode ()
-  "Disable `helix-multiple-cursors-mode' if no fake cursors in the buffer."
+  "Disable `helix-multiple-cursors-mode' if no more fake cursors in the buffer."
   (unless (helix-any-fake-cursors-p)
     (helix-disable-multiple-cursors-mode)))
 
