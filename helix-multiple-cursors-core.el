@@ -488,9 +488,6 @@ COMMAND to be executed only for original ones."
   (unless helix--executing-command-for-fake-cursor
     (setq helix--this-command this-command)
     (helix--single-undo-step-beginning)
-    (when helix--in-single-undo-step
-      (push (setq helix--undo-step-end `(apply helix--undo-step-end ,(point)))
-            buffer-undo-list))
     ;; Wrap in `condition-case' to protect this function, because the function
     ;; throwing the error is deleted from `pre-command-hook'.
     (condition-case error
@@ -504,23 +501,14 @@ COMMAND to be executed only for original ones."
                 (error-message-string error))))))
 
 (defun helix--post-command-hook ()
-  (when (and (not helix--executing-command-for-fake-cursor)
-             helix--in-single-undo-step)
-    (while (eq (car buffer-undo-list) nil)
-      (pop buffer-undo-list))
-    (if (equal (car buffer-undo-list) helix--undo-step-end)
-        (pop buffer-undo-list)
-      ;; else
-      (push `(apply helix--undo-step-start ,(point))
-            buffer-undo-list))
-    (helix--single-undo-step-end))
-  (when helix-multiple-cursors-mode
+  (unless helix--executing-command-for-fake-cursor
+    (helix--single-undo-step-end)
     (when (helix-merge-regions-p helix--this-command)
       (helix-merge-overlapping-regions))
-    (helix--reset-input-cache))
-  (when helix--remove-post-command-hook
-    (remove-hook 'post-command-hook 'helix--post-command-hook t)
-    (setq helix--remove-post-command-hook nil)))
+    (helix--reset-input-cache)
+    (when helix--remove-post-command-hook
+      (remove-hook 'post-command-hook 'helix--post-command-hook t)
+      (setq helix--remove-post-command-hook nil))))
 
 ;;;###autoload
 (define-minor-mode helix-multiple-cursors-mode
@@ -533,7 +521,9 @@ COMMAND to be executed only for original ones."
       (progn
         (helix-mc-load-lists) ;; Lazy-load the user's list file
         (helix-mc-temporarily-disable-unsupported-minor-modes)
-        (helix--pre-commad-hook)
+        ;; Due to this line, commands should always be executed  for fake
+        ;; cursors first and only then for real one.
+        (helix--single-undo-step-beginning)
         (add-hook 'pre-command-hook 'helix--pre-commad-hook nil t)
         (add-hook 'post-command-hook 'helix--post-command-hook t t))
     ;; Execute `helix--post-command-hook' one last time and remove it.
@@ -710,7 +700,8 @@ and which for all to `helix-mc-list-file' file."
 
 (defun helix-merge-regions-p (command)
   "Return non-nil if regions need to be merged after COMMAND."
-  (and mark-active
+  (and helix-multiple-cursors-mode
+       mark-active
        (or (and helix--extend-selection
                 (memq command helix--motion-command))
            (memq command helix--merge-regions-commands))))
