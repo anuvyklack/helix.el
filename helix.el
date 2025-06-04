@@ -15,11 +15,7 @@
 ;;; Code:
 
 (require 'helix-vars)
-(require 'helix-common)
-(require 'helix-core)
-(require 'helix-multiple-cursors)
 (require 'helix-states)
-(require 'helix-search)
 (require 'helix-commands)
 (require 'helix-keybindings)
 (require 'helix-integration)
