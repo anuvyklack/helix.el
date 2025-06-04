@@ -400,6 +400,7 @@ Use visual line when `visual-line-mode' is on."
          (delete-char -1)))
   (helix-insert-state 1))
 
+;; TODO:
 ;; - If point is surrounded by (balanced) whitespace and a brace delimiter
 ;; ({} [] ()), delete a space on either side of the cursor.
 ;; - If point is at BOL and surrounded by braces on adjacent lines,
@@ -410,7 +411,7 @@ Use visual line when `visual-line-mode' is on."
 ;; d
 (defun helix-delete ()
   "Delete text in region.
-With no region delete char before point."
+If region is not active — delete char before point."
   (interactive)
   (cond ((use-region-p)
          ;; If selection is a whole line then add newline character (for logical
@@ -447,8 +448,8 @@ With no region delete char before point."
   "Join selected lines."
   (interactive)
   (cond ((use-region-p)
-         (save-mark-and-excursion
-           (let ((deactivate-mark nil))
+         (save-excursion
+           (let (deactivate-mark)
              (join-line nil (region-beginning) (region-end)))))
         (t (join-line t))))
 
@@ -688,7 +689,7 @@ all regions that match to regexp withing active selections."
                 ;; wouldn't be restored during undo.
                 (push '(apply cdr nil) buffer-undo-list)
               ;; else
-              (let ((deactivate-mark nil) ;; Don't deactivate mark after insertion.
+              (let ((deactivate-mark) ;; Don't deactivate mark after insertion.
                     (str (s-repeat (- column (current-column)) " ")))
                 (cond ((and (use-region-p)
                             (> (helix-region-direction) 0))
@@ -887,7 +888,7 @@ ends at END-COLUMN spauns NUMBER-OF-LINES."
 Return the replaced substring."
   (helix-with-fake-cursor cursor
     (let ((dir (helix-region-direction))
-          (deactivate-mark nil) ;; Do not deactivate mark after insertion.
+          (deactivate-mark) ;; Do not deactivate mark after insertion.
           (new-content (buffer-substring (point) (mark))))
       (delete-region (point) (mark))
       (insert content)
@@ -1250,7 +1251,7 @@ lines and reindent the region."
       (when lines?
         (setq left  (s-trim left)
               right (s-trim right)))
-      (let ((deactivate-mark nil)) ;; To not deactivate-mark after insertion
+      (let ((deactivate-mark)) ;; To not deactivate-mark after insertion
         (goto-char end)
         (when lines?
           (helix-skip-whitespaces)

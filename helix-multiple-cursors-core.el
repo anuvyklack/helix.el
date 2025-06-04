@@ -421,6 +421,7 @@ and bind it to CURSOR."
   (dolist (var helix-fake-cursor-specific-vars)
     (when (boundp var)
       (set var (overlay-get overlay var))))
+  ;; (when mark-active (activate-mark))
   (helix--delete-region-overlay overlay)
   (delete-overlay overlay))
 
