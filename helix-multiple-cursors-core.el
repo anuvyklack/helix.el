@@ -330,25 +330,10 @@ the data needed for multiple cursors functionality."
        (save-excursion ,@body)
        (helix--restore-point-state ,state))))
 
-(defun helix-all-fake-cursors (&optional sort)
-  "Return list with all fake cursors in current buffer.
-If SORT is non-nil sort the list."
-  (let ((cursors (hash-table-values helix--cursors-table)))
-    (if sort
-        (sort cursors #'(lambda (c1 c2)
-                          (< (overlay-get c1 'point)
-                             (overlay-get c2 'point))))
-      cursors)))
-
-(defun helix-fake-cursors-in (start end)
-  "Return list of fake cursors within START...END buffer positions."
-  (-filter #'helix-fake-cursor-p
-           (overlays-in start end)))
-
 (defmacro helix-with-real-cursor-as-fake (&rest body)
-  "Temporarily create a fake-cursor for real one with ID 0
-during BODY evaluation. Restore it if it is still alive."
-  (declare (indent 0) (debug (&rest form)))
+  "Temporarily create a fake-cursor for real one with ID 0.
+Restore it after BODY evaluation if it is still alive."
+  (declare (indent 0) (debug t))
   (let ((real-cursor (make-symbol "real-cursor")))
     `(let ((,real-cursor (helix--create-fake-cursor-1 (point) (mark t) 0)))
        (prog1 (progn ,@body)
@@ -440,20 +425,6 @@ makes sense for fake cursors."
       (call-interactively command))
     (run-hooks 'post-command-hook)
     (when deactivate-mark (deactivate-mark))))
-
-(defun helix-cursor-with-id (id)
-  "Return the cursor with the given ID if it is stil alive."
-  (if-let* ((cursor (gethash id helix--cursors-table))
-            ((helix-overlay-live-p cursor)))
-      cursor))
-
-(defun helix-number-of-cursors ()
-  "The number of cursors (real and fake) in the buffer."
-  (1+ (hash-table-count helix--cursors-table)))
-
-(defun helix-any-fake-cursors-p ()
-  "Return non-nil if currently there are any fake cursors in the buffer."
-  (not (hash-table-empty-p helix--cursors-table)))
 
 (defun helix--delete-fake-cursors ()
   "Remove all fake cursors.
@@ -635,7 +606,7 @@ from being executed if in `helix-multiple-cursors-mode'."
 (helix-unsupported-command isearch-forward)
 (helix-unsupported-command isearch-backward)
 
-(define-advice current-kill (:before (n &optional do-not-move) multiple-cursors)
+(define-advice current-kill (:before (n &optional _do-not-move) multiple-cursors)
   "Make sure pastes from other programs are added to `kill-ring's
 of all cursors when yanking."
   (when-let* ((interprogram-paste (and (eql n 0)
@@ -809,10 +780,31 @@ ID 0 coresponds to the real cursor."
 
 ;;; Access fake cursors
 
-(defun helix-fake-regions-in (start end)
-  "Return a list of fake-cursors in START ... END region."
-  (cl-remove-if-not #'helix-fake-region-p
-                    (overlays-in start end)))
+(defun helix-all-fake-cursors (&optional sort)
+  "Return list with all fake cursors in current buffer.
+If SORT is non-nil sort cursors in order they are located in buffer."
+  (let ((cursors (hash-table-values helix--cursors-table)))
+    (if sort
+        (sort cursors #'(lambda (c1 c2)
+                          (< (overlay-get c1 'point)
+                             (overlay-get c2 'point))))
+      cursors)))
+
+(defun helix-fake-cursors-in (start end)
+  "Return list of fake cursors within START...END buffer positions."
+  (-filter #'helix-fake-cursor-p
+           (overlays-in start end)))
+
+;; (defun helix-fake-regions-in (start end)
+;;   "Return a list of fake-cursors in START ... END region."
+;;   (cl-remove-if-not #'helix-fake-region-p
+;;                     (overlays-in start end)))
+
+(defun helix-cursor-with-id (id)
+  "Return the cursor with the given ID if it is stil alive."
+  (if-let* ((cursor (gethash id helix--cursors-table))
+            ((helix-overlay-live-p cursor)))
+      cursor))
 
 (defun helix-fake-cursor-at (position)
   "Return the fake cursor at POSITION, or nil if no one."
@@ -851,6 +843,14 @@ ID 0 coresponds to the real cursor."
                (> (overlay-get a 'point)
                   (overlay-get b 'point)))
            (helix-all-fake-cursors)))
+
+(defun helix-number-of-cursors ()
+  "The number of cursors (real and fake) in the buffer."
+  (1+ (hash-table-count helix--cursors-table)))
+
+(defun helix-any-fake-cursors-p ()
+  "Return non-nil if currently there are any fake cursors in the buffer."
+  (not (hash-table-empty-p helix--cursors-table)))
 
 ;;; Utils
 
