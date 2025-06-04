@@ -579,37 +579,51 @@ action. The step is terminated with `helix--single-undo-step-end'."
     (setq helix--in-single-undo-step t)
     (unless (null (car-safe buffer-undo-list))
       (undo-boundary))
-    (setq helix--undo-list-pointer buffer-undo-list)))
+    (setq helix--undo-list-pointer buffer-undo-list)
+    (helix--undo-boundary-1)))
 
-(defvar helix-multiple-cursors-mode)
+(defun helix--undo-boundary-1 ()
+  (push (setq helix--undo-step-end `(apply helix--undo-step-end ,(point)))
+        buffer-undo-list))
+
+(defun helix--undo-boundary-2 ()
+  (when helix--undo-step-end
+    (while (eq (car buffer-undo-list) nil)
+      (pop buffer-undo-list))
+    (if (equal (car buffer-undo-list) helix--undo-step-end)
+        (pop buffer-undo-list)
+      ;; else
+      (push `(apply helix--undo-step-start ,(point))
+            buffer-undo-list))))
 
 (defun helix--single-undo-step-end ()
   "Finalize atomic undo step started by `helix--single-undo-step-beginning'."
-  (unless (or (not helix--in-single-undo-step)
-              (eq buffer-undo-list helix--undo-list-pointer))
-    (let ((undo-list buffer-undo-list))
-      (while (and (consp undo-list)
-                  (eq (car undo-list) nil))
-        (setq undo-list (cdr undo-list)))
-      (let ((equiv (gethash (car undo-list)
-                            undo-equiv-table)))
-        ;; Remove undo boundaries from `buffer-undo-list' withing current undo
-        ;; step. If multiple cursors are active, also remove entries that move
-        ;; point to prevent desynchronization between real cursor and fake ones
-        ;; during `undo'.
-        (let ((predicate (if helix-multiple-cursors-mode
-                             #'(lambda (i) (or (numberp i) (null i)))
-                           #'null)))
-          (setq undo-list (helix-destructive-filter predicate
-                                                    undo-list
-                                                    helix--undo-list-pointer)))
-        ;; Restore "undo" status of the tip of `buffer-undo-list'.
-        (when equiv
-          (puthash (car undo-list) equiv
-                   undo-equiv-table)))
-      (setq buffer-undo-list undo-list)))
-  (setq helix--in-single-undo-step nil
-        helix--undo-list-pointer nil))
+  (when helix--in-single-undo-step
+    (helix--undo-boundary-2)
+    (unless (eq buffer-undo-list helix--undo-list-pointer)
+      (let ((undo-list buffer-undo-list))
+        (while (and (consp undo-list)
+                    (eq (car undo-list) nil))
+          (setq undo-list (cdr undo-list)))
+        (let ((equiv (gethash (car undo-list)
+                              undo-equiv-table)))
+          ;; Remove undo boundaries from `buffer-undo-list' withing current undo
+          ;; step. If multiple cursors are active, also remove entries that move
+          ;; point to prevent desynchronization between real cursor and fake ones
+          ;; during `undo'.
+          (let ((predicate (if helix-multiple-cursors-mode
+                               #'(lambda (i) (or (numberp i) (null i)))
+                             #'null)))
+            (setq undo-list (helix-destructive-filter predicate
+                                                      undo-list
+                                                      helix--undo-list-pointer)))
+          ;; Restore "undo" status of the tip of `buffer-undo-list'.
+          (when equiv
+            (puthash (car undo-list) equiv
+                     undo-equiv-table)))
+        (setq buffer-undo-list undo-list)))
+    (setq helix--in-single-undo-step nil
+          helix--undo-list-pointer nil)))
 
 (defmacro helix-with-single-undo-step (&rest body)
   "Execute BODY and record all modifications as a single undo step."
