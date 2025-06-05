@@ -549,6 +549,7 @@ activate this fake cursor and place it place into POSITION."
 
 (defmacro helix-save-window-scroll (&rest body)
   "Save the window scroll position, evaluate BODY, restore it."
+  (declare (indent 0) (debug t))
   (let ((win-start (make-symbol "win-start"))
         (win-hscroll (make-symbol "win-hscroll")))
     `(let ((,win-start (set-marker (make-marker) (window-start)))
@@ -583,10 +584,10 @@ evaluate BODY, update fake CURSOR."
   (declare (indent 0) (debug t))
   `(progn
      (helix-save-window-scroll
-      (helix-save-excursion
-       (dolist (cursor (helix-all-fake-cursors))
-         (helix-with-fake-cursor cursor
-           ,@body))))
+       (helix-save-excursion
+        (dolist (cursor (helix-all-fake-cursors))
+          (helix-with-fake-cursor cursor
+            ,@body))))
      ;; Finaly execute for real cursor
      ,@body))
 
