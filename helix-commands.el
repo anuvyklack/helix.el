@@ -650,7 +650,7 @@ all regions that match to regexp withing active selections."
   (interactive)
   (helix-with-real-cursor-as-fake
     (let* (rest-cursors
-           ;; Filter cursors to remain only the first on each line.
+           ;; Filter cursors to remain only the first one on each line.
            ;; Line numbers start from 1, so 0 is out of scope.
            (cursors (let ((current-line 0))
                       (-remove #'(lambda (cursor)
@@ -667,25 +667,26 @@ all regions that match to regexp withing active selections."
                                      (max column (current-column)))
                                  0 cursors)))
       ;; Align
-      (dolist (cursor cursors)
-        (helix-with-fake-cursor cursor
-          (if (eql (current-column) column)
-              ;; Add placeholder for anchor cursor to `buffer-undo-list',
-              ;; because if during command evaluating with a fake cursor active
-              ;; nothing have been added to undo-list, the fake cursor position
-              ;; wouldn't be stored in `buffer-undo-list', and wouldn't be
-              ;; restored during undo.
-              (push '(apply cdr nil) buffer-undo-list)
-            ;; else
-            (let ((deactivate-mark nil) ;; Don't deactivate mark after insertion.
-                  (str (s-repeat (- column (current-column)) " ")))
-              (cond ((and (use-region-p)
-                          (> (helix-region-direction) 0))
-                     (helix-exchange-point-and-mark)
-                     (insert str)
-                     (helix-exchange-point-and-mark))
-                    (t
-                     (insert str)))))))
+      (helix-save-window-scroll
+        (dolist (cursor cursors)
+          (helix-with-fake-cursor cursor
+            (if (eql (current-column) column)
+                ;; Add placeholder for anchor cursor to `buffer-undo-list',
+                ;; because if during command evaluating with a fake cursor
+                ;; nothing have been added to undo-list, the fake cursor
+                ;; position wouldn't be stored in `buffer-undo-list', and
+                ;; wouldn't be restored during undo.
+                (push '(apply cdr nil) buffer-undo-list)
+              ;; else
+              (let ((deactivate-mark nil) ;; Don't deactivate mark after insertion.
+                    (str (s-repeat (- column (current-column)) " ")))
+                (cond ((and (use-region-p)
+                            (> (helix-region-direction) 0))
+                       (helix-exchange-point-and-mark)
+                       (insert str)
+                       (helix-exchange-point-and-mark))
+                      (t
+                       (insert str))))))))
       ;; Add rest cursors to `buffer-undo-list'.
       (dolist (cursor rest-cursors)
         (helix-with-fake-cursor cursor
