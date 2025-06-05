@@ -629,18 +629,7 @@ the original cursor, to inform about the lack of support."
             (helix-save-excursion
              (dolist (cursor (helix-all-fake-cursors))
                (helix-with-fake-cursor cursor
-                 (helix--execute-command command)))))))))
-
-(defun helix--execute-command (command)
-  "Run COMMAND, simulating the parts of the command loop that
-makes sense for fake cursor."
-  (setq this-command command)
-  ;; (ignore-errors)
-  (run-hooks 'pre-command-hook)
-  (unless (eq this-command 'ignore)
-    (call-interactively command))
-  (run-hooks 'post-command-hook)
-  (when deactivate-mark (deactivate-mark)))
+                 (call-interactively command)))))))))
 
 (defmacro helix-with-real-cursor-as-fake (&rest body)
   "Temporarily create a fake-cursor for real one with ID 0.
