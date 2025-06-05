@@ -413,7 +413,8 @@ Use visual line when `visual-line-mode' is on."
 With no region delete char before point."
   (interactive)
   (cond ((use-region-p)
-         ;; If line selected — add newline symbol after it into active region.
+         ;; If selection is a whole line then add newline character (for logical
+         ;; line) or space (for visual line) after into selection.
          (when (and (not (helix-blank-line-p))
                     (helix-line-selected-p))
            (when (< (helix-region-direction) 0)
@@ -506,6 +507,11 @@ Manages the internal `helix--extend-selection' flag."
 Uses visual lines if `visual-line-mode' is active, otherwise logical lines.
 Positive COUNT extends forward, negative extends backward.
 When no region exists, marks the current line first.
+
+Newline character doesn't included into selection in general case, but
+when line is empty, the selection consists of a newline character, since
+we have nothing else.
+
 Handles edge cases and direction transitions (forward<->backward)
 automatically."
   (interactive "p")
