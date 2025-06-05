@@ -386,16 +386,18 @@ Use visual line when `visual-line-mode' is on."
 (defun helix-change ()
   "Delete region and enter Insert state."
   (interactive)
-  (if (use-region-p)
-      (let ((line-selected? (helix-line-selected-p)))
-        (kill-region nil nil t)
-        (pcase line-selected?
-          ;; ('line (save-excursion (newline))
-          ;;        (indent-according-to-mode))
-          ('visual-line (insert " ")
-                        (backward-char))))
-    ;; no region
-    (delete-char -1))
+  (cond ((use-region-p)
+         (when (and (bolp)
+                    (save-excursion (backward-char) (helix-blank-line-p)))
+           (backward-char))
+         (let ((line-selected? (helix-line-selected-p)))
+           (kill-region nil nil t)
+           (pcase line-selected?
+             ('line (indent-according-to-mode))
+             ('visual-line (insert " ")
+                           (backward-char)))))
+        (t
+         (delete-char -1)))
   (helix-insert-state 1))
 
 ;; - If point is surrounded by (balanced) whitespace and a brace delimiter
