@@ -505,6 +505,7 @@ The cursor must be active when the execution thread enters this macro."
 (defun helix--undo-step-start (position)
   "This function always called from `buffer-undo-list' during undo
 by `primitive-undo' function and manages real cursor POSITION."
+  (set-mark position)
   (push `(apply helix--undo-step-end ,position)
         buffer-undo-list))
 
@@ -526,7 +527,7 @@ this fake cursor into POSITION and deactivate it."
          (make-overlay (point) (point) nil nil t)))
   (when-let* ((cursor (helix-cursor-with-id id)))
     (helix--restore-point-state cursor))
-  (goto-char position)
+  (set-mark position)
   (push `(apply helix-undo--deactivate-cursor ,id ,position)
         buffer-undo-list))
 
@@ -539,7 +540,7 @@ function which during redo (which mechanically is the same undo) will
 activate this fake cursor and place it place into POSITION."
   (push `(apply helix-undo--activate-cursor ,id ,position)
         buffer-undo-list)
-  ;; Update or create fake cursor
+  ;; Update fake cursor
   (helix-set-fake-cursor id position (mark t))
   ;; Restore real cursor
   (helix--restore-point-state helix--point-state-during-undo)

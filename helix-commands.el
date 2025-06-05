@@ -431,14 +431,16 @@ With no region delete char before point."
   "Cancel current region then undo."
   (interactive)
   (deactivate-mark)
-  (undo-only))
+  (let (deactivate-mark)
+    (undo-only)))
 
 ;; U
 (defun helix-redo ()
   "Cancel current region then redo."
   (interactive)
   (deactivate-mark)
-  (undo-redo))
+  (let (deactivate-mark)
+    (undo-redo)))
 
 ;; J
 (defun helix-join-line ()
