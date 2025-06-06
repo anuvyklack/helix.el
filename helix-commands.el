@@ -146,7 +146,7 @@ If the buffer is narrowed, this command uses the beginning of the
 accessible part of the buffer.
 Push mark at previous position, unless extending selection."
   (interactive "P")
-  (helix-disable-multiple-cursors-mode)
+  (helix-remove-all-fake-cursors)
   (if helix--extend-selection
       (or (region-active-p) (set-mark (point)))
     ;; else
@@ -167,7 +167,7 @@ Push mark at previous position, unless extending selection."
 (defun helix-goto-last-line ()
   "Move point the end of the buffer."
   (interactive)
-  (helix-disable-multiple-cursors-mode)
+  (helix-remove-all-fake-cursors)
   (if helix--extend-selection
       (or (region-active-p) (set-mark (point)))
     ;; else
@@ -240,7 +240,7 @@ Use visual line when `visual-line-mode' is on."
 (defun helix-avy-word-forward ()
   "Move to a word start after the point, choosing it with Avy."
   (interactive)
-  (helix-disable-multiple-cursors-mode)
+  (helix-remove-all-fake-cursors)
   (let ((mark (and helix--extend-selection
                    (not (region-active-p))
                    (point)))
@@ -257,7 +257,7 @@ Use visual line when `visual-line-mode' is on."
 (defun helix-avy-word-backward ()
   "Move to a word start before the point, choosing it with Avy."
   (interactive)
-  (helix-disable-multiple-cursors-mode)
+  (helix-remove-all-fake-cursors)
   (let ((mark (and helix--extend-selection
                    (not (region-active-p))
                    (point)))
@@ -275,7 +275,7 @@ Use visual line when `visual-line-mode' is on."
 (defun helix-avy-WORD-forward ()
   "Move to a WORD start after the point, choosing it with Avy."
   (interactive)
-  (helix-disable-multiple-cursors-mode)
+  (helix-remove-all-fake-cursors)
   (let ((mark (and helix--extend-selection
                    (not (region-active-p))
                    (point)))
@@ -292,7 +292,7 @@ Use visual line when `visual-line-mode' is on."
 (defun helix-avy-WORD-backward ()
   "Move to a WORD start before the point, choosing it with Avy."
   (interactive)
-  (helix-disable-multiple-cursors-mode)
+  (helix-remove-all-fake-cursors)
   (let ((mark (and helix--extend-selection
                    (not (region-active-p))
                    (point)))
@@ -310,7 +310,7 @@ Use visual line when `visual-line-mode' is on."
 (defun helix-avy-next-line ()
   "Move to a next line, choosing it with Avy."
   (interactive)
-  (helix-disable-multiple-cursors-mode)
+  (helix-remove-all-fake-cursors)
   (unless helix--extend-selection
     (deactivate-mark))
   (let ((temporary-goal-column (current-column)))
@@ -321,7 +321,7 @@ Use visual line when `visual-line-mode' is on."
 (defun helix-avy-previous-line ()
   "Move to a previous line, choosing it with Avy."
   (interactive)
-  (helix-disable-multiple-cursors-mode)
+  (helix-remove-all-fake-cursors)
   (unless helix--extend-selection
     (deactivate-mark))
   (let ((temporary-goal-column (current-column)))
@@ -589,7 +589,7 @@ Select visual lines when `visual-line-mode' is on."
 ;; %
 (defun helix-select-all ()
   (interactive)
-  (helix-disable-multiple-cursors-mode)
+  (helix-remove-all-fake-cursors)
   (goto-char (point-min))
   (set-mark (point-max)))
 
@@ -804,9 +804,16 @@ ends at END-COLUMN spauns NUMBER-OF-LINES."
             (cons start end)
           (cons end start)))))
 
+;; ,
+(defun helix-remove-all-fake-cursors ()
+  "Remove all fake cursors from current buffer."
+  (interactive)
+  (when helix-multiple-cursors-mode
+    (helix-multiple-cursors-mode -1)))
+
 ;; M-,
-(defun helix-delete-main-cursor ()
-  "Delete main cursor."
+(defun helix-remove-main-cursor ()
+  "Delete main cursor and activate the next fake one."
   (interactive)
   (when helix-multiple-cursors-mode
     (helix-restore-point-from-fake-cursor (or (helix-next-fake-cursor)
@@ -828,7 +835,7 @@ ends at END-COLUMN spauns NUMBER-OF-LINES."
                       (overlay-get cursor 'mark)
                       (point)
                       (if (use-region-p) (mark) 0)))))
-      (helix-disable-multiple-cursors-mode)
+      (helix-remove-all-fake-cursors)
       (helix-set-region beg end 1))))
 
 ;; (

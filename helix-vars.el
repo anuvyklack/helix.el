@@ -511,8 +511,8 @@ cursors editing.")
     helix-smooth-scroll-line-not-to-very-top ;; zz
     helix-smooth-scroll-line-to-top          ;; zt
     helix-smooth-scroll-line-to-bottom       ;; zb
-    helix-disable-multiple-cursors-mode      ;; ,
-    helix-delete-main-cursor                 ;; M-,
+    helix-remove-all-fake-cursors            ;; ,
+    helix-remove-main-cursor                 ;; M-,
     helix-merge-selections                   ;; M-minus
     helix-normal-state-escape                ;; ESC in normal state
     helix-normal-state                       ;; ESC

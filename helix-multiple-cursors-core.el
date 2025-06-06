@@ -86,9 +86,9 @@ The current state is stored in the overlay for later retrieval."
       cursor)))
 
 (defun helix--delete-fake-cursors ()
-  "Remove all fake cursors.
-Do not use this funtion to conclude editing with multiple cursors!
-Disable `helix-multiple-cursors-mode' instead."
+  "Remove all fake cursors overlays form current buffer.
+It is likely that you need `helix-remove-all-fake-cursors' function,
+not this one."
   (when helix--max-cursors-original
     (setq helix-max-cursors helix--max-cursors-original
           helix--max-cursors-original nil))
@@ -781,7 +781,7 @@ So you can paste it in later with `yank-rectangle'."
 
 ;;; Integration with other Emacs functionality
 
-(add-hook 'after-revert-hook 'helix-disable-multiple-cursors-mode)
+(add-hook 'after-revert-hook 'helix-remove-all-fake-cursors)
 
 (define-advice execute-kbd-macro (:around (orig-fun &rest args) multiple-cursors)
   "`execute-kbd-macro' should never be run for fake cursors.
