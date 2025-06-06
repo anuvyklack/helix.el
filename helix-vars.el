@@ -109,9 +109,10 @@ If this value is nil, there is no ceiling."
   :type '(boolean)
   :group 'helix)
 
-(defvar helix-mc-unsupported-minor-modes '(corfu-mode
-                                           company-mode
-                                           flyspell-mode)
+(defvar helix-minor-modes-incompatible-with-multiple-cursors
+  '(corfu-mode
+    company-mode
+    flyspell-mode)
   "List of minor-modes that does not work well with multiple cursors.
 They are temporarily disabled when there are multiple cursors.")
 
@@ -690,7 +691,7 @@ will be invoked if `helix--extend-selection' is t.")
 (helix-defvar-local helix--this-command nil
   "The command that all fake cursors are currently executing.")
 
-(helix-defvar-local helix-mc-temporarily-disabled-minor-modes nil
+(helix-defvar-local helix--temporarily-disabled-minor-modes nil
   "The list of temporarily disabled minor-modes while there are
 multiple cursors.")
 
