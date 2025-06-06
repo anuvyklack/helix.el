@@ -29,19 +29,68 @@
 (require 'dash)
 (require 'helix-vars)
 (require 'helix-common)
+(require 'helix-multiple-cursors-core)
 
-;;; helix-mode
+;;; Helix minor mode
+
+(defvar helix-insert-state)
+(declare-function helix-normal-state "helix-states.el")
+
+(defun helix--pre-commad-hook ()
+  "Called from `pre-command-hook' to execute COMMAND for fake cursors.
+The COMMAND should be executed for fake cursors first, because it can
+create fake cursors itself, like `helix-copy-selection' does, and we
+want COMMAND to be executed only for original ones."
+  (unless helix--executing-command-for-fake-cursor
+    (setq helix--this-command this-command)
+    (helix--single-undo-step-beginning)
+    (when (and helix-multiple-cursors-mode
+               (not (eq this-command #'ignore))
+               ;; TODO: This condition skips keyboard macros.
+               ;; We need to handle these! They will generate actual commands
+               ;; that are also run in the command loop.
+               (functionp this-command))
+      ;; Restore initial value of `this-command' after execution of command
+      ;; for all fake cursors, because some functions (like `kill-region')
+      ;; may change it.
+      (let ((this-command this-command))
+        ;; Wrap in `condition-case' to protect this function from being removed
+        ;; from `pre-command-hook', because the function throwing the error is
+        ;; unconditionally removed from `pre-command-hook'.
+        (condition-case error
+            (helix--execute-command-for-all-fake-cursors this-command)
+          (error
+           (message "[Helix] error in `helix--execute-command-for-all-fake-cursors': %s"
+                    (error-message-string error))))))))
+
+(defun helix--post-command-hook ()
+  (unless helix--executing-command-for-fake-cursor
+    (helix--single-undo-step-end)
+    (when (helix-merge-regions-p helix--this-command)
+      (helix-merge-overlapping-regions))
+    (setq helix--this-command nil
+          helix--input-cache nil)
+    (when helix--remove-post-command-hook
+      (remove-hook 'post-command-hook 'helix--post-command-hook t)
+      (setq helix--remove-post-command-hook nil))))
 
 (define-minor-mode helix-local-mode
   "Minor mode for setting up Helix in a current buffer."
   :global nil
   (if helix-local-mode
       (progn
-        ;; Just push the symbol here. We update its content on every
-        ;; Helix state change.
+        ;; Just push the symbol into `emulation-mode-map-alists'.
+        ;; We will update its content on every Helix state change.
         (cl-pushnew 'helix-mode-map-alist emulation-mode-map-alists)
+        (helix-load-whitelists)
+        (add-hook 'pre-command-hook 'helix--pre-commad-hook nil t)
+        (add-hook 'post-command-hook 'helix--post-command-hook t t)
         (helix-normal-state 1))
     ;; else
+    ;; Execute `helix--post-command-hook' one last time and then remove it.
+    (setq helix--remove-post-command-hook t)
+    (remove-hook 'post-command-hook 'helix--post-command-hook t)
+    (remove-hook 'pre-command-hook 'helix--pre-commad-hook t)
     (helix-disable-current-state)))
 
 ;;; Helix state

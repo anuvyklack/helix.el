@@ -329,48 +329,15 @@ If SORT is non-nil sort cursors in order they are located in buffer."
   (1+ (hash-table-count helix--cursors-table)))
 
 (defun helix-any-fake-cursors-p ()
-  "Return non-nil if currently there are any fake cursors in the buffer."
+  "Return non-nil if there are fake cursors in the buffer."
   (not (hash-table-empty-p helix--cursors-table)))
 
 ;;; Minor mode
 
-(defun helix--pre-commad-hook ()
-  "Called from `pre-command-hook' to execute COMMAND for fake cursors.
-The COMMAND should be executed for fake cursors first, because it can
-create fake cursors itself, like `helix-copy-selection' does, and we
-want COMMAND to be executed only for original ones."
-  (unless helix--executing-command-for-fake-cursor
-    (setq helix--this-command this-command)
-    (helix--single-undo-step-beginning)
-    ;; Restore initial value of `this-command' after execution of command for all
-    ;; fake cursors, because some functions (like `kill-region') may change it.
-    (let ((this-command this-command))
-      ;; Wrap in `condition-case' to protect this function, because the function
-      ;; throwing the error is deleted from `pre-command-hook'.
-      (condition-case error
-          ;; TODO: Skip keyboard macros, since they will generate
-          ;; actual commands that are also run in the command loop.
-          ;; Need to handle these!
-          (when (functionp this-command)
-            (helix--execute-command-for-all-fake-cursors this-command))
-        (error
-         (message "[Helix] error in `helix--execute-command-for-all-fake-cursors': %s"
-                  (error-message-string error)))))))
-
-(defun helix--post-command-hook ()
-  (unless helix--executing-command-for-fake-cursor
-    (helix--single-undo-step-end)
-    (when (helix-merge-regions-p helix--this-command)
-      (helix-merge-overlapping-regions))
-    (helix--reset-input-cache)
-    (when helix--remove-post-command-hook
-      (remove-hook 'post-command-hook 'helix--post-command-hook t)
-      (setq helix--remove-post-command-hook nil))))
-
 ;;;###autoload
 (define-minor-mode helix-multiple-cursors-mode
   "Minor mode, which is active when there are multiple cursors in the buffer.
-Do not activate it manually: it is activated automatically when you create
+No need activate it manually: it is activated automatically when you create
 first fake cursor with `helix-create-fake-cursor', and disabled when you
 delete last one with `helix-remove-fake-cursor'."
   :global nil
@@ -378,16 +345,7 @@ delete last one with `helix-remove-fake-cursor'."
   :lighter helix-mc-mode-line
   :keymap helix-multiple-cursors-map
   (if helix-multiple-cursors-mode
-      (progn
-        (helix-mc-load-lists) ;; Lazy-load the user's list file
-        (helix-mc-temporarily-disable-unsupported-minor-modes)
-        (helix--single-undo-step-beginning)
-        (add-hook 'pre-command-hook 'helix--pre-commad-hook nil t)
-        (add-hook 'post-command-hook 'helix--post-command-hook t t))
-    ;; Execute `helix--post-command-hook' one last time and then remove it.
-    (setq helix--remove-post-command-hook t)
-    (remove-hook 'pre-command-hook 'helix--pre-commad-hook t)
-    (setq helix--this-command nil)
+      (helix-mc-temporarily-disable-unsupported-minor-modes)
     (helix-mc--maybe-set-killed-rectangle)
     (helix--delete-fake-cursors)
     (helix-mc-enable-temporarily-disabled-minor-modes)))
@@ -399,16 +357,11 @@ and fake cursors are present in the buffer."
              (helix-any-fake-cursors-p))
     (helix-multiple-cursors-mode 1)))
 
-(defun helix-disable-multiple-cursors-mode ()
-  "Disable `helix-multiple-cursors-mode'."
-  (interactive)
-  (when helix-multiple-cursors-mode
-    (helix-multiple-cursors-mode -1)))
-
 (defun helix-maybe-disable-multiple-cursors-mode ()
-  "Disable `helix-multiple-cursors-mode' if no more fake cursors in the buffer."
+  "Disable `helix-multiple-cursors-mode' if no fake cursors remain
+in current buffer."
   (unless (helix-any-fake-cursors-p)
-    (helix-disable-multiple-cursors-mode)))
+    (helix-multiple-cursors-mode -1)))
 
 ;;; Undo
 ;;;; Manage undo list during general commands execution
@@ -454,15 +407,13 @@ action. The step is terminated with `helix--single-undo-step-end'."
         (let ((equiv (gethash (car undo-list)
                               undo-equiv-table)))
           ;; Remove undo boundaries from `buffer-undo-list' withing current undo
-          ;; step. If multiple cursors are active, also remove entries that move
-          ;; point during `undo'. We handle positions manually to synchronize
-          ;; real cursor with fake ones during `undo',
-          (let ((predicate (if helix-multiple-cursors-mode
-                               #'(lambda (i) (or (numberp i) (null i)))
-                             #'null)))
-            (setq undo-list (helix-destructive-filter predicate
-                                                      undo-list
-                                                      helix--undo-list-pointer)))
+          ;; step. Also remove entries that move point during `undo', because we
+          ;; handle positions manually to synchronize real cursor with fake ones
+          ;; during `undo',
+          (setq undo-list (helix-destructive-filter
+                           #'(lambda (i) (or (numberp i) (null i)))
+                           undo-list
+                           helix--undo-list-pointer))
           ;; Restore "undo" status of the tip of `buffer-undo-list'.
           (when equiv
             (puthash (car undo-list) equiv
@@ -602,7 +553,7 @@ evaluate BODY, update fake CURSOR."
   (when helix-multiple-cursors-mode
     (when (helix-merge-regions-p command)
       (helix-merge-overlapping-regions))
-    (helix--reset-input-cache)))
+    (setq helix--input-cache nil)))
 
 (defun helix--execute-command-for-all-fake-cursors (command)
   "Call COMMAND interactively for each fake cursor.
@@ -672,7 +623,7 @@ Return t if COMMMAND should be executed for all cursors."
     (helix-mc-save-lists)
     for-all?))
 
-(defun helix-mc-load-lists ()
+(defun helix-load-whitelists ()
   "Load `helix-mc-list-file' file if not yet."
   (unless helix-mc--list-file-loaded
     (load helix-mc-list-file 'noerror 'nomessage)
@@ -866,9 +817,6 @@ Calls with equal PROMPT or without it would be undistinguishable."
            (setq value (apply orig-fun args))
            (push (cons key value) helix--input-cache))
          value))))
-
-(defun helix--reset-input-cache ()
-  (setq helix--input-cache nil))
 
 (helix--advice-to-cache-input read-char)
 (helix--advice-to-cache-input read-quoted-char)
