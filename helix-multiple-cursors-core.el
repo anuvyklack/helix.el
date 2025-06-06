@@ -626,12 +626,13 @@ the original cursor, to inform about the lack of support."
                      (memq command helix-commands-to-run-for-all-cursors)
                      (helix--prompt-for-unknown-command command))))
            (helix-save-window-scroll
-            (helix-save-excursion
-             (dolist (cursor (helix-all-fake-cursors))
-               (helix-with-fake-cursor cursor
-                 (helix--execute-command command)))))))))
+             (helix-save-excursion
+              (dolist (cursor (helix-all-fake-cursors))
+                (helix-with-fake-cursor cursor
+                  ;; (helix--call-interactively command)
+                  (call-interactively command)))))))))
 
-(defun helix--execute-command (command)
+(defun helix--call-interactively (command)
   "Run COMMAND, simulating the parts of the command loop that
 makes sense for fake cursor."
   (setq this-command command)
