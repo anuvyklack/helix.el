@@ -143,8 +143,8 @@ push onto `buffer-undo-list'`helix-undo--deactivate-cursor' function
 which during redo (which mechanically is the same undo) will place
 this fake cursor into POSITION and deactivate it."
   (setq helix--point-state-during-undo
-        (helix--store-point-state
-         (make-overlay (point) (point) nil nil t)))
+        (helix--store-point-state (make-overlay (point) (point) nil nil t)
+                                  (point) (mark t)))
   (when-let* ((cursor (helix-cursor-with-id id)))
     (helix--restore-point-state cursor))
   (set-mark position)
@@ -307,21 +307,18 @@ will be set."
                  cursor (gethash id helix--cursors-table)))
           ((helix-fake-cursor-p cursor-or-id)
            (setq cursor cursor-or-id)))
-    (cond (cursor
-           (helix-move-fake-cursor cursor point mark)
-           (helix-maybe-enable-multiple-cursors-mode))
-          (t
-           (helix-create-fake-cursor point mark id)))))
+    (if cursor
+        (helix-move-fake-cursor cursor point mark)
+      (helix-create-fake-cursor point mark id))))
 
 (defun helix-move-fake-cursor (cursor point &optional mark)
   "Set fake CURSOR to new POINT and MARK and update its state."
   (helix--set-cursor-overlay cursor point)
   (move-marker (overlay-get cursor 'point) point)
-  (when mark
-    (move-marker (overlay-get cursor 'mark) mark)
-    (if (and mark mark-active)
-        (helix--set-region-overlay cursor point mark)
-      (helix--delete-region-overlay cursor)))
+  (move-marker (overlay-get cursor 'mark) (or mark point))
+  (if (and mark mark-active)
+      (helix--set-region-overlay cursor point mark)
+    (helix--delete-region-overlay cursor))
   (helix--store-point-state cursor point mark)
   cursor)
 
@@ -368,15 +365,16 @@ Return CURSOR."
 (defun helix--set-region-overlay (cursor point mark)
   "Set the overlay looking like active region between POINT and MARK
 and bind it to CURSOR."
-  (if (and mark mark-active)
-      (if-let* ((region (overlay-get cursor 'fake-region)))
-          (move-overlay region point mark)
-        (let ((region (make-overlay point mark nil nil t)))
-          (overlay-put region 'face 'helix-region-face)
-          (overlay-put region 'type 'fake-region)
-          (overlay-put region 'priority 99)
-          (overlay-put region 'id (overlay-get cursor 'id))
-          (overlay-put cursor 'fake-region region)))))
+  (when (and mark-active mark
+             (not (eql point mark)))
+    (if-let* ((region (overlay-get cursor 'fake-region)))
+        (move-overlay region point mark)
+      (let ((region (make-overlay point mark nil nil t)))
+        (overlay-put region 'face 'helix-region-face)
+        (overlay-put region 'type 'fake-region)
+        (overlay-put region 'priority 99)
+        (overlay-put region 'id (overlay-get cursor 'id))
+        (overlay-put cursor 'fake-region region)))))
 
 (defun helix--delete-fake-cursor (cursor)
   "Delete CURSOR overlay."
@@ -392,10 +390,9 @@ and bind it to CURSOR."
   (when-let* ((region (overlay-get cursor 'fake-region)))
     (delete-overlay region)))
 
-(defun helix--store-point-state (overlay &optional point mark)
+(defun helix--store-point-state (overlay point mark)
   "Store POINT, MARK and variables relevant to fake cursor into OVERLAY."
-  (unless point (setq point (point)))
-  (unless mark (setq mark (mark t)))
+  (unless mark (setq mark point))
   (let ((pnt-marker (or (overlay-get overlay 'point)
                         (let ((marker (make-marker)))
                           (set-marker-insertion-type marker t)
@@ -403,7 +400,7 @@ and bind it to CURSOR."
         (mrk-marker (or (overlay-get overlay 'mark)
                         (overlay-put overlay 'mark (make-marker)))))
     (set-marker pnt-marker point)
-    (set-marker mrk-marker (or mark point)))
+    (set-marker mrk-marker mark))
   (dolist (var helix-fake-cursor-specific-vars)
     (when (boundp var)
       (overlay-put overlay var (symbol-value var))))
@@ -541,7 +538,7 @@ the data needed for multiple cursors functionality."
   (let ((state (make-symbol "point-state")))
     `(let ((,state (make-overlay (point) (point) nil nil t)))
        (overlay-put ,state 'type 'original-cursor)
-       (helix--store-point-state ,state)
+       (helix--store-point-state ,state (point) (mark t))
        (save-excursion ,@body)
        (helix--restore-point-state ,state))))
 
