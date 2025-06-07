@@ -133,61 +133,6 @@ returned by `helix-cursors-positions' function."
   (push `(apply helix--undo-step-start ,cursors-positions)
         buffer-undo-list))
 
-;;; Minor mode
-
-;;;###autoload
-(define-minor-mode helix-multiple-cursors-mode
-  "Minor mode, which is active when there are multiple cursors in the buffer.
-No need activate it manually: it is activated automatically when you create
-first fake cursor with `helix-create-fake-cursor', and disabled when you
-delete last one with `helix-remove-fake-cursor'."
-  :global nil
-  :interactive nil
-  :lighter helix-mc-mode-line
-  :keymap helix-multiple-cursors-map
-  (if helix-multiple-cursors-mode
-      (helix-mc--disable-incompatible-minor-modes)
-    (helix-mc--maybe-set-killed-rectangle)
-    (helix--delete-fake-cursors)
-    (helix-mc--enable-incompatible-minor-modes)))
-
-(defun helix-maybe-enable-multiple-cursors-mode ()
-  "Enable `helix-multiple-cursors-mode' if not already enabled
-and fake cursors are present in the buffer."
-  (when (and (not helix-multiple-cursors-mode)
-             (helix-any-fake-cursors-p))
-    (helix-multiple-cursors-mode 1)))
-
-(defun helix-maybe-disable-multiple-cursors-mode ()
-  "Disable `helix-multiple-cursors-mode' if no fake cursors remain
-in current buffer."
-  (unless (helix-any-fake-cursors-p)
-    (helix-multiple-cursors-mode -1)))
-
-(defun helix-mc--maybe-set-killed-rectangle ()
-  "Add the latest `kill-ring' entry for each cursor to `killed-rectangle'.
-So you can paste it in later with `yank-rectangle'."
-  (let ((entries (helix-with-real-cursor-as-fake
-                   (-map #'(lambda (cursor)
-                             (-first-item (overlay-get cursor 'kill-ring)))
-                         (helix-all-fake-cursors :sort)))))
-    (unless (helix-all-elements-are-equal-p entries)
-      (setq killed-rectangle entries))))
-
-(defun helix-mc--disable-incompatible-minor-modes ()
-  "Disable incompatible minor modes while there are multiple cursors
-in the buffer."
-  (dolist (mode helix-minor-modes-incompatible-with-multiple-cursors)
-    (when (and (boundp mode) (symbol-value mode))
-      (push mode helix--temporarily-disabled-minor-modes)
-      (funcall mode -1))))
-
-(defun helix-mc--enable-incompatible-minor-modes ()
-  "Enable minor modes disabled by `helix-mc--disable-incompatible-minor-modes'."
-  (dolist (mode helix--temporarily-disabled-minor-modes)
-    (funcall mode 1))
-  (setq helix--temporarily-disabled-minor-modes nil))
-
 ;;; Fake cursor object
 
 (helix-defvar-local helix--cursors-table
@@ -613,6 +558,61 @@ Restore it after BODY evaluation if it is still alive."
                ((helix-any-fake-cursors-p)
                 (helix-restore-point-from-fake-cursor (helix-first-fake-cursor))))
          (helix-maybe-disable-multiple-cursors-mode)))))
+
+;;; Minor mode
+
+;;;###autoload
+(define-minor-mode helix-multiple-cursors-mode
+  "Minor mode, which is active when there are multiple cursors in the buffer.
+No need activate it manually: it is activated automatically when you create
+first fake cursor with `helix-create-fake-cursor', and disabled when you
+delete last one with `helix-remove-fake-cursor'."
+  :global nil
+  :interactive nil
+  :lighter helix-mc-mode-line
+  :keymap helix-multiple-cursors-map
+  (if helix-multiple-cursors-mode
+      (helix-mc--disable-incompatible-minor-modes)
+    (helix-mc--maybe-set-killed-rectangle)
+    (helix--delete-fake-cursors)
+    (helix-mc--enable-incompatible-minor-modes)))
+
+(defun helix-maybe-enable-multiple-cursors-mode ()
+  "Enable `helix-multiple-cursors-mode' if not already enabled
+and fake cursors are present in the buffer."
+  (when (and (not helix-multiple-cursors-mode)
+             (helix-any-fake-cursors-p))
+    (helix-multiple-cursors-mode 1)))
+
+(defun helix-maybe-disable-multiple-cursors-mode ()
+  "Disable `helix-multiple-cursors-mode' if no fake cursors remain
+in current buffer."
+  (unless (helix-any-fake-cursors-p)
+    (helix-multiple-cursors-mode -1)))
+
+(defun helix-mc--maybe-set-killed-rectangle ()
+  "Add the latest `kill-ring' entry for each cursor to `killed-rectangle'.
+So you can paste it in later with `yank-rectangle'."
+  (let ((entries (helix-with-real-cursor-as-fake
+                   (-map #'(lambda (cursor)
+                             (-first-item (overlay-get cursor 'kill-ring)))
+                         (helix-all-fake-cursors :sort)))))
+    (unless (helix-all-elements-are-equal-p entries)
+      (setq killed-rectangle entries))))
+
+(defun helix-mc--disable-incompatible-minor-modes ()
+  "Disable incompatible minor modes while there are multiple cursors
+in the buffer."
+  (dolist (mode helix-minor-modes-incompatible-with-multiple-cursors)
+    (when (and (boundp mode) (symbol-value mode))
+      (push mode helix--temporarily-disabled-minor-modes)
+      (funcall mode -1))))
+
+(defun helix-mc--enable-incompatible-minor-modes ()
+  "Enable minor modes disabled by `helix-mc--disable-incompatible-minor-modes'."
+  (dolist (mode helix--temporarily-disabled-minor-modes)
+    (funcall mode 1))
+  (setq helix--temporarily-disabled-minor-modes nil))
 
 ;;; Whitelists
 
