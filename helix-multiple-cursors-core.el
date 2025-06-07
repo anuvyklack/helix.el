@@ -593,12 +593,13 @@ in current buffer."
 (defun helix-mc--maybe-set-killed-rectangle ()
   "Add the latest `kill-ring' entry for each cursor to `killed-rectangle'.
 So you can paste it in later with `yank-rectangle'."
-  (let ((entries (helix-with-real-cursor-as-fake
-                   (-map #'(lambda (cursor)
-                             (-first-item (overlay-get cursor 'kill-ring)))
-                         (helix-all-fake-cursors :sort)))))
-    (unless (helix-all-elements-are-equal-p entries)
-      (setq killed-rectangle entries))))
+  (when (helix-any-fake-cursors-p)
+    (let ((entries (helix-with-real-cursor-as-fake
+                     (-map #'(lambda (cursor)
+                               (-first-item (overlay-get cursor 'kill-ring)))
+                           (helix-all-fake-cursors :sort)))))
+      (unless (helix-all-elements-are-equal-p entries)
+        (setq killed-rectangle entries)))))
 
 (defun helix-mc--disable-incompatible-minor-modes ()
   "Disable incompatible minor modes while there are multiple cursors
