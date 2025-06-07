@@ -33,7 +33,6 @@
 (require 'helix-common)
 
 ;;; Undo
-;;;; Manage undo list during general commands execution
 
 (defun helix--single-undo-step-beginning ()
   "Initiate atomic undo step.
@@ -48,25 +47,11 @@ action. The step is terminated with `helix--single-undo-step-end'."
     (setq helix--undo-list-pointer buffer-undo-list)
     (helix--undo-boundary-1)))
 
-(defvar helix--undo-step-end nil)
-
-(defun helix--undo-boundary-1 ()
-  (push (setq helix--undo-step-end `(apply helix--undo-step-end ,(point)))
-        buffer-undo-list))
-
-(defun helix--undo-boundary-2 ()
-  (when helix--undo-step-end
-    (while (eq (car buffer-undo-list) nil)
-      (pop buffer-undo-list))
-    (if (equal (car buffer-undo-list) helix--undo-step-end)
-        (pop buffer-undo-list)
-      ;; else
-      (push `(apply helix--undo-step-start ,(point))
-            buffer-undo-list))))
-
 (defun helix--single-undo-step-end ()
   "Finalize atomic undo step started by `helix--single-undo-step-beginning'."
-  (when helix--in-single-undo-step
+  (when (and helix--in-single-undo-step
+             ;; Merged all changes in Insert state into one undo step.
+             (not helix-insert-state))
     (helix--undo-boundary-2)
     (unless (eq buffer-undo-list helix--undo-list-pointer)
       (let ((undo-list buffer-undo-list))
@@ -76,9 +61,9 @@ action. The step is terminated with `helix--single-undo-step-end'."
         (let ((equiv (gethash (car undo-list)
                               undo-equiv-table)))
           ;; Remove undo boundaries from `buffer-undo-list' withing current undo
-          ;; step. Also remove entries that move point during `undo', because we
-          ;; handle positions manually to synchronize real cursor with fake ones
-          ;; during `undo',
+          ;; step. Also remove entries that move point during undo, because we
+          ;; handle cursors positions manually to synchronize real cursor with
+          ;; fake ones,
           (setq undo-list (helix-destructive-filter
                            #'(lambda (i) (or (numberp i) (null i)))
                            undo-list
@@ -91,80 +76,62 @@ action. The step is terminated with `helix--single-undo-step-end'."
     (setq helix--in-single-undo-step nil
           helix--undo-list-pointer nil)))
 
-;; (defmacro helix-with-single-undo-step (&rest body)
-;;   "Execute BODY and record all modifications as a single undo step."
-;;   (declare (indent defun) (debug t))
+(defvar helix--undo-boundary nil)
+
+(defun helix--undo-boundary-1 ()
+  (setq helix--undo-boundary
+        `(apply helix--undo-step-end ,(helix-cursors-positions)))
+  (push helix--undo-boundary buffer-undo-list))
+
+(defun helix--undo-boundary-2 ()
+  (when helix--undo-boundary
+    (while (eq (car buffer-undo-list) nil)
+      (pop buffer-undo-list))
+    (if (equal (car buffer-undo-list) helix--undo-boundary)
+        (pop buffer-undo-list)
+      ;; else
+      (push `(apply helix--undo-step-start ,(helix-cursors-positions))
+            buffer-undo-list))
+    (setq helix--undo-boundary nil)))
+
+;; (defmacro helix-with-undo-boundaries (&rest body)
+;;   (declare (indent 0) (debug t))
 ;;   `(progn
-;;      (helix--single-undo-step-beginning)
+;;      (helix--undo-boundary-1)
 ;;      (unwind-protect
 ;;          (progn
 ;;            ,@body)
-;;        (helix--single-undo-step-end))))
+;;        (helix--undo-boundary-2))))
 
-(defmacro helix--add-fake-cursor-to-undo-list (cursor &rest body)
-  "Evaluate BODY with handling `buffer-undo-list' for fake CURSOR.
-The cursor must be active when the execution thread enters this macro."
-  (declare (indent defun) (debug (symbolp &rest form)))
-  (let ((id (make-symbol "id"))
-        (deactivate (make-symbol "deactivate-cursor")))
-    `(let ((,id (overlay-get ,cursor 'id)))
-       (if (eql ,id 0)
-           (progn ,@body) ;; ID 0 is for real cursor, so skip it.
-         ;; else
-         (let* ((,deactivate `(apply helix-undo--deactivate-cursor ,,id ,(point))))
-           (push ,deactivate buffer-undo-list)
-           (prog1 (progn ,@body)
-             ;; If nothing has been added to the undo-list
-             (if (eq (car buffer-undo-list) ,deactivate)
-                 (pop buffer-undo-list)
-               (push `(apply helix-undo--activate-cursor ,,id ,(point))
-                     buffer-undo-list))))))))
+(defun helix--undo-step-start (cursors-positions)
+  "This function always called from `buffer-undo-list' during undo by
+`primitive-undo' function. It is the first one from a pair of functions:
+`helix--undo-step-start' and `helix--undo-step-end', which are executed
+at beginning and end of a single undo step and restores real and fake
+cursors points and regions after undo/redo step.
 
-;;;; Manage undo list during undo/redo
-
-(defun helix--undo-step-start (position)
-  "This function always called from `buffer-undo-list' during undo
-by `primitive-undo' function and manages real cursor POSITION."
-  (set-mark position)
-  (push `(apply helix--undo-step-end ,position)
+CURSORS-POSITIONS is an alist with cons cells (ID . (POINT MARK))
+returned by `helix-cursors-positions' function."
+  (push `(apply helix--undo-step-end ,cursors-positions)
         buffer-undo-list))
 
-(defun helix--undo-step-end (position)
-  "This function always called from `buffer-undo-list' during undo
-by `primitive-undo' function and manages real cursor POSITION."
-  (goto-char position)
-  (push `(apply helix--undo-step-start ,position) buffer-undo-list))
+(defun helix--undo-step-end (&optional cursors-positions)
+  "This function always called from `buffer-undo-list' during undo by
+`primitive-undo' function. It is the second one from a pair of functions:
+`helix--undo-step-start' and `helix--undo-step-end', which are executed
+at beginning and end of a single undo step and restores real and fake
+cursors points and regions after undo/redo step.
 
-(defun helix-undo--activate-cursor (id position)
-  "This function always called from `buffer-undo-list' during undo
-by `primitive-undo' function. It activates the fake cursor with ID
-which action is being undone, place point into POSITION, and
-push onto `buffer-undo-list'`helix-undo--deactivate-cursor' function
-which during redo (which mechanically is the same undo) will place
-this fake cursor into POSITION and deactivate it."
-  (setq helix--point-state-during-undo
-        (helix--store-point-state (make-overlay (point) (point) nil nil t)
-                                  (point) (mark t)))
-  (when-let* ((cursor (helix-cursor-with-id id)))
-    (helix--restore-point-state cursor))
-  (set-mark position)
-  (push `(apply helix-undo--deactivate-cursor ,id ,position)
+CURSORS-POSITIONS is an alist with cons cells (ID . (POINT MARK))
+returned by `helix-cursors-positions' function."
+  ;; First element of the `cursors-positions' list is the real cursor with ID 0.
+  (-let (((_id point mark) (car cursors-positions)))
+    (goto-char point)
+    (when mark (set-mark mark)))
+  (--each (cdr cursors-positions)
+    (apply #'helix-set-fake-cursor it))
+  (push `(apply helix--undo-step-start ,cursors-positions)
         buffer-undo-list))
-
-(defun helix-undo--deactivate-cursor (id position)
-  "This function always called from `buffer-undo-list' during undo
-by `primitive-undo' function. It set fake cursor with ID that was
-activated by `helix-undo--activate-cursor' function to POSITION,
-deactivates it, and push onto `buffer-undo-list'`helix-undo--activate-cursor'
-function which during redo (which mechanically is the same undo) will
-activate this fake cursor and place it place into POSITION."
-  (push `(apply helix-undo--activate-cursor ,id ,position)
-        buffer-undo-list)
-  ;; Update fake cursor
-  (helix-set-fake-cursor id position (mark t))
-  ;; Restore real cursor
-  (helix--restore-point-state helix--point-state-during-undo)
-  (setq helix--point-state-during-undo nil))
 
 ;;; Minor mode
 
@@ -518,6 +485,25 @@ If SORT is non-nil sort cursors in order they are located in buffer."
   "Return non-nil if there are fake cursors in the buffer."
   (not (hash-table-empty-p helix--cursors-table)))
 
+(defun helix-cursors-positions ()
+  "Return alist of cons cells (ID . (POINT MARK)) with positions of all cursors.
+Real cursor has ID 0 and is the first element (car) of the list.
+MARK is nil if cursor has no region."
+  (let (alist)
+    (when helix-multiple-cursors-mode
+      (dolist (cursor (helix-all-fake-cursors))
+        (let* ((id (overlay-get cursor 'id))
+               (point (marker-position (overlay-get cursor 'point)))
+               (mark (if-let* (((overlay-get cursor 'mark-active))
+                               (mark (marker-position (overlay-get cursor 'mark)))
+                               ((not (eql point mark))))
+                         mark)))
+          (unless (eq id 0)
+            (push (list id point mark) alist)))))
+    (push (list 0 (point) (if (use-region-p) (mark)))
+          alist)
+    alist))
+
 ;;; Executing commands for real and fake cursors
 
 (defmacro helix-save-window-scroll (&rest body)
@@ -548,10 +534,9 @@ evaluate BODY, update fake CURSOR."
   (declare (indent defun) (debug (symbolp &rest form)))
   `(let ((helix--executing-command-for-fake-cursor t))
      (helix--restore-point-state ,cursor)
-     (helix--add-fake-cursor-to-undo-list ,cursor
-       (unwind-protect
-           (progn ,@body)
-         (helix-move-fake-cursor ,cursor (point) (mark t))))))
+     (unwind-protect
+         (progn ,@body)
+       (helix-move-fake-cursor ,cursor (point) (mark t)))))
 
 (defmacro helix-with-each-cursor (&rest body)
   (declare (indent 0) (debug t))
@@ -579,7 +564,7 @@ evaluate BODY, update fake CURSOR."
   "Call COMMAND interactively for each fake cursor.
 
 Two lists of commands are used: the `run-once' list and the `run-for-all'
-list. If a command is in neither of these lists, the user will be prompt
+list. If a command is in neither of these lists, the user will be prompted
 for the proper action and then the choice will be saved.
 
 Some commands are so unsupported that they are even prevented for
@@ -856,10 +841,10 @@ of all cursors when yanking."
           (overlay-put cursor 'kill-ring kill-ring)
           (overlay-put cursor 'kill-ring-yank-pointer kill-ring-yank-pointer))))))
 
+;; M-x
 (define-advice execute-extended-command (:after (&rest _) multiple-cursors)
   "Execute selected command for all cursors."
-  (when helix-multiple-cursors-mode
-    (helix--execute-command-for-all-fake-cursors this-command)))
+  (helix--execute-command-for-all-fake-cursors this-command))
 
 ;;; Utils
 
