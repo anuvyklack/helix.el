@@ -356,7 +356,8 @@ Use visual line when `visual-line-mode' is on."
   (interactive)
   (helix-with-each-cursor
     (helix-insert-newline-below)
-    (indent-according-to-mode))
+    (indent-according-to-mode)
+    (set-marker (mark-marker) (point)))
   (helix-insert-state 1))
 
 ;; O
@@ -365,7 +366,8 @@ Use visual line when `visual-line-mode' is on."
   (interactive)
   (helix-with-each-cursor
     (helix-insert-newline-above)
-    (indent-according-to-mode))
+    (indent-according-to-mode)
+    (set-marker (mark-marker) (point)))
   (helix-insert-state 1))
 
 ;; ] SPC
