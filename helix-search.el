@@ -327,7 +327,7 @@ If nothing found, wrap around the buffer and search up to the point."
 
 (defun helix-filter-selections (&optional invert)
   "Keep selections that match regexp.
-If INVERT is non-nil — remove selections that match regexp"
+If INVERT is non-nil — remove selections that match regexp."
   (unless helix-multiple-cursors-mode
     (user-error "No multiple selections"))
   (helix-with-real-cursor-as-fake
@@ -358,8 +358,8 @@ If INVERT is non-nil — remove selections that match regexp"
                              (-map #'not flags)
                            flags)))
                 ((-contains? flags t)))
-          (--each (-zip-lists cursors flags)
-            (-let (((cursor flag) it))
+          (--each (-zip-pair cursors flags)
+            (-let (((cursor . flag) it))
               (cond (flag
                      (helix--set-cursor-overlay cursor (overlay-get cursor 'point))
                      (overlay-put (overlay-get cursor 'fake-region)
@@ -384,30 +384,28 @@ If INVERT is non-nil — remove selections that match regexp"
   (when helix-search--timer
     (cancel-timer helix-search--timer))
   (setq helix-search--timer
-        (run-at-time helix-search--timer nil
+        (run-at-time helix-update-highlight-delay nil
                      #'helix-filter--do-update)))
 
 (defun helix-filter--do-update ()
   "Highlight current matches during filtering selections session."
-  (when-let* ((pattern (minibuffer-contents-no-properties))
-              ((not (string-empty-p pattern)))
-              (regexp (helix-pcre-to-elisp pattern))
-              (regions-overlays helix-filter--regions-overlays)
-              (flags (let ((flags (-map #'(lambda (str)
-                                            (if (string-match regexp str) t))
-                                        helix-filter--regions-contents)))
-                       (if helix-filter--invert
-                           (-map #'not flags)
-                         flags))))
-    (cond ((-contains? flags t)
-           (--each (-zip-lists regions-overlays flags)
-             (-let (((overlay flag) it))
-               (if flag
-                   (overlay-put overlay 'face 'helix-region-face)
-                 (overlay-put overlay 'face nil)))))
-          (t
-           (dolist (ov regions-overlays)
-             (overlay-put ov 'face 'helix-region-face))))))
+  (if-let* ((regions-overlays helix-filter--regions-overlays)
+            (pattern (minibuffer-contents-no-properties))
+            ((not (string-empty-p pattern)))
+            (regexp (helix-pcre-to-elisp pattern))
+            (flags (let ((flags (-map #'(lambda (str)
+                                          (if (string-match regexp str) t))
+                                      helix-filter--regions-contents)))
+                     (if helix-filter--invert
+                         (-map #'not flags)
+                       flags)))
+            ((-contains? flags t)))
+      (--each (-zip-pair regions-overlays flags)
+        (-let (((overlay . flag) it))
+          (overlay-put overlay 'face (if flag 'helix-region-face))))
+    ;; Else highlight all regions
+    (dolist (ov regions-overlays)
+      (overlay-put ov 'face 'helix-region-face))))
 
 (provide 'helix-search)
 ;;; helix-search.el ends here
