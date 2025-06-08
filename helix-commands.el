@@ -350,6 +350,26 @@ Use visual line when `visual-line-mode' is on."
       (helix-exchange-point-and-mark)))
   (helix-insert-state 1))
 
+;; I
+(defun helix-insert-line ()
+  "Switch to insert state at beginning of current line."
+  (interactive)
+  (helix-with-each-cursor
+    (deactivate-mark)
+    (helix-first-non-blank)
+    (set-marker (mark-marker) (point)))
+  (helix-insert-state 1))
+
+;; A
+(defun helix-append-line ()
+  "Switch to Insert state at the end of the current line."
+  (interactive)
+  (helix-with-each-cursor
+    (deactivate-mark)
+    (helix-end-of-line)
+    (set-marker (mark-marker) (point)))
+  (helix-insert-state 1))
+
 ;; o
 (defun helix-open-below ()
   "Insert a new line below point and switch to Insert state."

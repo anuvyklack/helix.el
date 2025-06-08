@@ -496,6 +496,8 @@ cursors editing.")
   '(execute-extended-command                 ;; M-x
     helix-insert                             ;; i
     helix-append                             ;; a
+    helix-insert-line                        ;; I
+    helix-append-line                        ;; A
     helix-open-below                         ;; o
     helix-open-above                         ;; O
     helix-smooth-scroll-up                   ;; C-u
