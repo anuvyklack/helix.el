@@ -865,9 +865,9 @@ ends at END-COLUMN spauns NUMBER-OF-LINES."
              (use-region-p))
     (dotimes (_ count)
       (helix-with-real-cursor-as-fake
-        (let ((cursors (-> (helix-all-fake-cursors t)
-                           (nreverse))))
-          (helix--rotate-selections-content cursors))))))
+        (-> (helix-all-fake-cursors t)
+            (nreverse)
+            (helix--rotate-selections-content))))))
 
 ;; M-)
 (defun helix-rotate-selections-content-forward (count)
@@ -877,8 +877,8 @@ ends at END-COLUMN spauns NUMBER-OF-LINES."
              (use-region-p))
     (dotimes (_ count)
       (helix-with-real-cursor-as-fake
-        (let ((cursors (helix-all-fake-cursors t)))
-          (helix--rotate-selections-content cursors))))))
+        (-> (helix-all-fake-cursors t)
+            (helix--rotate-selections-content))))))
 
 (defun helix--rotate-selections-content (cursors)
   "Rotate regions content for all CURSORS in the order they are in list."
@@ -886,12 +886,11 @@ ends at END-COLUMN spauns NUMBER-OF-LINES."
          (content (buffer-substring (overlay-get first-cursor 'point)
                                     (overlay-get first-cursor 'mark))))
     (dolist (cursor (cdr cursors))
-      (setq content (helix--replace-fake-region-content cursor content)))
-    (helix--replace-fake-region-content first-cursor content)))
+      (setq content (helix-exchange-fake-region-content cursor content)))
+    (helix-exchange-fake-region-content first-cursor content)))
 
-(defun helix--replace-fake-region-content (cursor content)
-  "Replace the CURSORs region content with CONTENT.
-Return the replaced substring."
+(defun helix-exchange-fake-region-content (cursor content)
+  "Exchange the CURSORs region content with CONTENT and return the old one."
   (helix-with-fake-cursor cursor
     (let ((dir (helix-region-direction))
           (deactivate-mark nil) ;; Do not deactivate mark after insertion.
