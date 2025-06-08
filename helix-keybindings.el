@@ -75,6 +75,8 @@
   ;; Changes
   "i"   #'helix-insert
   "a"   #'helix-append
+  "I"   #'helix-insert-line
+  "A"   #'helix-append-line
   "o"   #'helix-open-below
   "O"   #'helix-open-above
   "c"   #'helix-change
