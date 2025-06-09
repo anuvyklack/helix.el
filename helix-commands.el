@@ -935,6 +935,52 @@ already there."
 
 ;;; Search
 
+;; f
+(defun helix-find-char-forward (count)
+  "Prompt user for CHAR and move to the next COUNT'th occurrence of it.
+Right after this command while hints are active, you can use `n' and `N'
+keys to repeat motion forward/backward."
+  (interactive "p")
+  (unless (region-active-p) (set-mark (point)))
+  (let ((char (read-char "f")))
+    (helix-motion-loop (dir count)
+      (helix-find-char char dir nil))))
+
+;; F
+(defun helix-find-char-backward (count)
+  "Prompt user for CHAR and move to the previous COUNT'th occurrence of it.
+Right after this command while hints are active, you can use `n' and `N'
+keys to repeat motion forward/backward."
+  (interactive "p")
+  (unless (region-active-p) (set-mark (point)))
+  (setq count (- count))
+  (let ((char (read-char "F")))
+    (helix-motion-loop (dir count)
+      (helix-find-char char dir nil))))
+
+;; t
+(defun helix-till-char-forward (count)
+  "Prompt user for CHAR and move before the next COUNT'th occurrence of it.
+Right after this command while hints are active, you can use `n' and `N'
+keys to repeat motion forward/backward."
+  (interactive "p")
+  (unless (region-active-p) (set-mark (point)))
+  (let ((char (read-char "t")))
+    (helix-motion-loop (dir count)
+      (helix-find-char char dir t))))
+
+;; T
+(defun helix-till-char-backward (count)
+  "Prompt user for CHAR and move before the prevous COUNT'th occurrence of it.
+Right after this command while hints are active, you can use `n' and `N'
+keys to repeat motion forward/backward."
+  (interactive "p")
+  (unless (region-active-p) (set-mark (point)))
+  (setq count (- count))
+  (let ((char (read-char "T")))
+    (helix-motion-loop (dir count)
+      (helix-find-char char dir t))))
+
 ;; /
 (defun helix-search-forward (count)
   (interactive "p")
