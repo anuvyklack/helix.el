@@ -941,8 +941,10 @@ already there."
 (defun helix-search-next (count)
   "Select next COUNT search match."
   (interactive "p")
-  (if helix-search--direction
-      (setq count (* count helix-search--direction)))
+  (unless helix-search--direction (setq helix-search--direction 1))
+  (when (and helix-search--direction
+             (< helix-search--direction 0))
+    (setq count (- count)))
   (let ((regexp (helix-search-pattern))
         (region-dir (if (use-region-p) (helix-region-direction) 1))
         (scroll-conservatively 0))
@@ -951,8 +953,8 @@ already there."
         (-let (((beg . end) (helix-match-bounds)))
           (when (and helix--extend-selection (use-region-p))
             (helix-create-fake-cursor-from-point))
-          (helix-set-region beg end region-dir)))))
-  (helix-flash-search-pattern))
+          (helix-set-region beg end region-dir))))
+    (helix-highlight-search-pattern regexp)))
 
 ;; N
 (defun helix-search-previous (count)
@@ -993,10 +995,10 @@ Auto-detect word boundaries at the beginning and end of the search pattern."
                 patterns))))
     (setq patterns (nreverse (-uniq patterns)))
     (let* ((separator (if helix-use-pcre-regex "|" "\\|"))
-           (result (apply #'concat (-interpose separator patterns))))
-      (set-register '/ result)
-      (message "Register / set: %s" result)
-      (helix-flash-search-pattern))))
+           (regexp (apply #'concat (-interpose separator patterns))))
+      (set-register '/ regexp)
+      (message "Register / set: %s" regexp)
+      (helix-highlight-search-pattern regexp))))
 
 ;; M-*
 (defun helix-construct-search-pattern-no-bounds ()
@@ -1011,10 +1013,10 @@ Do not auto-detect word boundaries in the search pattern."
               patterns)))
     (setq patterns (nreverse patterns))
     (let* ((separator (if helix-use-pcre-regex "|" "\\|"))
-           (result (apply #'concat (-interpose separator patterns))))
-      (set-register '/ result)
-      (message "Register / set: %s" result)
-      (helix-flash-search-pattern))))
+           (regexp (apply #'concat (-interpose separator patterns))))
+      (set-register '/ regexp)
+      (message "Register / set: %s" regexp)
+      (helix-highlight-search-pattern regexp))))
 
 ;;; Match
 

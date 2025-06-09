@@ -20,16 +20,70 @@
 
 (declare-function helix-extend-selection "helix-commands")
 
-;;; Highlight
+(defvar helix-search--timer nil)
+(defvar helix-search--buffer nil)
+(defvar helix-search--point nil)
+(defvar helix-search--overlay nil "Main overlay that will become next search.")
+(defvar helix-search--direction nil "1 or -1.")
+(helix-defvar-local helix-search--hl nil "The `helix-highlight' object for interactive search sessions.")
+
+;;; Highlight search pattern
+
+(defun helix-highlight-search-pattern (regexp &optional direction)
+  "Highlight all mathings to the REGEXP toward the DIRECTION.
+DIRECTION must be either 1 or -1."
+  (let ((hl (helix-highlight-create :buffer (current-buffer)
+                                    :regexp regexp
+                                    :direction direction
+                                    :face 'helix-lazy-highlight)))
+    (unless (helix-highlight-equal hl helix-search--hl)
+      (when helix-search--hl (helix-highlight-delete helix-search--hl))
+      (setq helix-search--hl hl)))
+  (add-hook 'pre-command-hook  #'helix-highlight-search-pattern--cleanup-hook nil t)
+  ;; Update highlighting after `helix-keep-search-highlight-commands'.
+  (add-hook 'post-command-hook #'helix-highlight-search-pattern--update-hook nil t))
+
+(defun helix-highlight-search-pattern--cleanup-hook ()
+  (unless (memq this-command helix-keep-search-highlight-commands)
+    (setq helix-search--direction nil)
+    (when helix-search--timer
+      (cancel-timer helix-search--timer)
+      (setq helix-search--timer nil))
+    (when helix-search--hl
+      (helix-highlight-delete helix-search--hl)
+      (setq helix-search--hl nil))
+    (remove-hook 'pre-command-hook  #'helix-highlight-search-pattern--cleanup-hook t)
+    (remove-hook 'post-command-hook #'helix-highlight-search-pattern--update-hook t)))
+
+(defun helix-highlight-search-pattern--update-hook (&optional _ _ _)
+  (when helix-search--timer
+    (cancel-timer helix-search--timer))
+  (setq helix-search--timer
+        (run-at-time helix-update-highlight-delay nil
+                     #'(lambda () (helix-highlight-update helix-search--hl)))))
+
+;;; Highlighting class
 
 (cl-defstruct (helix-highlight (:constructor helix-highlight-create)
                                (:type vector) (:copier nil) (:predicate nil))
   (regexp nil :type string)
   (buffer nil :read-only t)
   (face nil :read-only t)
-  (ranges nil :documentation "List of ranges in which the highlighting is performed.")
-  (invert nil :type bool :read-only t :documentation "Invert overlays.")
-  (overlays nil :documentation "The active overlays of the highlight."))
+  (ranges nil :documentation "List of cons cells (START . END) in which the highlighting is performed.")
+  (direction nil :type number
+             :documentation "DIRECTION relative to the point: 1 or -1. Overridden by RANGES.")
+  (invert nil :type bool :read-only t :documentation "INVERT overlays.")
+  (overlays nil :documentation "Active OVERLAYS."))
+
+(defun helix-highlight-equal (h1 h2)
+  "Return t if two `helix-highlight' objects are equal to each other."
+  (and h1 h2
+       (equal (helix-highlight-regexp h1) (helix-highlight-regexp h1))
+       (equal (helix-highlight-buffer h1) (helix-highlight-buffer h2))
+       (equal (helix-highlight-face h1) (helix-highlight-face h2))
+       (or (equal (helix-highlight-ranges h1) (helix-highlight-ranges h2))
+           (equal (helix-highlight-direction h1) (helix-highlight-direction h2)))
+       (equal (helix-highlight-invert h1) (helix-highlight-invert h2))))
 
 (defun helix-highlight-delete (hl)
   "Destruct `helix-highlight' object."
@@ -37,20 +91,31 @@
 
 (defun helix-highlight-update (hl)
   (let ((buffer (or (helix-highlight-buffer hl)
-                    (current-buffer))))
+                    (current-buffer)))
+        (dir (helix-highlight-direction hl))
+        (invert (helix-highlight-invert hl)))
     (with-current-buffer buffer
       (if-let* ((regexp (helix-highlight-regexp hl))
                 ((not (string-empty-p regexp)))
-                (search-ranges (or (helix-highlight-ranges hl)
-                                   (-map #'(lambda (win)
-                                             (if (window-live-p win)
-                                                 (cons (window-start win)
-                                                       (window-end win))))
-                                         (get-buffer-window-list buffer))))
-                (ranges (let ((invert (helix-highlight-invert hl)))
-                          (-mapcat (-lambda ((beg . end))
-                                     (helix-regexp-match-ranges regexp beg end invert))
-                                   search-ranges))))
+                (search-ranges
+                 (or (helix-highlight-ranges hl)
+                     (->> (get-buffer-window-list buffer)
+                          (-map #'(lambda (win)
+                                    (when (window-live-p win)
+                                      (cond ((null dir)
+                                             (cons (window-start win) (window-end win)))
+                                            ((and (< dir 0)
+                                                  (< (window-start win) (point)))
+                                             (cons (window-start win)
+                                                   (min (point) (window-end win))))
+                                            ((and (< 0 dir)
+                                                  (< (point) (window-end win)))
+                                             (cons (max (window-start win) (point))
+                                                   (window-end win)))))))
+                          (-remove #'null))))
+                (ranges (-mapcat (-lambda ((beg . end))
+                                   (helix-regexp-match-ranges regexp beg end invert))
+                                 search-ranges)))
           ;; do
           (let ((face (helix-highlight-face hl))
                 (old-overlays (helix-highlight-overlays hl)))
@@ -135,13 +200,6 @@ RANGES is a list of cons cells with positions (START . END)."
       (helix-pcre-to-elisp pattern)
     (user-error "Register / is empty")))
 
-(defvar helix-search--timer nil)
-(defvar helix-search--buffer nil)
-(defvar helix-search--point nil)
-(defvar helix-search--overlay nil "Main overlay that will become next search.")
-(defvar helix-search--direction nil "1 or -1.")
-(helix-defvar-local helix-search--hl nil "The `helix-highlight' object for interactive search sessions.")
-
 (defun helix-search-interactively (&optional direction)
   "DIRECTION should be either 1 or -1."
   (unless direction (setq direction 1))
@@ -208,44 +266,6 @@ RANGES is a list of cons cells with positions (START . END)."
     (when helix-search--hl
       (helix-highlight-delete helix-search--hl)
       (setq helix-search--hl nil))))
-
-;;; Flash search pattern
-
-(defun helix-flash-search-pattern ()
-  "Highlight all mathings to the regexp from \"/\" register."
-  ;; Get regexp from "/" register before we delete currently active overlays,
-  ;; because `helix-search-pattern' can throw.
-  (let ((regexp (helix-search-pattern)))
-    (when helix-search--hl (helix-highlight-delete helix-search--hl))
-    (setq helix-search--hl (helix-highlight-create :buffer (current-buffer)
-                                                   :regexp regexp
-                                                   :face 'helix-lazy-highlight))
-    (helix-highlight-update helix-search--hl)
-    (add-hook 'pre-command-hook  #'helix-flash-search-pattern--cleanup-hook nil t)
-    (add-hook 'post-command-hook #'helix-flash-search-pattern--update nil t)))
-
-(defun helix-flash-search-pattern--cleanup-hook ()
-  (unless (memq this-command helix-keep-search-highlight-commands)
-    (setq helix-search--direction nil)
-    (when helix-search--timer
-      (cancel-timer helix-search--timer))
-    (when helix-search--hl
-      (helix-highlight-delete helix-search--hl)
-      (setq helix-search--hl nil))
-    (remove-hook 'pre-command-hook  #'helix-flash-search-pattern--cleanup-hook t)
-    (remove-hook 'post-command-hook #'helix-flash-search-pattern--update t)))
-
-(defun helix-flash-search-pattern--update (&optional _ _ _)
-  (when helix-search--timer
-    (cancel-timer helix-search--timer))
-  (setq helix-search--timer
-        (run-at-time helix-update-highlight-delay nil
-                     #'helix-flash-search-pattern--do-update)))
-
-(defun helix-flash-search-pattern--do-update ()
-  (if helix-search--hl
-      (helix-highlight-update helix-search--hl)
-    (remove-hook 'post-command-hook #'helix-flash-search-pattern--update t)))
 
 ;;; Select
 
