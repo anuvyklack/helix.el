@@ -416,5 +416,44 @@ If INVERT is non-nil — remove selections that match regexp."
     (dolist (ov regions-overlays)
       (overlay-put ov 'face 'helix-region-face))))
 
+;;; Find char
+
+(defun helix-find-char (char direction exclusive?)
+  (let* ((case (let (case-fold-search)
+                 (not (string-match-p "[A-Z]" (char-to-string char)))))
+         (pattern (pcase char
+                    (?\t "\t") ;; TAB
+                    ((or ?\r ?\n) "\n") ;; RET
+                    ;; (?\e) ;; ESC
+                    ;; (?\d) ;; DEL (backspace)
+                    (_ (char-fold-to-regexp (char-to-string char)))
+                    ;; (_ (regexp-quote (char-to-string key)))
+                    ))
+         (hl (helix-highlight-create :buffer (current-buffer)
+                                     :regexp pattern
+                                     :face 'helix-lazy-highlight))
+         (case-fold-search case)
+         (deactivate-mark nil))
+    (let ((search #'(lambda (dir)
+                      (let ((case-fold-search case))
+                        (when exclusive? (forward-char dir))
+                        (if (helix-search pattern dir nil t t)
+                            (prog1 t
+                              (setf (helix-highlight-direction hl) dir)
+                              (save-match-data
+                                (helix-highlight-update hl))
+                              (when exclusive?
+                                (goto-char (if (< 0 dir) (match-beginning 0) (match-end 0)))))
+                          (prog1 nil
+                            (helix-highlight-delete hl)))))))
+      (when (funcall search direction)
+        (let* ((next #'(lambda () (interactive) (funcall search direction)))
+               (prev #'(lambda () (interactive) (funcall search (- direction))))
+               (on-exit #'(lambda () (helix-highlight-delete hl))))
+          (set-transient-map (define-keymap
+                               "n" next
+                               "N" prev)
+                             t on-exit))))))
+
 (provide 'helix-search)
 ;;; helix-search.el ends here

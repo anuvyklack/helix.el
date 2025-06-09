@@ -54,6 +54,10 @@
   "B"   #'helix-backward-WORD-start
   "e"   #'helix-forward-word-end
   "E"   #'helix-forward-WORD-end
+  "f"   #'helix-find-char-forward
+  "F"   #'helix-find-char-backward
+  "t"   #'helix-till-char-forward
+  "T"   #'helix-till-char-backward
   "g s" #'helix-beginning-of-line
   "g h" #'helix-first-non-blank
   "g l" #'helix-end-of-line

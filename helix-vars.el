@@ -299,15 +299,6 @@ This function populates the buffer local `helix-surround-alist' variable,
 and thus should be called from major-modes hooks.
 See the defaul value of `helix-surround-alist' variable for examples.")
 
-(helix-defvar-local helix-snipe-aliases '()
-  "A list of characters mapped to regexps '(CHAR REGEX).
-If CHAR is used in a snipe, it will be replaced with REGEX.
-To set an alias for a specific mode use:
-
-    (add-hook 'c++-mode-hook
-      (lambda ()
-        (push '(?\[ . \"[[{(]\") evil-snipe-aliases)))")
-
 (helix-defvar-local helix--state nil
   "The current Helix state.")
 
@@ -376,6 +367,10 @@ cursors editing.")
     helix-forward-WORD-start       ;; W
     helix-backward-WORD-start      ;; B
     helix-forward-WORD-end         ;; E
+    helix-find-char-forward        ;; f
+    helix-find-char-backward       ;; F
+    helix-till-char-forward        ;; t
+    helix-till-char-backward       ;; T
     helix-beginning-of-line        ;; gs
     helix-first-non-blank          ;; gh
     helix-end-of-line              ;; gl
@@ -684,7 +679,12 @@ will be invoked.")
                                 helix-backward-word-start ;; b
                                 helix-backward-WORD-start ;; B
                                 helix-forward-word-end    ;; e
-                                helix-forward-WORD-end)   ;; E
+                                helix-forward-WORD-end    ;; E
+                                helix-find-char-forward   ;; f
+                                helix-find-char-backward  ;; F
+                                helix-till-char-forward   ;; t
+                                helix-till-char-backward) ;; T
+
   "List of command, after which `helix-merge-overlapping-regions'
 will be invoked if `helix--extend-selection' is t.")
 
