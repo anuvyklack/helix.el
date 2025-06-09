@@ -83,7 +83,9 @@ If INVERT is non-nil return list with complements of ranges that match REGEXP."
                 ;; example, when regexp consists only of "^" or "$".
                 (when (equal bounds (car-safe ranges))
                   (signal 'error nil))
-                (push bounds ranges)))
+                (unless (or (invisible-p (car bounds))
+                            (invisible-p (1- (cdr bounds))))
+                  (push bounds ranges))))
           (error
            (setq ranges nil)))
         (when ranges
