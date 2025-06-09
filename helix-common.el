@@ -441,7 +441,7 @@ be skipped.
         (helix--search-out-balanced pair direction scope regexp?)
       (let ((str   (if (< direction 0) (car pair) (car pair)))
             (bound (if (< direction 0) (car scope) (cdr scope))))
-        (helix--search str direction bound regexp?)))))
+        (helix-search str direction bound regexp?)))))
 
 (defun helix--search-out-balanced (pair &optional direction scope regexp?)
   "This is an internal function for `helix-search-out' that is used
@@ -458,10 +458,10 @@ when BALANCED? argument is non-nil."
         (cl-block nil
           (while (> level 0)
             (let* ((pnt (point))
-                   (open-pos (helix--search open direction bound regexp?))
+                   (open-pos (helix-search open direction bound regexp?))
                    (close-pos (progn
                                 (goto-char pnt)
-                                (helix--search close direction bound regexp?))))
+                                (helix-search close direction bound regexp?))))
               (cond ((and close-pos open-pos)
                      (let ((close-dist (helix-distance pnt close-pos))
                            (open-dist  (helix-distance pnt open-pos)))
@@ -477,25 +477,6 @@ when BALANCED? argument is non-nil."
                     (t (cl-return))))))
         (if (eql level 0)
             (point))))))
-
-(defun helix--search (str &optional direction bound regexp?)
-  "Search for string STR toward the DIRECTION.
-
-DIRECTION can be either 1 — search forward, or -1 — search backward.
-
-BOUND optionally bounds the search. It should be a position that
-is *after* the point if DIRECTION is positive, and *before* the
-point — if negative.
-
-If REGEXP? is non-nil STR will be searched as regexp pattern,
-else it will be searched literally.
-
-When REGEXP? is non-nil this function modifies the match data
-that `match-beginning', `match-end' and `match-data' access."
-  (unless direction (setq direction 1))
-  (if regexp?
-      (re-search-forward str bound t direction)
-    (search-forward str bound t direction)))
 
 (defun helix--bounds-of-quoted-at-point-ppss (quote-mark)
   "Return a cons cell (START . END) with bounds of region around
@@ -626,6 +607,32 @@ Return symbol:
         (t 1)))
 
 (defun helix-distance (x y) (abs (- y x)))
+
+(defun helix-search (string &optional direction bound regexp? visible?)
+  "Search for string STR toward the DIRECTION.
+
+DIRECTION can be either 1 — search forward, or -1 — search backward.
+
+BOUND optionally bounds the search. It should be a position that
+is *after* the point if DIRECTION is positive, and *before* the
+point — if negative.
+
+If REGEXP? is non-nil STR will be searched as regexp pattern,
+else it will be searched literally.
+
+If VISIBLE? is non-nil skip invisible matches.
+
+When REGEXP? is non-nil this function modifies the match data
+that `match-beginning', `match-end' and `match-data' access."
+  (unless direction (setq direction 1))
+  (when-let* ((result (if regexp?
+                          (re-search-forward string bound t direction)
+                        (search-forward string bound t direction))))
+    (if (and visible?
+             (or (invisible-p (match-beginning 0))
+                 (invisible-p (1- (match-end 0)))))
+        (helix-search string bound regexp? visible?)
+      result)))
 
 (defun helix-re-search-with-wrap (regexp &optional direction)
   "Search REGEXP from the point toward the DIRECTION.
