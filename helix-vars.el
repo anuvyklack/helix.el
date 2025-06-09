@@ -144,6 +144,7 @@ rate allows highlights to update while scrolling."
     helix-smooth-scroll-line-to-bottom
     pixel-scroll-precision
     pixel-scroll-start-momentum
+    mwheel-scroll
     ;; switch windows
     helix-window-split
     helix-window-vsplit
