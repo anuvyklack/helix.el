@@ -135,19 +135,6 @@ RANGES is a list of cons cells with positions (START . END)."
       (helix-pcre-to-elisp pattern)
     (user-error "Register / is empty")))
 
-(defun helix-re-search-with-wrap (regexp &optional direction)
-  "Search REGEXP from the point toward the DIRECTION.
-If nothing found, wrap around the buffer and search up to the point."
-  (when (and (use-region-p)
-             (not (eql direction (helix-region-direction))))
-    (goto-char (mark-marker)))
-  (or (re-search-forward regexp nil t direction)
-      ;; If nothing found — wrap around buffer end and try again.
-      (let ((point (point)))
-        (goto-char (if (< direction 0) (point-max) (point-min)))
-        (if (re-search-forward regexp point t direction)
-            (message "Wrapped around buffer")))))
-
 (defvar helix-search--timer nil)
 (defvar helix-search--buffer nil)
 (defvar helix-search--point nil)

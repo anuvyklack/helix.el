@@ -627,6 +627,20 @@ Return symbol:
 
 (defun helix-distance (x y) (abs (- y x)))
 
+(defun helix-re-search-with-wrap (regexp &optional direction)
+  "Search REGEXP from the point toward the DIRECTION.
+If nothing found, wrap around the buffer and search up to the point."
+  (unless direction (setq direction 1))
+  (when (and (use-region-p)
+             (not (eql direction (helix-region-direction))))
+    (goto-char (mark-marker)))
+  (or (re-search-forward regexp nil t direction)
+      ;; If nothing found — wrap around buffer end and try again.
+      (let ((point (point)))
+        (goto-char (if (< direction 0) (point-max) (point-min)))
+        (if (re-search-forward regexp point t direction)
+            (message "Wrapped around buffer")))))
+
 (defun helix-all-elements-are-equal-p (list)
   "Return t if all elemetns in the LIST are `equal' each other."
   (let ((first (-first-item list)))
