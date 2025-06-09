@@ -211,31 +211,6 @@ WORD is any space separated sequence of characters."
                      (point) (point-max) nil nil state 'syntax-table)
                 (point)))))))
 
-(defun helix-bounds-of-complement-of-thing-at-point (thing &optional which)
-  "Return the bounds of a complement of THING at point.
-I.e., if there is a THING at point — returns nil, otherwise
-the gap between two THINGs is returned.
-
-Works only with THINGs, that returns the count of steps left to move,
-like: `helix-word', `paragraph', `line'."
-  (let ((orig-point (point)))
-    (if-let* ((beg (save-excursion
-                     (and (zerop (forward-thing thing -1))
-                          (forward-thing thing))
-                     (if (<= (point) orig-point)
-                         (point))))
-              (end (save-excursion
-                     (and (zerop (forward-thing thing))
-                          (forward-thing thing -1))
-                     (if (<= orig-point (point))
-                         (point))))
-              ((and (<= beg (point) end)
-                    (< beg end))))
-        (pcase which
-          (-1 beg)
-          (1  end)
-          (_ (cons beg end))))))
-
 ;;; Selection
 
 (defun helix-mark-inner-thing (thing &optional count)
@@ -645,49 +620,12 @@ Return symbol:
   "Return t if point is in blank line."
   (and (bolp) (eolp)))
 
-(defun helix-comment-at-point-p ()
-  "Return non-nil if point is inside a comment, or comment starts
-right after the point."
-  (ignore-errors
-    (save-excursion
-      ;; We cannot be in a comment if we are inside a string
-      (unless (nth 3 (syntax-ppss))
-        (let ((pnt (point)))
-          (or (nth 4 (syntax-ppss))
-              ;; this also test opening and closing comment delimiters... we
-              ;; need to check that it is not newline, which is in "comment
-              ;; ender" class in elisp-mode, but we just want it to be treated
-              ;; as whitespace
-              (and (< pnt (point-max))
-                   (memq (char-syntax (char-after pnt)) '(?< ?>))
-                   (not (eq (char-after pnt) ?\n)))
-              ;; we also need to test the special syntax flag for comment
-              ;; starters and enders, because `syntax-ppss' does not yet know if
-              ;; we are inside a comment or not (e.g. / can be a division or
-              ;; comment starter...).
-              (when-let ((s (car (syntax-after pnt))))
-                (or (and (/= 0 (logand (ash 1 16) s))
-                         (nth 4 (syntax-ppss (+ pnt 2))))
-                    (and (/= 0 (logand (ash 1 17) s))
-                         (nth 4 (syntax-ppss (+ pnt 1))))
-                    (and (/= 0 (logand (ash 1 18) s))
-                         (nth 4 (syntax-ppss (- pnt 1))))
-                    (and (/= 0 (logand (ash 1 19) s))
-                         (nth 4 (syntax-ppss (- pnt 2))))))))))))
-
 (defsubst helix-sign (&optional num)
   (cond ((< num 0) -1)
         ((zerop num) 0)
         (t 1)))
 
 (defun helix-distance (x y) (abs (- y x)))
-
-(defun helix-skip-gap (thing &optional direction)
-  (unless direction (setq direction 1))
-  (when-let* ((bounds (helix-bounds-of-complement-of-thing-at-point thing)))
-    (goto-char (if (< direction 0)
-                   (car bounds)
-                 (cdr bounds)))))
 
 (defun helix-all-elements-are-equal-p (list)
   "Return t if all elemetns in the LIST are `equal' each other."
