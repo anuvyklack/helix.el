@@ -789,7 +789,7 @@ Calls with equal PROMPT or without it would be undistinguishable."
          (apply orig-fun args)
        (let* (;; Use PROMPT argument as a hash key to distinguish different
               ;; calls of `read-char' like functions within one command.
-              (prompt (car args))
+              (prompt (car-safe args))
               (key (list ,(symbol-name fn-name) prompt))
               (value (alist-get key helix--input-cache nil nil #'equal)))
          (unless value

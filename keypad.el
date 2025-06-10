@@ -78,7 +78,6 @@ For example, key sequence \"C-f M-t h\" will be stored like
 
 (defvar keypad--prefix-arg nil)
 (defvar keypad--modifier nil)
-(defvar keypad--execute nil "When t Keypad will execute command when found.")
 (defvar keypad--command nil "The command that Keypad found.")
 
 (defvar keypad--use-leader nil
@@ -92,16 +91,17 @@ Other way seek in top level.")
 (defun keypad ()
   "Enter keypad state."
   (interactive)
-  (keypad-start t))
+  (let ((cmd (keypad-start)))
+    (setq this-command cmd)
+    (call-interactively cmd)))
 
-(defun keypad-start (&optional execute)
+(defun keypad-start ()
   "Enter keypad state.
 When EXECUTE is non-nil execute the found command.
 Return the found command."
   ;; Try to make this command transparent.
   (setq this-command last-command)
-  (setq keypad--execute execute
-        keypad--prefix-arg current-prefix-arg
+  (setq keypad--prefix-arg current-prefix-arg
         keypad--keys nil
         keypad--modifier nil
         keypad--use-leader nil
@@ -176,10 +176,6 @@ This function supports a fallback behavior, where it allows to use
              (keypad--close-preview)
              (setq keypad--command cmd)
              (setq current-prefix-arg keypad--prefix-arg)
-             (when keypad--execute
-               (setq real-this-command cmd
-                     this-command cmd)
-               (call-interactively cmd))
              :quit)
             ((keymapp cmd)
              (keypad--show-message)
@@ -423,7 +419,7 @@ If Helpful package is loaded, `helpful-key' will be used instead of
 `describe-key'."
   (interactive (list (help--read-key-sequence)))
   (pcase (key-binding (cdar key-list))
-    ('keypad (let ((cmd (keypad-start nil)))
+    ('keypad (let ((cmd (keypad-start)))
                (if (fboundp 'helpful-command)
                    (funcall #'helpful-command cmd)
                  (funcall #'describe-command cmd))))

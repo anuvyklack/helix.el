@@ -16,12 +16,13 @@
 (require 'helix-scrolling)
 (require 'helix-core)
 (require 'helix-states)
+(provide 'helix-integration)
 (require 'keypad)
 
 ;;; Normal state
 
 (helix-keymap-set nil 'normal
-  "SPC" #'keypad
+  "SPC" #'helix-keypad
   "C-h k" #'keypad-describe-key
   "<backspace>" #'execute-extended-command)
 
