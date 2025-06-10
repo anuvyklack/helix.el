@@ -773,7 +773,7 @@ in the command loop, and the fake cursors can pick up on those instead."
 ;; answer them for every single cursor
 (defvar helix--input-cache nil)
 
-(defmacro helix--advice-to-cache-input (fn-name)
+(defmacro helix-cache-input (fn-name)
   "Advice function to cache users input to use it for all cursors.
 
 Should be used with interactive input command to create advice around it,
@@ -797,10 +797,10 @@ Calls with equal PROMPT or without it would be undistinguishable."
            (push (cons key value) helix--input-cache))
          value))))
 
-(helix--advice-to-cache-input read-char)
-(helix--advice-to-cache-input read-quoted-char)
-(helix--advice-to-cache-input read-char-from-minibuffer)
-(helix--advice-to-cache-input register-read-with-preview)  ; used by read-string
+(helix-cache-input read-char)
+(helix-cache-input read-quoted-char)
+(helix-cache-input read-char-from-minibuffer)
+(helix-cache-input register-read-with-preview)  ; used by read-string
 
 (defmacro helix-unsupported-command (command)
   "Adds command to list of unsupported commands and prevents it
