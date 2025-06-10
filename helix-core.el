@@ -89,7 +89,6 @@ want COMMAND to be executed only for original ones."
     ;; else
     ;; Execute `helix--post-command-hook' one last time and then remove it.
     (setq helix--remove-post-command-hook t)
-    (remove-hook 'post-command-hook 'helix--post-command-hook t)
     (remove-hook 'pre-command-hook 'helix--pre-commad-hook t)
     (helix-disable-current-state)))
 
