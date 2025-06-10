@@ -436,14 +436,32 @@ If INVERT is non-nil — remove selections that match regexp."
          (deactivate-mark nil))
     (let ((search #'(lambda (dir)
                       (let ((case-fold-search case))
-                        (when exclusive? (forward-char dir))
+                        (if exclusive?
+                            (cond (;; t n
+                                   (<= 0 dir direction) (forward-char))
+                                  (;; T n
+                                   (<= dir direction 0) (backward-char)))
+                          ;; not exclusive?
+                          (cond (;; f N
+                                 (< dir 0 direction) (backward-char))
+                                (;; F N
+                                 (< direction 0 dir) (forward-char))))
                         (if (helix-search pattern dir nil t t)
                             (prog1 t
                               (setf (helix-highlight-direction hl) dir)
                               (save-match-data
                                 (helix-highlight-update hl))
-                              (when exclusive?
-                                (goto-char (if (< 0 dir) (match-beginning 0) (match-end 0)))))
+                              (if exclusive?
+                                  (cond (;; t n
+                                         (<= 0 dir direction) (backward-char))
+                                        (;; T n
+                                         (<= dir direction 0) (forward-char)))
+                                ;; not exclusive?
+                                (cond (;; f N
+                                       (< dir 0 direction) (forward-char))
+                                      (;; F N
+                                       (< direction 0 dir) (backward-char)))))
+                          ;; else
                           (prog1 nil
                             (helix-highlight-delete hl)))))))
       (when (funcall search direction)
