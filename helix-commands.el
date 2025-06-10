@@ -1253,8 +1253,12 @@ See the defaul value of `helix-surround-alist' variable for examples."
                         :balanced balanced?))
         helix-surround-alist))
 
-(defun helix-surround-insert--read-char ()
-  "Read char from minibuffer and return (LEFT . RIGHT) pair to surround with."
+(defun helix-surround--read-char ()
+  "Read char from minibuffer and return (LEFT . RIGHT) pair to surround with.
+
+This function is needed to cache its output with `helix-cache-input' to
+use with all cursors, instead of `read-char' and then execute it with each
+cursor."
   (let* ((char (read-char "surround: "))
          (pair-or-fun-or-nil (-some->
                                  (alist-get char helix-surround-alist)
@@ -1266,7 +1270,7 @@ See the defaul value of `helix-surround-alist' variable for examples."
        pair)
       (_ (cons char char)))))
 
-(helix-cache-input helix-surround-insert--read-char)
+(helix-cache-input helix-surround--read-char)
 
 (defun helix-surround--get-4-bounds (char)
   (let ((spec (alist-get char helix-surround-alist)))
@@ -1296,7 +1300,7 @@ If the region consist of full lines, insert delimiters on separate
 lines and reindent the region."
   (interactive)
   (when (use-region-p)
-    (pcase-let* ((`(,left . ,right) (helix-surround-insert--read-char))
+    (pcase-let* ((`(,left . ,right) (helix-surround--read-char))
                  (beg (region-beginning))
                  (end (region-end))
                  (dir (helix-region-direction))
