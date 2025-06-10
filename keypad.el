@@ -419,7 +419,7 @@ If Helpful package is loaded, `helpful-key' will be used instead of
 `describe-key'."
   (interactive (list (help--read-key-sequence)))
   (pcase (key-binding (cdar key-list))
-    ('keypad (let ((cmd (keypad-start)))
+    ('keypad (when-let* ((cmd (keypad-start)))
                (if (fboundp 'helpful-command)
                    (funcall #'helpful-command cmd)
                  (funcall #'describe-command cmd))))
