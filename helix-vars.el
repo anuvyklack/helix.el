@@ -357,7 +357,8 @@ cursors editing.")
   "Commands to execute only once while multiple cursors are active.")
 
 (defvar helix-default-commands-to-run-for-all-cursors
-  '(helix-backward-char            ;; h
+  '(keypad                         ;; SPC
+    helix-backward-char            ;; h
     helix-next-line                ;; j
     helix-previous-line            ;; k
     helix-forward-char             ;; l
@@ -490,6 +491,7 @@ cursors editing.")
 
 (defvar helix-default-commands-to-run-once
   '(execute-extended-command                 ;; M-x
+    helix-keypad                             ;; SPC
     helix-insert                             ;; i
     helix-append                             ;; a
     helix-insert-line                        ;; I
@@ -544,7 +546,6 @@ cursors editing.")
     helix-avy-previous-line                  ;; gk
     find-file-at-point                       ;; gf
     browse-url-at-point                      ;; gx
-    keypad                                   ;; SPC
     tab-next
     tab-previous
     ;; helix-mc-edit-lines

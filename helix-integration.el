@@ -14,11 +14,33 @@
 ;;; Code:
 
 (require 'helix-core)
+(require 'helix-multiple-cursors-core)
 (require 'helix-commands)
+
+;;; Keypad
+
+(declare-function keypad-start "keypad")
+(declare-function keypad-describe-key "keypad")
+
+;; The same result can be achived with:
+;;
+;;   (helix-cache-input keypad-start)
+;;
+;; but Keypad will wait for users input with the first fake cursor avtive,
+;; and it doesn't look very nice.
+(defun helix-keypad ()
+  (interactive)
+  (when-let* ((cmd (keypad-start)))
+    (helix-execute-command-for-all-cursors cmd)))
+
+(with-eval-after-load 'keypad
+  (helix-keymap-set nil 'normal
+    "SPC" #'helix-keypad
+    "C-h k" #'keypad-describe-key))
 
 ;;; Eldoc
 
-(eval-after-load 'eldoc
+(with-eval-after-load 'eldoc
   ;; Add motion commands to the `eldoc-message-commands' obarray.
   (eldoc-add-command 'helix-backward-char       ;; h
                      'helix-forward-char        ;; l
