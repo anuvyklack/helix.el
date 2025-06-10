@@ -394,6 +394,7 @@ cursors editing.")
     helix-surround-change          ;; mc mr
     helix-mark-inner-word          ;; miw
     helix-mark-inner-WORD          ;; miW
+    helix-mark-inner-sentence      ;; mis m.
     helix-mark-inner-paragraph     ;; mip
     helix-mark-a-paragraph         ;; map
     helix-mark-inner-double-quoted ;; mi"

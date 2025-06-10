@@ -166,13 +166,17 @@
 
   "m"   #'helix-jump-to-match-item
 
-  "i p" #'helix-mark-inner-paragraph
-  "p"   #'helix-mark-inner-paragraph
-  "a p" #'helix-mark-a-paragraph
   "i w" #'helix-mark-inner-word
   "w"   #'helix-mark-inner-word
   "i W" #'helix-mark-inner-WORD
   "W"   #'helix-mark-inner-WORD
+  "."   #'helix-mark-inner-sentence
+  "i s" #'helix-mark-inner-sentence
+  "i p" #'helix-mark-inner-paragraph
+  "p"   #'helix-mark-inner-paragraph
+  "a p" #'helix-mark-a-paragraph
+
+
   "\""  #'helix-mark-inner-double-quoted
   "i \"" #'helix-mark-inner-double-quoted
   "a \"" #'helix-mark-a-double-quoted
