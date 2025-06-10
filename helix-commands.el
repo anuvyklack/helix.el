@@ -1266,7 +1266,7 @@ See the defaul value of `helix-surround-alist' variable for examples."
        pair)
       (_ (cons char char)))))
 
-(helix--advice-to-cache-input helix-surround-insert--read-char)
+(helix-cache-input helix-surround-insert--read-char)
 
 (defun helix-surround--get-4-bounds (char)
   (let ((spec (alist-get char helix-surround-alist)))
