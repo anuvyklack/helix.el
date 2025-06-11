@@ -40,10 +40,13 @@ otherwise prepend it to the list.
   (declare (indent defun) (debug (form &rest form)))
   (let ((start (gensym "start"))
         (end (gensym "end")))
-    `(-let (((,start . ,end) ,restrictions))
-       (save-restriction
-         (narrow-to-region ,start ,end)
-         ,@body))))
+    `(if ,restrictions
+         (-let (((,start . ,end) ,restrictions))
+           (save-restriction
+             (narrow-to-region ,start ,end)
+             ,@body))
+       ;; else
+       ,@body)))
 
 (defmacro helix-narrow-to-field (&rest body)
   "Evaluated BODY with buffer narrowed to the current field."
@@ -76,15 +79,16 @@ When SKIP-EMPTY-LINES is non-nil skip all blank lines along the way.
 This is needed, for example, for `helix-word': two `helix-word's divided
 with empty lines, are considered adjoined when moving over them.
 
-Works only with THINGs, that returns the count of steps left to move."
+Works only with THINGs, that returns the count of steps left to move,
+such as `helix-word', `helix-sentence', `paragraph', `line'."
   (unless count (setq count 1))
   (cond ((= count 0) 0)
         ((< count 0)
          (forward-thing thing count))
         (t (when skip-empty-lines (skip-chars-forward "\r\n"))
-           (when-let* ((bnd (bounds-of-thing-at-point thing))
-                       ((< (point) (cdr bnd))))
-             (goto-char (cdr bnd))
+           (when-let* ((bounds (bounds-of-thing-at-point thing))
+                       ((< (point) (cdr bounds))))
+             (goto-char (cdr bounds))
              (when skip-empty-lines (skip-chars-forward "\r\n")))
            (let ((rest (forward-thing thing count)))
              (cond ((zerop rest)
@@ -92,6 +96,60 @@ Works only with THINGs, that returns the count of steps left to move."
                     (when skip-empty-lines (skip-chars-backward "\r\n")))
                    ((eobp) (backward-char))) ; assuming that buffer ends with newline
              rest))))
+
+(defun helix-bounds-of-complement-of-thing-at-point (thing)
+  "Return the bounds of a complement of THING at point.
+I.e., if there is a THING at point — returns nil, otherwise
+the gap between two THINGs is returned.
+
+Works only with THINGs, that returns the count of steps left to move,
+such as `helix-word', `helix-sentence', `paragraph', `line'."
+  (let ((orig-point (point)))
+    (if-let* ((beg (save-excursion
+                     (and (zerop (forward-thing thing -1))
+                          (forward-thing thing))
+                     (if (<= (point) orig-point)
+                         (point))))
+              (end (save-excursion
+                     (and (zerop (forward-thing thing))
+                          (forward-thing thing -1))
+                     (if (<= orig-point (point))
+                         (point))))
+              ((and (<= beg (point) end)
+                    (< beg end))))
+        (cons beg end))))
+
+(defun helix-select-a-thing (thing &optional line?)
+  "Select a THING with spacing around.
+
+Works only with THINGs, that returns the count of steps left to move,
+such as `helix-word', `helix-sentence', `paragraph', `line'."
+  (when-let* ((bounds (bounds-of-thing-at-point thing)))
+    (-let (((beg . end)
+            (or (progn
+                  (goto-char (cdr bounds))
+                  (helix-with-restriction
+                    (if line? (cons (line-beginning-position)
+                                    (line-end-position)))
+                    (if-let* ((complement
+                               (helix-bounds-of-complement-of-thing-at-point thing)))
+                        (cons (car bounds)
+                              (cdr complement)))))
+                (progn
+                  (goto-char (car bounds))
+                  (helix-with-restriction
+                    (if line?
+                        (cons (cond ((memq thing '(helix-word helix-WORD))
+                                     (save-excursion (back-to-indentation) (point)))
+                                    (t
+                                     (line-beginning-position)))
+                              (line-end-position)))
+                    (if-let* ((complement
+                               (helix-bounds-of-complement-of-thing-at-point thing)))
+                        (cons (car complement)
+                              (cdr bounds)))))
+                bounds)))
+      (helix-set-region beg end))))
 
 (defun helix-skip-chars (chars &optional direction)
   "Move point toward the DIRECTION stopping after a char is not in CHARS string.
@@ -164,6 +222,12 @@ COUNT minus number of steps moved; if backward, COUNT plus number moved.
 
 ;;; Things
 
+;; `visual-line' thing
+(put 'visual-line 'forward-op #'(lambda (&optional count)
+                                  (vertical-motion (or count 1))))
+;; (put 'visual-line 'beginning-op 'beginning-of-visual-line)
+;; (put 'visual-line 'end-op       'end-of-visual-line)
+
 (defun forward-helix-word (&optional count)
   "Move point forward COUNT words (backward if COUNT is negative).
 Returns the count of word left to move, positive or negative depending
@@ -195,11 +259,17 @@ WORD is any space separated sequence of characters."
     (unless (helix-beginning-or-end-of-line-p dir)
       (helix-skip-chars "^\n\r\t\f " dir))))
 
-(put 'visual-line 'forward-op #'(lambda (&optional count)
-                                  (vertical-motion (or count 1))))
-;; (put 'visual-line 'beginning-op 'beginning-of-visual-line)
-;; (put 'visual-line 'end-op       'end-of-visual-line)
+(defun forward-helix-sentence (&optional count)
+  "Move point forward COUNT sentences (backward if COUNT is negative.)
+Returns then count of sentences left to move, positive of negative depending
+on sign of COUNT.
 
+What is sentence is defined by `forward-sentence-function'."
+  (unless count (setq count 1))
+  (helix-motion-loop (dir count)
+    (ignore-errors (forward-sentence dir))))
+
+;; `helix-comment' thing
 (put 'helix-comment 'bounds-of-thing-at-point #'helix-bounds-of-comment-at-point-ppss)
 (defun helix-bounds-of-comment-at-point-ppss ()
   "Return the bounds of a comment at point using Parse-Partial-Sexp Scanner."
@@ -417,7 +487,7 @@ that `match-beginning', `match-end' and `match-data' access."
                               str))))))
 
 (defun helix-search-out (pair &optional direction scope regexp? balanced?)
-  "This function assume, that you are somewhere inside LEFT RIGHT
+  "This function assumes, that point is somewhere inside LEFT RIGHT
 enclosed text region, and return the position before LEFT or after
 RIGHT depending on DIRECTION.
 
