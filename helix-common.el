@@ -616,7 +616,7 @@ checks for beginning of line, positive — end of line."
   (and (bolp) (eolp)))
 
 (defun helix-bolp ()
-  "Like 'bolp' but consider visual lines when 'visual-line-mode' is enabled."
+  "Like `bolp' but consider visual lines when `visual-line-mode' is enabled."
   (if visual-line-mode
       (save-excursion
         (let ((p (point)))
@@ -632,7 +632,7 @@ checks for beginning of line, positive — end of line."
       (= p (point)))))
 
 (defun helix-eolp ()
-  "Like 'eolp' but consider visual lines when 'visual-line-mode' is enabled."
+  "Like `eolp' but consider visual lines when `visual-line-mode' is enabled."
   (if visual-line-mode
       (save-excursion
         (let ((p (point)))

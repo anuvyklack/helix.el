@@ -2,7 +2,6 @@
 
 ;; Authors: Yuriy Artemyev <anuvyklack@gmail.com>
 ;; Maintainer: Yuriy Artemyev <anuvyklack@gmail.com>
-;; Keywords: editing cursors
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -63,7 +62,7 @@ action. The step is terminated with `helix--single-undo-step-end'."
           ;; Remove undo boundaries from `buffer-undo-list' withing current undo
           ;; step. Also remove entries that move point during undo, because we
           ;; handle cursors positions manually to synchronize real cursor with
-          ;; fake ones,
+          ;; fake ones.
           (setq undo-list (helix-destructive-filter
                            #'(lambda (i) (or (numberp i) (null i)))
                            undo-list

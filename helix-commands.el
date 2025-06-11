@@ -32,7 +32,7 @@
         (t
          (helix-execute-command-for-all-cursors #'helix-collapse-selection))))
 
-;;; Movements
+;;; Motions
 
 ;; h
 (defun helix-backward-char (count)
@@ -234,6 +234,14 @@ Use visual line when `visual-line-mode' is on."
     (set-mark (point)))
   (forward-thing 'paragraph count))
 
+;; mm
+(defun helix-jump-to-match-item ()
+  "Jump between matching items."
+  (interactive)
+  (unless helix--extend-selection
+    (deactivate-mark))
+  (evilmi-jump-items-native))
+
 ;;; Easymotion / Avy
 
 ;; gw
@@ -422,6 +430,7 @@ Use visual line when `visual-line-mode' is on."
          (delete-char -1)))
   (helix-insert-state 1))
 
+;; TODO:
 ;; - If point is surrounded by (balanced) whitespace and a brace delimiter
 ;; ({} [] ()), delete a space on either side of the cursor.
 ;; - If point is at BOL and surrounded by braces on adjacent lines,
@@ -432,7 +441,7 @@ Use visual line when `visual-line-mode' is on."
 ;; d
 (defun helix-delete ()
   "Delete text in region.
-With no region delete char before point."
+If region is not active — delete char before point."
   (interactive)
   (cond ((use-region-p)
          ;; If selection is a whole line then add newline character (for logical
@@ -469,8 +478,8 @@ With no region delete char before point."
   "Join selected lines."
   (interactive)
   (cond ((use-region-p)
-         (save-mark-and-excursion
-           (let ((deactivate-mark nil))
+         (save-excursion
+           (let (deactivate-mark)
              (join-line nil (region-beginning) (region-end)))))
         (t (join-line t))))
 
@@ -493,7 +502,7 @@ With no region delete char before point."
   "Convert text in selection to lower case."
   (interactive "r")
   (when (use-region-p)
-    (let ((deactivate-mark nil))
+    (let (deactivate-mark)
       (downcase-region start end))))
 
 ;; M-` or gU
@@ -501,7 +510,7 @@ With no region delete char before point."
   "Convert text in selection to upper case."
   (interactive "r")
   (when (use-region-p)
-    (let ((deactivate-mark nil))
+    (let (deactivate-mark)
       (upcase-region start end))))
 
 ;;; Selections
@@ -598,6 +607,7 @@ Select visual lines when `visual-line-mode' is on."
 
 ;; %
 (defun helix-select-all ()
+  "Select whole buffer."
   (interactive)
   (helix-remove-all-fake-cursors)
   (goto-char (point-min))
@@ -605,8 +615,9 @@ Select visual lines when `visual-line-mode' is on."
 
 ;; s
 (defun helix-select-regex (&optional invert)
-  "Interactively enter regexp and create cursors for all matching regions
-withing active selections.
+  "Interactively enter regexp and create cursors for all matches withing
+active selections.
+
 If INVERT is non-nil — select complements to regions that match to regexp."
   (interactive)
   (cond (helix-multiple-cursors-mode
@@ -667,7 +678,7 @@ all regions that match to regexp withing active selections."
 
 ;; _
 (defun helix-trim-whitespaces-from-selection ()
-  "Trim whitespaces and newlines from the both ends of the current selection."
+  "Trim whitespaces and newlines from the both ends of selections."
   (interactive)
   (when (use-region-p)
     (let ((dir (if (< (point) (mark)) -1 1)))
@@ -893,7 +904,7 @@ ends at END-COLUMN spauns NUMBER-OF-LINES."
   "Exchange the CURSORs region content with CONTENT and return the old one."
   (helix-with-fake-cursor cursor
     (let ((dir (helix-region-direction))
-          (deactivate-mark nil) ;; Do not deactivate mark after insertion.
+          (deactivate-mark) ;; Do not deactivate mark after insertion.
           (new-content (buffer-substring (point) (mark))))
       (delete-region (point) (mark))
       (insert content)
@@ -1010,7 +1021,7 @@ keys to repeat motion forward/backward."
 
 ;; *
 (defun helix-construct-search-pattern ()
-  "Construct search pattern from all current selection and store it to / register.
+  "Construct search pattern from all current selections and store it to / register.
 Auto-detect word boundaries at the beginning and end of the search pattern."
   (interactive)
   (let ((quote (if helix-use-pcre-regex #'rxt-quote-pcre #'regexp-quote))
@@ -1223,14 +1234,6 @@ Do not auto-detect word boundaries in the search pattern."
         (set-mark l)
         (goto-char r)))))
 
-;; mm
-(defun helix-jump-to-match-item ()
-  "Jump between matching items."
-  (interactive)
-  (unless helix--extend-selection
-    (deactivate-mark))
-  (evilmi-jump-items-native))
-
 ;;; Surround
 
 (defun helix-surround-add-pair (key insert &optional search regexp? balanced?)
@@ -1328,7 +1331,7 @@ lines and reindent the region."
       (when lines?
         (setq left  (s-trim left)
               right (s-trim right)))
-      (let ((deactivate-mark nil)) ;; To not deactivate-mark after insertion
+      (let ((deactivate-mark)) ;; To not deactivate-mark after insertion
         (goto-char end)
         (when lines?
           (helix-skip-whitespaces)

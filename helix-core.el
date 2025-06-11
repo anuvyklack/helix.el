@@ -92,7 +92,7 @@ want COMMAND to be executed only for original ones."
     (remove-hook 'pre-command-hook 'helix--pre-commad-hook t)
     (helix-disable-current-state)))
 
-;;; Helix state
+;;; Helix states
 
 (defmacro helix-define-state (state doc &rest body)
   "Define Helix state STATE.
@@ -310,7 +310,7 @@ For example:
             (definition (pop rest)))
         (keymap-set map key definition)))))
 
-;;; Cursor
+;;; Cursor shape and color
 
 (defun helix-update-cursor ()
   "Update the cursor for current Helix STATE in current buffer."
