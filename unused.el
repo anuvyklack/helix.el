@@ -168,31 +168,6 @@ I.e.:
                                (overlay-end ov)))))
     (nreverse result)))
 
-(defun helix-bounds-of-complement-of-thing-at-point (thing &optional which)
-  "Return the bounds of a complement of THING at point.
-I.e., if there is a THING at point — returns nil, otherwise
-the gap between two THINGs is returned.
-
-Works only with THINGs, that returns the count of steps left to move,
-like: `helix-word', `paragraph', `line'."
-  (let ((orig-point (point)))
-    (if-let* ((beg (save-excursion
-                     (and (zerop (forward-thing thing -1))
-                          (forward-thing thing))
-                     (if (<= (point) orig-point)
-                         (point))))
-              (end (save-excursion
-                     (and (zerop (forward-thing thing))
-                          (forward-thing thing -1))
-                     (if (<= orig-point (point))
-                         (point))))
-              ((and (<= beg (point) end)
-                    (< beg end))))
-        (pcase which
-          (-1 beg)
-          (1  end)
-          (_ (cons beg end))))))
-
 (defun helix-skip-gap (thing &optional direction)
   (unless direction (setq direction 1))
   (when-let* ((bounds (helix-bounds-of-complement-of-thing-at-point thing)))

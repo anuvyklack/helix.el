@@ -393,8 +393,11 @@ cursors editing.")
     helix-surround-delete          ;; md
     helix-surround-change          ;; mc mr
     helix-mark-inner-word          ;; miw
+    helix-mark-a-word              ;; maw
     helix-mark-inner-WORD          ;; miW
+    helix-mark-inner-WORD          ;; maW
     helix-mark-inner-sentence      ;; mis m.
+    helix-mark-a-sentence          ;; mas
     helix-mark-inner-paragraph     ;; mip
     helix-mark-a-paragraph         ;; map
     helix-mark-inner-double-quoted ;; mi"

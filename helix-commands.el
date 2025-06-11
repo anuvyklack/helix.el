@@ -1088,10 +1088,25 @@ Do not auto-detect word boundaries in the search pattern."
   (interactive "p")
   (helix-mark-inner-thing 'helix-WORD count))
 
-;; mis or m.
+;; maw
+(defun helix-mark-a-word (count)
+  (interactive "p")
+  (helix-select-a-thing 'helix-word count t))
+
+;; maW
+(defun helix-mark-a-WORD (count)
+  (interactive "p")
+  (helix-select-a-thing 'helix-WORD count t))
+
+;; mis m.
 (defun helix-mark-inner-sentence (count)
   (interactive "p")
   (helix-mark-inner-thing 'sentence count))
+
+;; mas
+(defun helix-mark-a-sentence (count)
+  (interactive "p")
+  (helix-select-a-thing 'helix-sentence count t))
 
 ;; mip
 (defun helix-mark-inner-paragraph (count)
