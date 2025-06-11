@@ -120,6 +120,8 @@
   "g o" #'exchange-point-and-mark
   "_"   #'helix-trim-whitespaces-from-selection
   "&"   #'helix-align-selections
+
+  ;; Search
   "/"   #'helix-search-forward
   "?"   #'helix-search-backward
   "*"   #'helix-construct-search-pattern
@@ -175,8 +177,8 @@
   "."   #'helix-mark-inner-sentence
   "i s" #'helix-mark-inner-sentence
   "a s" #'helix-mark-a-sentence
-  "i p" #'helix-mark-inner-paragraph
   "p"   #'helix-mark-inner-paragraph
+  "i p" #'helix-mark-inner-paragraph
   "a p" #'helix-mark-a-paragraph
 
   "\""  #'helix-mark-inner-double-quoted
@@ -287,11 +289,9 @@
   "q"  #'ignore
   "\"" #'ignore
   "'"  #'ignore
-  ;; "n" #'ignore
+  "<"  #'ignore
+  ">"  #'ignore
   ;; "p" #'ignore
-  ;; "f" #'ignore
-  ;; "t" #'ignore
-  ;; "o" #'ignore
   )
 
 ;; (defun helix-general-o-fun ()
@@ -310,11 +310,6 @@
 ;;; Multiple cursors
 
 (keymap-set helix-multiple-cursors-map "C-g" #'helix-disable-multiple-cursors-mode)
-;; (keymap-set helix-multiple-cursors-map "C-:" #'helix-mc-repeat-command)
-(when (fboundp 'phi-search)
-  (keymap-set helix-multiple-cursors-map "C-s" #'phi-search))
-(when (fboundp 'phi-search-backward)
-  (keymap-set helix-multiple-cursors-map "C-r" #'phi-search-backward))
 
 ;;; Insert state
 
