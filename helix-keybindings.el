@@ -85,7 +85,8 @@
   "o"   #'helix-open-below
   "O"   #'helix-open-above
   "c"   #'helix-change
-  "d"   #'helix-delete
+  "d"   #'helix-kill
+  "D"   #'helix-delete
   "u"   #'helix-undo
   "U"   #'helix-redo
   "J"   #'helix-join-line

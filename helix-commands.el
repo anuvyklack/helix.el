@@ -439,10 +439,10 @@ Use visual line when `visual-line-mode' is on."
 ;; |
 ;; } => {|}
 ;; d
-(defun helix-delete ()
-  "Delete text in region.
-If region is not active — delete char before point."
-  (interactive)
+(defun helix-kill (count)
+  "Kill (cut) text in region. I.e. delete text and put it in the `kill-ring'.
+If no selection — delete COUNT chars before point."
+  (interactive "p")
   (cond ((use-region-p)
          ;; If selection is a whole line then add newline character (for logical
          ;; line) or space (for visual line) after into selection.
@@ -453,8 +453,23 @@ If region is not active — delete char before point."
            (forward-char))
          (kill-region nil nil t))
         (t
-         (delete-char -1)))
-  ;; (helix-extend-selection -1)
+         (delete-char (- count))))
+  (setq helix--extend-selection nil))
+
+;; D
+(defun helix-delete (count)
+  "Delete text in region, without modifying the `kill-ring'.
+If no selection — delete COUNT chars after point."
+  (interactive "p")
+  (cond ((use-region-p)
+         (when (and (not (helix-blank-line-p))
+                    (helix-line-selected-p))
+           (when (< (helix-region-direction) 0)
+             (helix-exchange-point-and-mark))
+           (forward-char))
+         (delete-region (region-beginning) (region-end)))
+        (t
+         (delete-char count)))
   (setq helix--extend-selection nil))
 
 ;; u
