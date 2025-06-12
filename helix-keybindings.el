@@ -89,6 +89,11 @@
   "D"   #'helix-delete
   "u"   #'helix-undo
   "U"   #'helix-redo
+  "y"   #'helix-yank
+  "p"   #'helix-paste-after
+  "P"   #'helix-paste-before
+  "C-p" #'helix-yank-pop ;; yank-pop
+  "C-n" #'helix-yank-undo-pop
   "J"   #'helix-join-line
   "`"   #'helix-downcase
   "M-`" #'helix-upcase

@@ -203,7 +203,7 @@ The current state is stored in the overlay for later retrieval."
   (helix-create-fake-cursor (point) (if (use-region-p) (mark)) id))
 
 (defun helix-set-fake-cursor (cursor-or-id point &optional mark)
-  "Set or create fake cursor at POINT position.
+  "Move or create fake cursor at POINT position.
 
 CURSOR-OR-ID can be either:
 - fake cursor overlay;
@@ -224,13 +224,12 @@ will be set."
 
 (defun helix-move-fake-cursor (cursor point &optional mark)
   "Set fake CURSOR to new POINT and MARK and update its state."
+  (set-marker (overlay-get cursor 'point) point)
+  (set-marker (overlay-get cursor 'mark) (or mark point))
   (helix--set-cursor-overlay cursor point)
-  (move-marker (overlay-get cursor 'point) point)
-  (move-marker (overlay-get cursor 'mark) (or mark point))
   (if (and mark mark-active)
       (helix--set-region-overlay cursor point mark)
     (helix--delete-region-overlay cursor))
-  (helix--store-point-state cursor point mark)
   cursor)
 
 (defun helix-remove-fake-cursor (cursor)
@@ -316,6 +315,12 @@ and bind it to CURSOR."
     (when (boundp var)
       (overlay-put overlay var (symbol-value var))))
   overlay)
+
+(defun helix-update-fake-cursor-state (cursor)
+  "Update variables stored in fake CURSOR."
+  (dolist (var helix-fake-cursor-specific-vars)
+    (when (boundp var)
+      (overlay-put cursor var (symbol-value var)))))
 
 (defun helix-restore-point-from-fake-cursor (cursor)
   "Restore point, mark and saved variables from CURSOR overlay, and delete it."
@@ -480,7 +485,8 @@ evaluate BODY, update fake CURSOR."
      (helix--restore-point-state ,cursor)
      (unwind-protect
          (progn ,@body)
-       (helix-move-fake-cursor ,cursor (point) (mark t)))))
+       (helix-move-fake-cursor ,cursor (point) (mark t))
+       (helix-update-fake-cursor-state ,cursor))))
 
 (defmacro helix-with-each-cursor (&rest body)
   (declare (indent 0) (debug t))
@@ -595,7 +601,7 @@ So you can paste it in later with `yank-rectangle'."
   (when (helix-any-fake-cursors-p)
     (let ((entries (helix-with-real-cursor-as-fake
                      (-map #'(lambda (cursor)
-                               (-first-item (overlay-get cursor 'kill-ring)))
+                               (car-safe (overlay-get cursor 'kill-ring)))
                            (helix-all-fake-cursors :sort)))))
       (unless (helix-all-elements-are-equal-p entries)
         (setq killed-rectangle entries)))))
@@ -798,6 +804,7 @@ Calls with equal PROMPT or without it would be undistinguishable."
 
 (helix-cache-input read-char)
 (helix-cache-input read-quoted-char)
+(helix-cache-input read-from-kill-ring)
 (helix-cache-input read-char-from-minibuffer)
 (helix-cache-input register-read-with-preview)  ; used by read-string
 
@@ -820,23 +827,28 @@ from being executed if in `helix-multiple-cursors-mode'."
 (define-advice current-kill (:before (n &optional _do-not-move) helix)
   "Make sure pastes from other programs are added to `kill-ring's
 of all cursors when yanking."
-  (when-let* ((interprogram-paste (and (eql n 0)
+  (when-let* ((interprogram-paste (and (= n 0)
                                        interprogram-paste-function
                                        (funcall interprogram-paste-function))))
-    ;; Add interprogram-paste to normal kill ring, just like current-kill
-    ;; usually does for itself. We have to do the work for it though, since
-    ;; the funcall only returns something once. It is not a pure function.
-    (let ((interprogram-cut-function nil))
+    (when (listp interprogram-paste)
+      ;; Use `reverse' to avoid modifying external data.
+      (setq interprogram-paste (reverse interprogram-paste)))
+    ;; Add `interprogram-paste' to `kill-ring's of all cursors real and fake.
+    ;; This is what `current-kill' do internally, but we have to do it ourselves,
+    ;; because `interprogram-paste-function' is not a pure function — it returns
+    ;; something only once.
+    (let ((interprogram-cut-function nil)
+          (interprogram-paste-function nil))
+      ;; real cursor
       (if (listp interprogram-paste)
-          (mapc 'kill-new (reverse interprogram-paste))
+          (mapc 'kill-new interprogram-paste)
         (kill-new interprogram-paste))
-      ;; And then add interprogram-paste to the kill-rings
-      ;; of all the other cursors too.
+      ;; fake cursors
       (dolist (cursor (helix-all-fake-cursors))
         (let ((kill-ring (overlay-get cursor 'kill-ring))
               (kill-ring-yank-pointer (overlay-get cursor 'kill-ring-yank-pointer)))
           (if (listp interprogram-paste)
-              (mapc 'kill-new (nreverse interprogram-paste))
+              (mapc 'kill-new interprogram-paste)
             (kill-new interprogram-paste))
           (overlay-put cursor 'kill-ring kill-ring)
           (overlay-put cursor 'kill-ring-yank-pointer kill-ring-yank-pointer))))))

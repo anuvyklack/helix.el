@@ -380,6 +380,11 @@ cursors editing.")
     helix-change                   ;; c
     helix-kill                     ;; d
     helix-delete                   ;; D
+    helix-yank                     ;; y
+    helix-paste-after              ;; p
+    helix-paste-before             ;; P
+    helix-yank-pop                 ;; C-p
+    helix-yank-undo-pop            ;; C-n
     helix-join-line                ;; J
     helix-invert-case              ;; ~
     helix-downcase                 ;; `   gu
