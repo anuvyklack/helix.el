@@ -65,6 +65,7 @@ If nil Keypad will look under \"C-c\" prefix."
   "<backspace>" #'keypad-undo
   "ESC" #'keypad-quit
   "<escape>" #'keypad-quit
+  "C-g" #'keypad-quit
   ;; "<remap> <keyboard-quit>" #'keypad-quit
   )
 
@@ -117,13 +118,9 @@ Return the found command."
 
 (defun keypad--handle-input-event (event)
   "Handle input EVENT. Return `:quit' if handling is completed."
-  (if (equal 'escape last-input-event)
-      (progn (keypad--close-preview)
-             :quit)
-    ;; else
-    (setq last-command-event last-input-event)
-    (if-let* ((key (single-key-description event))
-              (cmd (keymap-lookup keypad-map key)))
+  ;; (setq last-command-event last-input-event)
+  (let ((key (single-key-description event)))
+    (if-let* ((cmd (keymap-lookup keypad-map key)))
         (call-interactively cmd)
       (keypad--handle-input-key key))))
 
