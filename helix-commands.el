@@ -488,6 +488,52 @@ If no selection — delete COUNT chars after point."
   (let (deactivate-mark)
     (undo-redo)))
 
+;; y
+(defun helix-yank ()
+  "Copy selection into `kill-ring'."
+  (interactive)
+  (let (deactivate-mark)
+    (copy-region-as-kill nil nil t)
+    (message "Copied into kill-ring")))
+
+;; p
+(defun helix-paste-after ()
+  "Paste after selection."
+  (interactive)
+  (when (and (use-region-p)
+             (< (helix-region-direction) 0))
+    (helix-exchange-point-and-mark))
+  ;; `yank' sets `this-command' to `yank' internally
+  (let (deactivate-mark)
+    (yank)))
+
+;; P
+(defun helix-paste-before ()
+  "Paste before selection."
+  (interactive)
+  (when (and (use-region-p)
+             (< 0 (helix-region-direction)))
+    (helix-exchange-point-and-mark))
+  ;; `yank' sets `this-command' to `yank' internally
+  (let (deactivate-mark)
+    (yank)))
+
+;; C-p
+(defun helix-yank-pop (count)
+  "Wrapper around `yank-pop'."
+  (interactive "p")
+  (let ((yank-pop (command-remapping 'yank-pop))
+        (deactivate-mark nil))
+    (call-interactively yank-pop count)))
+
+;; C-n
+(defun helix-yank-undo-pop (count)
+  "Like `helix-yank-pop' but with negative COUNT argument."
+  (interactive "p")
+  (let ((yank-pop (command-remapping 'yank-pop))
+        (deactivate-mark nil))
+    (call-interactively yank-pop (- count))))
+
 ;; J
 (defun helix-join-line ()
   "Join the selected lines."

@@ -57,6 +57,10 @@
                      'helix-search-next         ;; n
                      'helix-search-previous))   ;; N
 
+;;; Consult
+
+(helix-cache-input consult--read)
+
 ;;; Lisp
 
 (add-hook 'lisp-mode-hook
