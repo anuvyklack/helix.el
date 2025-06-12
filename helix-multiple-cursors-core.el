@@ -761,7 +761,7 @@ ID 0 coresponds to the real cursor."
 
 (add-hook 'after-revert-hook 'helix-remove-all-fake-cursors)
 
-(define-advice execute-kbd-macro (:around (orig-fun &rest args) multiple-cursors)
+(define-advice execute-kbd-macro (:around (orig-fun &rest args) helix)
   "`execute-kbd-macro' should never be run for fake cursors.
 The real cursor will execute the keyboard macro, resulting in new commands
 in the command loop, and the fake cursors can pick up on those instead."
@@ -817,7 +817,7 @@ from being executed if in `helix-multiple-cursors-mode'."
 (helix-unsupported-command isearch-forward)
 (helix-unsupported-command isearch-backward)
 
-(define-advice current-kill (:before (n &optional _do-not-move) multiple-cursors)
+(define-advice current-kill (:before (n &optional _do-not-move) helix)
   "Make sure pastes from other programs are added to `kill-ring's
 of all cursors when yanking."
   (when-let* ((interprogram-paste (and (eql n 0)
@@ -842,7 +842,7 @@ of all cursors when yanking."
           (overlay-put cursor 'kill-ring-yank-pointer kill-ring-yank-pointer))))))
 
 ;; M-x
-(define-advice execute-extended-command (:after (&rest _) multiple-cursors)
+(define-advice execute-extended-command (:after (&rest _) helix)
   "Execute selected command for all cursors."
   (helix--execute-command-for-all-fake-cursors this-command))
 
