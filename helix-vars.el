@@ -378,7 +378,8 @@ cursors editing.")
     helix-forward-paragraph        ;; ]p or }}
     helix-backward-paragraph       ;; [p or {{
     helix-change                   ;; c
-    helix-delete                   ;; d
+    helix-kill                     ;; d
+    helix-delete                   ;; D
     helix-join-line                ;; J
     helix-invert-case              ;; ~
     helix-downcase                 ;; `   gu
