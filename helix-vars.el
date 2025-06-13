@@ -86,7 +86,7 @@ and which for all."
   :type 'file
   :group 'helix)
 
-(defcustom helix-max-cursors nil
+(defcustom helix-max-cursors-number nil
   "Safety ceiling for the number of active cursors.
 If your Emacs slows down or freezes when using too many cursors,
 customize this value appropriately.
