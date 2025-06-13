@@ -1,0 +1,35 @@
+#+title: Configuration
+
+* Faces
+
+- ~helix-fake-cursor-extend-selection~ ::
+  The face used for fake cursors when extending selection is active.
+
+- ~helix-lazy-highlight~ ::
+  Face for highlighting matches in interactive search with =/=, =?=, =*=, =M-*=, =n=, =N=.
+
+* Variables
+
+- ~helix-use-pcre-regex~ ::
+  If non-nil use PCRE regexp syntax instead of Emacs one.
+
+- ~helix-regex-history-max~ ::
+  Maximum length of regexp search ring before oldest elements are thrown away.
+  This ring is uesd with =/=, =?=, =*=, =M-*=, =n=, =N= commands.
+
+- ~helix-max-cursors-number~ ::
+  If your Emacs slows down or freezes when using too many cursors, customize
+  this value appropriately. Cursors will be added until this value is reached,
+  at which point you can either temporarily override the value or abort the
+  operation entirely. Default is ~nil~ — no ceiling.
+
+- ~helix-minor-modes-incompatible-with-multiple-cursors~ ::
+  List of minor-modes that does not work well with multiple cursors. They are
+  temporarily disabled when there are more then one cursor in the buffer.
+
+- ~helix-keep-search-highlight-commands~ ::
+  List of commands which should preserve search hints.
+
+- ~helix-surround-alist~ ::
+  Allows to customize patterns used for surrounding with =ms=, =md= and =mc= commands.
+  See built-in documentation with =C-h v helix-surround-alist=.

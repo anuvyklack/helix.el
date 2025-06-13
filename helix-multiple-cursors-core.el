@@ -18,8 +18,18 @@
 
 ;;; Commentary:
 
-;; The core functionality for multiple cursors. This module is based on
-;; Magnar Sveen `multiple-cursors.el' package.
+;; The core functionality for multiple cursors. This module is heavily inspired
+;; by `multiple-cursors.el' package from Magnar Sveen.
+;;
+;; Command is first executed for real cursor by Emacs command loop and then in
+;; `post-command-hook' it executed by all fake cursors. Fake cursor is an
+;; overlay that emulates cursor and stores inside point, mark, kill-ring and
+;; some other variables (full list is in `helix-fake-cursor-specific-vars').
+;; Executing command for fake cursor looks as follows: set point and mark to
+;; positions saved in fake cursor overlay, restore all variables from it,
+;; execute command in this environment, store point, mark and new state into
+;; fake cursor overlay.
+;;
 ;;
 ;; ID 0 is always coresponding to real cursor.
 
@@ -832,10 +842,10 @@ of all cursors when yanking."
     (when (listp interprogram-paste)
       ;; Use `reverse' to avoid modifying external data.
       (setq interprogram-paste (reverse interprogram-paste)))
-    ;; Add `interprogram-paste' to `kill-ring's of all cursors real and fake.
-    ;; This is what `current-kill' do internally, but we have to do it ourselves,
-    ;; because `interprogram-paste-function' is not a pure function — it returns
-    ;; something only once.
+    ;; Add `interprogram-paste' to `kill-ring's of all cursors real and
+    ;; fake. This is what `current-kill' do internally, but we have to do
+    ;; it ourselves, because `interprogram-paste-function' is not a pure
+    ;; function — it returns something only once.
     (let ((interprogram-cut-function nil)
           (interprogram-paste-function nil))
       ;; real cursor
