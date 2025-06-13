@@ -16,13 +16,8 @@
   :group 'emulations
   :prefix 'helix-)
 
-(defcustom helix-select-on-insert t
-  "Select inserted text on exiting Insert state."
-  :type 'boolean
-  :group 'helix)
-
 (defcustom helix-use-pcre-regex t
-  "Maximum length of regexp search ring before oldest elements are thrown away."
+  "If non-nil use PCRE regexp syntax instead of Emacs one."
   :type 'integer
   :group 'helix)
 
@@ -50,7 +45,7 @@ rendered or shift text."
 
 (defface helix-fake-cursor-extend-selection
   '((t (:background "orange")))
-  "The face used for fake cursors."
+  "The face used for fake cursors when extending selection is active."
   :group 'helix)
 
 ;; (defface helix-fake-cursor-bar
@@ -104,17 +99,13 @@ If this value is nil, there is no ceiling."
   :type '(boolean)
   :group 'helix)
 
-(defcustom helix-mc-always-repeat-command nil
-  "Disables confirmation for `helix-mc-repeat-command' command."
-  :type '(boolean)
-  :group 'helix)
-
 (defvar helix-minor-modes-incompatible-with-multiple-cursors
   '(corfu-mode
     company-mode
     flyspell-mode)
   "List of minor-modes that does not work well with multiple cursors.
-They are temporarily disabled when there are multiple cursors.")
+They are temporarily disabled when there are more then one cursor
+in the buffer.")
 
 (defcustom helix-update-highlight-delay 0.02
   "Time in seconds of idle before updating search highlighting.
@@ -162,7 +153,7 @@ rate allows highlights to update while scrolling."
     helix-move-window-down
     helix-move-window-up
     helix-move-window-right)
-  "List of commands which should preserve search highlight overlays.")
+  "List of commands which should preserve search highlighting overlays.")
 
 (defgroup helix-cjk nil
   "CJK support."
@@ -281,23 +272,24 @@ SPEC is a plist with next keys:
                         (LEFT-START LEFT-END RIGHT-START RIGHT-END)
                of START and END of LEFT and RIGHT delimeters.
                Example:
-                          LEFT             RIGHT
-                        |<tag> |Some text| </tag>|
-                        ^      ^         ^       ^
-                        LS     LE        RS      RE
+                          LEFT                              RIGHT
+                        |<tag> |Lorem ipsum dolor sit amet| </tag>|
+                        ^      ^                          ^       ^
+               LEFT-START      LEFT-END         RIGHT-START       RIGHT-END
 
-Following keys are taken into account only when :SEARCH argument is a cons cell
-with strings (LEFT . RIGHT) or a function, that returns such cons cell. If
-:SEARCH is a function that returns list with 4 positions, they will be ignored.
+  Following keys are taken into account only when :SEARCH argument is a cons cell
+  with strings (LEFT . RIGHT) or a function, that returns such cons cell. If
+  :SEARCH is a function that returns list with 4 positions, they will be ignored.
 
-:regexp   - If non-nil then LEFT and RIGHT strings specified in :SEARCH will be
-            treated as regexp patterns. Otherwise they will searched literally.
-:balanced - When non-nil all nested balanced LEFT RIGHT pairs will be skipped.
-            Otherwise the first found pattern will be accepted.
+  :regexp   - If non-nil then LEFT and RIGHT strings specified in :SEARCH will be
+  treated as regexp patterns. Otherwise they will searched literally.
+  :balanced - When non-nil all nested balanced LEFT RIGHT pairs will be skipped.
+  Otherwise the first found pattern will be accepted.
 
-This function populates the buffer local `helix-surround-alist' variable,
-and thus should be called from major-modes hooks.
-See the defaul value of `helix-surround-alist' variable for examples.")
+  This function populates the buffer local `helix-surround-alist' variable,
+  and thus should be called from major-modes hooks.
+
+  See the defaul value and `helix-integration.el' file for examples.")
 
 (helix-defvar-local helix--state nil
   "The current Helix state.")
@@ -336,7 +328,7 @@ Default value is 0 - scroll half the screen.")
   "Keymap for window-related commands.")
 
 (defvar helix-regex-history nil
-  "List with used pcre regexes.")
+  "List with used regexp patterns.")
 
 (with-eval-after-load 'savehist
   (add-to-list 'savehist-additional-variables 'helix-regex-history))
