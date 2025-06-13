@@ -204,3 +204,24 @@ right after the point."
                          (nth 4 (syntax-ppss (- pnt 1))))
                     (and (/= 0 (logand (ash 1 19) s))
                          (nth 4 (syntax-ppss (- pnt 2))))))))))))
+
+(defmacro helix-save-goal-column (&rest body)
+  "Restore the goal column after execution of BODY."
+  (declare (indent defun) (debug t))
+  `(let ((goal-column goal-column)
+         (temporary-goal-column temporary-goal-column))
+     ,@body))
+
+(defun helix-skip-empty-lines (&optional direction)
+  "Skip all empty lines toward direction.
+If DIR is positive number move forward, else — backward."
+  ;; (prog1
+  ;;     (helix-skip-chars "\r\n" (or dir 1))
+  ;;   (when (not helix-select-state-minor-mode)
+  ;;     (set-mark (point))))
+  (unless direction (setq direction 1))
+  (let ((point-moved (helix-skip-chars "\r\n" direction)))
+    (when (and point-moved
+               (not helix-select-state-minor-mode))
+      (set-mark (point)))
+    point-moved))

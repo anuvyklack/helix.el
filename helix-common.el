@@ -54,13 +54,6 @@ otherwise prepend it to the list.
   `(helix-with-restriction (cons (field-beginning) (field-end))
      ,@body))
 
-(defmacro helix-save-goal-column (&rest body)
-  "Restore the goal column after execution of BODY."
-  (declare (indent defun) (debug t))
-  `(let ((goal-column goal-column)
-         (temporary-goal-column temporary-goal-column))
-     ,@body))
-
 (defmacro helix-with-deactivate-mark (&rest body)
   "Evaluate BODY with mark temporary deactivated."
   (declare (debug t))
@@ -183,20 +176,6 @@ If DIRECTION is positive number get following char,
 negative — preceding char."
   (unless direction (setq direction 1))
   (if (< direction 0) (preceding-char) (following-char)))
-
-;; (defun helix-skip-empty-lines (&optional direction)
-;;   "Skip all empty lines toward direction.
-;; If DIR is positive number move forward, else — backward."
-;;   ;; (prog1
-;;   ;;     (helix-skip-chars "\r\n" (or dir 1))
-;;   ;;   (when (not helix-select-state-minor-mode)
-;;   ;;     (set-mark (point))))
-;;   (unless direction (setq direction 1))
-;;   (let ((point-moved (helix-skip-chars "\r\n" direction)))
-;;     (when (and point-moved
-;;                (not helix-select-state-minor-mode))
-;;       (set-mark (point)))
-;;     point-moved))
 
 (defmacro helix-motion-loop (spec &rest body)
   "Loop a certain number of times.
