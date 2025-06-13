@@ -500,6 +500,8 @@ evaluate BODY, update fake CURSOR."
 (defmacro helix-with-each-cursor (&rest body)
   (declare (indent 0) (debug t))
   `(progn
+     ;; First execute BODY for the fake cursors so that BODY can create new
+     ;; fake cursors, but overall was only executed for the original ones.
      (helix-save-window-scroll
        (helix-save-excursion
         (dolist (cursor (helix-all-fake-cursors))
@@ -510,11 +512,8 @@ evaluate BODY, update fake CURSOR."
 
 (defun helix-execute-command-for-all-cursors (command)
   "Call COMMAND interactively for all cursors: real and fake ones."
-  ;; First execute COMMAND for fake cursors, because it can create fake
-  ;; cursors itself, like `helix-copy-selection' does, and we want COMMAND
-  ;; to be executed only for original ones.
-  (helix--execute-command-for-all-fake-cursors command)
   (call-interactively command)
+  (helix--execute-command-for-all-fake-cursors command)
   (when (helix-merge-regions-p command)
     (helix-merge-overlapping-regions))
   (setq helix--input-cache nil))
@@ -797,7 +796,7 @@ FN-NAME should be an interactive function taking PROMPT as first argument,
 like `read-char' or `read-from-minibuffer'. This PROMPT will be used as
 a hash key, to distinguish different calls of FN-NAME within one command.
 Calls with equal PROMPT or without it would be undistinguishable."
-  `(define-advice ,fn-name (:around (orig-fun &rest args) multiple-cursors)
+  `(define-advice ,fn-name (:around (orig-fun &rest args) helix)
      "Cache the users input to use it with multiple cursors."
      (if (not (bound-and-true-p helix-multiple-cursors-mode))
          (apply orig-fun args)
@@ -865,7 +864,7 @@ of all cursors when yanking."
 ;; M-x
 (define-advice execute-extended-command (:after (&rest _) helix)
   "Execute selected command for all cursors."
-  (helix--execute-command-for-all-fake-cursors this-command))
+  (setq helix-this-command this-command))
 
 ;;; Utils
 

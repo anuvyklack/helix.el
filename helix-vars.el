@@ -413,8 +413,6 @@ cursors editing.")
     helix-mark-a-curly             ;; ma{ ma}
     helix-mark-inner-angle         ;; mi< mi>
     helix-mark-an-angle            ;; ma< ma>
-    helix-copy-selection           ;; C
-    helix-copy-selection-up        ;; M-c
     self-insert-command
     quoted-insert
     previous-line
@@ -520,13 +518,15 @@ cursors editing.")
     helix-merge-selections                   ;; M-minus
     helix-normal-state-escape                ;; ESC in normal state
     helix-normal-state                       ;; ESC
-    helix-toggle-cursor-on-click             ;; M-mouse1
     helix-goto-first-line                    ;; gg
     helix-goto-last-line                     ;; G
     helix-rotate-selections-backward         ;; (
     helix-rotate-selections-forward          ;; )
     helix-rotate-selections-content-backward ;; M-(
     helix-rotate-selections-content-forward  ;; M-)
+    helix-toggle-cursor-on-click             ;; M-mouse1
+    helix-copy-selection                     ;; C
+    helix-copy-selection-up                  ;; M-c
     helix-select-regex                       ;; s
     helix-split-region                       ;; S
     helix-split-region-on-newline            ;; M-s
@@ -695,8 +695,9 @@ will be invoked if `helix--extend-selection' is t.")
 (defvar helix-mc--list-file-loaded nil
   "Non-nil when `helix-mc-list-file' file has already been loaded.")
 
-(helix-defvar-local helix--this-command nil
-  "The command that all fake cursors are currently executing.")
+(defvar helix-this-command nil
+  "Like `this-command' but for fake cursors.
+The command that that will be executed by each fake cursor.")
 
 (helix-defvar-local helix--temporarily-disabled-minor-modes nil
   "The list of temporarily disabled minor-modes while there are

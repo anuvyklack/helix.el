@@ -807,12 +807,11 @@ all regions that match to regexp withing active selections."
   "Copy point and region COUNT times down if COUNT is positive,
 of up if negative."
   (interactive "p")
-  (if (use-region-p)
-      (helix-motion-loop (dir count)
-        (helix--copy-region dir))
-    ;; else
+  (helix-with-each-cursor
     (helix-motion-loop (dir count)
-      (helix--copy-cursor dir))))
+      (if (use-region-p)
+          (helix--copy-region dir)
+        (helix--copy-cursor dir)))))
 
 ;; M-c
 (defun helix-copy-selection-up (count)

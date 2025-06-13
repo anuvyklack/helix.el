@@ -22,7 +22,7 @@
 ;;; Normal state
 
 (helix-keymap-set nil 'normal
-  "SPC" #'helix-keypad
+  "SPC" #'keypad
   "C-h k" #'keypad-describe-key
   "<backspace>" #'execute-extended-command)
 
