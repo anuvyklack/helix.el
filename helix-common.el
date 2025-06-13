@@ -189,14 +189,14 @@ COUNT minus number of steps moved; if backward, COUNT plus number moved.
 \(fn (DIRECTION COUNT) BODY...)"
   (declare (indent defun)
            (debug ((symbolp form) body)))
-  (let ((direction (pop spec))
+  (let ((dir (pop spec))
         (count (pop spec))
         (n (gensym "n")))
-    `(let ((,direction (helix-sign ,count))
+    `(let ((,dir (helix-sign ,count))
            (,n ,count))
        (while (and (/= ,n 0)
                    (/= (point) (progn ,@body (point))))
-         (setq ,n (- ,n ,direction)))
+         (setq ,n (- ,n ,dir)))
        ,n)))
 
 ;;; Things
@@ -570,6 +570,8 @@ is inside a string, return quote-mark character that bounds that string."
 
 (defun helix-exchange-point-and-mark ()
   "Exchange point and mark without activating the region."
+  ;; (goto-char (prog1 (mark t)
+  ;;              (set-marker (mark-marker) (point) (current-buffer))))
   (let* ((point (point))
          (mark  (or (mark t) point)))
     (set-marker (mark-marker) point)
@@ -600,7 +602,7 @@ checks for beginning of line, positive — end of line."
       (save-excursion
         (let ((p (point)))
           (beginning-of-visual-line)
-          (= p (point))))
+          (eql p (point))))
     (bolp)))
 
 (defun helix-visual-bolp ()
@@ -608,7 +610,7 @@ checks for beginning of line, positive — end of line."
   (save-excursion
     (let ((p (point)))
       (beginning-of-visual-line)
-      (= p (point)))))
+      (eql p (point)))))
 
 (defun helix-eolp ()
   "Like `eolp' but consider visual lines when `visual-line-mode' is enabled."
@@ -616,7 +618,7 @@ checks for beginning of line, positive — end of line."
       (save-excursion
         (let ((p (point)))
           (end-of-visual-line)
-          (= p (point))))
+          (eql p (point))))
     (eolp)))
 
 (defun helix-line-selected-p ()
@@ -796,8 +798,11 @@ FUN on each invocation should move point."
           (old-point (point))
           positions)
       (while (ignore-errors
-               (let ((this-command fun)
-                     (last-command fun))
+               ;; Bind `last-command' and `this-command' to the same value,
+               ;; to get uniform result in case `fun' behaves differently
+               ;; depending on their values.
+               (let ((last-command fun)
+                     (this-command fun))
                  (call-interactively fun))
                (and (not (eql (point) old-point))
                     (<= start (point) end)))

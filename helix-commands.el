@@ -854,17 +854,17 @@ of up if negative."
                           (goto-char (if (< direction 0) beg end))
                           (helix--bounds-of-following-region
                            beg-column end-column num-of-lines direction))))
-      (let (pnt mrk)
+      (let (point mark)
         (if (< region-dir 0)
-            (pcase-setq `(,pnt . ,mrk) bounds)
-          (pcase-setq `(,mrk . ,pnt) bounds))
-        (if-let* ((cursor (helix-fake-cursor-at pnt))
-                  ((= mrk (overlay-get cursor 'mark))))
+            (-setq (point . mark) bounds)
+          (-setq (mark . point) bounds))
+        (if-let* ((cursor (helix-fake-cursor-at point))
+                  ((eql mark (overlay-get cursor 'mark))))
             nil ;; Do nothing, since fake cursor is already at target position.
           ;; else
           (helix-create-fake-cursor-from-point)
-          (goto-char pnt)
-          (set-marker (mark-marker) mrk))))))
+          (goto-char point)
+          (set-marker (mark-marker) mark))))))
 
 (defun helix--bounds-of-following-region
     (start-column end-column number-of-lines direction)
