@@ -343,12 +343,11 @@ RANGES is a list of cons cells (START . END) with bounds of regions.
 The real region will be set for the first range in RANGES, and fake one
 for others."
   (when ranges
-    (-let (((beg . end) (car ranges)))
-      (set-mark beg)
-      (goto-char end))
-    (--each (cdr ranges)
-      (-let (((mark . point) it))
-        (helix-create-fake-cursor point mark)))))
+    (pcase-let ((`(,mark . ,point) (car ranges)))
+      (set-mark mark)
+      (goto-char point))
+    (pcase-dolist (`(,mark . ,point) (cdr ranges))
+      (helix-create-fake-cursor point mark))))
 
 (defun helix-remove-fake-cursor-from-buffer (cursor)
   (helix--delete-region-overlay cursor)
