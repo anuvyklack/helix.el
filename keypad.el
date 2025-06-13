@@ -92,7 +92,7 @@ Other way seek in top level.")
 (defun keypad ()
   "Enter keypad state."
   (interactive)
-  (let ((cmd (keypad-start)))
+  (when-let* ((cmd (keypad-start)))
     (setq this-command cmd)
     (call-interactively cmd)))
 
@@ -421,7 +421,7 @@ If Helpful package is loaded, `helpful-key' will be used instead of
                    (funcall #'helpful-command cmd)
                  (funcall #'describe-command cmd))))
     (_ (if (fboundp 'helpful-key)
-           (funcall #'helpful-key (cdar key-list))
+           (helpful-key (cdar key-list))
          (describe-key key-list buffer)))))
 
 (provide 'keypad)
