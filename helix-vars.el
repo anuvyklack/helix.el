@@ -385,6 +385,7 @@ cursors editing.")
     helix-paste-before             ;; P
     helix-yank-pop                 ;; C-p
     helix-yank-undo-pop            ;; C-n
+    helix-replace-with-kill-ring   ;; R
     helix-join-line                ;; J
     helix-invert-case              ;; ~
     helix-downcase                 ;; `   gu
