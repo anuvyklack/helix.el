@@ -164,14 +164,13 @@ If INVERT is non-nil return list with complements of ranges that match REGEXP."
 RANGES is a list of cons cells with positions (START . END)."
   (when ranges
     (let (result)
-      (-let (((r-start . r-end) (car ranges)))
+      (pcase-let ((`(,r-start . ,r-end) (car ranges)))
         (unless (eql r-start start)
           (push (cons start r-start) result)
           (setq start r-end)))
-      (dolist (bounds (cdr ranges))
-        (-let (((r-start . r-end) bounds))
-          (push (cons start r-start) result)
-          (setq start r-end)))
+      (pcase-dolist (`(,r-start . ,r-end) (cdr ranges))
+        (push (cons start r-start) result)
+        (setq start r-end))
       (unless (eql start end)
         (push (cons start end) result))
       (nreverse result))))
