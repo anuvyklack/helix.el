@@ -92,6 +92,7 @@
   "y"   #'helix-yank
   "p"   #'helix-paste-after
   "P"   #'helix-paste-before
+  "R"   #'helix-replace-with-kill-ring
   "C-p" #'helix-yank-pop ;; yank-pop
   "C-n" #'helix-yank-undo-pop
   "J"   #'helix-join-line

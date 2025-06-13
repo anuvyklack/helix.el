@@ -518,6 +518,15 @@ If no selection — delete COUNT chars after point."
   (let (deactivate-mark)
     (yank)))
 
+;; R
+(defun helix-replace-with-kill-ring ()
+  "Replace selection content with yanked text from `kill-ring'."
+  (interactive)
+  (when (use-region-p)
+    (let (deactivate-mark)
+      (delete-region (region-beginning) (region-end))
+      (yank))))
+
 ;; C-p
 (defun helix-yank-pop (count)
   "Wrapper around `yank-pop'."
