@@ -279,12 +279,13 @@ and bind it to CURSOR."
              (not (eql point mark)))
     (if-let* ((region (overlay-get cursor 'fake-region)))
         (move-overlay region point mark)
-      (let ((region (make-overlay point mark nil nil t)))
-        (overlay-put region 'face 'helix-region-face)
-        (overlay-put region 'type 'fake-region)
-        (overlay-put region 'priority 99)
-        (overlay-put region 'id (overlay-get cursor 'id))
-        (overlay-put cursor 'fake-region region)))))
+      ;; else
+      (setq region (-doto (make-overlay point mark nil nil t)
+                     (overlay-put 'face 'helix-region-face)
+                     (overlay-put 'type 'fake-region)
+                     (overlay-put 'priority 99)
+                     (overlay-put 'id (overlay-get cursor 'id))))
+      (overlay-put cursor 'fake-region region))))
 
 (defun helix--delete-fake-cursor (cursor)
   "Delete CURSOR overlay."
@@ -297,16 +298,15 @@ and bind it to CURSOR."
 
 (defun helix--delete-region-overlay (cursor)
   "Remove the dependent region overlay for a given CURSOR overlay."
-  (when-let* ((region (overlay-get cursor 'fake-region)))
-    (delete-overlay region)))
+  (-some-> (overlay-get cursor 'fake-region)
+    (delete-overlay)))
 
 (defun helix--store-point-state (overlay point mark)
   "Store POINT, MARK and variables relevant to fake cursor into OVERLAY."
   (unless mark (setq mark point))
   (let ((pnt-marker (or (overlay-get overlay 'point)
-                        (let ((marker (make-marker)))
-                          (set-marker-insertion-type marker t)
-                          (overlay-put overlay 'point marker))))
+                        (overlay-put overlay 'point (-doto (make-marker)
+                                                      (set-marker-insertion-type t)))))
         (mrk-marker (or (overlay-get overlay 'mark)
                         (overlay-put overlay 'mark (make-marker)))))
     (set-marker pnt-marker point)
