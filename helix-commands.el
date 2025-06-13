@@ -1293,7 +1293,7 @@ Do not auto-detect word boundaries in the search pattern."
   (let ((pair '("<" . ">"))
         (limits (bounds-of-thing-at-point 'defun)))
     (when-let* ((bounds (helix-4-bounds-of-surrounded-at-point pair limits nil t)))
-      (pcase-let ((`(,_ ,l ,r ,_) bounds))
+      (-let (((_ l r _) bounds))
         (set-mark l)
         (goto-char r)))))
 
@@ -1303,7 +1303,7 @@ Do not auto-detect word boundaries in the search pattern."
   (let ((pair '("<" . ">"))
         (limits (bounds-of-thing-at-point 'defun)))
     (when-let* ((bounds (helix-4-bounds-of-surrounded-at-point pair limits nil t)))
-      (pcase-let ((`(,l ,_ ,_ ,r) bounds))
+      (-let (((l _ _ r) bounds))
         (set-mark l)
         (goto-char r)))))
 
@@ -1396,36 +1396,36 @@ If the region consist of full lines, insert delimiters on separate
 lines and reindent the region."
   (interactive)
   (when (use-region-p)
-    (pcase-let* ((`(,left . ,right) (helix-surround--read-char))
-                 (beg (region-beginning))
-                 (end (region-end))
-                 (dir (helix-region-direction))
-                 (lines? (helix-line-selected-p)))
+    (-let (((left . right) (helix-surround--read-char))
+           (beg (region-beginning))
+           (end (region-end))
+           (dir (helix-region-direction))
+           (lines? (helix-line-selected-p))
+           (deactivate-mark nil))
       (when lines?
         (setq left  (s-trim left)
               right (s-trim right)))
-      (let ((deactivate-mark)) ;; To not deactivate-mark after insertion
-        (goto-char end)
-        (when lines?
-          (helix-skip-whitespaces)
-          (newline-and-indent))
-        (insert right)
-        (goto-char beg)
-        (insert left)
-        (when lines?
-          (newline-and-indent)))
+      (goto-char end)
+      (when lines?
+        (helix-skip-whitespaces)
+        (newline-and-indent))
+      (insert right)
+      (goto-char beg)
+      (insert left)
+      (when lines?
+        (newline-and-indent))
       (let* ((new-beg (point))
              (new-end (+ end (- new-beg beg))))
         (helix-set-region new-beg new-end dir)
         (indent-region new-beg new-end)))
-    (helix-extend-selection -1)))
+    (setq helix--extend-selection nil)))
 
 ;; md
 (defun helix-surround-delete ()
   (interactive)
   (when-let* ((char (read-char "Delete pair: "))
               (bounds (helix-surround--get-4-bounds char)))
-    (pcase-let ((`(,left-beg ,left-end ,right-beg ,right-end) bounds))
+    (-let (((left-beg left-end right-beg right-end) bounds))
       (delete-region right-beg right-end)
       (delete-region left-beg left-end))))
 
@@ -1434,15 +1434,17 @@ lines and reindent the region."
   (interactive)
   (when-let* ((char (read-char "Delete pair: "))
               (bounds (helix-surround--get-4-bounds char)))
-    (pcase-let*
-        ((`(,left-beg ,left-end ,right-beg ,right-end) bounds)
-         (char (read-char "Insert pair: "))
-         (pair-or-fun (if-let ((spec (alist-get char helix-surround-alist)))
-                          (plist-get spec :insert)))
-         (`(,left . ,right) (cond ((and pair-or-fun (functionp pair-or-fun))
-                                   (funcall pair-or-fun))
-                                  (pair-or-fun)
-                                  (t (cons char char)))))
+    (-let* (((left-beg left-end right-beg right-end) bounds)
+            (char (read-char "Insert pair: "))
+            (pair-or-fun (-some-> (alist-get char helix-surround-alist)
+                           (plist-get :insert)))
+            ((left . right) (pcase pair-or-fun
+                              ((and (pred functionp) fun)
+                               (funcall fun))
+                              ((and pair (guard pair))
+                               pair)
+                              (_ (cons char char))))
+            (deactivate-mark nil))
       (save-mark-and-excursion
         (delete-region right-beg right-end)
         (goto-char right-beg)
@@ -1457,7 +1459,7 @@ lines and reindent the region."
                   last-command-event
                 (get last-command-event 'ascii-character))))
     (when-let* ((bounds (helix-surround--get-4-bounds char)))
-      (pcase-let ((`(,_ ,l ,r ,_) bounds))
+      (-let (((_ l r _) bounds))
         (set-mark l)
         (goto-char r)))))
 
@@ -1467,7 +1469,7 @@ lines and reindent the region."
                   last-command-event
                 (get last-command-event 'ascii-character))))
     (when-let* ((bounds (helix-surround--get-4-bounds char)))
-      (pcase-let ((`(,l ,_ ,_ ,r) bounds))
+      (-let (((l _ _ r) bounds))
         (set-mark l)
         (goto-char r)))))
 

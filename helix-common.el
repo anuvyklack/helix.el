@@ -282,7 +282,7 @@ What is sentence is defined by `forward-sentence-function'."
 enclosed in QUOTE-MARKs."
   (if-let* ((bounds (or (bounds-of-thing-at-point 'helix-comment)
                         (bounds-of-thing-at-point 'string))))
-      (pcase-let ((`(,l ,_ ,_ ,r) (helix-4-bounds-of-surrounded-at-point quote-mark bounds)))
+      (-let (((l _ _ r) (helix-4-bounds-of-surrounded-at-point quote-mark bounds)))
         (cons l r))
     (helix--bounds-of-quoted-at-point-ppss quote-mark)))
 
@@ -306,10 +306,10 @@ Return the list (LEFT-BEG LEFT-END RIGHT-LEFT RIGHT-END) with
 
 \(fn (LEFT . RIGHT) &optional SCOPE REGEXP? BALANCED?)"
   (save-excursion
-    (pcase-let* ((`(,left . ,right) pair)
-                 (balanced? (if (string-equal left right)
-                                nil
-                              balanced?)))
+    (-let* (((left . right) pair)
+            (balanced? (if (string-equal left right)
+                           nil
+                         balanced?)))
       (cond ((and balanced?
                   ;; Check if we can use Parse-Partial-Sexp Scanner
                   (and (length= left 1)
@@ -342,14 +342,14 @@ Return the cons cell (START . END) with positions before LEFT and
 after RIGHT.
 
 \(fn (LEFT . RIGHT))"
-  (pcase-let ((`(,left . ,right) pair))
+  (-let (((left . right) pair))
     (when (string-equal left right)
       (user-error "Left and right delimiters should not be equal"))
     (if-let* ((bounds (or (bounds-of-thing-at-point 'helix-comment)
                           (bounds-of-thing-at-point 'string)))
               ;; If inside comment or string use manual algorithm.
               (sexp-bounds (helix--4-bounds-of-surrounded-at-point-1 pair bounds nil t)))
-        (pcase-let ((`(,l ,_ ,_ ,r) sexp-bounds))
+        (-let (((l _ _ r) sexp-bounds))
           (cons l r))
       ;; Else if not or nothing have found — go out ...
       (when bounds (goto-char (car bounds)))
@@ -387,27 +387,27 @@ after RIGHT.
 (defun helix-4-bounds-of-sexp-at-point (pair)
   (if-let* ((bounds (helix-bounds-of-sexp-at-point pair)))
       (save-excursion
-        (pcase-let* ((`(,left-beg . ,right-end) bounds)
-                     (left-end (progn
-                                 (goto-char (1+ left-beg))
-                                 (skip-chars-forward " \t\n")
-                                 (point)))
-                     (right-beg (progn
-                                  (goto-char (1- right-end))
-                                  (skip-chars-backward " \t\n")
-                                  (point))))
+        (-let* (((left-beg . right-end) bounds)
+                (left-end (progn
+                            (goto-char (1+ left-beg))
+                            (skip-chars-forward " \t\n")
+                            (point)))
+                (right-beg (progn
+                             (goto-char (1- right-end))
+                             (skip-chars-backward " \t\n")
+                             (point))))
           (list left-beg left-end right-beg right-end)))))
 
 (defun helix-bounds-of-inner-part-of-sexp-at-point (pair)
   (if-let* ((bounds (helix-4-bounds-of-sexp-at-point pair)))
-      (pcase-let* ((`(,_ ,l ,r ,_) bounds))
+      (-let (((_ l r _) bounds))
         (cons l r))))
 
 (defun helix--4-bounds-of-surrounded-at-point-1 (pair &optional scope regexp? balanced?)
   "The internal function for `helix-4-bounds-of-surrounded-at-point'."
   (save-excursion
-    (pcase-let* ((`(,left . ,right) pair)
-                 (left-not-equal-right? (not (string-equal left right))))
+    (-let* (((left . right) pair)
+            (left-not-equal-right? (not (string-equal left right))))
       (cond (;; point is before LEFT
              (and left-not-equal-right?
                   (helix-looking-at left 1 regexp?))
