@@ -148,8 +148,8 @@ IDs' are used to keep track of cursors for undo."
 
 (defvar helix--max-cursors-original nil
   "This variable maintains the original maximum number of cursors.
-When `helix-create-fake-cursor' is called and `helix-max-cursors' is
-overridden, this value serves as a backup so that `helix-max-cursors'
+When `helix-create-fake-cursor' is called and `helix-max-cursors-number' is
+overridden, this value serves as a backup so that `helix-max-cursors-number'
 can take on a new value. When `helix--delete-fake-cursors' is called,
 the values are reset.")
 
@@ -161,12 +161,12 @@ The ID, if specified, will be assigned to the new cursor.
 Otherwise, the new unique ID will be assigned.
 The current state is stored in the overlay for later retrieval."
   (unless helix--max-cursors-original
-    (setq helix--max-cursors-original helix-max-cursors))
-  (when-let* ((helix-max-cursors)
+    (setq helix--max-cursors-original helix-max-cursors-number))
+  (when-let* ((helix-max-cursors-number)
               (num (helix-number-of-cursors))
-              ((<= helix-max-cursors num)))
+              ((<= helix-max-cursors-number num)))
     (if (yes-or-no-p (format "%d active cursors. Continue? " num))
-        (setq helix-max-cursors (read-number "Enter a new, temporary maximum: "))
+        (setq helix-max-cursors-number (read-number "Enter a new, temporary maximum: "))
       (helix--delete-fake-cursors)
       (error "Aborted: too many cursors")))
   (prog1 (helix--create-fake-cursor-1 point mark id)
@@ -190,7 +190,7 @@ The current state is stored in the overlay for later retrieval."
 It is likely that you need `helix-remove-all-fake-cursors' function,
 not this one."
   (when helix--max-cursors-original
-    (setq helix-max-cursors helix--max-cursors-original
+    (setq helix-max-cursors-number helix--max-cursors-original
           helix--max-cursors-original nil))
   (mapc #'helix--delete-fake-cursor (helix-all-fake-cursors)))
 
