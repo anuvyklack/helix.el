@@ -133,12 +133,13 @@ cursors points and regions after undo/redo step.
 
 CURSORS-POSITIONS is an alist with cons cells (ID . (POINT MARK))
 returned by `helix-cursors-positions' function."
-  ;; First element of the `cursors-positions' list is the real cursor with ID 0.
-  (-let (((_id point mark) (car cursors-positions)))
-    (goto-char point)
-    (when mark (set-mark mark)))
-  (--each (cdr cursors-positions)
-    (apply #'helix-set-fake-cursor it))
+  (maphash #'(lambda (id cursor)
+               (unless (assoc id cursors-positions #'eql)
+                 (helix--delete-fake-cursor cursor)))
+           helix--cursors-table)
+  (dolist (id-point-mark cursors-positions)
+    (apply #'helix-set-cursor id-point-mark))
+  (helix-maybe-disable-multiple-cursors-mode)
   (push `(apply helix--undo-step-start ,cursors-positions)
         buffer-undo-list))
 
@@ -212,25 +213,27 @@ Assign the ID to the new cursor, if specified.
 The current state is stored in the overlay for later retrieval."
   (helix-create-fake-cursor (point) (if (use-region-p) (mark)) id))
 
-(defun helix-set-fake-cursor (cursor-or-id point &optional mark)
-  "Move or create fake cursor at POINT position.
+(defun helix-set-cursor (cursor-or-id point &optional mark)
+  "Move or create cursor at POINT position.
 
 CURSOR-OR-ID can be either:
 - fake cursor overlay;
 - fake cursor ID;
-- nil — new fake cursor with unique ID will be created.
+- nil or 0 — real point and mark will be set.
 
-If MARK is passed a fake active region overlay between POINT and MARK
-will be set."
-  (let (id cursor)
-    (cond ((numberp cursor-or-id)
-           (setq id cursor-or-id
-                 cursor (gethash id helix--cursors-table)))
-          ((helix-fake-cursor-p cursor-or-id)
-           (setq cursor cursor-or-id)))
-    (if cursor
-        (helix-move-fake-cursor cursor point mark)
-      (helix-create-fake-cursor point mark id))))
+If MARK is passed, for real cursor active region will be set,
+for a fake cursor overlay looking like active region between
+POINT and MARK will be set."
+  (pcase cursor-or-id
+    ((or 'nil 0)
+     (goto-char point)
+     (when mark (set-mark mark)))
+    ((and (pred numberp) id)
+     (if-let* ((cursor (gethash id helix--cursors-table)))
+         (helix-move-fake-cursor cursor point mark)
+       (helix-create-fake-cursor point mark id)))
+    ((and (pred helix-fake-cursor-p) cursor)
+     (helix-move-fake-cursor cursor point mark))))
 
 (defun helix-move-fake-cursor (cursor point &optional mark)
   "Set fake CURSOR to new POINT and MARK and update its state."
@@ -367,7 +370,7 @@ for others."
 (defun helix-restore-fake-cursor-in-buffer (cursor)
   (let ((point (overlay-get cursor 'point))
         (mark  (overlay-get cursor 'mark)))
-    (helix-set-fake-cursor cursor point mark)))
+    (helix-set-cursor cursor point mark)))
 
 ;;; Access fake cursors
 

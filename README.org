@@ -27,10 +27,6 @@ not implemented.
 
 - Undo/redo that plays well with multiple cursors.
 
-  Currently there is only one minor drawback: when you go back in the history
-  cursors are only restored, but never deleted. You need to delete them manually
-  with =,= when you no more need them.
-
 ** Differences from Helix text editor
 
 - In Emacs the cursor ("point" in Emacs terms) is located between two characters
