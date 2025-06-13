@@ -1,0 +1,225 @@
+#+title: Helix Keybindings
+
+* Keybindings
+** Motions
+
+- =h=, =j=, =k=, =l= :: Arrows.
+
+- =w=, =W= :: Move to the next word or WORD start.
+
+- =b=, =B= :: Move to the previous word or WORD start.
+
+- =e=, =E= :: Move to the next word or WORD start.
+
+- =f=, =F= :: Find next/previous char.
+  While hints are active use =n= / =N= to repeat motion.
+
+- =t=, =T= :: Till next/previous char.
+  While hints are active use =n= / =N= to repeat motion.
+
+- =gs=, =gh=, =gl= ::
+
+- =gg=, =G= :: Go to the first/last line of the buffer.
+
+- =]p=, =[p= or =}=, ={= :: Move to the end/start of the paragraph.
+
+*** Easymotion
+
+- =gw=, =gb= ::
+  Place hints at all words forward/backward and select the chosen one.
+
+- =gW=, =gB= ::
+  Place hints at all WORDS forward/backward and select the chosen one.
+
+- =gj=, =gk= :: Go to line down/up.
+
+** Changes
+
+- =i=, =a= :: insert/append: Switch to Insert state before/after selection.
+
+- =I=, =A= :: Insert/Append: Switch to Insert state at the start/end of the line.
+
+- =o=, =O= ::
+  Open: add new line bellow/above the current line and switch to Insert state.
+
+- =d= :: Delete selection
+
+- =c= :: Change: delete selection and switch to Insert state.
+
+- =u=, =U= :: Undo/redo.
+
+- =y= :: Copy selections into ~kill-ring~.
+
+- =p=, =P= :: Paste after/before selection.
+
+- =C-p=, =C-n= ::
+  Replace just-pasted text with next/previous element from ~kill-ring~.
+  This is wrappers around Emacs built-in ~yank-pop~ command.
+
+- =R= ::
+  Replace selection with yanked text from ~kill-ring~. You can use =C-p= / =C-n=
+  right after this command to choose next/previous element from ~kill-ring~.
+
+- =~= :: Invert case of characters.
+
+- =`=, =M-`= or =gu=, =gU= :: Convert selection to lower/upper case.
+
+- =] SPC=, =[ SPC= :: Add empty line bellow/above current line.
+
+** Multiple cursors
+
+- =M-right mouse= :: Create secondary cursor on click.
+
+- =C=, =M-c= :: Copy selection (cursor) down/up.
+
+- =s= ::
+  Interactively enter regexp and create cursors for all matches withing active
+  selections.
+
+- =S= ::
+  Interactively enter regexp and create cursors for complements to all matches
+  to regexp withing active selections.
+
+- =M-s= :: Split selections on newlines.
+
+- =K=, =M-K= :: Keep/remove selections matching to regexp.
+
+- =,= :: Remove all secondary cursors.
+
+- =M-,= :: Remove main cursor.
+
+- =&= :: Align selections.
+
+- =M-minus= :: Merge all selections into single one.
+
+- =(=, =)= :: Rotate main selection backward/forward.
+
+- =M-(=, =M-)= :: Rotate selections content backward/forward.
+
+** Selections
+
+- =v= :: Toggle extend selection.
+
+- =x=, =X= ::
+  Select current visual (if ~visual-line-mode~ is active) or logical line on first
+  invocation. On subsequent calls extend and contract linewise selection down
+  when cursor is at the end of the selection, or up when cursor is at the
+  beginning of the selection.
+
+- =%= :: Select whole buffer.
+
+- =;= :: Collapse selection onto a single cursor.
+
+- =M-;= or =go= :: Exchange point and mark.
+
+- =_= :: Trim whitespaces and newlines from the both ends of selections.
+
+- =J= :: Join lines inside selection.
+
+*** Mark
+Here the word "mark" is used as synonym to "select", to form the mnemonic rule
+for =m= prefix. Also, this is in line with Emacs tradition which has commands like
+~mark-word~ which use the word "mark" in this particular sense.
+
+- =mw=, =mW= or =miw=, =miW= :: Mark inner word/WORD.
+
+- =maw=, =maW= :: Mark around word/WORD.
+
+- =m.= or =mis= :: Mark inner sentence.
+
+- =mas= :: Mark around sentence.
+
+- =mp= or =mip= :: Mark inner paragraph.
+
+- =map= :: Mark around paragraph.
+
+- =m"=, =m'=, =m`= or =mi"=, =mi'=, =mi`= ::
+  Mark inside ="= / ='= / =`= quotes.
+
+- =ma"=, =ma'=, =ma`= ::
+  Mark around ="= / ='= / =`= quotes.
+
+- =m(=, =m)= or =mi(=, =mi)= :: Mark inside =(= =)=.
+- =ma(=, =ma)= :: Mark around =(= =)=.
+
+- =m[=, =m]= or =mi[=, =mi]= :: Mark inside =[= =]=.
+- =ma[=, =ma]= :: Mark around =[= =]=.
+
+- =m{=, =m}= or =mi{=, =mi}= :: Mark inside ={= =}=.
+- =ma{=, =ma}= :: Mark around ={= =}=.
+
+- =m<=, =m>= or =mi<=, =mi>= :: Mark inside =<= =>=.
+- =ma<=, =ma>= :: Mark around =<= =>=.
+
+- =mi= + =!=, =@=, =#=, =$=, =%=, =^=, =&=, =*=, =~=, ~=~, =_= ::
+  Mark the inner part of the region enclosed in this characters.
+
+- =ma= + =!=, =@=, =#=, =$=, =%=, =^=, =&=, =*=, =~=, ~=~, =_= ::
+  Mark the whole region enclosed in this characters.
+
+** Surround
+
+- =mm= :: Go to matching bracket.
+- =ms= :: Surrond selection.
+- =md= :: Delete surround.
+- =mc= or =mr= :: Change (replace) surround.
+
+** Search
+
+- =/=, =?= :: Search for regex pattern forward/backward.
+
+- =*= ::
+  Construct regexp from all current selections and store it in ~/~ register.
+  Auto-detect word boundaries at the beginning and end of the search
+  patterns.
+
+- =M-*= ::
+  Construct regexp from all current selections and store it in ~/~ register.
+
+- =n=, =N= :: Select next/previous match to the regexp from ~/~ register.
+
+** Scrolling
+
+- =M-u= ::
+  Emacs universal argument. =C-u= is occupied for scrolling, and =M-u= by default
+  is bind to ~upcase-word~, for which Helix has itself version on =M-`= or =gU=.
+
+- =C-d=, =C-u= ::
+  Scroll down/up half of the page. If a numeric prefix is provided, scroll
+  this amount of lines and remember it for further use. To reset it use 0
+  prefix. (like in Vim)
+
+- =C-f=, =C-b= :: Scroll down/up full page.
+
+- =C-e=, =C-y= :: Scroll down/up COUNT lines.
+
+- =zz= ::
+  Scrolls current line to the upper part of the screen, 20% below the top border.
+  If you want Vim default behavior, i.e. scroll to the center, use following
+  snippet in your config:
+  #+begin_src emacs-lisp
+  (helix-keymap-set nil 'normal
+    "z z" #'helix-smooth-scroll-line-to-center)
+  #+end_src
+
+- =zt=, =zb= :: Scroll current line to the top/bottom border of the screen.
+
+** Windows
+
+- =C-w s=, =C-w v= :: Split window horizontally/vertically.
+
+- =C-w d=, =C-w c= :: Delete current window or tab.
+
+- =C-w h=, =C-w j=, =C-w k=, =C-w l= ::
+  Go to the window to the left/down/up/right.
+
+- =C-w C-h=, =C-w C-j=, =C-w C-k=, =C-w C-l= ::
+  Go to the window to the left/down/up/right.
+
+- =C-w H=, =C-w J=, =C-w K=, =C-w L= ::
+  Move window to the left/down/up/right.
+
+** Other
+
+- =gf= :: ~find-file-at-point~
+- =gx= :: ~browse-url-at-point~

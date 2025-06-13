@@ -1,18 +1,88 @@
-#+title: Hell (Helix Emulation Layer)
+#+title: Helix Emulation Layer
 
-[[https://helix-editor.com/][Helix Editor]] emulation layer. The name "Hell" was choosen to rhyme with [[https://github.com/emacs-evil/evil][Evil]].
+[[https://helix-editor.com/][Helix Editor]] emulation layer. It also can be called "Hell" (Helix Emulation Layer)
+to continue the tradition started by [[https://github.com/emacs-evil/evil][Evil]].
 
-* Differences from Helix text editor
+To my knowledge the originator of multiple cursors based modal editing was
+[[https://kakoune.org/][Kakoune]]. Kakoune and Helix has different views on what functionality should be
+included into the core and what should be outsourced, but in terms of emulating,
+the main difference between them is how they handle selections expanding:
+Kakoune use =shift= + motions, while Helix has separate state on =v= key.  Since I
+originally started working with Vim, I prefer the Helix =v= key more, so the
+choice was made in favor of Helix, but credit where credit's due to Kakoune.
 
-- =gh= / =gl= make a selection from current position till the beginning/end of the
-  line. This is done for convenience, since all other motions make selections.
-  In Helix they only move cursor without selection.
+This package is not one-to-one emulation: some commands are implemented in
+slightly different way (improved from the authors point of view), and some are
+not implemented.
+
+** Key features
+
+- Multiple cursors based modal editing workflow inside Emacs!
+
+- Smooth scrolling out of the box.
+
+- God-mode and Meow Keypad like functionality is built-in.
+
+- PCRE regexps by default (thanks to [[https://github.com/joddie/pcre2el][pcre2el]]).
+
+- Undo/redo that plays well with multiple cursors.
+
+  Currently there is only one minor drawback: when you go back in the history
+  cursors are only restored, but never deleted. You need to delete them manually
+  with =,= when you no more need them.
+
+** Differences from Helix text editor
+
+- In Emacs the cursor ("point" in Emacs terms) is located between two characters
+  rather than on a character like in Helix or Vim. I decided to keep this
+  behavior, instead of emulating original one, as Evil does, because the primary
+  object of interaction is a selection, not the cursor itself.
+
+- =x= and =X= commands are reworked. They are expand and contract line-wise
+  selection down when cursor is at the end of the selection, or up when cursor
+  is at the beginning of the selection.
 
 - Inner objects are available directly under =m= prefix together with =mi= to reduce
   keystrokes: =mw= is the same as =miw= — select word.
 
-- Match (or mark) commands accept numeric arguments:
+- Mark commands accept numeric arguments:
   =m2ip= or =2mip= — mark 2 paragraphs.
 
-- Right after search backward with =?= command, =n= and =N= are swaped: =n= will
-  repeat search backward, =N= — forward, like in Vim.
+- =gh= / =gl= make a selection from current position till the beginning/end of the
+  line. This is done for convenience, since all other motions make selections.
+  In Helix =gh= / =gl= only move cursor without selection.
+
+- 6 easymotion commands are provided:
+  - =gw= / =gb= — chose and mark word forward/backward.
+  - =gW= / =gB= — chose and mark WORD forward/backward.
+  - =gj= / =gk= — go to line down/up.
+  Helix provides only =gw= to place 2-char hints at the beginning of each word.
+
+- =gg= / =G= to go to the first/last line of the buffer like in Vim.
+  Helix uses =gg= / =ge=.
+
+- =f=, =F=, =t=, =T= commands to move to char are inhanced: they show hints and while
+  hints are active, motion can be repeated with =n= / =N= keys.
+
+- When you search backward with =?= command, while hints are acitve =n= and =N= keys
+  are swaped: =n= will repeat search backward and =N= — forward, like in Vim.
+
+- Scrolling keybindings are taken from Vim instead of Helix.
+
+** Commands that are not implemented
+
+- =<= / =>= — indent
+- =.= — repeat
+- =r= — replace
+- =C-i= / =C-o=, =C-s= — jumplist
+- =M-u=, =M-U= — traverse undo tree
+- =q=, =Q= — record keyboard macros
+
+** Acknowledgments
+
+Helix depends on [[https://github.com/magnars/dash.el][dash.el]], [[https://github.com/joddie/pcre2el][pcre2el]] and [[https://github.com/redguardtoo/evil-matchit][evil-matchit]] wonderfull packages,
+and is heavily inspired by: [[https://github.com/emacs-evil/evil][evil]], [[https://github.com/magnars/multiple-cursors.el][multiple-cursors.el]], [[https://github.com/meow-edit/meow][meow]], [[https://github.com/cute-jumper/embrace.el][emmbace.el]],
+[[https://github.com/mkleehammer/surround][surround]], [[https://github.com/aome510/kak.el][kak.el]].
+
+You are welcome to go and give them all a star!
+
