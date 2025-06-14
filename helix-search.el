@@ -366,13 +366,13 @@ If INVERT is non-nil — remove selections that match regexp."
                              (-map #'not flags)
                            flags)))
                 ((-contains? flags t)))
-          (--each (-zip-pair cursors flags)
-            (-let (((cursor . flag) it))
-              (cond (flag
-                     (helix--set-cursor-overlay cursor (overlay-get cursor 'point))
-                     (overlay-put (overlay-get cursor 'fake-region)
-                                  'face 'helix-region-face))
-                    (t (helix--delete-fake-cursor cursor)))))
+          (cl-loop for cursor in cursors
+                   for flag in flags
+                   do (cond (flag
+                             (helix--set-cursor-overlay cursor (overlay-get cursor 'point))
+                             (overlay-put (overlay-get cursor 'fake-region)
+                                          'face 'helix-region-face))
+                            (t (helix--delete-fake-cursor cursor))))
         ;; Else restore all cursors
         (dolist (cursor cursors)
           (helix--set-cursor-overlay cursor (overlay-get cursor 'point))
@@ -408,9 +408,9 @@ If INVERT is non-nil — remove selections that match regexp."
                          (-map #'not flags)
                        flags)))
             ((-contains? flags t)))
-      (--each (-zip-pair regions-overlays flags)
-        (-let (((overlay . flag) it))
-          (overlay-put overlay 'face (if flag 'helix-region-face))))
+      (cl-loop for overlay in regions-overlays
+               for flag in flags
+               do (overlay-put overlay 'face (if flag 'helix-region-face)))
     ;; Else highlight all regions
     (dolist (ov regions-overlays)
       (overlay-put ov 'face 'helix-region-face))))
