@@ -286,9 +286,9 @@ that multiple keybindings can be set at once.
 KEY, DEFINITION arguments are like those of `keymap-set'.
 For example:
 
-   (helix-keymap-set text-mode-map 'normal
-      \"f\" #'foo
-      \"b\" #'bar)"
+   (helix-keymap-set text-mode-map \\='normal
+      \"f\" #\\='foo
+      \"b\" #\\='bar)"
   (declare (indent defun))
   (when (and state (not (helix-state-p state)))
     (user-error "Helix state `%s' not known to be defined" state))
