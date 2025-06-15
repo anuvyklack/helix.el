@@ -26,7 +26,7 @@
   :type 'integer
   :group 'helix)
 
-(defcustom helix-mc-match-cursor-style nil
+(defcustom helix-match-fake-cursor-style nil
   "If non-nil, attempt to match the cursor style that the user
 has selected. Namely, use vertical bars the user has configured
 Emacs to use that cursor.
@@ -35,35 +35,49 @@ If nil, just use standard rectangle cursors for all fake cursors.
 
 In some modes/themes, the bar fake cursors are either not
 rendered or shift text."
-  :type '(boolean)
+  :type 'boolean
   :group 'helix)
 
-(defface helix-fake-cursor
+(defcustom helix-normal-state-main-cursor
+  `(bar ,(face-attribute 'cursor :background))
+  "Cursor apperance when Helix is in Norman state.
+Can be a cursor type as per `cursor-type', a color string as passed to
+`set-cursor-color', a zero-argument function for changing the cursor, or
+a list of the above."
+  :type '(set symbol (cons symbol symbol) string function)
+  :group 'helix)
+
+(defcustom helix-insert-state-main-cursor
+  `(box "#458588")
+  "Cursor apperance when Helix is in Insert state.
+Can be a cursor type as per `cursor-type', a color string as passed to
+`set-cursor-color', a zero-argument function for changing the cursor, or
+a list of the above."
+  :type '(set symbol (cons symbol symbol) string function)
+  :group 'helix)
+
+(defface helix-normal-state-fake-cursor
   '((t (:inverse-video t)))
-  "The face used for fake cursors."
+  "The face used for fake cursors when Helix is in Normal state."
   :group 'helix)
 
-(defface helix-fake-cursor-extend-selection
+(defface helix-insert-state-fake-cursor
+  '((t (:foreground "white"
+        :background "SkyBlue3")))
+  "The face used for fake cursors when Helix is in Insert state."
+  :group 'helix)
+
+(defface helix-extend-selection-cursor
   '((t (:background "orange")))
-  "The face used for fake cursors when extending selection is active."
+  "The face used for cursors when extending selection is active."
   :group 'helix)
 
-;; (defface helix-fake-cursor-bar
-;;   `((t (:height 1 :background ,(face-attribute 'cursor :background))))
-;;   "The face used for fake cursors if the cursor-type is bar."
-;;   :group 'helix)
-
-;; (defface helix-search '((t :inherit isearch))
-;;   "Face for interactive search."
-;;   :group 'helix)
+(defface helix-region-face '((t :inherit region))
+  "The face used for fake regions."
+  :group 'helix)
 
 (defface helix-lazy-highlight '((t :inherit lazy-highlight))
   "Face for highlighting all matches in interactive search."
-  :group 'helix)
-
-(defface helix-region-face
-  '((t :inherit region))
-  "The face used for fake regions."
   :group 'helix)
 
 (defcustom helix-mc-mode-line
@@ -350,6 +364,7 @@ cursors editing.")
 
 (defvar helix-default-commands-to-run-for-all-cursors
   '(keypad                         ;; SPC
+    helix-normal-state-escape      ;; ESC in normal state
     helix-backward-char            ;; h
     helix-next-line                ;; j
     helix-previous-line            ;; k
@@ -516,7 +531,6 @@ cursors editing.")
     helix-remove-all-fake-cursors            ;; ,
     helix-remove-main-cursor                 ;; M-,
     helix-merge-selections                   ;; M-minus
-    helix-normal-state-escape                ;; ESC in normal state
     helix-normal-state                       ;; ESC
     helix-goto-first-line                    ;; gg
     helix-goto-last-line                     ;; G
@@ -688,9 +702,8 @@ will be invoked.")
                                 helix-find-char-backward  ;; F
                                 helix-till-char-forward   ;; t
                                 helix-till-char-backward) ;; T
-
   "List of command, after which `helix-merge-overlapping-regions'
-will be invoked if `helix--extend-selection' is t.")
+will be invoked if extend-selection is enabled.")
 
 (defvar helix-mc--list-file-loaded nil
   "Non-nil when `helix-mc-list-file' file has already been loaded.")

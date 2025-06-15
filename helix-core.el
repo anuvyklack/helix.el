@@ -311,15 +311,15 @@ For example:
 (defun helix-update-cursor ()
   "Update the cursor for current Helix STATE in current buffer."
   (when (eq (window-buffer) (current-buffer))
-    (let* ((state (or helix--state 'normal))
-           (cursor (helix-state-property state :cursor)))
-      (helix-set-cursor cursor))))
+    (let ((state (or helix--state 'normal)))
+      (helix-set-cursor-type-and-color
+       (helix-state-property state :cursor)))))
 
-(defun helix-set-cursor (specs)
+(defun helix-set-cursor-type-and-color (specs)
   "Change the cursor's apperance according to SPECS.
-SPECS may be a cursor type as per `cursor-type', a color
-string as passed to `set-cursor-color', a zero-argument
-function for changing the cursor, or a list of the above."
+SPECS may be a cursor type as per `cursor-type', a color string as passed
+to `set-cursor-color', a zero-argument function for changing the cursor,
+or a list of the above."
   (unless (and (not (functionp specs))
                (proper-list-p specs))
     (setq specs (list specs)))
