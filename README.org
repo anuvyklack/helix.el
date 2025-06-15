@@ -3,25 +3,24 @@
 [[https://helix-editor.com/][Helix Editor]] emulation layer. It also can be called "Hell" (Helix Emulation Layer)
 to continue the tradition started by [[https://github.com/emacs-evil/evil][Evil]].
 
-To my knowledge the originator of multiple cursors based modal editing was
-[[https://kakoune.org/][Kakoune]]. Kakoune and Helix has different views on what functionality should be
-included into the core and what should be outsourced, but in terms of emulating,
-the main difference between them is how they handle selections expanding:
-Kakoune use =shift= + motions, while Helix has separate state on =v= key.  Since I
-originally started working with Vim, I prefer the Helix =v= key more, so the
-choice was made in favor of Helix, but credit where credit's due to Kakoune.
+The main difference between Kakoune and Helix, in terms of emulating, is how
+they handle expanding selections: Kakoune use =shift= + motions, while Helix has
+separate state on =v= key.  Since I originally started from Vim, I prefer the
+Helix =v= key more, so the choice was made in favor of Helix, but credit where
+credit's due to Kakoune.
 
 This package is not one-to-one emulation: some commands are implemented in
-slightly different way (improved from the authors point of view), and some are
-not implemented.
+slightly different way (improved from the author's point of view), and some,
+like keyboard macros, registers and jumplist are already has their alternatives
+in Emacs.
 
 ** Key features
 
-- Multiple cursors based modal editing workflow inside Emacs!
+- Multiple cursors based modal editing inside Emacs!
 
 - Smooth scrolling out of the box.
 
-- God-mode and Meow Keypad like functionality is built-in.
+- God-mode or Meow Keypad like functionality is built-in.
 
 - PCRE regexps by default (thanks to [[https://github.com/joddie/pcre2el][pcre2el]]).
 
@@ -32,7 +31,7 @@ not implemented.
 - In Emacs the cursor ("point" in Emacs terms) is located between two characters
   rather than on a character like in Helix or Vim. I decided to keep this
   behavior, instead of emulating original one, as Evil does, because the primary
-  object of interaction is a selection, not the cursor itself.
+  object of interaction in Helix approach is a selection, not the cursor itself.
 
 - =x= and =X= commands are reworked. They are expand and contract line-wise
   selection down when cursor is at the end of the selection, or up when cursor
@@ -42,11 +41,11 @@ not implemented.
   keystrokes: =mw= is the same as =miw= — select word.
 
 - Mark commands accept numeric arguments:
-  =m2ip= or =2mip= — mark 2 paragraphs.
+  =m2ip= or =2mip= — select 2 paragraphs.
 
 - =gh= / =gl= make a selection from current position till the beginning/end of the
   line. This is done for convenience, since all other motions make selections.
-  In Helix =gh= / =gl= only move cursor without selection.
+  In Helix =gh= / =gl= only move cursor without creating selection.
 
 - 6 easymotion commands are provided:
   - =gw= / =gb= — chose and mark word forward/backward.
@@ -57,8 +56,8 @@ not implemented.
 - =gg= / =G= to go to the first/last line of the buffer like in Vim.
   Helix uses =gg= / =ge=.
 
-- =f=, =F=, =t=, =T= commands to move to char are inhanced: they show hints and while
-  hints are active, motion can be repeated with =n= / =N= keys.
+- =f=, =F=, =t=, =T= commands to move to char are inhanced: they show hints for targets,
+  and while hints are active, they can be repeated with =n= / =N= keys.
 
 - When you search backward with =?= command, while hints are acitve =n= and =N= keys
   are swaped: =n= will repeat search backward and =N= — forward, like in Vim.
@@ -67,8 +66,8 @@ not implemented.
 
 ** Commands that are not implemented
 
-- =<= / =>= — indent
-- =.= — repeat
+- =<= / =>= (indent ) — On their way.
+- =.= (repeat) — Need to decide what it should repeat.
 - =r= — replace
 - =C-i= / =C-o=, =C-s= — jumplist
 - =M-u=, =M-U= — traverse undo tree
@@ -76,9 +75,32 @@ not implemented.
 
 ** Acknowledgments
 
-Helix depends on [[https://github.com/magnars/dash.el][dash.el]], [[https://github.com/joddie/pcre2el][pcre2el]] and [[https://github.com/redguardtoo/evil-matchit][evil-matchit]] wonderfull packages,
-and is heavily inspired by: [[https://github.com/emacs-evil/evil][evil]], [[https://github.com/magnars/multiple-cursors.el][multiple-cursors.el]], [[https://github.com/meow-edit/meow][meow]], [[https://github.com/cute-jumper/embrace.el][emmbace.el]],
+Helix depends on [[https://github.com/magnars/dash.el][dash.el]], [[https://github.com/joddie/pcre2el][pcre2el]], [[https://github.com/abo-abo/avy][avy]] and [[https://github.com/redguardtoo/evil-matchit][evil-matchit]] wonderful packages.
+
+Helix is heavily inspired by: [[https://github.com/emacs-evil/evil][evil]], [[https://github.com/magnars/multiple-cursors.el][multiple-cursors.el]], [[https://github.com/meow-edit/meow][meow]], [[https://github.com/cute-jumper/embrace.el][emmbace.el]],
 [[https://github.com/mkleehammer/surround][surround]], [[https://github.com/aome510/kak.el][kak.el]].
 
 You are welcome to go and give them all a star!
 
+** Contributing
+
+- *Code review*
+
+  It will be greate if some experienced Elisp developer will review the source
+  code.
+
+- *Tests*
+
+  Currently, this package is tested by personal day-to-day use, but it is not
+  the way. There's a branch with some very initial developments.
+
+- *Share it*
+
+  A quick post about Helix on your blog or social network could help bring new
+  users to Emacs, which would be great!
+
+- *Cool logo*
+
+  If you'd like, you can create a cool logo — that would be awesome!
+
+- *You can support the development with donation*

@@ -320,7 +320,12 @@
 
 ;;; Insert state
 
-(helix-keymap-set nil 'insert "<escape>" #'helix-normal-state)
+(helix-keymap-set nil 'insert
+  "<escape>" #'helix-normal-state
+  "<left>"   #'helix-backward-char
+  "<down>"   #'helix-next-line
+  "<up>"     #'helix-previous-line
+  "<right>"  #'helix-forward-char)
 
 ;;; Motion state
 

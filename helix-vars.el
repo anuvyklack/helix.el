@@ -58,12 +58,16 @@ a list of the above."
 
 (defface helix-normal-state-fake-cursor
   '((t (:inverse-video t)))
+  ;; '((t (:foreground "white"
+  ;;       :background "gray55")))
   "The face used for fake cursors when Helix is in Normal state."
   :group 'helix)
 
 (defface helix-insert-state-fake-cursor
   '((t (:foreground "white"
-        :background "SkyBlue3")))
+        :background "SkyBlue3"
+        ;; :background "#458588"
+        )))
   "The face used for fake cursors when Helix is in Insert state."
   :group 'helix)
 
@@ -655,12 +659,12 @@ cursors editing.")
   "Default set of commands to execute only once while multiple cursors are
 active.")
 
-(defvar helix-fake-cursor-specific-vars '(kill-ring
-                                          kill-ring-yank-pointer
-                                          helix--extend-selection
+(defvar helix-fake-cursor-specific-vars '(helix--extend-selection
                                           transient-mark-mode
                                           mark-ring
                                           mark-active
+                                          kill-ring
+                                          kill-ring-yank-pointer
                                           yank-undo-function
                                           temporary-goal-column
                                           dabbrev--abbrev-char-regexp
