@@ -690,10 +690,11 @@ Select visual lines when `visual-line-mode' is on."
 
 ;; s
 (defun helix-select-regex (&optional invert)
-  "Interactively enter regexp and create cursors for all matches withing
-active selections.
+  "Create new selections for all matches to the regexp entered withing current
+selections.
 
-If INVERT is non-nil — select complements to regions that match to regexp."
+If INVERT is non-nil — create new selections for all regions that NOT match to
+entered regexp withing current selections."
   (interactive)
   (cond (helix-multiple-cursors-mode
          (let* ((real-cursor (helix--create-fake-cursor-1 (point) (mark t) 0))
@@ -720,13 +721,13 @@ If INVERT is non-nil — select complements to regions that match to regexp."
 
 ;; S
 (defun helix-split-region ()
-  "Interactively enter regexp and create cursors for complements to
-all regions that match to regexp withing active selections."
+  "Split each selection according to the regexp entered."
   (interactive)
   (helix-select-regex t))
 
 ;; M-s
 (defun helix-split-region-on-newline ()
+  "Split selections on line boundaries."
   (interactive)
   (let (any?)
     (helix-with-each-cursor
@@ -741,13 +742,13 @@ all regions that match to regexp withing active selections."
 
 ;; K
 (defun helix-keep-selections ()
-  "Keep selections matching the regexp."
+  "Keep selections that match to the regexp entered."
   (interactive)
   (helix-filter-selections))
 
 ;; M-K
 (defun helix-remove-selections ()
-  "Remove selections matching the regexp."
+  "Remove selections that match to the regexp entered."
   (interactive)
   (helix-filter-selections t))
 
@@ -797,8 +798,7 @@ all regions that match to regexp withing active selections."
 
 ;; C
 (defun helix-copy-selection (count)
-  "Copy point and region COUNT times down if COUNT is positive,
-of up if negative."
+  "Copy selections COUNT times down if COUNT is positive, or up if negative."
   (interactive "p")
   (helix-with-each-cursor
     (helix-motion-loop (dir count)
@@ -852,7 +852,7 @@ of up if negative."
           (-setq (mark . point) bounds))
         (if-let* ((cursor (helix-fake-cursor-at point))
                   ((eql mark (overlay-get cursor 'mark))))
-            nil ;; Do nothing, since fake cursor is already at target position.
+            nil ;; Do nothing — fake cursor is already at desired position.
           ;; else
           (helix-create-fake-cursor-from-point)
           (goto-char point)
@@ -860,8 +860,8 @@ of up if negative."
 
 (defun helix--bounds-of-following-region
     (start-column end-column number-of-lines direction)
-  "Return bounds of following region that starts at START-COLUMN
-ends at END-COLUMN spauns NUMBER-OF-LINES."
+  "Return bounds of following region toward the DIRECTION that starts
+at START-COLUMN, ends at END-COLUMN and consists of NUMBER-OF-LINES."
   (when (< direction 0)
     (pcase-setq `(,start-column . ,end-column)
                 (cons end-column start-column)))
