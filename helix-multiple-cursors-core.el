@@ -30,7 +30,6 @@
 ;; execute command in this environment, store point, mark and new state into
 ;; fake cursor overlay.
 ;;
-;;
 ;; ID 0 is always coresponding to real cursor.
 
 ;;; Code:

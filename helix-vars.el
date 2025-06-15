@@ -291,19 +291,19 @@ SPEC is a plist with next keys:
                         ^      ^                          ^       ^
                LEFT-START      LEFT-END         RIGHT-START       RIGHT-END
 
-  Following keys are taken into account only when :SEARCH argument is a cons cell
-  with strings (LEFT . RIGHT) or a function, that returns such cons cell. If
-  :SEARCH is a function that returns list with 4 positions, they will be ignored.
+Following keys are taken into account only when :SEARCH argument is a cons cell
+with strings (LEFT . RIGHT) or a function, that returns such cons cell. If
+:SEARCH is a function that returns list with 4 positions, they will be ignored.
 
-  :regexp   - If non-nil then LEFT and RIGHT strings specified in :SEARCH will be
-  treated as regexp patterns. Otherwise they will searched literally.
-  :balanced - When non-nil all nested balanced LEFT RIGHT pairs will be skipped.
-  Otherwise the first found pattern will be accepted.
+:regexp   - If non-nil then LEFT and RIGHT strings specified in :SEARCH will be
+            treated as regexp patterns. Otherwise they will searched literally.
+:balanced - When non-nil all nested balanced LEFT RIGHT pairs will be skipped.
+            Otherwise the first found pattern will be accepted.
 
-  This function populates the buffer local `helix-surround-alist' variable,
-  and thus should be called from major-modes hooks.
+This function populates the buffer local `helix-surround-alist' variable,
+and thus should be called from major-modes hooks.
 
-  See the defaul value and `helix-integration.el' file for examples.")
+See the defaul value and `helix-integration.el' file for examples.")
 
 (helix-defvar-local helix--state nil
   "The current Helix state.")

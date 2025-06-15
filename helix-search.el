@@ -272,6 +272,7 @@ RANGES is a list of cons cells with positions (START . END)."
   "`helix-highlight' object for interactive select sessions.")
 
 (defun helix-select-interactively-in (ranges &optional invert)
+  "Inner function for `helix-select-regex' command."
   (unless (use-region-p)
     (user-error "No active selection"))
   (setq helix-select--hl (helix-highlight-create :buffer (current-buffer)
@@ -336,7 +337,7 @@ RANGES is a list of cons cells with positions (START . END)."
 (defvar helix-filter--invert nil)
 
 (defun helix-filter-selections (&optional invert)
-  "Keep selections that match regexp.
+  "Keep selections that match regexp entered.
 If INVERT is non-nil — remove selections that match regexp."
   (unless helix-multiple-cursors-mode
     (user-error "No multiple selections"))
