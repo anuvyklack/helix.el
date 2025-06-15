@@ -18,6 +18,7 @@
 (require 'pcre2el)
 (require 'cl-lib)
 (require 'thingatpt)
+(require 'helix-core)
 (require 'helix-common)
 (require 'helix-multiple-cursors-core)
 (require 'helix-search)
@@ -27,10 +28,9 @@
 (defun helix-normal-state-escape ()
   "Command for ESC key in Helix Normal state."
   (interactive)
-  (cond (helix--extend-selection
-         (setq helix--extend-selection nil))
-        (t
-         (helix-execute-command-for-all-cursors #'helix-collapse-selection))))
+  (if helix--extend-selection
+      (helix-extend-selection -1)
+    (deactivate-mark)))
 
 ;;; Motions
 
@@ -454,7 +454,7 @@ If no selection — delete COUNT chars before point."
          (kill-region nil nil t))
         (t
          (delete-char (- count))))
-  (setq helix--extend-selection nil))
+  (helix-extend-selection -1))
 
 ;; D
 (defun helix-delete (count)
@@ -470,7 +470,7 @@ If no selection — delete COUNT chars after point."
          (delete-region (region-beginning) (region-end)))
         (t
          (delete-char count)))
-  (setq helix--extend-selection nil))
+  (helix-extend-selection -1))
 
 ;; u
 (defun helix-undo ()
@@ -588,15 +588,20 @@ If no selection — delete COUNT chars after point."
 ;; v
 (defun helix-extend-selection (&optional arg)
   "Toggle extending selections.
-If ARG is nil or `toggle' — toggle extending selection.
-If ARG positive number — enable, negative — disable.
-Manages the internal `helix--extend-selection' flag."
+If ARG is nil — toggle extending selection.
+If ARG positive number — enable, negative — disable."
   (interactive)
-  (setq helix--extend-selection (cond ((or (null arg)
-                                           (eq arg 'toggle))
-                                       (not helix--extend-selection))
-                                      ((< arg 0) nil)
-                                      (t t))))
+  (if helix--extend-selection
+      (when (or (null arg) (< arg 0))
+        (setq helix--extend-selection nil)
+        (unless helix--executing-command-for-fake-cursor
+          (helix-update-cursor)))
+    ;; else
+    (when (or (null arg) (< 0 arg))
+      (setq helix--extend-selection t)
+      (unless helix--executing-command-for-fake-cursor
+        (set-cursor-color (face-attribute 'helix-extend-selection-cursor
+                                          :background))))))
 
 ;; ;
 (defun helix-collapse-selection ()
@@ -732,7 +737,7 @@ all regions that match to regexp withing active selections."
         (setq any? t)))
     (when any?
       (helix-with-each-cursor
-        (setq helix--extend-selection nil)))))
+        (helix-extend-selection -1)))))
 
 ;; K
 (defun helix-keep-selections ()
@@ -1414,7 +1419,7 @@ lines and reindent the region."
              (new-end (+ end (- new-beg beg))))
         (helix-set-region new-beg new-end dir)
         (indent-region new-beg new-end)))
-    (setq helix--extend-selection nil)))
+    (helix-extend-selection -1)))
 
 ;; md
 (defun helix-surround-delete ()

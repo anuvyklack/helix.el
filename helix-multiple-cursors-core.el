@@ -267,18 +267,21 @@ Return CURSOR."
                         (make-overlay pos pos nil t nil))
                        (t
                         (make-overlay pos (1+ pos) nil t nil))))
-    (let ((face (if helix--extend-selection
-                    'helix-fake-cursor-extend-selection
-                  'helix-fake-cursor)))
-      (cond ((and helix-mc-match-cursor-style
+    (let ((face (cond (helix--extend-selection
+                       'helix-extend-selection-cursor)
+                      (helix-insert-state
+                       'helix-insert-state-fake-cursor)
+                      (t
+                       'helix-normal-state-fake-cursor))))
+      (cond ((and helix-match-fake-cursor-style
                   (helix-cursor-is-bar-p))
+             (overlay-put cursor 'face nil)
              (overlay-put cursor 'before-string (propertize "|" 'face face))
-             (overlay-put cursor 'after-string nil)
-             (overlay-put cursor 'face nil))
+             (overlay-put cursor 'after-string nil))
             ((eolp)
-             (overlay-put cursor 'after-string (propertize " " 'face face))
+             (overlay-put cursor 'face nil)
              (overlay-put cursor 'before-string nil)
-             (overlay-put cursor 'face nil))
+             (overlay-put cursor 'after-string (propertize " " 'face face)))
             (t
              (overlay-put cursor 'face face)
              (overlay-put cursor 'before-string nil)

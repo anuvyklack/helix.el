@@ -19,22 +19,22 @@
 
 (helix-define-state normal
   "Normal state."
-  :cursor 'bar)
+  :cursor helix-normal-state-main-cursor
+  (when helix-normal-state
+    (helix-with-each-cursor
+      (when helix--region-was-active-on-insert
+        (activate-mark)))))
 
 ;;;
 
 (helix-define-state insert
   "Insert state."
-  :cursor 'box
-  (cond (helix-insert-state
-         (setq helix--region-was-active-on-insert (region-active-p))
-         (helix-with-each-cursor
-           (deactivate-mark)
-           (setq helix--extend-selection nil)))
-        (t
-         (when helix--region-was-active-on-insert
-           (helix-with-each-cursor
-             (activate-mark))))))
+  :cursor helix-insert-state-main-cursor
+  (when helix-insert-state
+    (setq helix--region-was-active-on-insert (region-active-p))
+    (helix-with-each-cursor
+      (deactivate-mark)
+      (setq helix--extend-selection nil))))
 
 ;;;
 

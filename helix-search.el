@@ -18,7 +18,7 @@
 (require 'helix-common)
 (require 'helix-multiple-cursors-core)
 
-(declare-function helix-extend-selection "helix-commands")
+(declare-function helix-update-cursor "helix-core")
 
 (defvar helix-search--timer nil)
 (defvar helix-search--buffer nil)
@@ -293,6 +293,8 @@ RANGES is a list of cons cells with positions (START . END)."
      (set-register '/ pattern)
      (setq helix--extend-selection nil)
      (helix-create-cursors region-ranges)
+     (helix-update-cursor)
+     (setq helix--extend-selection nil)
      :success)))
 
 (defun helix-select--start-session ()
