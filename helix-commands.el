@@ -814,17 +814,11 @@ entered regexp withing current selections."
 
 (defun helix--copy-cursor (direction)
   "Copy point toward the DIRECTION."
-  (unless direction (setq direction 1))
   (when-let* ((pos (save-excursion
-                     (let ((column (current-column))
-                           position)
-                       (cl-block nil
-                         (while (not position)
-                           (unless (zerop (forward-line direction))
-                             (cl-return))
-                           (when (eql (move-to-column column) column)
-                             (setq position (point)))))
-                       position)))
+                     (cl-loop with column = (current-column)
+                              while (zerop (forward-line direction))
+                              when (eql (move-to-column column) column)
+                              return (point))))
               ((not (helix-fake-cursor-at pos))))
     (helix-create-fake-cursor-from-point)
     (goto-char pos)))
@@ -863,26 +857,21 @@ entered regexp withing current selections."
   "Return bounds of following region toward the DIRECTION that starts
 at START-COLUMN, ends at END-COLUMN and consists of NUMBER-OF-LINES."
   (when (< direction 0)
-    (pcase-setq `(,start-column . ,end-column)
-                (cons end-column start-column)))
-  (let (start end)
-    (cl-block nil
-      (while (not (and start end))
-        (unless (zerop (forward-line direction))
-          (cl-return))
-        (when (eql (move-to-column start-column)
-                   start-column)
-          (setq start (point))
-          (unless (zerop (forward-line (* (1- number-of-lines)
-                                          direction)))
-            (cl-return))
-          (when (eql (move-to-column end-column)
-                     end-column)
-            (setq end (point))))))
-    (if (and start end)
-        (if (< 0 direction)
-            (cons start end)
-          (cons end start)))))
+    (cl-rotatef start-column end-column))
+  (cl-loop with start and end
+           while (zerop (forward-line direction))
+           when (eql (move-to-column start-column)
+                     start-column)
+           do (setq start (point))
+           when (cl-loop while (zerop (forward-line (* (1- number-of-lines)
+                                                       direction)))
+                         when (eql (move-to-column end-column)
+                                   end-column)
+                         return (point))
+           do (setq end (point))
+           return (if (< 0 direction)
+                      (cons start end)
+                    (cons end start))))
 
 ;; ,
 (defun helix-remove-all-fake-cursors ()
