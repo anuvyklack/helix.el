@@ -1138,13 +1138,13 @@ Do not auto-detect word boundaries in the search pattern."
       (message "Register / set: %s" regexp)
       (helix-highlight-search-pattern regexp))))
 
-;;; Match
+;;; Mark
 
-(defun helix-match-map-digit-argument (arg)
-  "Like `digit-argument' but keep `helix-match-map' active."
+(defun helix-mark-map-digit-argument (arg)
+  "Like `digit-argument' but keep `helix-mark-map' active."
   (interactive "P")
   (digit-argument arg)
-  (set-transient-map helix-match-map))
+  (set-transient-map helix-mark-map))
 
 ;; Don't show `helix-digit-argument-for-match-map' in which-key popup.
 (with-eval-after-load 'which-key
