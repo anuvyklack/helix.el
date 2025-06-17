@@ -27,10 +27,11 @@ If the list already contains an entry for KEY, update that entry;
 otherwise prepend it to the list.
 
 \(fn ALIST [KEY VAL]...)"
+  (declare (indent defun))
   `(progn
-     ,@(cl-loop
-        for (key val) on elements by #'cddr collect
-        `(setf (alist-get ,key ,alist nil nil #'equal) ,val))
+     ,@(cl-loop for (key val) on elements by #'cddr
+                collect `(setf (alist-get ,key ,alist nil nil #'equal)
+                               ,val))
      ,alist))
 
 (defmacro helix-with-restriction (restrictions &rest body)
@@ -498,10 +499,10 @@ when BALANCED? argument is non-nil."
   (save-excursion
     (let (open close bound)
       (if (> direction 0)
-          (pcase-setq `(,open . ,close) pair
-                      `(,_ . ,bound) scope)
-        (pcase-setq `(,close . ,open) pair
-                    `(,bound . ,_) scope))
+          (-setq (open . close) pair
+                 (_ . bound) scope)
+        (-setq (close . open) pair
+               (bound . _) scope))
       ;; The algorithm assume we are *inside* a pair: level of nesting is 1.
       (let ((level 1))
         (cl-block nil
@@ -794,33 +795,28 @@ FUN on each invocation should move point."
   (unless start (setq start (window-start)))
   (unless end (setq end (window-end)))
   (save-excursion
-    (let ((win (get-buffer-window))
-          (old-point (point))
-          positions)
-      (while (ignore-errors
-               ;; Bind `last-command' and `this-command' to the same value,
-               ;; to get uniform result in case `fun' behaves differently
-               ;; depending on their values.
-               (let ((last-command fun)
-                     (this-command fun))
-                 (call-interactively fun))
-               (and (not (eql (point) old-point))
-                    (<= start (point) end)))
-        (push (cons (point) win)
-              positions)
-        (setq old-point (point)))
-      (nreverse positions))))
+    (cl-loop with win = (get-buffer-window)
+             for old-point = (point)
+             do (ignore-errors
+                  ;; Bind `last-command' and `this-command' to the same value,
+                  ;; to get uniform result in case `fun' behaves differently
+                  ;; depending on their values.
+                  (let ((last-command fun)
+                        (this-command fun))
+                    (call-interactively fun)))
+             while (and (not (eql (point) old-point))
+                        (<= start (point) end))
+             collect (cons (point) win))))
 
 (defun helix-invert-case-in-region (start end)
   "Invert case of characters within START...END buffer positions."
   (goto-char start)
-  (while (< start end)
+  (while (< (point) end)
     (let ((char (following-char)))
       (delete-char 1)
       (insert-char (if (eq (upcase char) char)
                        (downcase char)
-                     (upcase char))))
-    (setq start (1+ start))))
+                     (upcase char))))))
 
 (defun helix-insert-newline-above ()
   "Insert a new line above point and place point in that line
