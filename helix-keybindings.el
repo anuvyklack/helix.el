@@ -24,6 +24,8 @@
 (helix-keymap-set nil 'normal
   "SPC" #'keypad
   "C-h k" #'keypad-describe-key
+  "<f1> k" #'keypad-describe-key
+  "<help> k" #'keypad-describe-key
   "<backspace>" #'execute-extended-command)
 
 (helix-keymap-set nil 'normal
