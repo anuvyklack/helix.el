@@ -36,7 +36,7 @@
 
 ;; h
 (defun helix-backward-char (count)
-  "Move backward."
+  "Move backward COUNT chars."
   (interactive "p")
   (if helix--extend-selection
       (or (region-active-p) (set-mark (point)))
@@ -45,7 +45,7 @@
 
 ;; l
 (defun helix-forward-char (count)
-  "Move forward."
+  "Move forward COUNT chars."
   (interactive "p")
   (if helix--extend-selection
       (or (region-active-p) (set-mark (point)))
@@ -54,7 +54,7 @@
 
 ;; j
 (defun helix-next-line (count)
-  "Move to the next line."
+  "Move to the next COUNT line."
   (interactive "p")
   (if helix--extend-selection
       (or (region-active-p) (set-mark (point)))
@@ -67,7 +67,7 @@
 
 ;; k
 (defun helix-previous-line (count)
-  "Move to the COUNT-th previous line."
+  "Move to the previous COUNT line."
   (interactive "p")
   (if helix--extend-selection
       (or (region-active-p) (set-mark (point)))

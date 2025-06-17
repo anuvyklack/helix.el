@@ -113,6 +113,14 @@ want COMMAND to be executed only for original ones."
 (helix-define-advice select-window (:after (&rest _) helix)
   (helix-update-cursor))
 
+;; (helix-define-advice use-global-map (:after (&rest _))
+;;   "Refresh Helix keymaps."
+;;   (helix-update-active-keymaps))
+;;
+;; (helix-define-advice use-local-map (:after (&rest _))
+;;   "Refresh Helix keymaps."
+;;   (helix-update-active-keymaps))
+
 ;;; Helix states
 
 (defmacro helix-define-state (state doc &rest body)
@@ -210,10 +218,10 @@ When ARG is non-positive integer and Helix is in %s — disable it.\n\n%s"
 
 (defun helix-change-state (state)
   "Switch Helix into STATE."
-  (when (not (eq state helix-state))
-    (-some-> state
-      (helix-state-property :function)
-      (funcall 1))))
+  (when (and state
+             (not (eq state helix-state)))
+    (-> (helix-state-property state :function)
+        (funcall 1))))
 
 (defun helix-disable-current-state ()
   "Disable current Helix state."
@@ -396,6 +404,9 @@ For example:
       keymap))
 
 ;;; Cursor shape and color
+
+;; set-window-cursor-type
+;; window-cursor-type
 
 (defun helix-update-cursor ()
   "Update the cursor for current Helix STATE in current buffer."
