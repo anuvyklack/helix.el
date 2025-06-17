@@ -164,23 +164,22 @@ If INVERT is non-nil return list with complements of ranges that match REGEXP."
 RANGES is a list of cons cells with positions (START . END)."
   (when ranges
     (let (result)
-      (pcase-let ((`(,r-start . ,r-end) (car ranges)))
+      (-let (((r-start . r-end) (car ranges)))
         (unless (eql r-start start)
           (push (cons start r-start) result)
           (setq start r-end)))
-      (pcase-dolist (`(,r-start . ,r-end) (cdr ranges))
-        (push (cons start r-start) result)
-        (setq start r-end))
+      (cl-loop for (r-start . r-end) in (cdr ranges) do
+               (push (cons start r-start) result)
+               (setq start r-end))
       (unless (eql start end)
         (push (cons start end) result))
       (nreverse result))))
 
 (defun helix-highlight-entire-ranges (hl)
-  (dolist (range (helix-highlight-ranges hl))
-    (-let* (((beg . end) range)
-            (ov (make-overlay beg end)))
-      (overlay-put ov 'face (helix-highlight-face hl))
-      (push ov (helix-highlight-overlays hl)))))
+  (cl-loop for (beg . end) in (helix-highlight-ranges hl)
+           do (push (-doto (make-overlay beg end)
+                      (overlay-put 'face (helix-highlight-face hl)))
+                    (helix-highlight-overlays hl))))
 
 ;;; Search
 
