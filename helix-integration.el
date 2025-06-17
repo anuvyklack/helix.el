@@ -26,8 +26,15 @@
 
 (with-eval-after-load 'keypad
   (helix-keymap-set nil 'normal
-    "SPC" #'keypad
-    "C-h k" #'keypad-describe-key))
+    "SPC"      #'keypad
+    "C-h k"    #'keypad-describe-key
+    "<f1> k"   #'keypad-describe-key
+    "<help> k" #'keypad-describe-key)
+  (helix-keymap-set nil 'motion
+    "SPC"      #'keypad
+    "C-h k"    #'keypad-describe-key
+    "<f1> k"   #'keypad-describe-key
+    "<help> k" #'keypad-describe-key))
 
 ;;; Eldoc
 
