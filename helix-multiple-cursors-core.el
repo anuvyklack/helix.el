@@ -358,11 +358,11 @@ RANGES is a list of cons cells (START . END) with bounds of regions.
 The real region will be set for the first range in RANGES, and fake one
 for others."
   (when ranges
-    (pcase-let ((`(,mark . ,point) (car ranges)))
+    (-let (((mark . point) (car ranges)))
       (set-mark mark)
       (goto-char point))
-    (pcase-dolist (`(,mark . ,point) (cdr ranges))
-      (helix-create-fake-cursor point mark))))
+    (cl-loop for (mark . point) in (cdr ranges)
+             do (helix-create-fake-cursor point mark))))
 
 (defun helix-remove-fake-cursor-from-buffer (cursor)
   (helix--delete-region-overlay cursor)
@@ -409,22 +409,18 @@ If SORT is non-nil sort cursors in order they are located in buffer."
 
 (defun helix-next-fake-cursor (&optional position)
   "Return the next fake cursor after the POSITION."
-  (unless position (setq position (point)))
-  (let (cursor)
-    (while (not (or cursor
-                    (eql position (point-max))) )
-      (setq position (next-overlay-change position)
-            cursor (helix-fake-cursor-at position)))
-    cursor))
+  ;; (unless position (setq position (point)))
+  (cl-loop for pos = (next-overlay-change position)
+           then (next-overlay-change pos)
+           until (eql pos (point-max))
+           thereis (helix-fake-cursor-at pos)))
 
 (defun helix-previous-fake-cursor (position)
   "Return the first fake cursor before the POSITION."
-  (let (cursor)
-    (while (not (or cursor
-                    (eql position (point-min))) )
-      (setq position (previous-overlay-change position)
-            cursor (helix-fake-cursor-at position)))
-    cursor))
+  (cl-loop for pos = (previous-overlay-change position)
+           then (previous-overlay-change pos)
+           until (eql pos (point-min))
+           thereis (helix-fake-cursor-at pos)))
 
 (defun helix-first-fake-cursor ()
   "Return the first fake cursor in the buffer."
@@ -746,7 +742,7 @@ cursor."
         current-group
         (current-end (point-min)))
     (dolist (item alist)
-      (pcase-let ((`(,_ ,start ,end) item))
+      (-let (((_ start end) item))
         (if (< start current-end)
             (push item current-group)
           ;; else
