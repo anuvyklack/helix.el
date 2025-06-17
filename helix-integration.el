@@ -14,12 +14,15 @@
 ;;; Code:
 
 (require 'helix-core)
+(require 'helix-common)
 (require 'helix-multiple-cursors-core)
 (require 'helix-commands)
 
 ;;; Keypad
 
-(helix-cache-input keypad-start)
+(helix-define-advice keypad (:after ())
+  "Execute selected command for all cursors."
+  (setq helix-this-command this-command))
 
 (with-eval-after-load 'keypad
   (helix-keymap-set nil 'normal

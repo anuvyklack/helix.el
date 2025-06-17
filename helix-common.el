@@ -34,6 +34,26 @@ otherwise prepend it to the list.
                                ,val))
      ,alist))
 
+(defmacro helix-define-advice (symbol args &rest body)
+  "This macro wraps `define-advice' and extends it to automatically
+add/remove advice when `helix-mode' is toggled on or off.
+
+\(fn SYMBOL (HOW LAMBDA-LIST &optional NAME) &rest BODY)"
+  (declare (indent 2) (doc-string 3) (debug (sexp sexp def-body)))
+  (unless (listp args)
+    (signal 'wrong-type-argument (list 'listp args)))
+  (unless (<= 2 (length args) 4)
+    (signal 'wrong-number-of-arguments (list 2 4 (length args))))
+  (let* ((how (nth 0 args))
+         (lambda-list (nth 1 args))
+         (name (or (nth 2 args) 'helix))
+         (advice (intern (format "%s@%s" symbol name))))
+    `(prog1 (defun ,advice ,lambda-list ,@body)
+       (cl-pushnew '(,symbol ,how ,advice) helix--advices
+                   :test #'equal)
+       (when helix-mode
+         (advice-add ',symbol ,how #',advice)))))
+
 (defmacro helix-with-restriction (restrictions &rest body)
   "Evaluate BODY with the buffer narrowed to START and END.
 
@@ -834,6 +854,16 @@ with regard to indentation."
     (end-of-line)
     (insert (if use-hard-newlines hard-newline "\n"))
     (back-to-indentation)))
+
+(defun helix-letters-are-self-insert-p ()
+  "Return t if any of the a-z keys are bound to self-insert command."
+  (cl-dolist (key '("a" "b" "c" "d" "e" "f" "g" "h" "i" "j" "k" "l" "m"
+                    "n" "o" "p" "q" "r" "s" "t" "u" "v" "w" "x" "y" "z"))
+    (if-let* ((cmd (key-binding key))
+              ((symbolp cmd))
+              ((string-match-p "\\`.*self-insert.*\\'"
+                               (symbol-name cmd))))
+        (cl-return t))))
 
 (provide 'helix-common)
 ;;; helix-common.el ends here

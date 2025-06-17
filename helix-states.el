@@ -21,11 +21,11 @@
   "Normal state."
   :cursor helix-normal-state-main-cursor
   (when helix-normal-state
+    ;; We need to run through all the cursors in any case to switch their color.
     (helix-with-each-cursor
       (when helix--region-was-active-on-insert
-        (activate-mark)))))
-
-;;;
+        (activate-mark)))
+    (setq helix--region-was-active-on-insert nil)))
 
 (helix-define-state insert
   "Insert state."
@@ -36,12 +36,9 @@
       (deactivate-mark)
       (setq helix--extend-selection nil))))
 
-;;;
-
 (helix-define-state motion
-  "Motion state.")
-
-;;;
+  "Motion state."
+  :cursor 'hbar)
 
 (provide 'helix-states)
 ;;; helix-states.el ends here

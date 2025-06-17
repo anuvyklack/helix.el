@@ -9,12 +9,24 @@
 ;;
 ;;; Code:
 
+(defvar helix-mode nil)
+
 ;;; Customization group
 
 (defgroup helix nil
   "Helix emulation."
   :group 'emulations
   :prefix 'helix-)
+
+(defcustom helix-want-minibuffer t
+  "Whether to enable Helix in minibuffer(s)."
+  :type 'boolean
+  :group 'helix
+  :set #'(lambda (sym value)
+           (set-default sym value)
+           (if (and helix-mode value)
+               (add-hook 'minibuffer-setup-hook 'helix--initialize)
+             (remove-hook 'minibuffer-setup-hook 'helix--initialize))))
 
 (defcustom helix-use-pcre-regex t
   "If non-nil use PCRE regexp syntax instead of Emacs one."
@@ -48,7 +60,7 @@ a list of the above."
   :group 'helix)
 
 (defcustom helix-insert-state-main-cursor
-  `(box "#458588")
+  `(box ,(face-attribute 'cursor :background))
   "Cursor apperance when Helix is in Insert state.
 Can be a cursor type as per `cursor-type', a color string as passed to
 `set-cursor-color', a zero-argument function for changing the cursor, or
@@ -315,6 +327,9 @@ See the defaul value and `helix-integration.el' file for examples.")
 Entries have the form (STATE . PLIST), where PLIST is a property
 list specifying various aspects of the state. To access a property,
 use `helix-state-property'.")
+
+(defvar helix--advices nil
+  "Inner variable for `helix-define-advice'.")
 
 (helix-defvar-local helix--extend-selection nil
   "Extend selection.")
