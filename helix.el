@@ -20,6 +20,21 @@
 (require 'helix-keybindings)
 (require 'helix-integration)
 
+
+;; (require 'keypad)
+;; (helix-keymap-set nil 'normal
+;;   "SPC"      #'keypad
+;;   "C-h k"    #'keypad-describe-key
+;;   ;; "<f1> k"   #'keypad-describe-key
+;;   ;; "<help> k" #'keypad-describe-key
+;;   )
+;; ;; (helix-keymap-set nil 'motion
+;; ;;   "SPC"      #'keypad
+;; ;;   "C-h k"    #'keypad-describe-key
+;; ;;   "<f1> k"   #'keypad-describe-key
+;; ;;   "<help> k" #'keypad-describe-key)
+
+
 ;; Merge overlapping regions after all `helix-mark-*' commands.
 (setq helix--merge-regions-commands
       (nconc (apropos-internal "^helix-mark" 'commandp)

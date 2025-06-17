@@ -192,15 +192,15 @@
   "i p" #'helix-mark-inner-paragraph
   "a p" #'helix-mark-a-paragraph
 
-  "\""  #'helix-mark-inner-double-quoted
+  "\""   #'helix-mark-inner-double-quoted
   "i \"" #'helix-mark-inner-double-quoted
   "a \"" #'helix-mark-a-double-quoted
-  "'"   #'helix-mark-inner-single-quoted
-  "i '" #'helix-mark-inner-single-quoted
-  "a '" #'helix-mark-a-single-quoted
-  "`"   #'helix-mark-inner-back-quoted
-  "i `" #'helix-mark-inner-back-quoted
-  "a `" #'helix-mark-a-back-quoted
+  "'"    #'helix-mark-inner-single-quoted
+  "i '"  #'helix-mark-inner-single-quoted
+  "a '"  #'helix-mark-a-single-quoted
+  "`"    #'helix-mark-inner-back-quoted
+  "i `"  #'helix-mark-inner-back-quoted
+  "a `"  #'helix-mark-a-back-quoted
 
   "("   #'helix-mark-inner-paren
   ")"   #'helix-mark-inner-paren

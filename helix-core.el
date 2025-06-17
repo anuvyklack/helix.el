@@ -105,9 +105,18 @@ want COMMAND to be executed only for original ones."
   (if helix-local-mode
       ;; Set Helix state according to new major-mode.
       (helix-change-state (helix-initial-state))
-    (or (and (minibufferp)
-             (not helix-want-minibuffer))
-        (helix-local-mode 1))))
+    ;; (or (and (minibufferp)
+    ;;          (not helix-want-minibuffer))
+    ;;     (helix-local-mode 1))
+    (helix-local-mode 1)))
+
+;; (helix-define-advice use-global-map (:after (&rest _))
+;;   "Refresh Helix keymaps."
+;;   (helix-update-active-keymaps))
+;;
+;; (helix-define-advice use-local-map (:after (&rest _))
+;;   "Refresh Helix keymaps."
+;;   (helix-update-active-keymaps))
 
 ;;; Helix states
 
