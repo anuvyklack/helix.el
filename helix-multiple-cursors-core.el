@@ -776,7 +776,7 @@ ID 0 coresponds to the real cursor."
 
 (add-hook 'after-revert-hook 'helix-remove-all-fake-cursors)
 
-(define-advice execute-kbd-macro (:around (orig-fun &rest args) helix)
+(helix-define-advice execute-kbd-macro (:around (orig-fun &rest args))
   "`execute-kbd-macro' should never be run for fake cursors.
 The real cursor will execute the keyboard macro, resulting in new commands
 in the command loop, and the fake cursors can pick up on those instead."
@@ -797,7 +797,7 @@ FN-NAME should be an interactive function taking PROMPT as first argument,
 like `read-char' or `read-from-minibuffer'. This PROMPT will be used as
 a hash key, to distinguish different calls of FN-NAME within one command.
 Calls with equal PROMPT or without it would be undistinguishable."
-  `(define-advice ,fn-name (:around (orig-fun &rest args) helix)
+  `(helix-define-advice ,fn-name (:around (orig-fun &rest args) helix)
      "Cache the users input to use it with multiple cursors."
      (if (not (bound-and-true-p helix-multiple-cursors-mode))
          (apply orig-fun args)
@@ -822,8 +822,8 @@ Calls with equal PROMPT or without it would be undistinguishable."
 from being executed if in `helix-multiple-cursors-mode'."
   `(progn
      (put ',command 'helix-unsupported t)
-     (define-advice ,command (:around (orig-fun &rest args)
-                                      multiples-cursors-unsupported)
+     (helix-define-advice ,command (:around (orig-fun &rest args)
+                                            helix-unsupported)
        "Don't execute an unsupported command while multiple cursors are active."
        (unless (and helix-multiple-cursors-mode
                     (called-interactively-p 'any))
@@ -833,7 +833,7 @@ from being executed if in `helix-multiple-cursors-mode'."
 (helix-unsupported-command isearch-forward)
 (helix-unsupported-command isearch-backward)
 
-(define-advice current-kill (:before (n &optional _do-not-move) helix)
+(helix-define-advice current-kill (:before (n &optional _do-not-move) helix)
   "Make sure pastes from other programs are added to `kill-ring's
 of all cursors when yanking."
   (when-let* ((interprogram-paste (and (= n 0)
@@ -863,7 +863,7 @@ of all cursors when yanking."
           (overlay-put cursor 'kill-ring-yank-pointer kill-ring-yank-pointer))))))
 
 ;; M-x
-(define-advice execute-extended-command (:after (&rest _) helix)
+(helix-define-advice execute-extended-command (:after (&rest _) helix)
   "Execute selected command for all cursors."
   (setq helix-this-command this-command))
 

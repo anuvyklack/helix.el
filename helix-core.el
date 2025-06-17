@@ -33,9 +33,6 @@
 
 ;;; Helix minor mode
 
-(defvar helix-insert-state)
-(declare-function helix-normal-state "helix-states.el")
-
 (defun helix--pre-commad-hook ()
   "Called from `pre-command-hook' to execute COMMAND for fake cursors.
 The COMMAND should be executed for fake cursors first, because it can
@@ -81,12 +78,36 @@ want COMMAND to be executed only for original ones."
         (helix-load-whitelists)
         (add-hook 'pre-command-hook 'helix--pre-commad-hook nil t)
         (add-hook 'post-command-hook 'helix--post-command-hook t t)
-        (helix-normal-state 1))
+        (helix-change-state (helix-initial-state)))
     ;; else
+    (remove-hook 'pre-command-hook 'helix--pre-commad-hook t)
     ;; Execute `helix--post-command-hook' one last time and then remove it.
     (setq helix--remove-post-command-hook t)
-    (remove-hook 'pre-command-hook 'helix--pre-commad-hook t)
     (helix-disable-current-state)))
+
+(put 'helix-local-mode 'permanent-local t)
+
+(define-globalized-minor-mode helix-mode helix-local-mode helix--initialize
+  :group 'helix
+  (if helix-mode
+      (progn
+        (dolist (fun-how-advice helix--advices)
+          (apply #'advice-add fun-how-advice))
+        (when helix-want-minibuffer
+          (add-hook 'minibuffer-setup-hook 'helix--initialize)))
+    ;; else
+    (cl-loop for (fun _where advice) in helix--advices
+             do (advice-remove fun advice))
+    (remove-hook 'minibuffer-setup-hook 'helix--initialize)))
+
+(defun helix--initialize ()
+  "Turn on `helix-local-mode' in current buffer if appropriate."
+  (if helix-local-mode
+      ;; Set Helix state according to new major-mode.
+      (helix-change-state (helix-initial-state))
+    (or (and (minibufferp)
+             (not helix-want-minibuffer))
+        (helix-local-mode 1))))
 
 ;;; Helix states
 
@@ -116,6 +137,7 @@ Optional keyword arguments:
          (cursor (intern (format "%s-cursor" symbol)))
          (hook   (intern (format "%s-hook" symbol)))
          (keymap (intern (format "%s-map" symbol)))
+         (modes  (intern (format "%s-modes" symbol)))
          key arg cursor-value hook-value after-hook)
     ;; collect keywords
     (while (keywordp (car-safe body))
@@ -123,39 +145,32 @@ Optional keyword arguments:
             arg (pop body))
       (pcase key
         (:cursor (setq cursor-value arg))
-        (:hook (setq hook-value arg)
-               (unless (listp hook-value)
-                 (setq hook-value (list hook-value))))
+        (:hook (setq hook-value (ensure-list arg)))
         (:after-hook (setq after-hook arg))))
     `(progn
-       ;; Save the state's properties in `helix-state-properties' for
-       ;; runtime lookup.
-       (helix--add-to-alist helix-state-properties ',state
-                            (list :name     ,state-name
-                                  :variable ',variable
-                                  :fun      ',statefun
-                                  :cursor   ',cursor
-                                  :keymap   ',keymap
-                                  :hook     ',hook))
-       (defvar ,cursor ,cursor-value
-         ,(format "Cursor for %s.
+       ;; Save the state's properties in `helix-state-properties' for runtime lookup.
+       (helix--add-to-alist helix-state-properties
+         ',state (list
+                  :name ,state-name
+                  :variable ',variable
+                  :function ',statefun
+                  :cursor (defvar ,cursor ,cursor-value
+                            ,(format "Cursor for %s.
 May be a cursor type as per `cursor-type', a color string as passed
 to `set-cursor-color', a zero-argument function for changing the
 cursor, or a list of the above." state-name))
-       ;; hook
-       (defvar ,hook nil
-         ,(format "Hooks to run on entry/exit %s." state-name))
-       (dolist (func ',hook-value)
-         (add-hook ',hook func))
-       ;; keymap
-       (defvar ,keymap (make-sparse-keymap)
-         ,(format "Global keymap for Helix %s." state-name))
-       ;; (helix--add-to-alist helix-global-keymaps-alist ',symbol ',keymap)
-       ;; (push helix-global-keymaps-alist ',keymap)
-       ;; state variable
+                  :keymap (defvar ,keymap (make-sparse-keymap)
+                            ,(format "Global keymap for Helix %s." state-name))
+                  :modes (defvar ,modes nil
+                           ,(format "List of major and minor modes such that if any of them is active in the
+current buffer, than Helix will start in %s." state-name))
+                  :hook (prog1 (defvar ,hook nil
+                                 ,(format "Hooks to run on entry/exit %s." state-name))
+                          (dolist (func ',hook-value)
+                            (add-hook ',hook func)))))
+       ;; state function
        (helix-defvar-local ,variable nil
          ,(format "Non nil if Helix is in %s." state-name))
-       ;; state function
        (defun ,statefun (&optional arg)
          ,(format "Switch Helix into %s.
 When ARG is non-positive integer and Helix is in %s — disable it.\n\n%s"
@@ -178,47 +193,84 @@ When ARG is non-positive integer and Helix is in %s — disable it.\n\n%s"
          ,@(when after-hook `(,after-hook))
          (force-mode-line-update)))))
 
+(defun helix-state-p (symbol)
+  "Return non-nil if SYMBOL corresponds to Helix state."
+  (assq symbol helix-state-properties))
+
+(defun helix-change-state (state)
+  "Switch Helix into STATE."
+  (when (not (eq state helix--state))
+    (-some-> state
+      (helix-state-property :function)
+      (funcall 1))))
+
 (defun helix-disable-current-state ()
   "Disable current Helix state."
-  (when-let* ((state helix--state)
-              (func (helix-state-property state :fun))
-              ((functionp func)))
-    (funcall func -1)))
+  (-some-> helix--state
+    (helix-state-property :function)
+    (funcall -1)))
 
 (defun helix-state-property (state property)
   "Return the value of PROPERTY for STATE.
 PROPERTY is a keyword as used by `helix-define-state'.
-STATE is the state's symbolic name.
-
-If STATE is t, return an association list of states and their PROP
-values instead."
-  ;; (if (eq state t)
-  ;;     (cl-loop for (key . plist) in helix-state-properties with result do
-  ;;              (let ((p (plist-member plist prop)))
-  ;;                (when p (push (cons key (cadr p)) result)))
-  ;;              finally return result)
-  ;;   (let ((val (plist-get (cdr (assq state helix-state-properties))
-  ;;                         prop)))
-  ;;     (if (and value (symbolp val) (boundp val))
-  ;;         (symbol-value val)
-  ;;       val)))
+STATE is the state's symbolic name."
   (let* ((state-properties (cdr (assq state helix-state-properties)))
          (val (plist-get state-properties property)))
     (if (memq property '(:keymap :cursor))
         (symbol-value val)
       val)))
 
-(defun helix-state (&optional state)
-  "Return current Helix state.
-If optional STATE argument is passed return t if Helix is currently
-in STATE, else return nil."
-  (if state
-      (eq state helix--state)
-    helix--state))
+(defun helix-initial-state (&optional buffer)
+  "Return the state in which Helix should start in BUFFER."
+  (with-current-buffer (or buffer (current-buffer))
+    (or (if (minibufferp) 'insert)
+        ;; Check minor modes
+        (cl-loop for (mode) in minor-mode-map-alist
+                 when (and (boundp mode)
+                           (symbol-value mode))
+                 thereis (helix-initial-state-for-mode mode))
+        ;; Check major mode
+        (helix-initial-state-for-mode major-mode t)
+        (if (helix-letters-are-self-insert-p) 'normal 'motion))))
 
-(defun helix-state-p (symbol)
-  "Return non-nil if SYMBOL corresponds to Helix state."
-  (assq symbol helix-state-properties))
+(defun helix-initial-state-for-mode (mode &optional follow-parent checked-modes)
+  "Return the Helix state to use for MODE or its alias.
+The initial state for MODE should be set beforehand by the
+`helix-set-initial-state' function.
+
+If FOLLOW-PARENT is non-nil, also check parent modes of MODE and its alias.
+
+CHECKED-MODES is used internally and should not be set initially."
+  (when (memq mode checked-modes)
+    (error "Circular reference detected in ancestors of `%s'\n%s"
+           major-mode checked-modes))
+  (let ((mode-alias (let ((func (symbol-function mode)))
+                      (if (symbolp func)
+                          func))))
+    (or (cl-loop for (state . properties) in helix-state-properties
+                 for modes = (-> (plist-get properties :modes)
+                                 (symbol-value))
+                 when (or (memq mode modes)
+                          (and mode-alias
+                               (memq mode-alias modes)))
+                 return state)
+        (if-let* ((follow-parent)
+                  (parent (get mode 'derived-mode-parent)))
+            (helix-initial-state-for-mode parent t (cons mode checked-modes)))
+        (if-let* ((follow-parent)
+                  (mode-alias)
+                  (parent (get mode-alias 'derived-mode-parent)))
+            (helix-initial-state-for-mode parent t
+                                          (cons mode-alias checked-modes))))))
+
+(defun helix-set-initial-state (mode state)
+  "Set the Helix initial STATE for major MODE."
+  ;; Remove current settings for MODE.
+  (cl-loop for (_state . plist) in helix-state-properties
+           for modes = (plist-get plist :modes)
+           do (set modes (delq mode (symbol-value modes))))
+  (add-to-list (helix-state-property state :modes)
+               mode))
 
 ;;; Keymaps
 

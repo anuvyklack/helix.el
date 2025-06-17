@@ -225,3 +225,7 @@ If DIR is positive number move forward, else — backward."
                (not helix-select-state-minor-mode))
       (set-mark (point)))
     point-moved))
+
+(defun helix-state ()
+  "Return current Helix state."
+  helix--state)
