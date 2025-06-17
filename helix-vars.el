@@ -229,8 +229,7 @@ buffer local variable."
   (declare (indent defun)
            (doc-string 3)
            (debug (symbolp &optional form stringp)))
-  `(progn
-     (defvar ,symbol ,initvalue ,docstring)
+  `(prog1 (defvar ,symbol ,initvalue ,docstring)
      (make-variable-buffer-local ',symbol)
      (put ',symbol 'permanent-local t)))
 
