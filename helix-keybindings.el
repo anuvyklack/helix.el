@@ -273,6 +273,7 @@
 ;;;; Windows
 
 (helix-keymap-set nil 'normal "C-w" 'helix-window-map)
+
 (define-prefix-command 'helix-window-map)
 (helix-keymap-set helix-window-map nil
   "s"   #'helix-window-split
@@ -300,32 +301,32 @@
   "'"  #'ignore
   "<"  #'ignore
   ">"  #'ignore
-  ;; "p" #'ignore
-  )
-
-;; (defun helix-general-o-fun ()
-;;   (interactive)
-;;   (message "General o function"))
-;;
-;; (keymap-set helix-normal-state-map "o" #'helix-general-o-fun)
-;;
-;; (defun helix-elisp-mode-o-fun ()
-;;   (interactive)
-;;   (message "Emacs-Lisp mode local o function"))
-;;
-;; (helix-keymap-set emacs-lisp-mode-map 'normal
-;;   "o" #'helix-elisp-mode-o-fun)
+  "+"  #'ignore
+  "="  #'ignore
+  "!"  #'ignore
+  "|"  #'ignore
+  "#"  #'ignore
+  "$"  #'ignore
+  "^"  #'ignore)
 
 ;;; Multiple cursors
 
-(keymap-set helix-multiple-cursors-map "C-g" #'helix-disable-multiple-cursors-mode)
+(keymap-set helix-multiple-cursors-map "C-g" #'helix-remove-all-fake-cursors)
 
 ;;; Insert state
 
-(helix-keymap-set nil 'insert "<escape>" #'helix-normal-state)
+(helix-keymap-set nil 'insert
+  "<escape>" #'helix-normal-state)
 
 ;;; Motion state
 
+(helix-keymap-set nil 'motion
+  "C-w" 'helix-window-map
+  "<backspace>" #'execute-extended-command
+  "SPC"      #'keypad
+  "C-h k"    #'keypad-describe-key
+  "<f1> k"   #'keypad-describe-key
+  "<help> k" #'keypad-describe-key)
 
 (provide 'helix-keybindings)
 ;;; helix-keybindings.el ends here

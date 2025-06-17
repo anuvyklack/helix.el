@@ -40,20 +40,24 @@
 
 (with-eval-after-load 'eldoc
   ;; Add motion commands to the `eldoc-message-commands' obarray.
-  (eldoc-add-command 'helix-backward-char       ;; h
-                     'helix-forward-char        ;; l
-                     'helix-next-line           ;; j
-                     'helix-previous-line       ;; k
-                     'helix-forward-word-start  ;; w
-                     'helix-forward-WORD-start  ;; W
-                     'helix-backward-word-start ;; b
-                     'helix-backward-WORD-start ;; B
-                     'helix-forward-word-end    ;; e
-                     'helix-forward-WORD-end    ;; E
-                     'helix-search-forward      ;; /
-                     'helix-search-backward     ;; ?
-                     'helix-search-next         ;; n
-                     'helix-search-previous))   ;; N
+  (eldoc-add-command 'helix-backward-char        ;; h
+                     'helix-forward-char         ;; l
+                     'helix-next-line            ;; j
+                     'helix-previous-line        ;; k
+                     'helix-forward-word-start   ;; w
+                     'helix-forward-WORD-start   ;; W
+                     'helix-backward-word-start  ;; b
+                     'helix-backward-WORD-start  ;; B
+                     'helix-forward-word-end     ;; e
+                     'helix-forward-WORD-end     ;; E
+                     'helix-search-forward       ;; /
+                     'helix-search-backward      ;; ?
+                     'helix-search-next          ;; n
+                     'helix-search-previous      ;; N
+                     'helix-find-char-forward    ;; f
+                     'helix-find-char-backward   ;; F
+                     'helix-till-char-forward    ;; t
+                     'helix-till-char-backward)) ;; T
 
 ;;; Consult
 
