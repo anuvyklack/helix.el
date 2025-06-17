@@ -159,21 +159,21 @@
 (keymap-global-unset "M-<down-mouse-1>")
 (helix-keymap-set nil 'normal "M-<mouse-1>" #'helix-toggle-cursor-on-click)
 
-;;;; Match
+;;;; Mark
 
-(helix-keymap-set nil 'normal "m" 'helix-match-map)
-(define-prefix-command 'helix-match-map)
-(helix-keymap-set helix-match-map nil
-  "0"   #'helix-match-map-digit-argument
-  "1"   #'helix-match-map-digit-argument
-  "2"   #'helix-match-map-digit-argument
-  "3"   #'helix-match-map-digit-argument
-  "4"   #'helix-match-map-digit-argument
-  "5"   #'helix-match-map-digit-argument
-  "6"   #'helix-match-map-digit-argument
-  "7"   #'helix-match-map-digit-argument
-  "8"   #'helix-match-map-digit-argument
-  "9"   #'helix-match-map-digit-argument
+(helix-keymap-set nil 'normal "m" 'helix-mark-map)
+(define-prefix-command 'helix-mark-map)
+(helix-keymap-set helix-mark-map nil
+  "0"   #'helix-mark-map-digit-argument
+  "1"   #'helix-mark-map-digit-argument
+  "2"   #'helix-mark-map-digit-argument
+  "3"   #'helix-mark-map-digit-argument
+  "4"   #'helix-mark-map-digit-argument
+  "5"   #'helix-mark-map-digit-argument
+  "6"   #'helix-mark-map-digit-argument
+  "7"   #'helix-mark-map-digit-argument
+  "8"   #'helix-mark-map-digit-argument
+  "9"   #'helix-mark-map-digit-argument
 
   "m"   #'helix-jump-to-match-item
 
@@ -293,7 +293,7 @@
   "K"   #'helix-move-window-up
   "L"   #'helix-move-window-right)
 
-;; Ingored
+;; Ignored
 
 (helix-keymap-set nil 'normal
   "q"  #'ignore
