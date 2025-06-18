@@ -135,7 +135,6 @@ such as `helix-word', `helix-sentence', `paragraph', `line'."
 
 (defun helix-select-a-thing (thing &optional line?)
   "Select a THING with spacing around.
-
 Works only with THINGs, that returns the count of steps left to move,
 such as `helix-word', `helix-sentence', `paragraph', `line'."
   (when-let* ((bounds (bounds-of-thing-at-point thing)))
