@@ -228,4 +228,4 @@ If DIR is positive number move forward, else — backward."
 
 (defun helix-state ()
   "Return current Helix state."
-  helix--state)
+  helix-state)
