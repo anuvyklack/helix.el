@@ -177,14 +177,14 @@ When ARG is non-positive integer and Helix is in %s — disable it.\n\n%s"
                   state-name state-name doc)
          (interactive)
          (if (and (numberp arg) (< arg 1))
-             (when (eq helix--state ',state)
-               (setq helix--state nil
-                     helix--previous-state ',state
+             (when (eq helix-state ',state)
+               (setq helix-state nil
+                     helix-previous-state ',state
                      ,variable nil))
            ;; else
            (unless helix-local-mode (helix-local-mode))
            (helix-disable-current-state)
-           (setq helix--state ',state
+           (setq helix-state ',state
                  ,variable t)
            (helix-update-cursor))
          (helix-update-active-keymaps)
@@ -199,14 +199,14 @@ When ARG is non-positive integer and Helix is in %s — disable it.\n\n%s"
 
 (defun helix-change-state (state)
   "Switch Helix into STATE."
-  (when (not (eq state helix--state))
+  (when (not (eq state helix-state))
     (-some-> state
       (helix-state-property :function)
       (funcall 1))))
 
 (defun helix-disable-current-state ()
   "Disable current Helix state."
-  (-some-> helix--state
+  (-some-> helix-state
     (helix-state-property :function)
     (funcall -1)))
 
@@ -276,7 +276,7 @@ CHECKED-MODES is used internally and should not be set initially."
 
 (defun helix-update-active-keymaps ()
   "Reset keymaps for current Helix state."
-  (helix-activate-state-keymaps helix--state))
+  (helix-activate-state-keymaps helix-state))
 
 (defun helix-activate-state-keymaps (state)
   "Set the value of the `helix-mode-map-alist' in the current buffer
@@ -363,7 +363,7 @@ For example:
 (defun helix-update-cursor ()
   "Update the cursor for current Helix STATE in current buffer."
   (when (eq (window-buffer) (current-buffer))
-    (let ((state (or helix--state 'normal)))
+    (let ((state (or helix-state 'normal)))
       (helix-set-cursor-type-and-color
        (helix-state-property state :cursor)))))
 
