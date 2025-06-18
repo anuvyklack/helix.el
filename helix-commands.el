@@ -675,14 +675,13 @@ Uses visual lines if `visual-line-mode' is active, otherwise logical lines."
                (set-mark (car (bounds-of-thing-at-point line))) ; left end
                (goto-char e)
                (goto-char (cdr (bounds-of-thing-at-point line))) ; right end
-               (backward-char)
+               (unless (eobp) (backward-char))
                1)))
           (t ;; no region
            (-let (((beg . end) (bounds-of-thing-at-point line)))
              (set-mark beg)
              (goto-char end)
-             (unless (eql (1+ beg) end)
-               (backward-char))
+             (unless (eobp) (backward-char))
              1)))))
 
 ;; X
