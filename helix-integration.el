@@ -59,6 +59,10 @@
                      'helix-till-char-forward    ;; t
                      'helix-till-char-backward)) ;; T
 
+;;; Edebug
+
+(helix-set-intercept-keymap edebug-mode-map)
+
 ;;; Consult
 
 (helix-cache-input consult--read)

@@ -185,10 +185,10 @@ When ARG is non-positive integer and Helix is in %s — disable it.\n\n%s"
            (unless helix-local-mode (helix-local-mode))
            (helix-disable-current-state)
            (setq helix-state ',state
-                 ,variable t)
-           (helix-update-cursor))
-         (helix-update-active-keymaps)
+                 ,variable t))
          ,@body
+         (helix-update-cursor)
+         (helix-update-active-keymaps)
          (run-hooks ',hook)
          ,@(when after-hook `(,after-hook))
          (force-mode-line-update)))))
@@ -282,16 +282,21 @@ CHECKED-MODES is used internally and should not be set initially."
   "Set the value of the `helix-mode-map-alist' in the current buffer
 according to the Helix STATE."
   (setq helix-mode-map-alist
-        (if state
-            (let ((global-keymap (cons t (helix-state-property state :keymap)))
-                  other-maps)
-              (dolist (keymap (current-active-maps) (nreverse other-maps))
-                (when-let* ((helix-map (helix-get-nested-helix-keymap keymap state))
-                            (mode      (helix-get-minor-mode-for-keymap keymap)))
-                  (push (cons mode helix-map) other-maps)))
-              `(,@other-maps ,global-keymap)))))
+        (when state
+          (let ((global-keymap (cons t (helix-state-property state :keymap)))
+                intercept-maps state-maps)
+            (dolist (keymap (current-active-maps))
+              (cond ((helix-intercept-keymap-p keymap)
+                     (let ((minor-mode (helix-minor-mode-for-keymap keymap)))
+                       (push (cons minor-mode keymap) intercept-maps)))
+                    ((when-let* ((helix-map (helix-get-nested-helix-keymap keymap state))
+                                 (minor-mode (helix-minor-mode-for-keymap keymap)))
+                       (push (cons minor-mode helix-map) state-maps)))))
+            `(,@(nreverse intercept-maps)
+              ,@(nreverse state-maps)
+              ,global-keymap)))))
 
-(defun helix-get-minor-mode-for-keymap (keymap)
+(defun helix-minor-mode-for-keymap (keymap)
   "Return the minor mode associated with KEYMAP or t if it doesn't have one."
   (when (symbolp keymap)
     (setq keymap (symbol-value keymap)))
@@ -357,6 +362,17 @@ For example:
       (let ((key (pop rest))
             (definition (pop rest)))
         (keymap-set map key definition)))))
+
+(defun helix-set-intercept-keymap (keymap)
+  "Make KEYMAP override all Helix keymaps."
+  (when (keymapp keymap)
+    (define-key keymap [helix-intercept] #'undefined)))
+
+(defun helix-intercept-keymap-p (keymap)
+  "Return non-nil if KEYMAP should override all Helix keymaps."
+  (if (and (keymapp keymap)
+           (lookup-key keymap [helix-intercept]))
+      keymap))
 
 ;;; Cursor shape and color
 
