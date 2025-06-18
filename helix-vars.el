@@ -316,10 +316,10 @@ and thus should be called from major-modes hooks.
 
 See the defaul value and `helix-integration.el' file for examples.")
 
-(helix-defvar-local helix--state nil
+(helix-defvar-local helix-state nil
   "The current Helix state.")
 
-(helix-defvar-local helix--previous-state nil
+(helix-defvar-local helix-previous-state nil
   "The previous Helix state.")
 
 (defvar helix-state-properties nil
