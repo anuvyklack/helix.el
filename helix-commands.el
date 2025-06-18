@@ -1174,14 +1174,14 @@ Do not auto-detect word boundaries in the search pattern."
   (helix-mark-inner-thing 'helix-WORD count))
 
 ;; maw
-(defun helix-mark-a-word (count)
-  (interactive "p")
-  (helix-select-a-thing 'helix-word count t))
+(defun helix-mark-a-word ()
+  (interactive)
+  (helix-select-a-thing 'helix-word t))
 
 ;; maW
-(defun helix-mark-a-WORD (count)
-  (interactive "p")
-  (helix-select-a-thing 'helix-WORD count t))
+(defun helix-mark-a-WORD ()
+  (interactive)
+  (helix-select-a-thing 'helix-WORD t))
 
 ;; mis m.
 (defun helix-mark-inner-sentence (count)
@@ -1189,9 +1189,9 @@ Do not auto-detect word boundaries in the search pattern."
   (helix-mark-inner-thing 'sentence count))
 
 ;; mas
-(defun helix-mark-a-sentence (count)
-  (interactive "p")
-  (helix-select-a-thing 'helix-sentence count t))
+(defun helix-mark-a-sentence ()
+  (interactive)
+  (helix-select-a-thing 'helix-sentence t))
 
 ;; mip
 (defun helix-mark-inner-paragraph (count)
