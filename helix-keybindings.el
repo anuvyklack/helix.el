@@ -328,5 +328,17 @@
   "<f1> k"   #'keypad-describe-key
   "<help> k" #'keypad-describe-key)
 
+  ;; Scrolling
+  "C-b" #'helix-smooth-scroll-page-up
+  "C-f" #'helix-smooth-scroll-page-down
+  "C-d" #'helix-smooth-scroll-down
+  "C-u" #'helix-smooth-scroll-up
+  "C-e" #'helix-mix-scroll-line-down
+  "C-y" #'helix-mix-scroll-line-up
+  ;; "z z" #'helix-smooth-scroll-line-to-center
+  "z z" #'helix-smooth-scroll-line-not-to-very-top
+  "z t" #'helix-smooth-scroll-line-to-top
+  "z b" #'helix-smooth-scroll-line-to-bottom)
+
 (provide 'helix-keybindings)
 ;;; helix-keybindings.el ends here
