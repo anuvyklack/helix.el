@@ -14,9 +14,9 @@
 ;;; Code:
 
 (require 'helix-core)
-(require 'helix-common)
 (require 'helix-multiple-cursors-core)
 (require 'helix-commands)
+(require 'keypad)
 
 ;;; Keypad
 
@@ -37,7 +37,6 @@
     "<help> k" #'keypad-describe-key))
 
 ;;; Eldoc
-
 (with-eval-after-load 'eldoc
   ;; Add motion commands to the `eldoc-message-commands' obarray.
   (eldoc-add-command 'helix-backward-char        ;; h
@@ -50,6 +49,8 @@
                      'helix-backward-WORD-start  ;; B
                      'helix-forward-word-end     ;; e
                      'helix-forward-WORD-end     ;; E
+                     'helix-first-non-blank      ;; gh
+                     'helix-end-of-line          ;; gl
                      'helix-search-forward       ;; /
                      'helix-search-backward      ;; ?
                      'helix-search-next          ;; n
@@ -61,11 +62,13 @@
 
 ;;; Edebug
 
-(helix-set-intercept-keymap edebug-mode-map)
+(with-eval-after-load 'edebug
+  (helix-set-intercept-keymap edebug-mode-map))
 
 ;;; Consult
 
-(helix-cache-input consult--read)
+(with-eval-after-load 'consult
+  (helix-cache-input consult--read))
 
 ;;; Lisp
 
@@ -73,6 +76,19 @@
           #'(lambda ()
               (helix-surround-add-pair ?` '("`" . "'"))
               (helix-surround-add-pair ?' '("`" . "'"))))
+
+;;; Help
+
+(helix-set-initial-state 'help-mode 'normal)
+(with-eval-after-load 'help-mode
+  (helix-keymap-set help-mode-map 'normal
+    ;; "RET" (keymap-lookup help-mode-map "RET")
+    "q" (keymap-lookup help-mode-map "q")))
+
+(helix-set-initial-state 'helpful-mode 'normal)
+(with-eval-after-load 'helpful
+  (helix-keymap-set helpful-mode-map 'normal
+    "q" #'quit-window))
 
 ;;; Org mode
 
