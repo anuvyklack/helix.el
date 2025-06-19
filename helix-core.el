@@ -379,43 +379,30 @@ For example:
 (defun helix-update-cursor ()
   "Update the cursor for current Helix STATE in current buffer."
   (when (eq (window-buffer) (current-buffer))
-    (let ((state (or helix-state 'normal)))
-      (helix-set-cursor-type-and-color
-       (helix-state-property state :cursor)))))
+    (helix-set-cursor-type-and-color
+     (helix-state-property helix-state :cursor))))
 
-(defun helix-set-cursor-type-and-color (specs)
+(defun helix-set-cursor-type-and-color (&optional specs)
   "Change the cursor's apperance according to SPECS.
 SPECS may be a cursor type as per `cursor-type', a color string as passed
 to `set-cursor-color', a zero-argument function for changing the cursor,
 or a list of the above."
-  (unless (and (not (functionp specs))
-               (proper-list-p specs))
-    (setq specs (list specs)))
+  (setq specs (cond ((null specs) '(t))
+                    ((not (or (functionp specs)
+                              (proper-list-p specs)))
+                     (list specs))
+                    (t specs)))
   (dolist (spec specs)
-    (cond ((functionp spec)
-           (ignore-errors (funcall spec)))
-          ((stringp spec)
-           (helix-set-cursor-color spec))
-          (t
-           (helix-set-cursor-type spec)))))
-
-(defun helix-set-cursor-type (type)
-  "Set cursor TYPE."
-  (if (display-graphic-p)
-      (setq cursor-type type)
-    (let* ((type (or (car-safe type) type))
-           (code (pcase type
-                   ('bar "6")
-                   ('hbar "4")
-                   (_ "2"))))
-      (send-string-to-terminal (concat "\e[" code " q")))))
-
-(defun helix-set-cursor-color (color)
-  "Set the cursor color to COLOR."
-  ;; `set-cursor-color' forces a redisplay, so only
-  ;; call it when the color actually changes
-  (unless (equal (frame-parameter nil 'cursor-color) color)
-    (set-cursor-color color)))
+    (pcase spec
+      ((and fun (pred functionp))
+       (ignore-errors (funcall fun)))
+      ((and color (pred stringp))
+       ;; `set-cursor-color' forces a redisplay, so only
+       ;; call it when the color actually changes.
+       (unless (equal (frame-parameter nil 'cursor-color) color)
+         (set-cursor-color color)))
+      (type
+       (setq cursor-type type)))))
 
 (provide 'helix-core)
 ;;; helix-core.el ends here
