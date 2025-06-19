@@ -38,7 +38,7 @@
 
 (helix-define-state motion
   "Motion state."
-  :cursor 'hbar)
+  :cursor 'hollow)
 
 (provide 'helix-states)
 ;;; helix-states.el ends here
