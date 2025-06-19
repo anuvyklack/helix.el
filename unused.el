@@ -229,3 +229,21 @@ If DIR is positive number move forward, else — backward."
 (defun helix-state ()
   "Return current Helix state."
   helix-state)
+
+(defun helix-set-cursor-type (type)
+  "Set cursor TYPE."
+  (if (display-graphic-p)
+      (setq cursor-type type)
+    (let* ((type (or (car-safe type) type))
+           (code (pcase type
+                   ('bar "6")
+                   ('hbar "4")
+                   (_ "2"))))
+      (send-string-to-terminal (concat "\e[" code " q")))))
+
+(defun helix-set-cursor-color (color)
+  "Set the cursor color to COLOR."
+  ;; `set-cursor-color' forces a redisplay, so only
+  ;; call it when the color actually changes.
+  (unless (equal (frame-parameter nil 'cursor-color) color)
+    (set-cursor-color color)))
