@@ -292,6 +292,14 @@
 
 (helix-keymap-set nil 'normal
   "q"  #'ignore
+  "Q"  #'ignore
+  "r"  #'ignore
+  "Y"  #'ignore
+  "H"  #'ignore
+  "L"  #'ignore
+  "Z"  #'ignore
+  "V"  #'ignore
+  "M"  #'ignore
   "\"" #'ignore
   "'"  #'ignore
   "<"  #'ignore

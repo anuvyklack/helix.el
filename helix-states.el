@@ -20,6 +20,7 @@
 (helix-define-state normal
   "Normal state."
   :cursor helix-normal-state-main-cursor
+  :keymap (make-keymap) ;; full keymap
   (when helix-normal-state
     ;; We need to run through all the cursors in any case to switch their color.
     (helix-with-each-cursor
