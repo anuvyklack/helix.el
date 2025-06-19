@@ -288,22 +288,6 @@
   "K"   #'helix-move-window-up
   "L"   #'helix-move-window-right)
 
-;; Ignored
-
-(helix-keymap-set nil 'normal
-  "q"  #'ignore
-  "\"" #'ignore
-  "'"  #'ignore
-  "<"  #'ignore
-  ">"  #'ignore
-  "+"  #'ignore
-  "="  #'ignore
-  "!"  #'ignore
-  "|"  #'ignore
-  "#"  #'ignore
-  "$"  #'ignore
-  "^"  #'ignore)
-
 ;;; Multiple cursors
 
 (keymap-set helix-multiple-cursors-map "C-g" #'helix-remove-all-fake-cursors)

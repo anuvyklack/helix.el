@@ -143,12 +143,13 @@ Optional keyword arguments:
          (hook   (intern (format "%s-hook" symbol)))
          (keymap (intern (format "%s-map" symbol)))
          (modes  (intern (format "%s-modes" symbol)))
-         key arg cursor-value hook-value after-hook)
+         key arg keymap-value cursor-value hook-value after-hook)
     ;; collect keywords
     (while (keywordp (car-safe body))
       (setq key (pop body)
             arg (pop body))
       (pcase key
+        (:keymap (setq keymap-value arg))
         (:cursor (setq cursor-value arg))
         (:hook (setq hook-value (ensure-list arg)))
         (:after-hook (setq after-hook arg))))
@@ -164,7 +165,7 @@ Optional keyword arguments:
 May be a cursor type as per `cursor-type', a color string as passed
 to `set-cursor-color', a zero-argument function for changing the
 cursor, or a list of the above." state-name))
-                  :keymap (defvar ,keymap (make-sparse-keymap)
+                  :keymap (defvar ,keymap ,(or keymap-value '(make-sparse-keymap))
                             ,(format "Global keymap for Helix %s." state-name))
                   :modes (defvar ,modes nil
                            ,(format "List of major and minor modes such that if any of them is active in the
