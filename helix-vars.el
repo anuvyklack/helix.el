@@ -377,8 +377,7 @@ cursors editing.")
   "Commands to execute only once while multiple cursors are active.")
 
 (defvar helix-default-commands-to-run-for-all-cursors
-  '(keypad                         ;; SPC
-    helix-normal-state-escape      ;; ESC in normal state
+  '(helix-normal-state-escape      ;; ESC in normal state
     helix-backward-char            ;; h
     helix-next-line                ;; j
     helix-previous-line            ;; k
@@ -521,7 +520,7 @@ cursors editing.")
 
 (defvar helix-default-commands-to-run-once
   '(execute-extended-command                 ;; M-x
-    helix-keypad                             ;; SPC
+    keypad                                   ;; SPC
     helix-insert                             ;; i
     helix-append                             ;; a
     helix-insert-line                        ;; I

@@ -16,16 +16,11 @@
 (require 'helix-scrolling)
 (require 'helix-core)
 (require 'helix-states)
-(provide 'helix-integration)
 (require 'keypad)
 
 ;;; Normal state
 
 (helix-keymap-set nil 'normal
-  "SPC" #'keypad
-  "C-h k" #'keypad-describe-key
-  "<f1> k" #'keypad-describe-key
-  "<help> k" #'keypad-describe-key
   "<backspace>" #'execute-extended-command)
 
 (helix-keymap-set nil 'normal
@@ -323,10 +318,6 @@
 (helix-keymap-set nil 'motion
   "C-w" 'helix-window-map
   "<backspace>" #'execute-extended-command
-  "SPC"      #'keypad
-  "C-h k"    #'keypad-describe-key
-  "<f1> k"   #'keypad-describe-key
-  "<help> k" #'keypad-describe-key)
 
   ;; Scrolling
   "C-b" #'helix-smooth-scroll-page-up
