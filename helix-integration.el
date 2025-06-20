@@ -63,7 +63,10 @@
 ;;; Edebug
 
 (with-eval-after-load 'edebug
-  (helix-set-intercept-keymap edebug-mode-map))
+  (keymap-unset edebug-mode-map "SPC")
+  (keymap-set edebug-mode-map "s" #'edebug-step-mode)
+  (keymap-unset edebug-mode-map "h")
+  (keymap-set edebug-mode-map "H" #'edebug-goto-here))
 
 ;;; Consult
 
