@@ -284,23 +284,29 @@ CHECKED-MODES is used internally and should not be set initially."
   "Reset keymaps for current Helix state."
   (helix-activate-state-keymaps helix-state))
 
+(defvar edebug-mode nil)
+(defvar edebug-mode-map)
+(add-hook 'edebug-mode-hook #'helix-update-active-keymaps)
+
 (defun helix-activate-state-keymaps (state)
   "Set the value of the `helix-mode-map-alist' in the current buffer
 according to the Helix STATE."
   (setq helix-mode-map-alist
         (when state
-          (let ((global-keymap (cons t (helix-state-property state :keymap)))
-                intercept-maps state-maps)
-            (dolist (keymap (current-active-maps))
-              (cond ((helix-intercept-keymap-p keymap)
-                     (let ((minor-mode (helix-minor-mode-for-keymap keymap)))
-                       (push (cons minor-mode keymap) intercept-maps)))
-                    ((when-let* ((helix-map (helix-get-nested-helix-keymap keymap state))
-                                 (minor-mode (helix-minor-mode-for-keymap keymap)))
-                       (push (cons minor-mode helix-map) state-maps)))))
-            `(,@(nreverse intercept-maps)
-              ,@(nreverse state-maps)
-              ,global-keymap)))))
+          `(;; Edebug if active
+            ,@(if edebug-mode
+                  (let ((map (or (helix-get-nested-helix-keymap edebug-mode-map state)
+                                 edebug-mode-map)))
+                    `((edebug-mode . ,map))))
+            ;; Helix keymaps nested in other keymaps
+            ,@(let (maps)
+                (dolist (keymap (current-active-maps))
+                  (when-let* ((helix-map (helix-get-nested-helix-keymap keymap state))
+                              (mode (helix-minor-mode-for-keymap keymap)))
+                    (push (cons mode helix-map) maps)))
+                (nreverse maps))
+            ;; Main state keymap
+            (t . ,(helix-state-property state :keymap))))))
 
 (defun helix-minor-mode-for-keymap (keymap)
   "Return the minor mode associated with KEYMAP or t if it doesn't have one."
