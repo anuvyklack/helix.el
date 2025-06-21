@@ -48,12 +48,14 @@ All following buffer modifications are grouped together as a single
 action. The step is terminated with `helix--single-undo-step-end'."
   (unless (or helix--in-single-undo-step
               (helix-undo-command-p this-command)
-              (memq buffer-undo-list '(nil t)))
+              (eq buffer-undo-list t))
     (setq helix--in-single-undo-step t)
     (unless (null (car-safe buffer-undo-list))
       (undo-boundary))
     (setq helix--undo-list-pointer buffer-undo-list)
     (helix--undo-boundary-1)))
+
+(defvar helix-insert-state)
 
 (defun helix--single-undo-step-end ()
   "Finalize atomic undo step started by `helix--single-undo-step-beginning'."
@@ -84,8 +86,6 @@ action. The step is terminated with `helix--single-undo-step-end'."
     (setq helix--in-single-undo-step nil
           helix--undo-list-pointer nil)))
 
-(defvar helix--undo-boundary nil)
-
 (defun helix--undo-boundary-1 ()
   (setq helix--undo-boundary
         `(apply helix--undo-step-end ,(helix-cursors-positions)))
@@ -93,14 +93,17 @@ action. The step is terminated with `helix--single-undo-step-end'."
 
 (defun helix--undo-boundary-2 ()
   (when helix--undo-boundary
-    (while (eq (car buffer-undo-list) nil)
-      (pop buffer-undo-list))
-    (if (equal (car buffer-undo-list) helix--undo-boundary)
-        (pop buffer-undo-list)
-      ;; else
-      (push `(apply helix--undo-step-start ,(helix-cursors-positions))
-            buffer-undo-list))
-    (setq helix--undo-boundary nil)))
+    (let ((undo-list buffer-undo-list))
+      (while (and (consp undo-list)
+                  (eq (car undo-list) nil))
+        (pop undo-list))
+      (if (equal (car undo-list) helix--undo-boundary)
+          (pop undo-list)
+        ;; else
+        (push `(apply helix--undo-step-start ,(helix-cursors-positions))
+              undo-list))
+      (setq helix--undo-boundary nil
+            buffer-undo-list undo-list))))
 
 ;; (defmacro helix-with-undo-boundaries (&rest body)
 ;;   (declare (indent 0) (debug t))
@@ -143,13 +146,6 @@ returned by `helix-cursors-positions' function."
         buffer-undo-list))
 
 ;;; Fake cursor object
-
-(helix-defvar-local helix--cursors-table
-  (make-hash-table :test 'eql :weakness t)
-  "Table mapping fake cursors IDs to cursors overlays.")
-
-(defvar helix--fake-cursor-last-used-id 0
-  "Last used fake cursor ID.")
 
 (defun helix--new-fake-cursor-id ()
   "Return new unique cursor id.
