@@ -18,12 +18,19 @@
 (require 'helix-states)
 (require 'keypad)
 
+;;; Universal argument
+
+;; Bind `universal-argument' to `M-u' since `C-u' is used for scrolling.
+;; By default `M-u' is binded to `upcase-word'.
+(keymap-global-set "M-u" #'universal-argument)
+(keymap-set universal-argument-map "M-u" #'universal-argument-more)
+(helix-keymap-set nil 'normal "M-u" #'universal-argument)
+(helix-keymap-set nil 'motion "M-u" #'universal-argument)
+
 ;;; Normal state
 
 (helix-keymap-set nil 'normal
-  "<backspace>" #'execute-extended-command)
-
-(helix-keymap-set nil 'normal
+  "<backspace>" #'execute-extended-command
   ":" #'execute-extended-command
 
   "0" #'digit-argument
@@ -300,6 +307,8 @@
 ;;; Motion state
 
 (helix-keymap-set nil 'motion
+  "M-u" #'universal-argument
+
   "C-w" 'helix-window-map
   "<backspace>" #'execute-extended-command
 
