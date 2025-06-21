@@ -736,18 +736,15 @@ multiple cursors.")
 (defvar helix--executing-command-for-fake-cursor nil
   "Non-nil if `this-command' is currently executing for fake cursor.")
 
-(defvar helix--remove-post-command-hook nil
+(helix-defvar-local helix--remove-post-command-hook nil
   "If non-nil the `helix--post-command-hook' function will be removed from
 `post-command-hook' after execution.")
 
-(defvar helix--in-single-undo-step nil
+(helix-defvar-local helix--in-single-undo-step nil
   "Non-nil while we are in the single undo step.")
 
-(defvar helix--undo-list-pointer nil
+(helix-defvar-local helix--undo-list-pointer nil
   "Stores the start of the current undo step in `buffer-undo-list'.")
-
-(defvar helix--point-state-during-undo nil
-  "Hold state of the real cursor while a fake cursor active for undo.")
 
 (provide 'helix-vars)
 ;;; helix-vars.el ends here
