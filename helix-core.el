@@ -57,15 +57,12 @@ want COMMAND to be executed only for original ones."
           (helix--execute-command-for-all-fake-cursors helix-this-command)
         (error
          (message "[Helix] error while executing command for fake cursor: %s"
-                  (error-message-string error)))))
-    (when (helix-merge-regions-p helix-this-command)
-      (helix-merge-overlapping-regions))
+                  (error-message-string error))))
+      (when (helix-merge-regions-p helix-this-command)
+        (helix-merge-overlapping-regions)))
     (helix--single-undo-step-end)
     (setq helix-this-command nil
-          helix--input-cache nil)
-    (when helix--remove-post-command-hook
-      (remove-hook 'post-command-hook 'helix--post-command-hook t)
-      (setq helix--remove-post-command-hook nil))))
+          helix--input-cache nil)))
 
 (define-minor-mode helix-local-mode
   "Minor mode for setting up Helix in a current buffer."
@@ -76,13 +73,16 @@ want COMMAND to be executed only for original ones."
         ;; We will update its content on every Helix state change.
         (cl-pushnew 'helix-mode-map-alist emulation-mode-map-alists)
         (helix-load-whitelists)
-        (add-hook 'pre-command-hook 'helix--pre-commad-hook nil t)
-        (add-hook 'post-command-hook 'helix--post-command-hook t t)
+        (add-hook 'pre-command-hook #'helix--pre-commad-hook nil t)
+        (add-hook 'post-command-hook #'helix--post-command-hook 90 t)
         (helix-change-state (helix-initial-state)))
     ;; else
-    (remove-hook 'pre-command-hook 'helix--pre-commad-hook t)
-    ;; Execute `helix--post-command-hook' one last time and then remove it.
-    (setq helix--remove-post-command-hook t)
+    (remove-hook 'post-command-hook #'helix--post-command-hook t)
+    (remove-hook 'pre-command-hook #'helix--pre-commad-hook t)
+    (helix--single-undo-step-end)
+    (setq helix-this-command nil
+          helix--input-cache nil)
+    (when helix-multiple-cursors-mode (helix-multiple-cursors-mode -1))
     (helix-disable-current-state)))
 
 (put 'helix-local-mode 'permanent-local t)
