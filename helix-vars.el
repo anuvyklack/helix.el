@@ -364,6 +364,13 @@ Default value is 0 - scroll half the screen.")
 (defvar helix-undo-commands '(helix-undo helix-redo undo undo-redo)
   "Commands that implement undo/redo functionality.")
 
+(helix-defvar-local helix--cursors-table
+  (make-hash-table :test 'eql :weakness t)
+  "Table mapping fake cursors IDs to cursors overlays.")
+
+(defvar helix--fake-cursor-last-used-id 0
+  "Last used fake cursor ID.")
+
 (defvar helix-multiple-cursors-map (make-sparse-keymap)
   "Transient keymap for `helix-multiple-cursors-mode'.
 It is active while there are multiple cursors.
@@ -732,18 +739,13 @@ multiple cursors.")
 (defvar helix--executing-command-for-fake-cursor nil
   "Non-nil if `this-command' is currently executing for fake cursor.")
 
-(defvar helix--remove-post-command-hook nil
-  "If non-nil the `helix--post-command-hook' function will be removed from
-`post-command-hook' after execution.")
-
-(defvar helix--in-single-undo-step nil
+(helix-defvar-local helix--in-single-undo-step nil
   "Non-nil while we are in the single undo step.")
 
-(defvar helix--undo-list-pointer nil
+(helix-defvar-local helix--undo-list-pointer nil
   "Stores the start of the current undo step in `buffer-undo-list'.")
 
-(defvar helix--point-state-during-undo nil
-  "Hold state of the real cursor while a fake cursor active for undo.")
+(helix-defvar-local helix--undo-boundary nil)
 
 (provide 'helix-vars)
 ;;; helix-vars.el ends here
