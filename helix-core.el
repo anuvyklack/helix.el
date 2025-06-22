@@ -94,11 +94,13 @@ want COMMAND to be executed only for original ones."
         (dolist (fun-how-advice helix--advices)
           (apply #'advice-add fun-how-advice))
         (when helix-want-minibuffer
-          (add-hook 'minibuffer-setup-hook 'helix--initialize)))
+          (add-hook 'minibuffer-setup-hook #'helix--initialize))
+        (add-hook 'window-configuration-change-hook #'helix-update-cursor))
     ;; else
     (cl-loop for (fun _where advice) in helix--advices
              do (advice-remove fun advice))
-    (remove-hook 'minibuffer-setup-hook 'helix--initialize)))
+    (remove-hook 'minibuffer-setup-hook #'helix--initialize)
+    (remove-hook 'window-configuration-change-hook #'helix-update-cursor)))
 
 (defun helix--initialize ()
   "Turn on `helix-local-mode' in current buffer if appropriate."
@@ -108,6 +110,9 @@ want COMMAND to be executed only for original ones."
     (or (and (minibufferp)
              (not helix-want-minibuffer))
         (helix-local-mode 1))))
+
+(helix-define-advice select-window (:after (&rest _) helix)
+  (helix-update-cursor))
 
 ;;; Helix states
 
@@ -187,10 +192,10 @@ When ARG is non-positive integer and Helix is in %s — disable it.\n\n%s"
            (setq helix-state ',state
                  ,variable t))
          ,@body
-         (helix-update-cursor)
          (helix-update-active-keymaps)
          (run-hooks ',hook)
          ,@(when after-hook `(,after-hook))
+         (helix-update-cursor)
          (force-mode-line-update)))))
 
 (defun helix-state-p (symbol)
@@ -394,13 +399,14 @@ or a list of the above."
                     (t specs)))
   (dolist (spec specs)
     (pcase spec
+      ((and color (pred stringp))
+       ;; Cursor color can only be set for each frame but not for each buffer.
+       ;; Also `set-cursor-color' forces a redisplay, so only call it when the
+       ;; color actually changes.
+       (unless (equal color (frame-parameter nil 'cursor-color))
+         (set-cursor-color color)))
       ((and fun (pred functionp))
        (ignore-errors (funcall fun)))
-      ((and color (pred stringp))
-       ;; `set-cursor-color' forces a redisplay, so only
-       ;; call it when the color actually changes.
-       (unless (equal (frame-parameter nil 'cursor-color) color)
-         (set-cursor-color color)))
       (type
        (setq cursor-type type)))))
 
