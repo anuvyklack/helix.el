@@ -1145,106 +1145,86 @@ already there."
 ;; mi"
 (defun helix-mark-inner-double-quoted ()
   (interactive)
-  (when-let* ((bounds (helix-bounds-of-string-at-point ?\")))
-    (set-mark (1+ (car bounds)))
-    (goto-char (1- (cdr bounds)))))
+  (-when-let ((beg . end) (helix-bounds-of-quoted-at-point ?\"))
+    (helix-set-region (1+ beg) (1- end))))
 
 ;; ma"
 (defun helix-mark-a-double-quoted ()
   (interactive)
-  (when-let* ((bounds (helix-bounds-of-string-at-point ?\")))
-    (set-mark (car bounds))
-    (goto-char (cdr bounds))))
+  (-when-let ((beg . end) (helix-bounds-of-quoted-at-point ?\"))
+    (helix-set-region beg end)))
 
 ;; mi'
 (defun helix-mark-inner-single-quoted ()
   (interactive)
-  (when-let* ((bounds (helix-bounds-of-string-at-point ?')))
-    (set-mark (1+ (car bounds)))
-    (goto-char (1- (cdr bounds)))))
+  (-when-let ((beg . end) (helix-bounds-of-quoted-at-point ?'))
+    (helix-set-region (1+ beg) (1- end))))
 
 ;; ma'
 (defun helix-mark-a-single-quoted ()
   (interactive)
-  (when-let* ((bounds (helix-bounds-of-string-at-point ?')))
-    (set-mark (car bounds))
-    (goto-char (cdr bounds))))
+  (-when-let ((beg . end) (helix-bounds-of-quoted-at-point ?'))
+    (helix-set-region beg end)))
 
 ;; mi`
 (defun helix-mark-inner-back-quoted ()
   (interactive)
-  (when-let* ((bounds (helix-bounds-of-string-at-point ?`)))
-    (set-mark (1+ (car bounds)))
-    (goto-char (1- (cdr bounds)))))
+  (-when-let ((beg . end) (helix-bounds-of-quoted-at-point ?`))
+    (helix-set-region (1+ beg) (1- end))))
 
 ;; ma`
 (defun helix-mark-a-back-quoted ()
   (interactive)
-  (when-let* ((bounds (helix-bounds-of-string-at-point ?`)))
-    (set-mark (car bounds))
-    (goto-char (cdr bounds))))
+  (-when-let ((beg . end) (helix-bounds-of-quoted-at-point ?`))
+    (helix-set-region beg end)))
 
 ;; mi( mi)
 (defun helix-mark-inner-paren ()
   (interactive)
-  (when-let* ((bounds (helix-bounds-of-inner-part-of-sexp-at-point '("(" . ")"))))
-    (set-mark (car bounds))
-    (goto-char (cdr bounds))))
+  (-when-let ((_ beg end _) (helix-4-bounds-of-brackets-at-point ?\( ?\)))
+    (helix-set-region beg end)))
 
 ;; ma( ma)
 (defun helix-mark-a-paren ()
   (interactive)
-  (when-let* ((bounds (helix-bounds-of-sexp-at-point '("(" . ")"))))
-    (set-mark (car bounds))
-    (goto-char (cdr bounds))))
+  (-when-let ((beg . end) (helix-bounds-of-brackets-at-point ?\( ?\)))
+    (helix-set-region beg end)))
 
 ;; mi[ mi]
 (defun helix-mark-inner-bracket ()
   (interactive)
-  (when-let* ((bounds (helix-bounds-of-inner-part-of-sexp-at-point '("[" . "]"))))
-    (set-mark (car bounds))
-    (goto-char (cdr bounds))))
+  (-when-let ((_ beg end _) (helix-4-bounds-of-brackets-at-point ?\[ ?\]))
+    (helix-set-region beg end)))
 
 ;; ma[ ma]
 (defun helix-mark-a-bracket ()
   (interactive)
-  (when-let* ((bounds (helix-bounds-of-sexp-at-point '("[" . "]"))))
-    (set-mark (car bounds))
-    (goto-char (cdr bounds))))
+  (-when-let ((beg . end) (helix-bounds-of-brackets-at-point ?\[ ?\]))
+    (helix-set-region beg end)))
 
 ;; mi{ mi}
 (defun helix-mark-inner-curly ()
   (interactive)
-  (when-let* ((bounds (helix-bounds-of-inner-part-of-sexp-at-point '("{" . "}"))))
-    (set-mark (car bounds))
-    (goto-char (cdr bounds))))
+  (-when-let ((_ beg end _) (helix-4-bounds-of-brackets-at-point ?{ ?}))
+    (helix-set-region beg end)))
 
 ;; ma{ ma}
 (defun helix-mark-a-curly ()
   (interactive)
-  (when-let* ((bounds (helix-bounds-of-sexp-at-point '("{" . "}"))))
-    (set-mark (car bounds))
-    (goto-char (cdr bounds))))
+  (-when-let ((beg . end) (helix-bounds-of-brackets-at-point ?{ ?}))
+    (helix-set-region beg end)))
 
 ;; mi< mi>
 (defun helix-mark-inner-angle ()
   (interactive)
-  (let ((pair '("<" . ">"))
-        (limits (bounds-of-thing-at-point 'defun)))
-    (when-let* ((bounds (helix-4-bounds-of-surrounded-at-point pair limits nil t)))
-      (-let (((_ l r _) bounds))
-        (set-mark l)
-        (goto-char r)))))
+  (-when-let ((_ beg end _) (helix-4-bounds-of-brackets-at-point ?< ?>))
+    (helix-set-region beg end)))
 
 ;; ma< ma>
 (defun helix-mark-an-angle ()
   (interactive)
-  (let ((pair '("<" . ">"))
-        (limits (bounds-of-thing-at-point 'defun)))
-    (when-let* ((bounds (helix-4-bounds-of-surrounded-at-point pair limits nil t)))
-      (-let (((l _ _ r) bounds))
-        (set-mark l)
-        (goto-char r)))))
+  (-when-let ((beg _ _ end) (helix-4-bounds-of-brackets-at-point ?< ?>))
+    (helix-set-region beg end)))
 
 ;;; Search
 
@@ -1442,11 +1422,8 @@ See the defaul value of `helix-surround-alist' variable for examples."
         helix-surround-alist))
 
 (defun helix-surround--read-char ()
-  "Read char from minibuffer and return (LEFT . RIGHT) pair to surround with.
-
-This function is needed to cache its output with `helix-cache-input' to
-use with all cursors, instead of `read-char' and then execute it with each
-cursor."
+  "Read char from minibuffer and return (LEFT . RIGHT) pair with strings
+to surround with."
   (let* ((char (read-char "surround: "))
          (pair-or-fun-or-nil (-some->
                                  (alist-get char helix-surround-alist)
@@ -1458,28 +1435,8 @@ cursor."
        pair)
       (_ (cons char char)))))
 
+;; Cache the function output to use with all cursors.
 (helix-cache-input helix-surround--read-char)
-
-(defun helix-surround--get-4-bounds (char)
-  (let ((spec (alist-get char helix-surround-alist)))
-    (if (not spec)
-        (helix-4-bounds-of-surrounded-at-point (cons (char-to-string char)
-                                                     (char-to-string char))
-                                               (bounds-of-thing-at-point 'defun))
-      ;; else
-      (when-let* ((list-or-pair (pcase (plist-get spec :search)
-                                  ((and (pred functionp) fn)
-                                   (funcall fn))
-                                  ((and (pred consp) lop)
-                                   lop))))
-        (pcase list-or-pair
-          ((and (pred -cons-pair?) pair)
-           (helix-4-bounds-of-surrounded-at-point pair
-                                                  (bounds-of-thing-at-point 'defun)
-                                                  (plist-get spec :regexp)
-                                                  (plist-get spec :balanced)))
-          ((and list (guard (length= list 4)))
-           list))))))
 
 ;; ms
 (defun helix-surround ()
@@ -1515,8 +1472,8 @@ lines and reindent the region."
 ;; md
 (defun helix-surround-delete ()
   (interactive)
-  (when-let* ((char (read-char "Delete pair: "))
-              (bounds (helix-surround--get-4-bounds char)))
+  (when-let* ((key (read-char "Delete pair: "))
+              (bounds (helix-surround--4-bounds key)))
     (-let (((left-beg left-end right-beg right-end) bounds))
       (delete-region right-beg right-end)
       (delete-region left-beg left-end))))
@@ -1525,7 +1482,7 @@ lines and reindent the region."
 (defun helix-surround-change ()
   (interactive)
   (when-let* ((char (read-char "Delete pair: "))
-              (bounds (helix-surround--get-4-bounds char)))
+              (bounds (helix-surround--4-bounds char)))
     (-let* (((left-beg left-end right-beg right-end) bounds)
             (char (read-char "Insert pair: "))
             (pair-or-fun (-some-> (alist-get char helix-surround-alist)
@@ -1535,7 +1492,7 @@ lines and reindent the region."
                                (funcall fun))
                               ((and pair (guard pair))
                                pair)
-                              (_ (cons char char))))
+                              ('nil (cons char char))))
             (deactivate-mark nil))
       (save-mark-and-excursion
         (delete-region right-beg right-end)
@@ -1547,23 +1504,21 @@ lines and reindent the region."
 
 (defun helix-mark-inner-surround ()
   (interactive)
-  (let ((char (if (integerp last-command-event)
-                  last-command-event
-                (get last-command-event 'ascii-character))))
-    (when-let* ((bounds (helix-surround--get-4-bounds char)))
-      (-let (((_ l r _) bounds))
-        (set-mark l)
-        (goto-char r)))))
+  (when-let* ((char (if (characterp last-command-event)
+                        last-command-event
+                      (get last-command-event 'ascii-character)))
+              (bounds (helix-surround--4-bounds char)))
+    (-let (((_ beg end _) bounds))
+      (helix-set-region beg end))))
 
 (defun helix-mark-a-surround ()
   (interactive)
-  (let ((char (if (integerp last-command-event)
-                  last-command-event
-                (get last-command-event 'ascii-character))))
-    (when-let* ((bounds (helix-surround--get-4-bounds char)))
-      (-let (((l _ _ r) bounds))
-        (set-mark l)
-        (goto-char r)))))
+  (when-let* ((char (if (characterp last-command-event)
+                        last-command-event
+                      (get last-command-event 'ascii-character)))
+              (bounds (helix-surround--4-bounds char)))
+    (-let (((beg _ _ end) bounds))
+      (helix-set-region beg end))))
 
 ;;; Window navigation
 
