@@ -313,6 +313,7 @@ enclosed in QUOTE-MARKs."
                         (bounds-of-thing-at-point 'string))))
       (-let (((l _ _ r) (helix-4-bounds-of-surrounded-at-point quote-mark bounds)))
         (cons l r))
+    ;; else
     (helix--bounds-of-quoted-at-point-ppss quote-mark)))
 
 (defun helix-4-bounds-of-surrounded-at-point (pair &optional scope regexp? balanced?)
@@ -346,10 +347,8 @@ Return the list (LEFT-BEG LEFT-END RIGHT-LEFT RIGHT-END) with
                        (eq (char-syntax (string-to-char left)) ?\()
                        (eq (char-syntax (string-to-char right)) ?\))))
              (if-let* ((bounds (helix-bounds-of-sexp-at-point pair)))
-                 (list (car bounds)
-                       (1+ (car bounds))
-                       (1- (cdr bounds))
-                       (cdr bounds))))
+                 (-let (((l . r) bounds))
+                   (list l (1+ l) (1- r) r))))
             (t
              (helix--4-bounds-of-surrounded-at-point-1 pair scope regexp?
                                                        balanced?))))))
@@ -473,7 +472,7 @@ after RIGHT.
 matches string STR.
 
 If REGEXP? is non-nil STR will be searched as regexp pattern,
-else it will be searched literally.
+otherwise it will be searched literally.
 
 When REGEXP? is non-nil this function modifies the match data
 that `match-beginning', `match-end' and `match-data' access."

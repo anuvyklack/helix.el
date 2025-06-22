@@ -1426,26 +1426,24 @@ cursor."
 
 (helix-cache-input helix-surround--read-char)
 
-(defun helix-surround--get-4-bounds (char)
-  (let ((spec (alist-get char helix-surround-alist)))
-    (if (not spec)
-        (helix-4-bounds-of-surrounded-at-point (cons (char-to-string char)
-                                                     (char-to-string char))
-                                               (bounds-of-thing-at-point 'defun))
-      ;; else
-      (when-let* ((list-or-pair (pcase (plist-get spec :search)
-                                  ((and (pred functionp) fn)
-                                   (funcall fn))
-                                  ((and (pred consp) lop)
-                                   lop))))
-        (pcase list-or-pair
-          ((and (pred -cons-pair?) pair)
-           (helix-4-bounds-of-surrounded-at-point pair
-                                                  (bounds-of-thing-at-point 'defun)
-                                                  (plist-get spec :regexp)
-                                                  (plist-get spec :balanced)))
-          ((and list (guard (length= list 4)))
-           list))))))
+(defun helix-surround--get-4-bounds (key)
+  (if-let* ((spec (alist-get key helix-surround-alist))
+            (pair-or-list (pcase (plist-get spec :search)
+                            ((and fn (pred functionp))
+                             (funcall fn))
+                            (val val))))
+      (pcase pair-or-list
+        ((and pair (pred -cons-pair?))
+         (helix-4-bounds-of-surrounded-at-point pair
+                                                (bounds-of-thing-at-point 'defun)
+                                                (plist-get spec :regexp)
+                                                (plist-get spec :balanced)))
+        ((and list (pred proper-list-p) (pred (length= 4)))
+         list))
+    ;; else
+    (helix-4-bounds-of-surrounded-at-point (cons (char-to-string key)
+                                                 (char-to-string key))
+                                           (bounds-of-thing-at-point 'defun))))
 
 ;; ms
 (defun helix-surround ()
@@ -1481,8 +1479,8 @@ lines and reindent the region."
 ;; md
 (defun helix-surround-delete ()
   (interactive)
-  (when-let* ((char (read-char "Delete pair: "))
-              (bounds (helix-surround--get-4-bounds char)))
+  (when-let* ((key (read-char "Delete pair: "))
+              (bounds (helix-surround--get-4-bounds key)))
     (-let (((left-beg left-end right-beg right-end) bounds))
       (delete-region right-beg right-end)
       (delete-region left-beg left-end))))
@@ -1513,23 +1511,21 @@ lines and reindent the region."
 
 (defun helix-mark-inner-surround ()
   (interactive)
-  (let ((char (if (integerp last-command-event)
-                  last-command-event
-                (get last-command-event 'ascii-character))))
-    (when-let* ((bounds (helix-surround--get-4-bounds char)))
-      (-let (((_ l r _) bounds))
-        (set-mark l)
-        (goto-char r)))))
+  (when-let* ((char (if (characterp last-command-event)
+                        last-command-event
+                      (get last-command-event 'ascii-character)))
+              (bounds (helix-surround--get-4-bounds char)))
+    (-let (((_ l r _) bounds))
+      (helix-set-region l r))))
 
 (defun helix-mark-a-surround ()
   (interactive)
-  (let ((char (if (integerp last-command-event)
-                  last-command-event
-                (get last-command-event 'ascii-character))))
-    (when-let* ((bounds (helix-surround--get-4-bounds char)))
-      (-let (((l _ _ r) bounds))
-        (set-mark l)
-        (goto-char r)))))
+  (when-let* ((char (if (characterp last-command-event)
+                        last-command-event
+                      (get last-command-event 'ascii-character)))
+              (bounds (helix-surround--get-4-bounds char)))
+    (-let (((l _ _ r) bounds))
+      (helix-set-region l r))))
 
 ;;; Window navigation
 
