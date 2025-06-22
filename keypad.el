@@ -44,11 +44,6 @@
   :group 'keypad
   :type 'string)
 
-(defcustom keypad-ctrl-prefix nil ; "SPC"
-  "The key coresponding to C- modifier."
-  :group 'keypad
-  :type 'string)
-
 (defcustom keypad-meta-prefix "m"
   "The key coresponding to M- modifier."
   :group 'keypad
@@ -195,8 +190,6 @@ Return the found command."
                (cond ((eq keypad--pending-modifier 'literal) 'literal)
                      ((keypad--C-x-or-C-c?) 'control)
                      (t nil))))
-        ((equal keypad-ctrl-prefix key)
-         (setq keypad--pending-modifier 'control))
         ((and (equal keypad-meta-prefix key)
               (keypad--meta-keybindings-available-p))
          (setq keypad--pending-modifier 'meta))
@@ -388,7 +381,6 @@ that were entered in the Keypad."
                     keymap))
           (t ; no keys
            (let* ((ignored (list "x" "c"
-                                 keypad-ctrl-prefix
                                  keypad-meta-prefix
                                  keypad-ctrl-meta-prefix))
                   (keymap (keypad--filter-keymap (keypad--leader-keymap)
@@ -397,8 +389,6 @@ that were entered in the Keypad."
                                                               (member key ignored)))))))
              (keymap-set keymap "x" "C-x")
              (keymap-set keymap "c" "C-c")
-             (when keypad-ctrl-prefix
-               (define-key keymap keypad-ctrl-prefix "C-prefix"))
              (when keypad-meta-prefix
                (define-key keymap keypad-meta-prefix "M-prefix"))
              (when keypad-ctrl-meta-prefix
