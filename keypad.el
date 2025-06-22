@@ -129,13 +129,13 @@ Other way seek in top level.")
 with Keypad. If Helpful package is loaded, `helpful-key' will be used instead
 of `describe-key'."
   (interactive (list (help--read-key-sequence)))
-  (pcase (key-binding (cdar key-list))
+  (pcase (key-binding (caar key-list))
     ('keypad (when-let* ((cmd (keypad-start)))
                (if (fboundp 'helpful-command)
                    (helpful-command cmd)
                  (describe-command cmd))))
     (_ (if (fboundp 'helpful-key)
-           (helpful-key (cdar key-list))
+           (helpful-key (caar key-list))
          (describe-key key-list buffer)))))
 
 ;;; Core
