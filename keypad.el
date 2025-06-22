@@ -150,16 +150,13 @@ Return the found command."
         keypad--pending-modifier nil
         keypad--use-leader-map? nil
         keypad--command nil)
-  (let ((which-key-show-prefix 'echo))
-    (unwind-protect
-        (progn
-          (keypad--show-message)
-          (keypad--open-preview)
-          (while (not (eq (keypad--handle-input-event (read-key))
-                          :quit))
-            (keypad--show-message)
-            (keypad--open-preview)))
-      (keypad--close-preview)))
+  (unwind-protect
+      (progn
+        (keypad--show-preview)
+        (while (not (eq (keypad--handle-input-event (read-key))
+                        :quit))
+          (keypad--show-preview)))
+    (keypad--hide-preview))
   keypad--command)
 
 (defun keypad--handle-input-event (event)
@@ -323,20 +320,20 @@ different events."
 
 ;;; Which-key integration
 
-(defun keypad--open-preview ()
+(defun keypad--show-preview ()
   "Show preview with possible continuations for the keys
 that were entered in the Keypad."
+  (keypad--show-message)
   (when-let* ((which-key-mode)
               ((or keypad--preview-is-active
                    (sit-for which-key-idle-delay t)))
               (keymap (keypad--keymap-for-preview)))
-    (which-key--create-buffer-and-show nil keymap nil
-                                       (concat keypad-message-prefix
-                                               (keypad--format-prefix)
-                                               (keypad--format-keys)))
+    (let ((which-key-show-prefix nil))
+      (which-key--create-buffer-and-show nil keymap nil nil))
+    (keypad--show-message)
     (setq keypad--preview-is-active t)))
 
-(defun keypad--close-preview ()
+(defun keypad--hide-preview ()
   (when keypad--preview-is-active
     (which-key--hide-popup)
     (setq keypad--preview-is-active nil)))
