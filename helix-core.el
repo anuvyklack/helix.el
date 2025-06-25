@@ -140,10 +140,11 @@ Optional keyword arguments:
          (variable symbol)
          (statefun symbol)
          (cursor (intern (format "%s-cursor" symbol)))
-         (hook   (intern (format "%s-hook" symbol)))
+         (enter-hook (intern (format "%s-enter-hook" symbol)))
+         (exit-hook (intern (format "%s-exit-hook" symbol)))
          (keymap (intern (format "%s-map" symbol)))
          (modes  (intern (format "%s-modes" symbol)))
-         key arg keymap-value cursor-value hook-value after-hook)
+         key arg keymap-value cursor-value enter-hook-value exit-hook-value)
     ;; collect keywords
     (while (keywordp (car-safe body))
       (setq key (pop body)
@@ -151,8 +152,8 @@ Optional keyword arguments:
       (pcase key
         (:keymap (setq keymap-value arg))
         (:cursor (setq cursor-value arg))
-        (:hook (setq hook-value (ensure-list arg)))
-        (:after-hook (setq after-hook arg))))
+        (:enter-hook (setq enter-hook-value (ensure-list arg)))
+        (:exit-hook (setq exit-hook-value (ensure-list arg)))))
     `(progn
        ;; Save the state's properties in `helix-state-properties' for runtime lookup.
        (helix--add-to-alist helix-state-properties
@@ -170,10 +171,14 @@ cursor, or a list of the above." state-name))
                   :modes (defvar ,modes nil
                            ,(format "List of major and minor modes such that if any of them is active in the
 current buffer, than Helix will start in %s." state-name))
-                  :hook (prog1 (defvar ,hook nil
-                                 ,(format "Hooks to run on entry/exit %s." state-name))
-                          (dolist (func ',hook-value)
-                            (add-hook ',hook func)))))
+                  :enter-hook (prog1 (defvar ,enter-hook nil
+                                       ,(format "Hooks to run on entry %s." state-name))
+                                (dolist (func ',enter-hook-value)
+                                  (add-hook ',enter-hook func)))
+                  :exit-hook (prog1 (defvar ,exit-hook nil
+                                      ,(format "Hooks to run on exit %s." state-name))
+                               (dolist (func ',exit-hook-value)
+                                 (add-hook ',exit-hook func)))))
        ;; state function
        (helix-defvar-local ,variable nil
          ,(format "Non nil if Helix is in %s." state-name))
@@ -186,16 +191,17 @@ When ARG is non-positive integer and Helix is in %s — disable it.\n\n%s"
              (when (eq helix-state ',state)
                (setq helix-state nil
                      helix-previous-state ',state
-                     ,variable nil))
+                     ,variable nil)
+               ,@body
+               (run-hooks ',exit-hook))
            ;; else
            (unless helix-local-mode (helix-local-mode))
            (helix-disable-current-state)
            (setq helix-state ',state
-                 ,variable t))
-         ,@body
+                 ,variable t)
+           ,@body
+           (run-hooks ',enter-hook))
          (helix-update-active-keymaps)
-         (run-hooks ',hook)
-         ,@(when after-hook `(,after-hook))
          (helix-update-cursor)
          (force-mode-line-update)))))
 
