@@ -179,5 +179,10 @@
     "m i ~" #'helix-mark-inner-org-verbatim
     "m a ~" #'helix-mark-an-org-verbatim))
 
+;;; Corfu
+
+(with-eval-after-load 'corfu
+  (add-hook 'helix-insert-state-exit-hook #'corfu-quit))
+
 (provide 'helix-integration)
 ;;; helix-integration.el ends here
