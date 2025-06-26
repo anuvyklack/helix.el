@@ -62,8 +62,8 @@
   ;; Preserve the column: the behaviour is hard-coded and the column
   ;; is preserved if and only if the last command was `next-line' or
   ;; `previous-line'.
-  (let ((this-command 'next-line))
-    (funcall-interactively 'next-line count)))
+  (setq this-command 'next-line)
+  (funcall-interactively 'next-line count))
 
 ;; k
 (defun helix-previous-line (count)
@@ -75,8 +75,8 @@
   ;; Preserve the column: the behaviour is hard-coded and the column
   ;; is preserved if and only if the last command was `next-line' or
   ;; `previous-line'.
-  (let ((this-command 'previous-line))
-    (funcall-interactively 'previous-line count)))
+  (setq this-command 'previous-line)
+  (funcall-interactively 'previous-line count))
 
 ;; w
 (defun helix-forward-word-start (count &optional bigword)
