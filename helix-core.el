@@ -293,6 +293,7 @@ CHECKED-MODES is used internally and should not be set initially."
 according to the Helix STATE."
   (setq helix-mode-map-alist
         (when state
+          ;; Order matters
           `(;; Edebug if active
             ,@(if edebug-mode
                   (let ((map (or (helix-get-nested-helix-keymap edebug-mode-map state)
@@ -306,7 +307,8 @@ according to the Helix STATE."
                     (push (cons mode helix-map) maps)))
                 (nreverse maps))
             ;; Main state keymap
-            (t . ,(helix-state-property state :keymap))))))
+            ,(cons (helix-state-property state :variable)
+                   (helix-state-property state :keymap))))))
 
 (defun helix-minor-mode-for-keymap (keymap)
   "Return the minor mode associated with KEYMAP or t if it doesn't have one."
