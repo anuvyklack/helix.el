@@ -94,22 +94,21 @@ want COMMAND to be executed only for original ones."
         (dolist (fun-how-advice helix--advices)
           (apply #'advice-add fun-how-advice))
         (when helix-want-minibuffer
-          (add-hook 'minibuffer-setup-hook #'helix--initialize))
+          (add-hook 'minibuffer-setup-hook #'helix-local-mode))
         (add-hook 'window-configuration-change-hook #'helix-update-cursor))
     ;; else
     (cl-loop for (fun _where advice) in helix--advices
              do (advice-remove fun advice))
-    (remove-hook 'minibuffer-setup-hook #'helix--initialize)
+    (remove-hook 'minibuffer-setup-hook #'helix-local-mode)
     (remove-hook 'window-configuration-change-hook #'helix-update-cursor)))
 
 (defun helix--initialize ()
   "Turn on `helix-local-mode' in current buffer if appropriate."
-  (if helix-local-mode
-      ;; Set Helix state according to new major-mode.
-      (helix-change-state (helix-initial-state))
-    (or (and (minibufferp)
-             (not helix-want-minibuffer))
-        (helix-local-mode 1))))
+  (cond (helix-local-mode
+         ;; Set Helix state according to new major-mode.
+         (helix-change-state (helix-initial-state)))
+        ((not (minibufferp))
+         (helix-local-mode 1))))
 
 (helix-define-advice select-window (:after (&rest _) helix)
   (helix-update-cursor))
