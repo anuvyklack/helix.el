@@ -10,6 +10,7 @@
 ;;; Code:
 
 (defvar helix-mode nil)
+(declare-function helix-local-mode "helix-core.el")
 
 ;;; Customization group
 
@@ -25,8 +26,8 @@
   :set #'(lambda (sym value)
            (set-default sym value)
            (if (and helix-mode value)
-               (add-hook 'minibuffer-setup-hook 'helix--initialize)
-             (remove-hook 'minibuffer-setup-hook 'helix--initialize))))
+               (add-hook 'minibuffer-setup-hook #'helix-local-mode)
+             (remove-hook 'minibuffer-setup-hook #'helix-local-mode))))
 
 (defcustom helix-use-pcre-regex t
   "If non-nil use PCRE regexp syntax instead of Emacs one."
