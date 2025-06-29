@@ -302,9 +302,11 @@ according to the Helix STATE."
           ;; Order matters
           `(;; Edebug if active
             ,@(if edebug-mode
-                  (let ((map (or (helix-get-nested-helix-keymap edebug-mode-map state)
-                                 edebug-mode-map)))
-                    `((edebug-mode . ,map))))
+                  `((edebug-mode . ,edebug-mode-map))
+                ;; (let ((map (or (helix-get-nested-helix-keymap edebug-mode-map state)
+                ;;                edebug-mode-map)))
+                ;;   `((edebug-mode . ,map)))
+                )
             ;; Helix keymaps nested in other keymaps
             ,@(let (maps)
                 (dolist (keymap (current-active-maps))
