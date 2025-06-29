@@ -499,11 +499,12 @@ evaluate BODY, update fake CURSOR."
   `(progn
      ;; First execute BODY for the fake cursors so that BODY can create new
      ;; fake cursors, but overall was only executed for the original ones.
-     (helix-save-window-scroll
-       (helix-save-excursion
-        (dolist (cursor (helix-all-fake-cursors))
-          (helix-with-fake-cursor cursor
-            ,@body))))
+     (when helix-multiple-cursors-mode
+       (helix-save-window-scroll
+         (helix-save-excursion
+          (dolist (cursor (helix-all-fake-cursors))
+            (helix-with-fake-cursor cursor
+              ,@body)))))
      ;; Finaly execute for real cursor
      ,@body))
 
