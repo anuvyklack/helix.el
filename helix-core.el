@@ -112,8 +112,16 @@ want COMMAND to be executed only for original ones."
         ((not (minibufferp))
          (helix-local-mode 1))))
 
-(helix-define-advice select-window (:after (&rest _) helix)
+(helix-define-advice select-window (:after (&rest _))
   (helix-update-cursor))
+
+;; (helix-define-advice use-global-map (:after (&rest _))
+;;   "Refresh Helix keymaps."
+;;   (helix-update-active-keymaps))
+;;
+;; (helix-define-advice use-local-map (:after (&rest _))
+;;   "Refresh Helix keymaps."
+;;   (helix-update-active-keymaps))
 
 ;;; Helix states
 
@@ -398,6 +406,9 @@ For example:
       keymap))
 
 ;;; Cursor shape and color
+
+;; set-window-cursor-type
+;; window-cursor-type
 
 (defun helix-update-cursor ()
   "Update the cursor for current Helix STATE in current buffer."

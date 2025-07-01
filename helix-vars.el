@@ -71,12 +71,16 @@ a list of the above."
 
 (defface helix-normal-state-fake-cursor
   '((t (:inverse-video t)))
+  ;; '((t (:foreground "white"
+  ;;       :background "gray55")))
   "The face used for fake cursors when Helix is in Normal state."
   :group 'helix)
 
 (defface helix-insert-state-fake-cursor
   '((t (:foreground "white"
-        :background "SkyBlue3")))
+        :background "SkyBlue3"
+        ;; :background "#458588"
+        )))
   "The face used for fake cursors when Helix is in Insert state."
   :group 'helix)
 

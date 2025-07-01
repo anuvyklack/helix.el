@@ -616,7 +616,6 @@ is inside a string, return quote-mark character that bounds that string."
   (let* ((beg (region-beginning))
          (end (region-end))
          (text (filter-buffer-substring beg end))
-         ;; (yank-handler (list #'helix-yank-line-handler nil t))
          (yank-handler (list #'helix-yank-line-handler)))
     ;; Ensure the text ends with a newline. This is required
     ;; if the deleted lines were the last lines in the buffer.
