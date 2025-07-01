@@ -78,7 +78,7 @@ in Emacs.
 Helix depends on [[https://github.com/magnars/dash.el][dash.el]], [[https://github.com/joddie/pcre2el][pcre2el]], [[https://github.com/abo-abo/avy][avy]] and [[https://github.com/redguardtoo/evil-matchit][evil-matchit]] wonderful packages.
 
 Helix is heavily inspired by: [[https://github.com/emacs-evil/evil][evil]], [[https://github.com/magnars/multiple-cursors.el][multiple-cursors.el]], [[https://github.com/meow-edit/meow][meow]], [[https://github.com/cute-jumper/embrace.el][emmbace.el]],
-[[https://github.com/mkleehammer/surround][surround]], [[https://github.com/aome510/kak.el][kak.el]].
+[[https://github.com/mkleehammer/surround][surround]], [[https://github.com/aome510/kak.el][kak.el]], [[https://github.com/doomemacs/doomemacs][doomemacs]], [[https://github.com/bbatsov/crux][crux]]
 
 You are welcome to go and give them all a star!
 

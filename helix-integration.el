@@ -28,13 +28,15 @@
   (helix-keymap-set nil 'normal
     "SPC"      #'keypad
     "C-h k"    #'keypad-describe-key
-    "<f1> k"   #'keypad-describe-key
-    "<help> k" #'keypad-describe-key)
+    ;; "<f1> k"   #'keypad-describe-key
+    ;; "<help> k" #'keypad-describe-key
+    )
   (helix-keymap-set nil 'motion
     "SPC"      #'keypad
     "C-h k"    #'keypad-describe-key
-    "<f1> k"   #'keypad-describe-key
-    "<help> k" #'keypad-describe-key))
+    ;; "<f1> k"   #'keypad-describe-key
+    ;; "<help> k" #'keypad-describe-key
+    ))
 
 ;;; Eldoc
 (with-eval-after-load 'eldoc
@@ -92,6 +94,23 @@
 (with-eval-after-load 'helpful
   (helix-keymap-set helpful-mode-map 'normal
     "q" #'quit-window))
+
+;;; Special mode
+
+(helix-keymap-set special-mode-map nil ;; 'motion
+  "h" #'left-char
+  "j" #'next-line
+  "k" #'previous-line
+  "l" #'right-char)
+
+;;; Messages buffer
+
+(helix-set-initial-state 'messages-buffer-mode 'normal)
+
+;;; Corfu
+
+(with-eval-after-load 'corfu
+  (add-hook 'helix-insert-state-exit-hook #'corfu-quit))
 
 ;;; Org mode
 
@@ -178,11 +197,6 @@
     "m ~"   #'helix-mark-inner-org-verbatim
     "m i ~" #'helix-mark-inner-org-verbatim
     "m a ~" #'helix-mark-an-org-verbatim))
-
-;;; Corfu
-
-(with-eval-after-load 'corfu
-  (add-hook 'helix-insert-state-exit-hook #'corfu-quit))
 
 (provide 'helix-integration)
 ;;; helix-integration.el ends here

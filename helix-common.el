@@ -262,7 +262,7 @@ functions."
 (defun helix-mark-a-thing (thing)
   "Select a THING with spacing around.
 Works only with THINGs, that returns the count of steps left to move,
-such as `paragraph'."
+such as `paragraph', `helix-function'."
   (-when-let ((thing-beg . thing-end) (bounds-of-thing-at-point thing))
     (-let (((beg . end)
             (or (progn
@@ -610,7 +610,6 @@ is inside a string, return quote-mark character that bounds that string."
   (let* ((beg (region-beginning))
          (end (region-end))
          (text (filter-buffer-substring beg end))
-         ;; (yank-handler (list #'helix-yank-line-handler nil t))
          (yank-handler (list #'helix-yank-line-handler)))
     ;; Ensure the text ends with a newline. This is required
     ;; if the deleted lines were the last lines in the buffer.
