@@ -212,10 +212,10 @@ When ARG is non-positive integer and Helix is in %s — disable it.\n\n%s"
 
 (defun helix-change-state (state)
   "Switch Helix into STATE."
-  (when (not (eq state helix-state))
-    (-some-> state
-      (helix-state-property :function)
-      (funcall 1))))
+  (when (and state
+             (not (eq state helix-state)))
+    (-> (helix-state-property state :function)
+        (funcall 1))))
 
 (defun helix-disable-current-state ()
   "Disable current Helix state."

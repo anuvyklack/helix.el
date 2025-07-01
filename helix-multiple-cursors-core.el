@@ -30,7 +30,7 @@
 ;; execute command in this environment, store point, mark and new state into
 ;; fake cursor overlay.
 ;;
-;; ID 0 is always coresponding to real cursor.
+;; ID 0 is always corresponding to real cursor.
 
 ;;; Code:
 
@@ -223,11 +223,11 @@ POINT and MARK will be set."
     ((or 'nil 0)
      (goto-char point)
      (when mark (set-mark mark)))
-    ((and (pred numberp) id)
+    ((and id (pred numberp))
      (if-let* ((cursor (gethash id helix--cursors-table)))
          (helix-move-fake-cursor cursor point mark)
        (helix-create-fake-cursor point mark id)))
-    ((and (pred helix-fake-cursor-p) cursor)
+    ((and cursor (pred helix-fake-cursor-p))
      (helix-move-fake-cursor cursor point mark))))
 
 (defun helix-move-fake-cursor (cursor point &optional mark)
@@ -877,8 +877,8 @@ of all cursors when yanking."
   (eq (overlay-get overlay 'type) 'fake-cursor))
 
 (defun helix-fake-region-p (overlay)
-  (eq (overlay-get overlay 'type)
-      'fake-region))
+  "Return t if an OVERLAY is a fake region."
+  (eq (overlay-get overlay 'type) 'fake-region))
 
 (defun helix--overlays-overlap-p (o1 o2)
   (< (overlay-start o2)

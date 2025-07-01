@@ -1,6 +1,6 @@
 #+title: Helix Keybindings
 
-* Keybindings
+* Normal state
 ** Motions
 
 - =h=, =j=, =k=, =l= :: Arrows.
@@ -221,5 +221,16 @@ for =m= prefix. Also, this is in line with Emacs tradition which has commands li
 
 ** Other
 
-- =gf= :: ~find-file-at-point~
-- =gx= :: ~browse-url-at-point~
+- =gf= :: ~find-file-at-point~ (like in Vim)
+- =gx= :: ~browse-url-at-point~ (like in Vim)
+
+* Motion
+In Motion state by default only following keys are binded:
+
+- =C-w= prefix for windows layout manipulation.
+
+- =SPC= for ~keypad~.
+
+- Scrolling commands.
+
+- =M-u= for universal argument, since =C-u= is occupide by scrolling.

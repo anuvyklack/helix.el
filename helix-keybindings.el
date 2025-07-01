@@ -29,6 +29,9 @@
 
 ;;; Normal state
 
+(keymap-global-unset "M-<down-mouse-1>")
+(helix-keymap-set nil 'normal "M-<mouse-1>" #'helix-toggle-cursor-on-click)
+
 (helix-keymap-set nil 'normal
   "<backspace>" #'execute-extended-command
   ":" #'execute-extended-command
@@ -153,13 +156,13 @@
   "z b" #'helix-smooth-scroll-line-to-bottom
 
   ;; Misc
+  "g c" #'comment-or-uncomment-region
   "g f" #'find-file-at-point
   "g x" #'browse-url-at-point
+  "] b" #'next-buffer
+  "[ b" #'previous-buffer
   "] SPC" #'helix-add-blank-line-below
   "[ SPC" #'helix-add-blank-line-above)
-
-(keymap-global-unset "M-<down-mouse-1>")
-(helix-keymap-set nil 'normal "M-<mouse-1>" #'helix-toggle-cursor-on-click)
 
 ;;;; Mark
 
@@ -192,15 +195,15 @@
   "i p" #'helix-mark-inner-paragraph
   "a p" #'helix-mark-a-paragraph
 
-  "\""  #'helix-mark-inner-double-quoted
+  "\""   #'helix-mark-inner-double-quoted
   "i \"" #'helix-mark-inner-double-quoted
   "a \"" #'helix-mark-a-double-quoted
-  "'"   #'helix-mark-inner-single-quoted
-  "i '" #'helix-mark-inner-single-quoted
-  "a '" #'helix-mark-a-single-quoted
-  "`"   #'helix-mark-inner-back-quoted
-  "i `" #'helix-mark-inner-back-quoted
-  "a `" #'helix-mark-a-back-quoted
+  "'"    #'helix-mark-inner-single-quoted
+  "i '"  #'helix-mark-inner-single-quoted
+  "a '"  #'helix-mark-a-single-quoted
+  "`"    #'helix-mark-inner-back-quoted
+  "i `"  #'helix-mark-inner-back-quoted
+  "a `"  #'helix-mark-a-back-quoted
 
   "("   #'helix-mark-inner-paren
   ")"   #'helix-mark-inner-paren
@@ -282,6 +285,7 @@
   "v"   #'helix-window-vsplit
   "d"   #'helix-window-delete
   "c"   #'helix-window-delete
+  "o"   #'delete-other-windows
   "h"   #'helix-window-left
   "j"   #'helix-window-down
   "k"   #'helix-window-up
