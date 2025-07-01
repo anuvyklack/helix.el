@@ -422,6 +422,7 @@ cursors editing.")
     helix-mark-line-upward         ;; X
     helix-extend-selection         ;; v
     helix-collapse-selection       ;; ;
+    mark-whole-buffer              ;; %
     helix-trim-whitespaces-from-selection ;; _
     helix-jump-to-match-item       ;; mm
     helix-surround                 ;; ms

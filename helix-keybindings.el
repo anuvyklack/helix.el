@@ -111,7 +111,7 @@
   "v"   #'helix-extend-selection
   "x"   #'helix-mark-line
   "X"   #'helix-mark-line-upward
-  "%"   #'helix-select-all
+  "%"   #'mark-whole-buffer
   "C"   #'helix-copy-selection
   "M-c" #'helix-copy-selection-up
   "("   #'helix-rotate-selections-backward
