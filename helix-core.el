@@ -40,6 +40,8 @@ create fake cursors itself, like `helix-copy-selection' does, and we
 want COMMAND to be executed only for original ones."
   (unless helix--executing-command-for-fake-cursor
     (setq helix-this-command this-command)
+    (when (get this-command 'helix-deactivate-mark)
+      (deactivate-mark))
     (helix--single-undo-step-beginning)))
 
 (defun helix--post-command-hook ()
