@@ -664,7 +664,8 @@ Return symbol:
   "Non-nil when CHAR belongs to whitespace syntax class."
   ;; FIXME: Space syntax class can be denoted with both " " and "-" chars.
   ;; Are we shore that `char-syntax' always returns " "?
-  (eql (char-syntax char) ?\s)
+  (and (eql (char-syntax char) ?\s)
+       (not (memq char '(?\r ?\n))))
   ;; Alternative: (memq char '(?\s ?\t))
   )
 
