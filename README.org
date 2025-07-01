@@ -86,8 +86,9 @@ You are welcome to go and give them all a star!
 
 - *Code review*
 
-  It will be greate if some experienced Elisp developer will review the source
-  code.
+  It would be great if some experienced Elisp hacker would review the source
+  code. I am absolutely sure there are gazillion of nuances I'm not aware
+  about.
 
 - *Tests*
 
@@ -96,8 +97,8 @@ You are welcome to go and give them all a star!
 
 - *Share it*
 
-  A quick post about Helix on your blog or social network could help bring new
-  users to Emacs, which would be great!
+  A quick post about this package on your blog or social network could bring
+  new users to Emacs, which would be great!
 
 - *Cool logo*
 

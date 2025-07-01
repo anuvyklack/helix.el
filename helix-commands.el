@@ -35,7 +35,7 @@
 
 ;; h
 (defun helix-backward-char (count)
-  "Move backward."
+  "Move backward COUNT chars."
   (interactive "p")
   (if helix--extend-selection
       (or (region-active-p) (set-mark (point)))
@@ -44,7 +44,7 @@
 
 ;; l
 (defun helix-forward-char (count)
-  "Move forward."
+  "Move forward COUNT chars."
   (interactive "p")
   (if helix--extend-selection
       (or (region-active-p) (set-mark (point)))
@@ -53,7 +53,7 @@
 
 ;; j
 (defun helix-next-line (count)
-  "Move to the next line."
+  "Move to the next COUNT line."
   (interactive "p")
   (if helix--extend-selection
       (or (region-active-p) (set-mark (point)))
@@ -66,7 +66,7 @@
 
 ;; k
 (defun helix-previous-line (count)
-  "Move to the COUNT-th previous line."
+  "Move to the previous COUNT line."
   (interactive "p")
   (if helix--extend-selection
       (or (region-active-p) (set-mark (point)))
@@ -527,7 +527,8 @@ If no selection — delete COUNT chars after point."
 
 ;; C-p
 (defun helix-yank-pop (count)
-  "Wrapper around `yank-pop'."
+  "Replace just-pasted text with next COUNT element from `kill-ring'.
+Wrapper around `yank-pop'."
   (interactive "p")
   (let ((yank-pop (command-remapping 'yank-pop))
         (deactivate-mark nil))
@@ -535,7 +536,8 @@ If no selection — delete COUNT chars after point."
 
 ;; C-n
 (defun helix-yank-undo-pop (count)
-  "Like `helix-yank-pop' but with negative COUNT argument."
+  "Replace just-pasted text with previous COUNT element from `kill-ring'.
+Like `helix-yank-pop' but with negative COUNT argument."
   (interactive "p")
   (let ((yank-pop (command-remapping 'yank-pop))
         (deactivate-mark nil))
