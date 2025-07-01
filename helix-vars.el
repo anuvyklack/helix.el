@@ -418,8 +418,8 @@ cursors editing.")
     helix-invert-case              ;; ~
     helix-downcase                 ;; `   gu
     helix-upcase                   ;; M-` gU
-    helix-mark-line                ;; x
-    helix-mark-line-upward         ;; X
+    helix-expand-line-selection    ;; x
+    helix-contract-line-selection  ;; X
     helix-extend-selection         ;; v
     helix-collapse-selection       ;; ;
     mark-whole-buffer              ;; %
