@@ -109,8 +109,8 @@
   ;; Selections
   "<escape>" #'helix-normal-state-escape
   "v"   #'helix-extend-selection
-  "x"   #'helix-mark-line
-  "X"   #'helix-mark-line-upward
+  "x"   #'helix-expand-line-selection
+  "X"   #'helix-contract-line-selection
   "%"   #'mark-whole-buffer
   "C"   #'helix-copy-selection
   "M-c" #'helix-copy-selection-up

@@ -23,7 +23,6 @@
 (require 'helix-multiple-cursors-core)
 (require 'helix-search)
 (require 'avy)
-(require 'evil-matchit)
 
 (defun helix-normal-state-escape ()
   "Command for ESC key in Helix Normal state."
@@ -417,10 +416,9 @@ Use visual line when `visual-line-mode' is on."
   "Delete region and enter Insert state."
   (interactive)
   (cond ((use-region-p)
-         (when (and (bolp)
-                    (save-excursion (backward-char) (helix-blank-line-p)))
+         (when (helix-empty-line-selected-p)
            (backward-char))
-         (let ((line-selected? (helix-line-selected-p)))
+         (let ((line-selected? (helix-linewise-selection-p)))
            (kill-region nil nil t)
            (pcase line-selected?
              ('line (indent-according-to-mode))
@@ -444,11 +442,11 @@ Use visual line when `visual-line-mode' is on."
 If no selection — delete COUNT chars before point."
   (interactive "p")
   (cond ((use-region-p)
-         ;; If selection is a whole line then add newline character (for logical
-         ;; line) or space (for visual line) after into selection.
-         (when (and (not (helix-blank-line-p))
-                    (helix-line-selected-p))
-           (when (< (helix-region-direction) 0)
+         ;; If selection is a whole line then add newline character (for
+         ;; logical line) or space (for visual line) after into selection.
+         (when (and (not (helix-empty-line-selected-p))
+                    (helix-linewise-selection-p))
+           (when (< (point) (mark))
              (helix-exchange-point-and-mark))
            (forward-char))
          (kill-region nil nil t))
@@ -462,9 +460,9 @@ If no selection — delete COUNT chars before point."
 If no selection — delete COUNT chars after point."
   (interactive "p")
   (cond ((use-region-p)
-         (when (and (not (helix-blank-line-p))
-                    (helix-line-selected-p))
-           (when (< (helix-region-direction) 0)
+         (when (and (not (helix-empty-line-selected-p))
+                    (helix-linewise-selection-p))
+           (when (< (point) (mark))
              (helix-exchange-point-and-mark))
            (forward-char))
          (delete-region (region-beginning) (region-end)))
@@ -622,74 +620,140 @@ If ARG positive number — enable, negative — disable."
   (deactivate-mark))
 
 ;; x
-(defun helix-mark-line (count)
-  "Mark COUNT lines directionally, extending the active region.
-Uses visual lines if `visual-line-mode' is active, otherwise logical lines.
-Positive COUNT extends forward, negative extends backward.
-When no region exists, marks the current line first.
-
-Newline character doesn't included into selection in general case, but
-when line is empty, the selection consists of a newline character, since
-we have nothing else.
-
-Handles edge cases and direction transitions (forward<->backward)
-automatically."
+(defun helix-expand-line-selection (count)
+  "Expand current selection linewise.
+If region is forward — mark is before point — expand selection downwise,
+if region is backward — point is before mark — expand upwise."
   (interactive "p")
-  (let* ((line (if visual-line-mode 'visual-line 'line))
-         (motion-dir (helix-sign count))
-         (region-dir (helix-region-direction)))
-    (when (helix-mark-current-line)
-      (setq count (- count motion-dir)
-            region-dir 1))
-    (unless (zerop count)
-      (cond ((<= 0 region-dir motion-dir)
-             (if (helix-blank-line-p)
-                 (forward-char)
-               ;; else
-               (forward-char)
-               (forward-thing line count)
-               (backward-char)))
-            ((<= region-dir motion-dir 0)
+  (when (helix-expand-selection-to-full-lines)
+    (setq count (- count (helix-sign count))))
+  (unless (zerop count)
+    (let* ((line (if visual-line-mode 'visual-line 'line))
+           (dir (helix-region-direction))
+           (count (* count dir)))
+      (cond ((< dir 0)
              (forward-thing line count))
-            ((< region-dir 0 motion-dir)
+            ((helix-empty-line-p)
+             (forward-char))
+            (t
+             (forward-char)
              (forward-thing line count)
-             (helix-mark-current-line))
-            ((< motion-dir 0 region-dir)
-             (forward-thing line (1+ count))
-             (backward-char)
-             (and (helix-mark-current-line)
-                  (helix-exchange-point-and-mark)))))))
-
-(defun helix-mark-current-line ()
-  "Extend or create a line-wise selection, using visual/logical lines.
-When active region exists: expand selection to encompass full line(s),
-converting partial-line selections to whole lines.
-Without region: select current line (excludes trailing newline).
-Uses visual lines if `visual-line-mode' is active, otherwise logical lines."
-  (let ((line (if visual-line-mode 'visual-line 'line)))
-    (cond ((use-region-p)
-           (unless (helix-line-selected-p)
-             (let ((b (region-beginning))
-                   (e (region-end)))
-               (goto-char b)
-               (set-mark (car (bounds-of-thing-at-point line))) ; left end
-               (goto-char e)
-               (goto-char (cdr (bounds-of-thing-at-point line))) ; right end
-               (unless (eobp) (backward-char))
-               1)))
-          (t ;; no region
-           (-let (((beg . end) (bounds-of-thing-at-point line)))
-             (set-mark beg)
-             (goto-char end)
-             (unless (eobp) (backward-char))
-             1)))))
+             (unless (helix-empty-line-selected-p)
+               (backward-char)))))))
 
 ;; X
-(defun helix-mark-line-upward (count)
-  "Select COUNT lines upward.
-Select visual lines when `visual-line-mode' is on."
+(defun helix-contract-line-selection (count)
+  "Contract selection linewise.
+Counterpart to `helix-expand-line-selection' that does the exact opposite."
   (interactive "p")
-  (helix-mark-line (- count)))
+  (setq count (abs count))
+  (when (helix-reduce-selection-to-full-lines)
+    (setq count (- count (helix-sign count))))
+  (unless (zerop count)
+    (let* ((line (if visual-line-mode 'visual-line 'line))
+           (beg (region-beginning))
+           (end (region-end))
+           (dir (helix-region-direction)))
+      (cond ((< dir 0)
+             (forward-thing line count)
+             (when (<= end (point))
+               (helix-set-region beg end dir)))
+            (t ;; (< 0 dir)
+             (setq count (- (abs count)))
+             (cond ((helix-empty-line-selected-p)
+                    (backward-char)
+                    (helix-reduce-selection-to-full-lines))
+                   (t
+                    (-let (((line-beg . _) (bounds-of-thing-at-point line)))
+                      (goto-char line-beg)
+                      (unless (helix-empty-line-selected-p)
+                        (backward-char)))))
+             (when(<= (point) beg)
+               (helix-set-region beg end dir)))))))
+
+(defun helix-expand-selection-to-full-lines ()
+  "Create a line-wise selection, using visual or logical lines.
+When region is active: expand selection to line boundaries to encompass full
+line(s). Otherwise, select current line. Uses visual lines if `visual-line-mode'
+is active, otherwise logical lines.
+
+Example, [ ] denotes selection:
+
+  Lorem ipsum dolor [sit amet        [Lorem ipsum dolor sit amet
+  nunc aliquet nulla et neque   =>   nunc aliquet nulla et neque
+  ultricies eget] diam nec           ultricies eget diam nec]"
+  (let ((line (if visual-line-mode 'visual-line 'line)))
+    (cond ((use-region-p)
+           (unless (helix-linewise-selection-p)
+             (let ((beg (region-beginning))
+                   (end (region-end)))
+               (goto-char beg)
+               (set-mark (car (bounds-of-thing-at-point line))) ; left end
+               (goto-char end)
+               (goto-char (cdr (bounds-of-thing-at-point line))) ; right end
+               (unless (or (eobp) (helix-empty-line-selected-p))
+                 (backward-char))
+               t)))
+          (t ;; no region
+           (-let (((beg . end) (bounds-of-thing-at-point line))
+                  (empty-line? (helix-empty-line-p)))
+             (set-mark beg)
+             (goto-char end)
+             (unless (or (eobp) empty-line?)
+               (backward-char))
+             t)))))
+
+(defun helix-reduce-selection-to-full-lines ()
+  "Remove non full line parts from both ends of the selection.
+Return t if does anything, otherwise return nil.
+
+Example, [ ] denotes selection:
+
+  Lorem ipsum dolor [sit amet        Lorem ipsum dolor sit amet
+  nunc aliquet nulla et neque   =>   [nunc aliquet nulla et neque]
+  ultricies eget] diam nec           ultricies eget diam nec"
+  (when (and (use-region-p)
+             (not (helix-linewise-selection-p)))
+    (let ((line (if visual-line-mode 'visual-line 'line))
+          (beg (region-beginning))
+          (end (region-end))
+          (dir (helix-region-direction))
+          result)
+      ;; new END
+      (progn
+        (goto-char end)
+        (cond ((helix-empty-line-p)
+               (backward-char)
+               (unless (eql (point) beg)
+                 (setq end (point)
+                       result t)))
+              ((not (pcase line
+                      ('line (or (eolp) (helix-empty-line-selected-p)))
+                      ('visual-line (helix-visual-eolp))))
+               (cond ((and (bolp) (eq line 'line))
+                      (backward-char)
+                      (setq end (point)))
+                     (t
+                      (-let (((line-beg . _) (bounds-of-thing-at-point line)))
+                        (unless (< line-beg beg)
+                          (setq end (pcase line
+                                      ('visual-line line-beg)
+                                      ('line (goto-char line-beg)
+                                             (backward-char)
+                                             (if (helix-empty-line-p)
+                                                 line-beg
+                                               (point)))))))))
+               (setq result t))))
+      ;; new BEG
+      (progn
+        (goto-char beg)
+        (unless (helix-bolp)
+          (-let (((_ . line-end) (bounds-of-thing-at-point line)))
+            (unless (<= end line-end)
+              (setq beg line-end
+                    result t)))))
+      (helix-set-region beg end dir)
+      result)))
 
 ;; %
 (helix-define-advice mark-whole-buffer (:before ())
@@ -1398,7 +1462,7 @@ lines and reindent the region."
            (beg (region-beginning))
            (end (region-end))
            (dir (helix-region-direction))
-           (lines? (helix-line-selected-p))
+           (lines? (helix-linewise-selection-p))
            (deactivate-mark nil))
       (when lines?
         (setq left  (s-trim left)
