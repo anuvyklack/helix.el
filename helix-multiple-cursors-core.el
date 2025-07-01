@@ -510,7 +510,7 @@ evaluate BODY, update fake CURSOR."
 
 (defun helix-execute-command-for-all-cursors (command)
   "Call COMMAND interactively for all cursors: real and fake ones."
-  (call-interactively command)
+  (helix--call-interactively command)
   (helix--execute-command-for-all-fake-cursors command)
   (when (helix-merge-regions-p command)
     (helix-merge-overlapping-regions))
@@ -543,19 +543,25 @@ the original cursor, to inform about the lack of support."
              (helix-save-excursion
               (dolist (cursor (helix-all-fake-cursors))
                 (helix-with-fake-cursor cursor
-                  ;; (helix--call-interactively command)
-                  (call-interactively command)))))))))
+                  (helix--call-interactively command)))))))))
 
 (defun helix--call-interactively (command)
   "Run COMMAND, simulating the parts of the command loop that
 makes sense for fake cursor."
-  (setq this-command command)
-  ;; (ignore-errors)
-  (run-hooks 'pre-command-hook)
-  (unless (eq this-command 'ignore)
-    (call-interactively command))
-  (run-hooks 'post-command-hook)
-  (when deactivate-mark (deactivate-mark)))
+  (when (and (symbolp command)
+             (get command 'helix-deactivate-mark))
+    (deactivate-mark))
+  (unless (eq command 'ignore)
+    (let ((this-command command))
+      (call-interactively command)))
+  ;; (setq this-command command)
+  ;; ;; (ignore-errors)
+  ;; (run-hooks 'pre-command-hook)
+  ;; (unless (eq this-command 'ignore)
+  ;;   (call-interactively command))
+  ;; (run-hooks 'post-command-hook)
+  ;; (when deactivate-mark (deactivate-mark))
+  )
 
 (defmacro helix-with-real-cursor-as-fake (&rest body)
   "Temporarily create a fake-cursor for real one with ID 0.
@@ -683,9 +689,10 @@ and which for all to `helix-mc-list-file' file."
   "Return non-nil if regions need to be merged after COMMAND."
   (and helix-multiple-cursors-mode
        mark-active
-       (or (and helix--extend-selection
-                (memq command helix--motion-command))
-           (memq command helix--merge-regions-commands))))
+       (let ((p (get command 'helix-merge-regions)))
+         (or (and (eq p 'extend-selection)
+                  helix--extend-selection)
+             p))))
 
 (defun helix-merge-overlapping-regions ()
   "Merge overlapping regions."

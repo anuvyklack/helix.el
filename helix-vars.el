@@ -141,6 +141,31 @@ rate allows highlights to update while scrolling."
   :type 'number
   :group 'helix)
 
+(defcustom helix-jump-commands
+  '(pop-global-mark
+    pop-to-mark-command
+    xref-find-definitions
+    xref-find-references
+    xref-go-back
+    xref-go-forward
+    outline-up-heading
+    outline-next-visible-heading
+    outline-previous-visible-heading
+    outline-forward-same-level
+    outline-backward-same-level)
+  "List of commands that move point.
+For these commands:
+- Mark will be deactivated.
+- Overlapping selections will be merged."
+  :type '(list symbol)
+  :group 'helix
+  :set #'(lambda (sym value)
+           (set-default sym value)
+           (mapc #'(lambda (cmd)
+                     (put cmd 'helix-deactivate-mark t)
+                     (put cmd 'helix-merge-regions 'extend-selection))
+                 value)))
+
 (defvar helix-keep-search-highlight-commands
   '(helix-extend-selection
     helix-rotate-selections-forward
@@ -697,35 +722,6 @@ active.")
                                           dabbrev--last-expansion-location
                                           dabbrev--last-table)
   "A list of vars that need to be tracked on a per-cursor basis.")
-
-(defvar helix--merge-regions-commands '(helix-first-non-blank   ;; gh
-                                        helix-beginning-of-line ;; gs
-                                        helix-end-of-line       ;; gl
-                                        helix-copy-selection    ;; C
-                                        helix-copy-selection-up ;; M-c
-                                        helix-search-forward    ;; /
-                                        helix-search-backward   ;; ?
-                                        helix-search-next       ;; n
-                                        helix-search-previous)  ;; N
-  "List of command, after which `helix-merge-overlapping-regions'
-will be invoked.")
-
-(defvar helix--motion-command '(helix-backward-char       ;; h
-                                helix-forward-char        ;; l
-                                helix-next-line           ;; j
-                                helix-previous-line       ;; k
-                                helix-forward-word-start  ;; w
-                                helix-forward-WORD-start  ;; W
-                                helix-backward-word-start ;; b
-                                helix-backward-WORD-start ;; B
-                                helix-forward-word-end    ;; e
-                                helix-forward-WORD-end    ;; E
-                                helix-find-char-forward   ;; f
-                                helix-find-char-backward  ;; F
-                                helix-till-char-forward   ;; t
-                                helix-till-char-backward) ;; T
-  "List of command, after which `helix-merge-overlapping-regions'
-will be invoked if extend-selection is enabled.")
 
 (defvar helix-mc--list-file-loaded nil
   "Non-nil when `helix-mc-list-file' file has already been loaded.")
