@@ -239,7 +239,7 @@ Word is:
   (helix-motion-loop (dir count)
     (helix-skip-chars "\r\n" dir)
     (helix-skip-whitespaces dir)
-    (or (helix-beginning-or-end-of-line-p dir)
+    (or (helix-line-boundary-p dir)
         (helix-skip-chars "^[:word:]\n\r\t\f " dir)
         (let ((word-separating-categories helix-cjk-word-separating-categories)
               (word-combining-categories  helix-cjk-word-combining-categories))
@@ -255,7 +255,7 @@ WORD is any space separated sequence of characters."
   (helix-motion-loop (dir count)
     (helix-skip-chars "\r\n" dir)
     (helix-skip-whitespaces dir)
-    (unless (helix-beginning-or-end-of-line-p dir)
+    (unless (helix-line-boundary-p dir)
       (helix-skip-chars "^\n\r\t\f " dir))))
 
 (defun forward-helix-sentence (&optional count)
@@ -588,41 +588,10 @@ is inside a string, return quote-mark character that bounds that string."
 
 ;;; Miscellaneous
 
-(defun helix-exchange-point-and-mark ()
-  "Exchange point and mark without activating the region."
-  ;; (goto-char (prog1 (mark t)
-  ;;              (set-marker (mark-marker) (point) (current-buffer))))
-  (let* ((point (point))
-         (mark  (or (mark t) point)))
-    (set-marker (mark-marker) point)
-    (goto-char mark)))
-
-(defun helix-region-direction ()
-  "Return the direction of region: -1 if point precedes mark, 1 otherwise."
-  (let* ((point (point))
-         (mark (or (mark t) point)))
-    (if (< point mark) -1 1)))
-
-(defun helix-beginning-or-end-of-line-p (direction)
-  "DIRECTION should be a number. If DIRECTION is negative,
-checks for beginning of line, positive — end of line."
-  (if (< direction 0) (bolp) (eolp)))
-
-;; (defmacro helix-expand-selection-or (body)
-;;   `(if helix-extend-selection
-;;        (or (region-active-p) (set-mark (point)))
-;;      ,@body))
-
-(defsubst helix-empty-line-p ()
-  (and (bolp) (eolp)))
-
 (defun helix-bolp ()
   "Like `bolp' but consider visual lines when `visual-line-mode' is enabled."
   (if visual-line-mode
-      (save-excursion
-        (let ((p (point)))
-          (beginning-of-visual-line)
-          (eql p (point))))
+      (helix-visual-bolp)
     (bolp)))
 
 (defun helix-visual-bolp ()
@@ -635,29 +604,59 @@ checks for beginning of line, positive — end of line."
 (defun helix-eolp ()
   "Like `eolp' but consider visual lines when `visual-line-mode' is enabled."
   (if visual-line-mode
-      (save-excursion
-        (let ((p (point)))
-          (end-of-visual-line)
-          (eql p (point))))
+      (helix-visual-eolp)
     (eolp)))
 
-(defun helix-line-selected-p ()
-  "Check if active region exactly spans whole line(s).
-Return symbol:
+(defun helix-visual-eolp ()
+  "Return t if point is at the end of visual line."
+  (save-excursion
+    (let ((p (point)))
+      (end-of-visual-line)
+      (eql p (point)))))
+
+(defun helix-line-boundary-p (direction)
+  "If DIRECTION is negative number, checks for beginning of line,
+positive — end of line."
+  (if (< direction 0) (bolp) (eolp)))
+
+(defun helix-region-direction ()
+  "Return the direction of region: -1 if point precedes mark, 1 otherwise."
+  (let* ((point (point))
+         (mark (or (mark t) point)))
+    (if (< point mark) -1 1)))
+
+(defun helix-exchange-point-and-mark ()
+  "Exchange point and mark without activating the region."
+  ;; (goto-char (prog1 (mark t)
+  ;;              (set-marker (mark-marker) (point) (current-buffer))))
+  (let* ((point (point))
+         (mark  (or (mark t) point)))
+    (set-marker (mark-marker) point)
+    (goto-char mark)))
+
+(defun helix-linewise-selection-p ()
+  "Return non-nil if active region exactly spans whole line(s).
+Returns symbol:
 - `line' — if logical lines are selected;
-- `visual-line' — if visual lines are selected;
-- nil — otherwise."
+- `visual-line' — if visual lines are selected."
   (when (use-region-p)
     (save-mark-and-excursion
       (let ((beg (region-beginning))
             (end (region-end)))
         (goto-char beg)
-        (cond ((and (bolp)
-                    (save-excursion (goto-char end) (eolp)))
+        ;; Line selected when either:
+        ;; 1. Region starts at the beginning and ends at the end of line.
+        ;; 2. Region starts and ends at the beginning of line
+        (cond ((and (bolp) (save-excursion
+                             (goto-char end)
+                             (or (and (eolp)
+                                      (not (helix-empty-line-p)))
+                                 (helix-empty-line-selected-p))))
                'line)
               ((and visual-line-mode
                     (helix-visual-bolp)
-                    (save-excursion (goto-char end) (helix-eolp)))
+                    (save-excursion (goto-char end)
+                                    (helix-visual-eolp)))
                'visual-line))))))
 
 (defun helilx-whitespace? (char)
@@ -668,10 +667,6 @@ Return symbol:
        (not (memq char '(?\r ?\n))))
   ;; Alternative: (memq char '(?\s ?\t))
   )
-
-(defun helix-blank-line-p ()
-  "Return t if point is in blank line."
-  (and (bolp) (eolp)))
 
 (defsubst helix-sign (&optional num)
   (cond ((< num 0) -1)
