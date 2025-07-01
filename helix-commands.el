@@ -680,12 +680,8 @@ Select visual lines when `visual-line-mode' is on."
   (helix-mark-line (- count)))
 
 ;; %
-(defun helix-select-all ()
-  "Select whole buffer."
-  (interactive)
-  (helix-remove-all-fake-cursors)
-  (goto-char (point-min))
-  (set-mark (point-max)))
+(helix-define-advice mark-whole-buffer (:before ())
+  (helix-remove-all-fake-cursors))
 
 ;; s
 (defun helix-select-regex (&optional invert)
