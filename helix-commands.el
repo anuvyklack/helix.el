@@ -447,11 +447,11 @@ Use visual line when `visual-line-mode' is on."
 If no selection — delete COUNT chars before point."
   (interactive "p")
   (cond ((use-region-p)
-         ;; If selection is a whole line then add newline character (for logical
-         ;; line) or space (for visual line) after into selection.
-         (when (and (not (helix-empty-line-p))
+         ;; If selection is a whole line then add newline character (for
+         ;; logical line) or space (for visual line) after into selection.
+         (when (and (not (helix-empty-line-selected-p))
                     (helix-linewise-selection-p))
-           (when (< (helix-region-direction) 0)
+           (when (< (point) (mark))
              (helix-exchange-point-and-mark))
            (forward-char))
          (kill-region nil nil t))
@@ -465,9 +465,9 @@ If no selection — delete COUNT chars before point."
 If no selection — delete COUNT chars after point."
   (interactive "p")
   (cond ((use-region-p)
-         (when (and (not (helix-empty-line-p))
+         (when (and (not (helix-empty-line-selected-p))
                     (helix-linewise-selection-p))
-           (when (< (helix-region-direction) 0)
+           (when (< (point) (mark))
              (helix-exchange-point-and-mark))
            (forward-char))
          (delete-region (region-beginning) (region-end)))
