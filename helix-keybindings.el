@@ -92,16 +92,16 @@
   "o"   #'helix-open-below
   "O"   #'helix-open-above
   "c"   #'helix-change
-  "d"   #'helix-kill
+  "d"   #'helix-cut
   "D"   #'helix-delete
   "u"   #'helix-undo
   "U"   #'helix-redo
-  "y"   #'helix-yank
+  "y"   #'helix-copy
   "p"   #'helix-paste-after
   "P"   #'helix-paste-before
   "R"   #'helix-replace-with-kill-ring
-  "C-p" #'helix-yank-pop ;; yank-pop
-  "C-n" #'helix-yank-undo-pop
+  "C-p" #'helix-paste-pop ;; yank-pop
+  "C-n" #'helix-paste-undo-pop
   "J"   #'helix-join-line
   "`"   #'helix-downcase
   "M-`" #'helix-upcase
