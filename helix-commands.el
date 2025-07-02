@@ -22,6 +22,7 @@
 (require 'helix-common)
 (require 'helix-multiple-cursors-core)
 (require 'helix-search)
+(provide 'pulse)
 (require 'avy)
 
 (defun helix-normal-state-escape ()
@@ -437,7 +438,7 @@ Use visual line when `visual-line-mode' is on."
 ;; |
 ;; } => {|}
 ;; d
-(defun helix-kill (count)
+(defun helix-cut (count)
   "Kill (cut) text in region. I.e. delete text and put it in the `kill-ring'.
 If no selection — delete COUNT chars before point."
   (interactive "p")
@@ -487,19 +488,23 @@ If no selection — delete COUNT chars after point."
     (undo-redo)))
 
 ;; y
-(defun helix-yank ()
+(defun helix-copy ()
   "Copy selection into `kill-ring'."
   (interactive)
-  (let (deactivate-mark)
-    (copy-region-as-kill nil nil t)
-    (message "Copied into kill-ring")))
+  (when (use-region-p)
+    (let ((deactivate-mark nil))
+      (pcase (helix-linewise-selection-p)
+        ('line (helix-copy-line))
+        (_ (copy-region-as-kill nil nil t)))
+      (pulse-momentary-highlight-region (region-beginning) (region-end))
+      (message "Copied into kill-ring"))))
 
 ;; p
 (defun helix-paste-after ()
   "Paste after selection."
   (interactive)
   (when (and (use-region-p)
-             (< (helix-region-direction) 0))
+             (< (point) (mark)))
     (helix-exchange-point-and-mark))
   ;; `yank' sets `this-command' to `yank' internally
   (let (deactivate-mark)
@@ -510,7 +515,7 @@ If no selection — delete COUNT chars after point."
   "Paste before selection."
   (interactive)
   (when (and (use-region-p)
-             (< 0 (helix-region-direction)))
+             (< (mark) (point)))
     (helix-exchange-point-and-mark))
   ;; `yank' sets `this-command' to `yank' internally
   (let (deactivate-mark)
@@ -526,7 +531,7 @@ If no selection — delete COUNT chars after point."
       (yank))))
 
 ;; C-p
-(defun helix-yank-pop (count)
+(defun helix-paste-pop (count)
   "Replace just-pasted text with next COUNT element from `kill-ring'.
 Wrapper around `yank-pop'."
   (interactive "p")
@@ -535,9 +540,9 @@ Wrapper around `yank-pop'."
     (call-interactively yank-pop count)))
 
 ;; C-n
-(defun helix-yank-undo-pop (count)
+(defun helix-paste-undo-pop (count)
   "Replace just-pasted text with previous COUNT element from `kill-ring'.
-Like `helix-yank-pop' but with negative COUNT argument."
+Like `helix-paste-pop' but with negative COUNT argument."
   (interactive "p")
   (let ((yank-pop (command-remapping 'yank-pop))
         (deactivate-mark nil))
