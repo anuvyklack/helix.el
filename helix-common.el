@@ -586,7 +586,42 @@ is inside a string, return quote-mark character that bounds that string."
 
 (defalias 'helix--syntax-ppss-inside-string-p #'helix--syntax-ppss-string-quote-mark)
 
-;;; Miscellaneous
+;;; Paste
+
+(defun helix-yank-line-handler (text)
+  "Insert the TEXT linewise."
+  (pcase helix-this-command
+    ('helix-paste-before (if visual-line-mode
+                             (beginning-of-visual-line)
+                           (move-beginning-of-line nil))
+                         (set-marker (mark-marker) (point))
+                         (insert text))
+    ('helix-paste-after (if visual-line-mode
+                            (end-of-visual-line)
+                          (move-end-of-line 1))
+                        (insert "\n")
+                        (set-marker (mark-marker) (point))
+                        (insert text)
+                        (delete-char -1)) ; delete the last newline
+    (_ (insert text))))
+
+(defun helix-copy-line ()
+  "Copy selection as line into `kill-ring'."
+  (interactive)
+  (let* ((beg (region-beginning))
+         (end (region-end))
+         (text (filter-buffer-substring beg end))
+         ;; (yank-handler (list #'helix-yank-line-handler nil t))
+         (yank-handler (list #'helix-yank-line-handler)))
+    ;; Ensure the text ends with a newline. This is required
+    ;; if the deleted lines were the last lines in the buffer.
+    (when (or (zerop (length text))
+              (/= (aref text (1- (length text))) ?\n))
+      (setq text (concat text "\n")))
+    (put-text-property 0 (length text) 'yank-handler yank-handler text)
+    (kill-new text)))
+
+;;; Utils
 
 (defun helix-bolp ()
   "Like `bolp' but consider visual lines when `visual-line-mode' is enabled."
