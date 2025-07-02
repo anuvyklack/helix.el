@@ -431,13 +431,13 @@ cursors editing.")
     helix-forward-paragraph        ;; ]p or }}
     helix-backward-paragraph       ;; [p or {{
     helix-change                   ;; c
-    helix-kill                     ;; d
+    helix-cut                      ;; d
     helix-delete                   ;; D
-    helix-yank                     ;; y
+    helix-copy                     ;; y
     helix-paste-after              ;; p
     helix-paste-before             ;; P
-    helix-yank-pop                 ;; C-p
-    helix-yank-undo-pop            ;; C-n
+    helix-paste-pop                ;; C-p
+    helix-paste-undo-pop           ;; C-n
     helix-replace-with-kill-ring   ;; R
     helix-join-line                ;; J
     helix-invert-case              ;; ~
