@@ -558,8 +558,12 @@ Like `helix-paste-pop' but with negative COUNT argument."
   (interactive)
   (cond ((use-region-p)
          (save-excursion
-           (let (deactivate-mark)
-             (join-line nil (region-beginning) (region-end)))))
+           (let ((beg (region-beginning))
+                 (end (region-end))
+                 (deactivate-mark nil))
+             (if (> (count-lines beg end) 1)
+                 (join-line nil beg end)
+               (join-line t)))))
         (t (join-line t))))
 
 ;; ~
