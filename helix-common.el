@@ -798,9 +798,14 @@ the returned list to the original symbol like this:
     list))
 
 (defun helix-pcre-to-elisp (regexp)
-  "Convert PCRE REGEXP into Elisp one if Helix configured to use PCRE."
+  "Convert PCRE REGEXP into Elisp one if Helix configured to use PCRE syntax."
   (if helix-use-pcre-regex
-      (pcre-to-elisp regexp)
+      (condition-case err
+          (pcre-to-elisp regexp)
+        (rxt-invalid-regexp
+         (let ((string (error-message-string err)))
+           (put-text-property 0 (length string) 'face 'error string)
+           (message "%s" string))))
     regexp))
 
 (defun helix-match-bounds ()
