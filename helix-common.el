@@ -259,7 +259,7 @@ WORD is any space separated sequence of characters."
       (helix-skip-chars "^\n\r\t\f " dir))))
 
 (defun forward-helix-sentence (&optional count)
-  "Move point forward COUNT sentences (backward if COUNT is negative.)
+  "Move point forward COUNT sentences (backward if COUNT is negative).
 Returns then count of sentences left to move, positive of negative depending
 on sign of COUNT.
 
