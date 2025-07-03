@@ -417,16 +417,19 @@ Use visual line when `visual-line-mode' is on."
   "Delete region and enter Insert state."
   (interactive)
   (cond ((use-region-p)
-         (when (helix-empty-line-selected-p)
-           (backward-char))
          (let ((line-selected? (helix-linewise-selection-p)))
-           (kill-region nil nil t)
+           (when (helix-empty-line-selected-p)
+             (backward-char))
+           (unless (eql (point) (mark))
+             (kill-region nil nil t))
            (pcase line-selected?
              ('line (indent-according-to-mode))
              ('visual-line (insert " ")
                            (backward-char)))))
-        (t
-         (delete-char -1)))
+        ((not (helix-bolp))
+         (delete-char -1))
+        ((bolp)
+         (indent-according-to-mode)))
   (helix-insert-state 1))
 
 ;; TODO:
