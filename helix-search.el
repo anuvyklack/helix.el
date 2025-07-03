@@ -231,6 +231,8 @@ RANGES is a list of cons cells with positions (START . END)."
     (with-selected-window (minibuffer-selected-window)
       (let ((dir helix-search--direction)
             (hl helix-search--hl)
+            ;; Center point after jump to a search result if it is out of the
+            ;; screen.
             (scroll-conservatively 0))
         (goto-char helix-search--point)
         (if-let* (((not (string-empty-p pattern)))
@@ -246,7 +248,10 @@ RANGES is a list of cons cells with positions (START . END)."
                         (overlay-put ov 'priority 99)
                         ov)))
               (setf (helix-highlight-regexp hl) regexp)
-              (helix-highlight-update hl))
+              (helix-highlight-update hl)
+              ;; Update the screen so that the temporary value for
+              ;; `scroll-conservatively' is taken into account.
+              (redisplay))
           ;; else
           (when helix-search--overlay
             (delete-overlay helix-search--overlay))
