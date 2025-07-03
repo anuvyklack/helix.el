@@ -44,8 +44,8 @@
 (mapc #'(lambda (cmd)
           (put cmd 'helix-merge-regions t))
       `(helix-first-non-blank   ;; gh
-        helix-beginning-of-line ;; gs
-        helix-end-of-line       ;; gl
+        helix-beginning-of-line-command ;; gs
+        helix-end-of-line-command ;; gl
         helix-copy-selection    ;; C
         helix-copy-selection-up ;; M-c
         helix-search-forward    ;; /
