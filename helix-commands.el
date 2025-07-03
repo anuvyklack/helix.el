@@ -446,6 +446,15 @@ Use visual line when `visual-line-mode' is on."
   "Kill (cut) text in region. I.e. delete text and put it in the `kill-ring'.
 If no selection — delete COUNT chars before point."
   (interactive "p")
+  ;; (if (use-region-p)
+  ;;     (let ((line? (helix-linewise-selection-p)))
+  ;;       (cond ((eq (helix-linewise-selection-p) 'line)
+  ;;              (helix-copy-line)
+  ;;              (delete-region (region-beginning) (region-end)))
+  ;;             (t
+  ;;              (kill-region nil nil t))))
+  ;;   ;; else
+  ;;   (delete-char (- count)))
   (cond ((use-region-p)
          ;; If selection is a whole line then add newline character (for
          ;; logical line) or space (for visual line) after into selection.
@@ -496,11 +505,14 @@ If no selection — delete COUNT chars after point."
   "Copy selection into `kill-ring'."
   (interactive)
   (when (use-region-p)
-    (let ((deactivate-mark nil))
+    (let ((beg (region-beginning))
+          (end (region-end))
+          (deactivate-mark nil))
       (pcase (helix-linewise-selection-p)
         ('line (helix-copy-line))
-        (_ (copy-region-as-kill nil nil t)))
-      (pulse-momentary-highlight-region (region-beginning) (region-end))
+        ('visual-line (copy-region-as-kill beg (1+ end)))
+        (_ (copy-region-as-kill beg end)))
+      (pulse-momentary-highlight-region beg end)
       (message "Copied into kill-ring"))))
 
 ;; p
