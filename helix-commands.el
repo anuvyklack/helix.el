@@ -935,24 +935,26 @@ at START-COLUMN, ends at END-COLUMN and consists of NUMBER-OF-LINES."
   "Rotate main selection backward COUNT times."
   (interactive "p")
   (when helix-multiple-cursors-mode
-    (dotimes (_ count)
-      (let ((scroll-conservatively 0))
+    (let ((scroll-conservatively 0))
+      (dotimes (_ count)
         (let ((cursor (or (helix-previous-fake-cursor (point))
                           (helix-last-fake-cursor))))
           (helix-create-fake-cursor-from-point)
-          (helix-restore-point-from-fake-cursor cursor))))))
+          (helix-restore-point-from-fake-cursor cursor)))
+      (redisplay))))
 
 ;; )
 (defun helix-rotate-selections-forward (count)
   "Rotate main selection forward COUNT times."
   (interactive "p")
   (when helix-multiple-cursors-mode
-    (dotimes (_ count)
-      (let ((scroll-conservatively 0))
+    (let ((scroll-conservatively 0))
+      (dotimes (_ count)
         (let ((cursor (or (helix-next-fake-cursor (point))
                           (helix-first-fake-cursor))))
           (helix-create-fake-cursor-from-point)
-          (helix-restore-point-from-fake-cursor cursor))))))
+          (helix-restore-point-from-fake-cursor cursor))))
+    (redisplay)))
 
 ;; M-(
 (defun helix-rotate-selections-content-backward (count)
@@ -1090,6 +1092,7 @@ keys to repeat motion forward/backward."
     (setq count (- count)))
   (let ((regexp (helix-search-pattern))
         (region-dir (if (use-region-p) (helix-region-direction) 1))
+        ;; Center point after jump to search result if it is out of the screen.
         (scroll-conservatively 0))
     (helix-motion-loop (dir count)
       (when (save-excursion (helix-re-search-with-wrap regexp dir))
@@ -1097,6 +1100,9 @@ keys to repeat motion forward/backward."
           (when (and helix--extend-selection (use-region-p))
             (helix-create-fake-cursor-from-point))
           (helix-set-region beg end region-dir))))
+    ;; Update the screen so that the temporary value for
+    ;; `scroll-conservatively' is taken into account.
+    (redisplay)
     (helix-highlight-search-pattern regexp)))
 
 ;; N
