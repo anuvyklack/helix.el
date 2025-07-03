@@ -228,7 +228,7 @@ RANGES is a list of cons cells with positions (START . END)."
 
 (defun helix-search--do-update ()
   (let ((pattern (minibuffer-contents-no-properties)))
-    (with-current-buffer helix-search--buffer
+    (with-selected-window (minibuffer-selected-window)
       (let ((dir helix-search--direction)
             (hl helix-search--hl)
             (scroll-conservatively 0))
