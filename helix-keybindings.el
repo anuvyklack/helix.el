@@ -66,9 +66,9 @@
   "F"   #'helix-find-char-backward
   "t"   #'helix-till-char-forward
   "T"   #'helix-till-char-backward
-  "g s" #'helix-beginning-of-line
+  "g s" #'helix-beginning-of-line-command
   "g h" #'helix-first-non-blank
-  "g l" #'helix-end-of-line
+  "g l" #'helix-end-of-line-command
   "g g" #'helix-goto-first-line
   "G"   #'helix-goto-last-line
   "] p" #'helix-forward-paragraph
