@@ -250,7 +250,10 @@ RANGES is a list of cons cells with positions (START . END)."
           ;; else
           (when helix-search--overlay
             (delete-overlay helix-search--overlay))
-          (helix-highlight-delete hl))))))
+          (helix-highlight-delete hl)
+          (let ((str "Search failed"))
+            (put-text-property 0 (length str) 'face 'error str)
+            (message "%s" str)))))))
 
 (defun helix-search--stop-session ()
   "Stop interactive select."
