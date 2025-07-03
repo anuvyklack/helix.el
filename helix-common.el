@@ -197,6 +197,18 @@ negative — preceding char."
   (unless direction (setq direction 1))
   (if (< direction 0) (preceding-char) (following-char)))
 
+(defun helix-beginning-of-line ()
+  "Move point to beginning of current line.
+Use visual line when `visual-line-mode' is active."
+  (if visual-line-mode
+      (beginning-of-visual-line)
+    (move-beginning-of-line nil)))
+
+(defun helix-end-of-line ()
+  (if visual-line-mode
+      (end-of-visual-line)
+    (move-end-of-line 1)))
+
 (defmacro helix-motion-loop (spec &rest body)
   "Loop a certain number of times.
 Evaluate BODY repeatedly COUNT times with DIRECTION bound to 1 or -1,
@@ -591,14 +603,10 @@ is inside a string, return quote-mark character that bounds that string."
 (defun helix-yank-line-handler (text)
   "Insert the TEXT linewise."
   (pcase helix-this-command
-    ('helix-paste-before (if visual-line-mode
-                             (beginning-of-visual-line)
-                           (move-beginning-of-line nil))
+    ('helix-paste-before (helix-beginning-of-line)
                          (set-marker (mark-marker) (point))
                          (insert text))
-    ('helix-paste-after (if visual-line-mode
-                            (end-of-visual-line)
-                          (move-end-of-line 1))
+    ('helix-paste-after (helix-end-of-line)
                         (insert "\n")
                         (set-marker (mark-marker) (point))
                         (insert text)
@@ -683,19 +691,18 @@ Returns symbol:
       (let ((beg (region-beginning))
             (end (region-end)))
         (goto-char beg)
-        ;; Line selected when either:
-        ;; 1. Region starts at the beginning and ends at the end of line.
-        ;; 2. Region starts and ends at the beginning of line
+        ;; First check for logical line, because visual line can be logical line
+        ;; and then should be treated as logical line.
         (cond ((and (bolp) (save-excursion
                              (goto-char end)
-                             (or (and (eolp)
-                                      (not (helix-empty-line-p)))
-                                 (helix-empty-line-selected-p))))
+                             (bolp)))
                'line)
               ((and visual-line-mode
-                    (helix-visual-bolp)
-                    (save-excursion (goto-char end)
-                                    (helix-visual-eolp)))
+                    (helix-visual-bolp) (save-excursion
+                                          (goto-char end)
+                                          (helix-visual-bolp)
+                                          ;; (helix-visual-eolp)
+                                          ))
                'visual-line))))))
 
 (defun helix-empty-line-selected-p ()
