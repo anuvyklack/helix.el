@@ -54,25 +54,23 @@ add/remove advice when `helix-mode' is toggled on or off.
        (when helix-mode
          (advice-add ',symbol ,how #',advice)))))
 
-(defmacro helix-with-restriction (restrictions &rest body)
-  "Evaluate BODY with the buffer narrowed to START and END.
-
-\(fn (START . END) BODY...)"
-  (declare (indent defun) (debug (form &rest form)))
-  (let ((start (gensym "start"))
-        (end (gensym "end")))
-    `(if ,restrictions
-         (-let (((,start . ,end) ,restrictions))
-           (save-restriction
-             (narrow-to-region ,start ,end)
-             ,@body))
+(defmacro helix-with-restriction (start end &rest body)
+  "Evaluate BODY with the buffer narrowed to START and END."
+  (declare (indent 2) (debug t))
+  (let ((beg1 (gensym "beg"))
+        (end1 (gensym "end")))
+    `(if-let* ((,beg1 ,start)
+               (,end1 ,end))
+         (save-restriction
+           (narrow-to-region ,beg1 ,end1)
+           ,@body)
        ;; else
        ,@body)))
 
 (defmacro helix-narrow-to-field (&rest body)
   "Evaluated BODY with buffer narrowed to the current field."
   (declare (indent defun) (debug t))
-  `(helix-with-restriction (cons (field-beginning) (field-end))
+  `(helix-with-restriction (field-beginning) (field-end)
      ,@body))
 
 (defmacro helix-with-deactivate-mark (&rest body)
@@ -110,59 +108,6 @@ such as `helix-word', `helix-sentence', `paragraph', `line'."
                     (when skip-empty-lines (skip-chars-backward "\r\n")))
                    ((eobp) (backward-char))) ; assuming that buffer ends with newline
              rest))))
-
-(defun helix-bounds-of-complement-of-thing-at-point (thing)
-  "Return the bounds of a complement of THING at point.
-I.e., if there is a THING at point — returns nil, otherwise
-the gap between two THINGs is returned.
-
-Works only with THINGs, that returns the count of steps left to move,
-such as `helix-word', `helix-sentence', `paragraph', `line'."
-  (let ((orig-point (point)))
-    (if-let* ((beg (save-excursion
-                     (and (zerop (forward-thing thing -1))
-                          (forward-thing thing))
-                     (if (<= (point) orig-point)
-                         (point))))
-              (end (save-excursion
-                     (and (zerop (forward-thing thing))
-                          (forward-thing thing -1))
-                     (if (<= orig-point (point))
-                         (point))))
-              ((and (<= beg (point) end)
-                    (< beg end))))
-        (cons beg end))))
-
-(defun helix-select-a-thing (thing &optional line?)
-  "Select a THING with spacing around.
-Works only with THINGs, that returns the count of steps left to move,
-such as `helix-word', `helix-sentence', `paragraph', `line'."
-  (when-let* ((bounds (bounds-of-thing-at-point thing)))
-    (-let (((beg . end)
-            (or (progn
-                  (goto-char (cdr bounds))
-                  (helix-with-restriction
-                    (if line? (cons (line-beginning-position)
-                                    (line-end-position)))
-                    (if-let* ((complement
-                               (helix-bounds-of-complement-of-thing-at-point thing)))
-                        (cons (car bounds)
-                              (cdr complement)))))
-                (progn
-                  (goto-char (car bounds))
-                  (helix-with-restriction
-                    (if line?
-                        (cons (cond ((memq thing '(helix-word helix-WORD))
-                                     (save-excursion (back-to-indentation) (point)))
-                                    (t
-                                     (line-beginning-position)))
-                              (line-end-position)))
-                    (if-let* ((complement
-                               (helix-bounds-of-complement-of-thing-at-point thing)))
-                        (cons (car complement)
-                              (cdr bounds)))))
-                bounds)))
-      (helix-set-region beg end))))
 
 (defun helix-skip-chars (chars &optional direction)
   "Move point toward the DIRECTION stopping after a char is not in CHARS string.
@@ -308,6 +253,47 @@ What is sentence is defined by `forward-sentence-function'."
            (forward-thing thing -1)
            (set-mark (point)))))
   (forward-thing thing count))
+
+(defun helix-mark-a-thing (thing)
+  "Select a THING with spacing around.
+Works only with THINGs, that returns the count of steps left to move,
+such as `paragraph'."
+  (-when-let ((thing-beg . thing-end) (bounds-of-thing-at-point thing))
+    (-let (((beg . end)
+            (or (progn
+                  (goto-char thing-end)
+                  (-if-let ((_ . space-end)
+                            (helix-bounds-of-complement-of-thing-at-point thing))
+                      (cons thing-beg space-end)))
+                (progn
+                  (goto-char thing-beg)
+                  (-if-let ((space-beg . _)
+                            (helix-bounds-of-complement-of-thing-at-point thing))
+                      (cons space-beg thing-end)))
+                (cons thing-beg thing-end))))
+      (helix-set-region beg end))))
+
+(defun helix-bounds-of-complement-of-thing-at-point (thing)
+  "Return the bounds of a complement of THING at point.
+I.e., if there is a THING at point — returns nil, otherwise
+the gap between two THINGs is returned.
+
+Works only with THINGs, that returns the count of steps left to move,
+such as `helix-word', `helix-sentence', `paragraph', `line'."
+  (let ((orig-point (point)))
+    (if-let* ((beg (save-excursion
+                     (and (zerop (forward-thing thing -1))
+                          (forward-thing thing))
+                     (if (<= (point) orig-point)
+                         (point))))
+              (end (save-excursion
+                     (and (zerop (forward-thing thing))
+                          (forward-thing thing -1))
+                     (if (<= orig-point (point))
+                         (point))))
+              ((and (<= beg (point) end)
+                    (< beg end))))
+        (cons beg end))))
 
 (defun helix-bounds-of-string-at-point (quote-mark)
   "Return a cons cell (START . END) with bounds of string
