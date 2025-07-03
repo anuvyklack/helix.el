@@ -425,9 +425,9 @@ cursors editing.")
     helix-find-char-backward       ;; F
     helix-till-char-forward        ;; t
     helix-till-char-backward       ;; T
-    helix-beginning-of-line        ;; gs
+    helix-beginning-of-line-command ;; gs
     helix-first-non-blank          ;; gh
-    helix-end-of-line              ;; gl
+    helix-end-of-line-command      ;; gl
     helix-forward-paragraph        ;; ]p or }}
     helix-backward-paragraph       ;; [p or {{
     helix-change                   ;; c

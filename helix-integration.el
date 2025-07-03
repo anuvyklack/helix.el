@@ -50,7 +50,7 @@
                      'helix-forward-word-end     ;; e
                      'helix-forward-WORD-end     ;; E
                      'helix-first-non-blank      ;; gh
-                     'helix-end-of-line          ;; gl
+                     'helix-end-of-line-command  ;; gl
                      'helix-search-forward       ;; /
                      'helix-search-backward      ;; ?
                      'helix-search-next          ;; n
