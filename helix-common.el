@@ -225,6 +225,17 @@ What is sentence is defined by `forward-sentence-function'."
   (helix-motion-loop (dir count)
     (ignore-errors (forward-sentence dir))))
 
+(defun forward-helix-function (&optional count)
+  "Move point forward COUNT functions (backward if COUNT is negative).
+Returns then count of sentences left to move, positive of negative depending
+on sign of COUNT.
+
+What is function is defined by `beginning-of-defun' and `end-of-defun'
+functions."
+  (unless count (setq count 1))
+  (helix-motion-loop (dir count)
+    (if (< dir 0) (beginning-of-defun) (end-of-defun))))
+
 ;; `helix-comment' thing
 (put 'helix-comment 'bounds-of-thing-at-point #'helix-bounds-of-comment-at-point-ppss)
 (defun helix-bounds-of-comment-at-point-ppss ()
