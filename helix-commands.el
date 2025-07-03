@@ -1188,12 +1188,36 @@ Do not auto-detect word boundaries in the search pattern."
 ;; maw
 (defun helix-mark-a-word ()
   (interactive)
-  (helix-select-a-thing 'helix-word t))
+  (helix--mark-a-word-1 nil))
 
 ;; maW
 (defun helix-mark-a-WORD ()
   (interactive)
-  (helix-select-a-thing 'helix-WORD t))
+  (helix--mark-a-word-1 t))
+
+(defun helix--mark-a-word-1 (bigword?)
+  "Inner implementation of `helix-mark-a-word' and `helix-mark-a-WORD' commands."
+  (let ((thing (if bigword? 'helix-WORD 'helix-word)))
+    (-when-let ((thing-beg . thing-end) (bounds-of-thing-at-point thing))
+      (-let (((beg . end)
+              (or (progn
+                    (goto-char thing-end)
+                    (helix-with-restriction (line-beginning-position) (line-end-position)
+                      (-if-let ((_ . space-end)
+                                (helix-bounds-of-complement-of-thing-at-point thing))
+                          (cons thing-beg space-end))))
+                  (progn
+                    (goto-char thing-beg)
+                    (helix-with-restriction
+                        (save-excursion
+                          (back-to-indentation)
+                          (point))
+                        (line-end-position)
+                      (-if-let ((space-beg . _)
+                                (helix-bounds-of-complement-of-thing-at-point thing))
+                          (cons space-beg thing-end))))
+                  (cons thing-beg thing-end))))
+        (helix-set-region beg end)))))
 
 ;; mis
 (defun helix-mark-inner-sentence (count)
@@ -1203,18 +1227,35 @@ Do not auto-detect word boundaries in the search pattern."
 ;; mas
 (defun helix-mark-a-sentence ()
   (interactive)
-  (helix-select-a-thing 'helix-sentence t))
+  (let ((thing 'helix-sentence))
+    (-when-let ((thing-beg . thing-end) (bounds-of-thing-at-point thing))
+      (-let (((beg . end)
+              (or (progn
+                    (goto-char thing-end)
+                    (helix-with-restriction (line-beginning-position) (line-end-position)
+                      (-if-let ((_ . space-end)
+                                (helix-bounds-of-complement-of-thing-at-point thing))
+                          (cons thing-beg space-end))))
+                  (progn
+                    (goto-char thing-beg)
+                    (helix-with-restriction (line-beginning-position) (line-end-position)
+                      (-if-let ((space-beg . _)
+                                (helix-bounds-of-complement-of-thing-at-point thing))
+                          (cons space-beg thing-end))))
+                  (cons thing-beg thing-end))))
+        (helix-set-region beg end)))))
 
 ;; mip
 (defun helix-mark-inner-paragraph (count)
   (interactive "p")
-  (helix-mark-inner-thing 'paragraph count)
-  (helix-trim-whitespaces-from-selection))
+  (push-mark nil t)
+  (helix-mark-inner-thing 'paragraph count))
 
 ;; map
-(defun helix-mark-a-paragraph (count)
-  (interactive "p")
-  (helix-mark-inner-thing 'paragraph count))
+(defun helix-mark-a-paragraph ()
+  (interactive)
+  (push-mark nil t)
+  (helix-mark-a-thing 'paragraph))
 
 ;; mi"
 (defun helix-mark-inner-double-quoted ()
