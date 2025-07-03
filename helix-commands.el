@@ -1250,6 +1250,16 @@ Do not auto-detect word boundaries in the search pattern."
   (push-mark nil t)
   (helix-mark-a-thing 'paragraph))
 
+;; mif
+(defun helix-mark-inner-function (count)
+  (interactive "p")
+  (helix-mark-inner-thing 'helix-function count))
+
+;; maf
+(defun helix-mark-a-function ()
+  (interactive)
+  (helix-mark-a-thing 'helix-function))
+
 ;; mi"
 (defun helix-mark-inner-double-quoted ()
   (interactive)
