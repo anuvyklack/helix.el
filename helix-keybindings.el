@@ -188,7 +188,6 @@
   "W"   #'helix-mark-inner-WORD
   "i W" #'helix-mark-inner-WORD
   "a W" #'helix-mark-a-WORD
-  "."   #'helix-mark-inner-sentence
   "i s" #'helix-mark-inner-sentence
   "a s" #'helix-mark-a-sentence
   "p"   #'helix-mark-inner-paragraph
