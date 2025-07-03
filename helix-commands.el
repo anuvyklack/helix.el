@@ -1265,10 +1265,10 @@ Do not auto-detect word boundaries in the search pattern."
   (interactive)
   (helix-select-a-thing 'helix-WORD t))
 
-;; mis m.
+;; mis
 (defun helix-mark-inner-sentence (count)
   (interactive "p")
-  (helix-mark-inner-thing 'sentence count))
+  (helix-mark-inner-thing 'helix-sentence count))
 
 ;; mas
 (defun helix-mark-a-sentence ()
