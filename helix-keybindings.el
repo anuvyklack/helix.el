@@ -190,6 +190,9 @@
   "a W" #'helix-mark-a-WORD
   "i s" #'helix-mark-inner-sentence
   "a s" #'helix-mark-a-sentence
+  "f"   #'helix-mark-inner-function
+  "i f" #'helix-mark-inner-function
+  "a f" #'helix-mark-a-function
   "p"   #'helix-mark-inner-paragraph
   "i p" #'helix-mark-inner-paragraph
   "a p" #'helix-mark-a-paragraph
