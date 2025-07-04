@@ -385,8 +385,8 @@ Use visual line when `visual-line-mode' is active."
   "Insert a new line below point and switch to Insert state."
   (interactive)
   (helix-with-each-cursor
-    (helix-insert-newline-below)
-    (indent-according-to-mode)
+    (move-end-of-line nil)
+    (newline-and-indent)
     (set-marker (mark-marker) (point)))
   (helix-insert-state 1))
 
@@ -395,24 +395,30 @@ Use visual line when `visual-line-mode' is active."
   "Insert a new line above point and switch to Insert state."
   (interactive)
   (helix-with-each-cursor
-    (helix-insert-newline-above)
+    (move-beginning-of-line nil)
+    (newline)
+    (forward-line -1)
     (indent-according-to-mode)
     (set-marker (mark-marker) (point)))
   (helix-insert-state 1))
 
 ;; ] SPC
-(defun helix-add-blank-line-below ()
-  "Add blank line below."
-  (interactive)
+(defun helix-add-blank-line-below (count)
+  "Add COUNT blank lines below."
+  (interactive "p")
   (save-excursion
-    (helix-insert-newline-below)))
+    (let (deactivate-mark)
+      (move-end-of-line nil)
+      (newline count))))
 
 ;; [ SPC
-(defun helix-add-blank-line-above ()
-  "Add blank line above."
-  (interactive)
+(defun helix-add-blank-line-above (count)
+  "Add COUNT blank lines above."
+  (interactive "p")
   (save-excursion
-    (helix-insert-newline-above)))
+    (let (deactivate-mark)
+      (move-beginning-of-line nil)
+      (newline count))))
 
 ;; c
 (defun helix-change ()
