@@ -67,12 +67,6 @@ add/remove advice when `helix-mode' is toggled on or off.
        ;; else
        ,@body)))
 
-(defmacro helix-narrow-to-field (&rest body)
-  "Evaluated BODY with buffer narrowed to the current field."
-  (declare (indent defun) (debug t))
-  `(helix-with-restriction (field-beginning) (field-end)
-     ,@body))
-
 (defmacro helix-with-deactivate-mark (&rest body)
   "Evaluate BODY with mark temporary deactivated."
   (declare (debug t))
@@ -876,23 +870,6 @@ FUN on each invocation should move point."
       (insert-char (if (eq (upcase char) char)
                        (downcase char)
                      (upcase char))))))
-
-(defun helix-insert-newline-above ()
-  "Insert a new line above point and place point in that line
-with regard to indentation."
-  (helix-narrow-to-field
-    (beginning-of-line)
-    (insert (if use-hard-newlines hard-newline "\n"))
-    (forward-line -1)
-    (back-to-indentation)))
-
-(defun helix-insert-newline-below ()
-  "Insert a new line below point and place point in that line
-with regard to indentation."
-  (helix-narrow-to-field
-    (end-of-line)
-    (insert (if use-hard-newlines hard-newline "\n"))
-    (back-to-indentation)))
 
 (defun helix-letters-are-self-insert-p ()
   "Return t if any of the a-z keys are bound to self-insert command."
