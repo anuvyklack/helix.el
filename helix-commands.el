@@ -559,19 +559,28 @@ Like `helix-paste-pop' but with negative COUNT argument."
   (let ((deactivate-mark nil)
         beg end dir)
     (when (use-region-p)
-      (setq beg (copy-marker (region-beginning))
+      (setq beg (region-beginning)
             end (copy-marker (region-end))
             dir (helix-region-direction)))
-    (let ((count (let ((count (if beg (count-lines beg end) 1)))
+    (let ((count (let ((count (if end (count-lines beg end) 1)))
                    (if (> count 1) (1- count) count))))
-      (goto-char beg)
-      (forward-line count)
+      (when beg (goto-char beg))
+      ;; All these `let' bindings are actually move point.
+      (let ((in-comment? (helix-comment-at-pos-p
+                          (progn (move-beginning-of-line nil)
+                                 (skip-chars-forward " \t")
+                                 (point))))
+            (ubeg (progn (forward-line 1)
+                         (line-beginning-position)))
+            (uend (progn (forward-line (1- count))
+                         (line-end-position))))
+        (when in-comment?
+          (uncomment-region ubeg uend)))
       (dotimes (_ count)
         (forward-line 0)
         (delete-char -1)
         (fixup-whitespace)))
     (helix-set-region beg end dir)
-    (set-marker beg nil)
     (set-marker end nil)))
 
 ;; ~
