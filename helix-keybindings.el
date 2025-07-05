@@ -159,6 +159,7 @@
   "g c" #'comment-or-uncomment-region
   "g f" #'find-file-at-point
   "g x" #'browse-url-at-point
+  "g q" #'fill-region
   "] b" #'next-buffer
   "[ b" #'previous-buffer
   "] SPC" #'helix-add-blank-line-below
