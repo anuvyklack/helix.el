@@ -175,36 +175,6 @@ I.e.:
                    (car bounds)
                  (cdr bounds)))))
 
-(defun helix-comment-at-point-p ()
-  "Return non-nil if point is inside a comment, or comment starts
-right after the point."
-  (ignore-errors
-    (save-excursion
-      ;; We cannot be in a comment if we are inside a string
-      (unless (nth 3 (syntax-ppss))
-        (let ((pnt (point)))
-          (or (nth 4 (syntax-ppss))
-              ;; this also test opening and closing comment delimiters... we
-              ;; need to check that it is not newline, which is in "comment
-              ;; ender" class in elisp-mode, but we just want it to be treated
-              ;; as whitespace
-              (and (< pnt (point-max))
-                   (memq (char-syntax (char-after pnt)) '(?< ?>))
-                   (not (eq (char-after pnt) ?\n)))
-              ;; we also need to test the special syntax flag for comment
-              ;; starters and enders, because `syntax-ppss' does not yet know if
-              ;; we are inside a comment or not (e.g. / can be a division or
-              ;; comment starter...).
-              (when-let ((s (car (syntax-after pnt))))
-                (or (and (/= 0 (logand (ash 1 16) s))
-                         (nth 4 (syntax-ppss (+ pnt 2))))
-                    (and (/= 0 (logand (ash 1 17) s))
-                         (nth 4 (syntax-ppss (+ pnt 1))))
-                    (and (/= 0 (logand (ash 1 18) s))
-                         (nth 4 (syntax-ppss (- pnt 1))))
-                    (and (/= 0 (logand (ash 1 19) s))
-                         (nth 4 (syntax-ppss (- pnt 2))))))))))))
-
 (defmacro helix-save-goal-column (&rest body)
   "Restore the goal column after execution of BODY."
   (declare (indent defun) (debug t))
