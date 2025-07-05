@@ -404,7 +404,10 @@ For example:
   "Update the cursor for current Helix STATE in current buffer."
   (when (eq (window-buffer) (current-buffer))
     (helix-set-cursor-type-and-color
-     (helix-state-property helix-state :cursor))))
+     (helix-state-property helix-state :cursor))
+    (when helix--extend-selection
+      (set-cursor-color (face-attribute 'helix-extend-selection-cursor
+                                        :background)))))
 
 (defun helix-set-cursor-type-and-color (&optional specs)
   "Change the cursor's apperance according to SPECS.
