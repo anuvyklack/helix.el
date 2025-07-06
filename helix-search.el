@@ -4,7 +4,8 @@
 ;;
 ;; Author: Yuriy Artemyev <anuvyklack@gmail.com>
 ;; Maintainer: Yuriy Artemyev <anuvyklack@gmail.com>
-;; Package-Requires: ((emacs "29.1"))
+;; Version: 0.0.1
+;; Package-Requires: ((emacs "28.3"))
 ;;
 ;; This file is not part of GNU Emacs.
 ;;
@@ -205,6 +206,7 @@ RANGES is a list of cons cells with positions (START . END)."
       (helix-pcre-to-elisp pattern)
     (user-error "Register / is empty")))
 
+;; FIXME: Cursor in the minibuffer blinks on each input.
 (defun helix-search-interactively (&optional direction)
   "DIRECTION should be either 1 or -1."
   (unless direction (setq direction 1))
