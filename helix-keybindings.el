@@ -131,7 +131,7 @@
   "M--" #'helix-merge-selections
   ";"   #'helix-collapse-selection
   "M-;" #'exchange-point-and-mark
-  "g o" #'exchange-point-and-mark
+  "g ;" #'exchange-point-and-mark
   "_"   #'helix-trim-whitespaces-from-selection
   "&"   #'helix-align-selections
 
