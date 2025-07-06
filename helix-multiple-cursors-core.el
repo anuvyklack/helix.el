@@ -387,11 +387,6 @@ If SORT is non-nil sort cursors in order they are located in buffer."
   (-filter #'helix-fake-cursor-p
            (overlays-in start end)))
 
-;; (defun helix-fake-regions-in (start end)
-;;   "Return a list of fake-cursors in START ... END region."
-;;   (cl-remove-if-not #'helix-fake-region-p
-;;                     (overlays-in start end)))
-
 (defun helix-cursor-with-id (id)
   "Return the cursor with the given ID if it is stil alive."
   (if-let* ((cursor (gethash id helix--cursors-table))
@@ -778,15 +773,6 @@ ID 0 coresponds to the real cursor."
 
 ;;; Integration with other Emacs functionality
 
-(add-hook 'after-revert-hook 'helix-remove-all-fake-cursors)
-
-(helix-define-advice execute-kbd-macro (:around (orig-fun &rest args))
-  "`execute-kbd-macro' should never be run for fake cursors.
-The real cursor will execute the keyboard macro, resulting in new commands
-in the command loop, and the fake cursors can pick up on those instead."
-  (unless helix--executing-command-for-fake-cursor
-    (apply orig-fun args)))
-
 ;; Intercept some reading commands so you won't have to
 ;; answer them for every single cursor
 (defvar helix--input-cache nil)
@@ -815,12 +801,6 @@ Calls with equal PROMPT or without it would be undistinguishable."
            (push (cons key value) helix--input-cache))
          value))))
 
-(helix-cache-input read-char)
-(helix-cache-input read-quoted-char)
-(helix-cache-input read-from-kill-ring)
-(helix-cache-input read-char-from-minibuffer)
-(helix-cache-input register-read-with-preview)  ; used by read-string
-
 (defmacro helix-unsupported-command (command)
   "Adds command to list of unsupported commands and prevents it
 from being executed if in `helix-multiple-cursors-mode'."
@@ -833,44 +813,6 @@ from being executed if in `helix-multiple-cursors-mode'."
                     (called-interactively-p 'any))
          (apply orig-fun args)))))
 
-;; Commands that don't work with multiple-cursors
-(helix-unsupported-command isearch-forward)
-(helix-unsupported-command isearch-backward)
-
-(helix-define-advice current-kill (:before (n &optional _do-not-move) helix)
-  "Make sure pastes from other programs are added to `kill-ring's
-of all cursors when yanking."
-  (when-let* ((interprogram-paste (and (= n 0)
-                                       interprogram-paste-function
-                                       (funcall interprogram-paste-function))))
-    (when (listp interprogram-paste)
-      ;; Use `reverse' to avoid modifying external data.
-      (setq interprogram-paste (reverse interprogram-paste)))
-    ;; Add `interprogram-paste' to `kill-ring's of all cursors real and
-    ;; fake. This is what `current-kill' do internally, but we have to do
-    ;; it ourselves, because `interprogram-paste-function' is not a pure
-    ;; function — it returns something only once.
-    (let ((interprogram-cut-function nil)
-          (interprogram-paste-function nil))
-      ;; real cursor
-      (if (listp interprogram-paste)
-          (mapc 'kill-new interprogram-paste)
-        (kill-new interprogram-paste))
-      ;; fake cursors
-      (dolist (cursor (helix-all-fake-cursors))
-        (let ((kill-ring (overlay-get cursor 'kill-ring))
-              (kill-ring-yank-pointer (overlay-get cursor 'kill-ring-yank-pointer)))
-          (if (listp interprogram-paste)
-              (mapc 'kill-new interprogram-paste)
-            (kill-new interprogram-paste))
-          (overlay-put cursor 'kill-ring kill-ring)
-          (overlay-put cursor 'kill-ring-yank-pointer kill-ring-yank-pointer))))))
-
-;; M-x
-(helix-define-advice execute-extended-command (:after (&rest _) helix)
-  "Execute selected command for all cursors."
-  (setq helix-this-command this-command))
-
 ;;; Utils
 
 (defun helix-fake-cursor-p (overlay)
@@ -880,19 +822,6 @@ of all cursors when yanking."
 (defun helix-fake-region-p (overlay)
   "Return t if an OVERLAY is a fake region."
   (eq (overlay-get overlay 'type) 'fake-region))
-
-(defun helix--overlays-overlap-p (o1 o2)
-  (< (overlay-start o2)
-     (overlay-end o1)))
-
-(defun helix--compare-by-overlay-start (o1 o2)
-  (< (overlay-start o1)
-     (overlay-start o2)))
-
-(defun helix-overlay-live-p (overlay)
-  "Return non-nil if OVERLAY is not deleted from buffer."
-  (if-let* ((buffer (overlay-buffer overlay)))
-      (buffer-live-p buffer)))
 
 (provide 'helix-multiple-cursors-core)
 ;;; helix-multiple-cursors-core.el ends here

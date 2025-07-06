@@ -67,6 +67,8 @@ want COMMAND to be executed only for original ones."
     (setq helix-this-command nil
           helix--input-cache nil)))
 
+(declare-function helix-remove-all-fake-cursors "helix-commands")
+
 (define-minor-mode helix-local-mode
   "Minor mode for setting up Helix in a current buffer."
   :global nil
@@ -78,10 +80,12 @@ want COMMAND to be executed only for original ones."
         (helix-load-whitelists)
         (add-hook 'pre-command-hook #'helix--pre-commad-hook nil t)
         (add-hook 'post-command-hook #'helix--post-command-hook 90 t)
+        (add-hook 'after-revert-hook #'helix-remove-all-fake-cursors nil t)
         (helix-change-state (helix-initial-state)))
     ;; else
     (remove-hook 'post-command-hook #'helix--post-command-hook t)
     (remove-hook 'pre-command-hook #'helix--pre-commad-hook t)
+    (remove-hook 'after-revert-hook #'helix-remove-all-fake-cursors t)
     (helix--single-undo-step-end)
     (setq helix-this-command nil
           helix--input-cache nil)
@@ -158,7 +162,7 @@ Optional keyword arguments:
         (:exit-hook (setq exit-hook-value (ensure-list arg)))))
     `(progn
        ;; Save the state's properties in `helix-state-properties' for runtime lookup.
-       (helix--add-to-alist helix-state-properties
+       (helix-add-to-alist helix-state-properties
          ',state (list
                   :name ,state-name
                   :variable ',variable
