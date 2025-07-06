@@ -778,13 +778,16 @@ If nothing found, wrap around the buffer and search up to the point."
     (string-to-number (format-mode-line "%l"))))
 
 (defun helix-set-region (start end &optional direction)
-  (unless direction (setq direction 1))
-  (cond ((< direction 0)
-         (goto-char start)
-         (set-mark end))
+  "Make active region between START and END position.
+If DIRECTION is positive number — place point at the END,
+negative number — at the beginning."
+  (cond ((or (null direction)
+             (> direction 0))
+         (set-mark start)
+         (goto-char end))
         (t
-         (goto-char end)
-         (set-mark start))))
+         (goto-char start)
+         (set-mark end))))
 
 (defun helix-ensure-region-direction (direction)
   "Exchange point and mark if region direction mismatch DIRECTION.
