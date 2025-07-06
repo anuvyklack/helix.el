@@ -3,7 +3,7 @@
 ;; Author: Yuriy Artemyev <anuvyklack@gmail.com>
 ;; Maintainer: Yuriy Artemyev <anuvyklack@gmail.com>
 ;; Version: 0.0.1
-;; Package-Requires: ((emacs "29.1"))
+;; Package-Requires: ((emacs "28.3"))
 ;;
 ;; This file is not part of GNU Emacs.
 ;;
@@ -35,19 +35,15 @@
 (defvar edebug-mode-map)
 (declare-function helix-remove-all-fake-cursors "helix-commands")
 
-;;; Helix minor mode
+;;; Helix mode
 
 (defun helix--pre-commad-hook ()
-  "Called from `pre-command-hook' to execute COMMAND for fake cursors.
-The COMMAND should be executed for fake cursors first, because it can
-create fake cursors itself, like `helix-copy-selection' does, and we
-want COMMAND to be executed only for original ones."
   (unless helix--executing-command-for-fake-cursor
-    ;; FIXME: Need to intercept into Edebug: when in Edebug `this-command'
-    ;; in `pre-command-hook' is the Edebugs command you invoced, and then
-    ;; Edebug set it to correct value inside somewhere inside this Edebug
-    ;; command. So we need to find where does it happen and add advice to
-    ;; set `helix-this-command' to this value.
+    ;; FIXME: Need to intercept into Edebug mode.
+    ;; When in Edebug `this-command' in `pre-command-hook' is the Edebugs
+    ;; command you invoked, and then Edebug set it to the function you debuging
+    ;; somewhere inside this Edebug command. So we need to find where does it
+    ;; happen and add advice to set `helix-this-command' to this value.
     (unless  edebug-mode ;; this is bad termporary solution
       (setq helix-this-command this-command))
     (when (and (symbolp this-command)
@@ -63,9 +59,9 @@ want COMMAND to be executed only for original ones."
                ;; We need to handle these! They will generate actual commands
                ;; that are also run in the command loop.
                (functionp helix-this-command))
-      ;; Wrap in `condition-case' to protect this function from being removed
-      ;; from `pre-command-hook', because the function throwing the error is
-      ;; unconditionally removed from `pre-command-hook'.
+      ;; Wrap in `condition-case' to protect `helix--post-command-hook' from
+      ;; being removed from `post-command-hook', because the function throwing
+      ;; the error is unconditionally removed from `post-command-hook'.
       (condition-case error
           (helix--execute-command-for-all-fake-cursors helix-this-command)
         (error
@@ -201,9 +197,10 @@ current buffer, than Helix will start in %s." state-name))
                                       ,(format "Hooks to run on exit %s." state-name))
                                (dolist (func ',exit-hook-value)
                                  (add-hook ',exit-hook func)))))
-       ;; state function
+       ;; State variable
        (helix-defvar-local ,variable nil
          ,(format "Non nil if Helix is in %s." state-name))
+       ;; State function
        (defun ,statefun (&optional arg)
          ,(format "Switch Helix into %s.
 When ARG is non-positive integer and Helix is in %s — disable it.\n\n%s"
@@ -388,7 +385,7 @@ For example:
       \"b\" #\\='bar)"
   (declare (indent defun))
   (when (and state (not (helix-state-p state)))
-    (user-error "Helix state `%s' not known to be defined" state))
+    (user-error "Helix state `%s' is not known to be defined" state))
   (unless (cl-evenp (length rest))
     (user-error "The number of `key definition' pairs is not even"))
   (let ((map (cond ((and keymap state)
