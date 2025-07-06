@@ -110,7 +110,7 @@
 
 - =;= :: Collapse selection onto a single cursor.
 
-- =M-;= or =go= :: Exchange point and mark.
+- =M-;= or =g;= :: Exchange point and mark.
 
 - =_= :: Trim whitespaces and newlines from the both ends of selections.
 
