@@ -3,7 +3,7 @@
 ;; Author: Yuriy Artemyev <anuvyklack@gmail.com>
 ;; Maintainer: Yuriy Artemyev <anuvyklack@gmail.com>
 ;; Version: 0.0.1
-;; Package-Requires: ((emacs "29.1"))
+;; Package-Requires: ((emacs "28.3"))
 ;;
 ;; This file is not part of GNU Emacs.
 ;;
@@ -34,10 +34,6 @@
 ;;; Helix minor mode
 
 (defun helix--pre-commad-hook ()
-  "Called from `pre-command-hook' to execute COMMAND for fake cursors.
-The COMMAND should be executed for fake cursors first, because it can
-create fake cursors itself, like `helix-copy-selection' does, and we
-want COMMAND to be executed only for original ones."
   (unless helix--executing-command-for-fake-cursor
     (setq helix-this-command this-command)
     (when (and (symbolp this-command)

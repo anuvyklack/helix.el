@@ -609,6 +609,7 @@ Like `helix-paste-pop' but with negative COUNT argument."
 
 ;; gq
 (helix-define-advice fill-region (:around (orig-fun &rest args))
+  "Don't deactivate region."
   (let (deactivate-mark)
     (apply orig-fun args)))
 

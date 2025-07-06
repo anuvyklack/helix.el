@@ -42,29 +42,33 @@
 - =o=, =O= ::
   Open: add new line bellow/above the current line and switch to Insert state.
 
-- =d= :: Delete selection
+- =d= :: Cut selection: delete it from buffer and put it into ~kill-ring~.
 
-- =c= :: Change: delete selection and switch to Insert state.
+- =D= :: Delete selection.
+
+- =c= ::
+  Change. Delete selection and switch to Insert state. When executed in empty
+  line — insert indentation and switch to Insert state.
 
 - =u=, =U= :: Undo/redo.
 
-- =y= :: Copy selections into ~kill-ring~.
+- =y= :: Copy selection into ~kill-ring~.
 
-- =p=, =P= :: Paste after/before selection.
+- =p=, =P= :: Paste last entry from ~kill-ring~ after/before selection.
 
 - =C-p=, =C-n= ::
   Replace just-pasted text with next/previous element from ~kill-ring~.
   This is wrappers around Emacs built-in ~yank-pop~ command.
 
 - =R= ::
-  Replace selection with yanked text from ~kill-ring~. You can use =C-p= / =C-n=
-  right after this command to choose next/previous element from ~kill-ring~.
+  Replace selection with last entry from ~kill-ring~. You can use =C-p= / =C-n=
+  immediately after this command to choose next/previous element from ~kill-ring~.
 
 - =~= :: Invert case of characters.
 
 - =`=, =M-`= or =gu=, =gU= :: Convert selection to lower/upper case.
 
-- =] SPC=, =[ SPC= :: Add empty line bellow/above current line.
+- =] SPC=, =[ SPC= :: Add empty line bellow/above the current line.
 
 ** Multiple cursors
 
@@ -132,6 +136,10 @@ for =m= prefix. Also, this is in line with Emacs tradition which has commands li
 - =mp= or =mip= :: Mark inner paragraph.
 
 - =map= :: Mark around paragraph.
+
+- =mf= or =mif= :: Mark inner function.
+
+- =maf= :: Mark around funciton.
 
 - =m"=, =m'=, =m`= or =mi"=, =mi'=, =mi`= ::
   Mark inside ="= / ='= / =`= quotes.

@@ -3,7 +3,7 @@
 ;; Author: Yuriy Artemyev <anuvyklack@gmail.com>
 ;; Maintainer: Yuriy Artemyev <anuvyklack@gmail.com>
 ;; Version: 0.0.1
-;; Package-Requires: ((emacs "29.1"))
+;; Package-Requires: ((emacs "28.3"))
 ;;
 ;; This file is not part of GNU Emacs.
 ;;
@@ -262,7 +262,7 @@ functions."
 (defun helix-mark-a-thing (thing)
   "Select a THING with spacing around.
 Works only with THINGs, that returns the count of steps left to move,
-such as `paragraph'."
+such as `paragraph', `helix-function'."
   (-when-let ((thing-beg . thing-end) (bounds-of-thing-at-point thing))
     (-let (((beg . end)
             (or (progn
