@@ -2,6 +2,7 @@
 ;;
 ;; Author: Yuriy Artemyev <anuvyklack@gmail.com>
 ;; Maintainer: Yuriy Artemyev <anuvyklack@gmail.com>
+;; Created: March 27, 2025
 ;; Version: 0.0.1
 ;; Homepage: https://github.com/anuvyklack/helix
 ;; Package-Requires: ((emacs "28.3"))

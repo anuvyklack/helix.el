@@ -1,4 +1,4 @@
-#+title: Helix Emulation Layer
+#+title: Helix Emulation Layer for Emacs
 
 [[https://helix-editor.com/][Helix Editor]] emulation layer. It also can be called "Hell" (Helix Emulation Layer)
 to continue the tradition started by [[https://github.com/emacs-evil/evil][Evil]].
@@ -20,7 +20,7 @@ in Emacs.
 
 - Smooth scrolling out of the box.
 
-- God-mode or Meow Keypad like functionality is built-in.
+- Built-in God-mode or Meow Keypad like functionality.
 
 - PCRE regexps by default (thanks to [[https://github.com/joddie/pcre2el][pcre2el]]).
 
@@ -28,8 +28,8 @@ in Emacs.
 
 ** Differences from Helix text editor
 
-- In Emacs the cursor ("point" in Emacs terms) is located between two characters
-  rather than on a character like in Helix or Vim. I decided to keep this
+- In Emacs the cursor ("point" in Emacs terms) is located *between* two characters
+  rather than *on* a character like in Helix or Vim. I decided to keep this
   behavior, instead of emulating original one, as Evil does, because the primary
   object of interaction in Helix approach is a selection, not the cursor itself.
 
@@ -37,7 +37,7 @@ in Emacs.
   selection down when cursor is at the end of the selection, or up when cursor
   is at the beginning of the selection.
 
-- Inner objects are available directly under =m= prefix together with =mi= to reduce
+- Inner objects are additionally available directly under =m= prefix to reduce
   keystrokes: =mw= is the same as =miw= — select word.
 
 - Mark commands accept numeric arguments:
@@ -66,7 +66,6 @@ in Emacs.
 
 ** Commands that are not implemented
 
-- =<= / =>= (indent ) — On their way.
 - =.= (repeat) — Need to decide what it should repeat.
 - =r= — replace
 - =C-i= / =C-o=, =C-s= — jumplist
@@ -75,10 +74,10 @@ in Emacs.
 
 ** Acknowledgments
 
-Helix depends on [[https://github.com/magnars/dash.el][dash.el]], [[https://github.com/joddie/pcre2el][pcre2el]], [[https://github.com/abo-abo/avy][avy]] and [[https://github.com/redguardtoo/evil-matchit][evil-matchit]] wonderful packages.
+Helix depends on [[https://github.com/magnars/dash.el][dash.el]], [[https://github.com/joddie/pcre2el][pcre2el]], and [[https://github.com/abo-abo/avy][avy]] wonderful packages.
 
-Helix is heavily inspired by: [[https://github.com/emacs-evil/evil][evil]], [[https://github.com/magnars/multiple-cursors.el][multiple-cursors.el]], [[https://github.com/meow-edit/meow][meow]], [[https://github.com/cute-jumper/embrace.el][emmbace.el]],
-[[https://github.com/mkleehammer/surround][surround]], [[https://github.com/aome510/kak.el][kak.el]].
+Helix is heavily inspired by: [[https://github.com/emacs-evil/evil][evil]], [[https://github.com/magnars/multiple-cursors.el][multiple-cursors.el]], [[https://github.com/meow-edit/meow][meow]], [[https://github.com/mkleehammer/surround][surround]],
+[[https://github.com/aome510/kak.el][kak.el]], [[https://github.com/doomemacs/doomemacs][doomemacs]], [[https://github.com/bbatsov/crux][crux]].
 
 You are welcome to go and give them all a star!
 

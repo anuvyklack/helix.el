@@ -1729,7 +1729,7 @@ Do not auto-detect word boundaries in the search pattern."
 
 (defun helix-surround-add-pair (key insert &optional search regexp? balanced?)
   "Add a new insert-delete pattern for Helix surround functionality.
-KEY       - To what KEY this pattern should be binded?
+KEY       - A character that will activates this pattern.
 INSERT    - Cons cell (LEFT . RIGHT) with strings, or function that returns such
             cons cell. The strigs that will be inserted by `helix-surround' and
             `helix-surround-change' functions.
@@ -1754,14 +1754,15 @@ cell with stirngs (LEFT . RIGHT) or a function, that returns such cons cell. If
 SEARCH is a function that returns list with 4 positions, they will be ignored.
 
 REGEXP?   - If non-nil then strings specified in SEARCH argument will be treated
-            as regexp patterns, otherwise they will searched literally.
+            as regexp patterns, otherwise they will be searched literally.
 BALANCED? - When non-nil all nested balanced LEFT RIGHT pairs will be skipped,
             else the first found pattern will be accepted.
 
 This function populates the buffer local `helix-surround-alist' variable,
 and thus should be called from major-modes hooks.
 
-See the defaul value of `helix-surround-alist' variable for examples."
+See the defaul value of `helix-surround-alist' variable and
+`helix-integration.el' file for examples."
   (push (cons key (list :insert insert
                         :search (or search insert)
                         :regexp regexp?

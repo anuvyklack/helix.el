@@ -3,7 +3,7 @@
 ;; Author: Yuriy Artemyev <anuvyklack@gmail.com>
 ;; Maintainer: Yuriy Artemyev <anuvyklack@gmail.com>
 ;; Version: 0.0.1
-;; Package-Requires: ((emacs "29.1"))
+;; Package-Requires: ((emacs "28.3"))
 ;;
 ;; This file is not part of GNU Emacs.
 ;;
@@ -212,6 +212,7 @@ COUNT minus number of steps moved; if backward, COUNT plus number moved.
 ;; (put 'visual-line 'beginning-op 'beginning-of-visual-line)
 ;; (put 'visual-line 'end-op       'end-of-visual-line)
 
+;; `helix-word' thing
 (defun forward-helix-word (&optional count)
   "Move point forward COUNT words (backward if COUNT is negative).
 Returns the count of word left to move, positive or negative depending
@@ -229,6 +230,7 @@ Word is:
               (word-combining-categories  helix-cjk-word-combining-categories))
           (forward-word dir)))))
 
+;; `helix-WORD' thing
 (defun forward-helix-WORD (&optional count)
   "Move point forward COUNT WORDs (backward if COUNT is negative).
 Returns the count of WORD left to move, positive or negative depending
@@ -241,6 +243,7 @@ WORD is any space separated sequence of characters."
     (unless (helix-line-boundary-p dir)
       (helix-skip-chars "^\n\r\t\f " dir))))
 
+;; `helix-sentence' thing
 (defun forward-helix-sentence (&optional count)
   "Move point forward COUNT sentences (backward if COUNT is negative).
 Returns then count of sentences left to move, positive of negative depending
@@ -250,6 +253,7 @@ What is sentence is defined by `forward-sentence-function'."
   (helix-motion-loop (dir (or count 1))
     (ignore-errors (forward-sentence dir))))
 
+;; `helix-function' thing
 (defun forward-helix-function (&optional count)
   "Move point forward COUNT functions (backward if COUNT is negative).
 Returns then count of sentences left to move, positive of negative depending
@@ -299,7 +303,7 @@ functions."
 (defun helix-mark-a-thing (thing)
   "Select a THING with spacing around.
 Works only with THINGs, that returns the count of steps left to move,
-such as `paragraph'."
+such as `paragraph', `helix-function'."
   (-when-let ((thing-beg . thing-end) (bounds-of-thing-at-point thing))
     (-let [(beg . end)
            (or (progn
