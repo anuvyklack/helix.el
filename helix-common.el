@@ -702,7 +702,7 @@ Returns symbol:
   ;; Alternative: (memq char '(?\s ?\t))
   )
 
-(defsubst helix-sign (&optional num)
+(defun helix-sign (&optional num)
   (cond ((< num 0) -1)
         ((zerop num) 0)
         (t 1)))

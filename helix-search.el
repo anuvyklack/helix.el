@@ -209,7 +209,7 @@ RANGES is a list of cons cells with positions (START . END)."
   (save-excursion
     (if-let* ((pattern (condition-case nil
                            (minibuffer-with-setup-hook #'helix-search--start-session
-                             (helix-read-regexp (if (< 0 direction) "/ " "? ")))
+                             (helix-read-regexp (if (< 0 direction) "/" "?")))
                          (quit)))
               ((not (string-empty-p pattern))))
         (set-register '/ pattern))))
@@ -446,30 +446,30 @@ If INVERT is non-nil — remove selections that match regexp."
     (let ((search #'(lambda (dir)
                       (let ((case-fold-search case))
                         (if exclusive?
-                            (cond (;; t n
-                                   (<= 0 dir direction) (forward-char))
-                                  (;; T n
-                                   (<= dir direction 0) (backward-char)))
+                            (cond ((<= 0 dir direction) ;; t n
+                                   (forward-char))
+                                  ((<= dir direction 0) ;; T n
+                                   (backward-char)))
                           ;; not exclusive?
-                          (cond (;; f N
-                                 (< dir 0 direction) (backward-char))
-                                (;; F N
-                                 (< direction 0 dir) (forward-char))))
+                          (cond ((< dir 0 direction) ;; f N
+                                 (backward-char))
+                                ((< direction 0 dir) ;; F N
+                                 (forward-char))))
                         (if (helix-search pattern dir nil t t)
                             (prog1 t
                               (setf (helix-highlight-direction hl) dir)
                               (save-match-data
                                 (helix-highlight-update hl))
                               (if exclusive?
-                                  (cond (;; t n
-                                         (<= 0 dir direction) (backward-char))
-                                        (;; T n
-                                         (<= dir direction 0) (forward-char)))
+                                  (cond ((<= 0 dir direction) ;; t n
+                                         (backward-char))
+                                        ((<= dir direction 0) ;; T n
+                                         (forward-char)))
                                 ;; not exclusive?
-                                (cond (;; f N
-                                       (< dir 0 direction) (forward-char))
-                                      (;; F N
-                                       (< direction 0 dir) (backward-char)))))
+                                (cond ((< dir 0 direction) ;; f N
+                                       (forward-char))
+                                      ((< direction 0 dir) ;; F N
+                                       (backward-char)))))
                           ;; else
                           (prog1 nil
                             (helix-highlight-delete hl)))))))
