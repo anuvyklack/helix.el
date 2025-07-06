@@ -697,8 +697,8 @@ and which for all to `helix-mc-list-file' file."
             (end (point-min))
             id delete real-cursor?)
         (dolist (region-data group-or-overlapping-regions)
-          ;; rid - region id, b - region beginning, e - region end
-          (pcase-let ((`(,rid ,b ,e) region-data))
+          ;; rid - region ID, b - region beginning, e - region end
+          (-let (((rid b e) region-data))
             (when (< b beg)
               (setq beg b)
               (when (< dir 0)
