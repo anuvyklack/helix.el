@@ -345,9 +345,7 @@ Use visual line when `visual-line-mode' is active."
   "Switch to Insert state before region."
   (interactive)
   (helix-with-each-cursor
-    (when (and (use-region-p)
-               (< (mark) (point)))
-      (helix-exchange-point-and-mark)))
+    (helix-ensure-region-direction -1))
   (helix-insert-state 1))
 
 ;; a
@@ -355,9 +353,7 @@ Use visual line when `visual-line-mode' is active."
   "Switch to Insert state after region."
   (interactive)
   (helix-with-each-cursor
-    (when (and (use-region-p)
-               (< (point) (mark)))
-      (helix-exchange-point-and-mark)))
+    (helix-ensure-region-direction 1))
   (helix-insert-state 1))
 
 ;; I
@@ -506,9 +502,7 @@ If no selection — delete COUNT chars after point."
 (defun helix-paste-after ()
   "Paste after selection."
   (interactive)
-  (when (and (use-region-p)
-             (< (point) (mark)))
-    (helix-exchange-point-and-mark))
+  (helix-ensure-region-direction 1)
   ;; `yank' sets `this-command' to `yank' internally
   (let (deactivate-mark)
     (yank)))
@@ -517,9 +511,7 @@ If no selection — delete COUNT chars after point."
 (defun helix-paste-before ()
   "Paste before selection."
   (interactive)
-  (when (and (use-region-p)
-             (< (mark) (point)))
-    (helix-exchange-point-and-mark))
+  (helix-ensure-region-direction -1)
   ;; `yank' sets `this-command' to `yank' internally
   (let (deactivate-mark)
     (yank)))
@@ -802,7 +794,7 @@ entered regexp withing current selections."
   "Trim whitespaces and newlines from the both ends of selections."
   (interactive)
   (when (use-region-p)
-    (let ((dir (if (< (point) (mark)) -1 1)))
+    (let ((dir (helix-region-direction)))
       (helix-skip-chars " \t\r\n" (- dir))
       (helix-exchange-point-and-mark)
       (helix-skip-chars " \t\r\n" dir)
