@@ -18,9 +18,10 @@
 (require 'pcre2el)
 (require 'cl-lib)
 (require 'thingatpt)
-(require 'helix-core)
 (require 'helix-common)
+(require 'helix-core)
 (require 'helix-multiple-cursors-core)
+(require 'helix-states)
 (require 'helix-search)
 (provide 'pulse)
 (require 'avy)
@@ -516,15 +517,6 @@ If no selection — delete COUNT chars after point."
   (let (deactivate-mark)
     (yank)))
 
-;; R
-(defun helix-replace-with-kill-ring ()
-  "Replace selection content with yanked text from `kill-ring'."
-  (interactive)
-  (when (use-region-p)
-    (let (deactivate-mark)
-      (delete-region (region-beginning) (region-end))
-      (yank))))
-
 ;; C-p
 (defun helix-paste-pop (count)
   "Replace just-pasted text with next COUNT element from `kill-ring'.
@@ -542,6 +534,15 @@ Like `helix-paste-pop' but with negative COUNT argument."
   (let ((yank-pop (command-remapping 'yank-pop))
         (deactivate-mark nil))
     (call-interactively yank-pop (- count))))
+
+;; R
+(defun helix-replace-with-kill-ring ()
+  "Replace selection content with yanked text from `kill-ring'."
+  (interactive)
+  (when (use-region-p)
+    (let (deactivate-mark)
+      (delete-region (region-beginning) (region-end))
+      (yank))))
 
 ;; J
 (defun helix-join-line ()
@@ -1034,159 +1035,7 @@ already there."
         ;; (deactivate-mark)
         (helix-create-fake-cursor pos pos)))))
 
-;;; Search
-
-;; f
-(defun helix-find-char-forward (count)
-  "Prompt user for CHAR and move to the next COUNT'th occurrence of it.
-Right after this command while hints are active, you can use `n' and `N'
-keys to repeat motion forward/backward."
-  (interactive "p")
-  (unless (region-active-p) (set-mark (point)))
-  (let ((char (read-char "f")))
-    (helix-motion-loop (dir count)
-      (helix-find-char char dir nil))))
-
-;; F
-(defun helix-find-char-backward (count)
-  "Prompt user for CHAR and move to the previous COUNT'th occurrence of it.
-Right after this command while hints are active, you can use `n' and `N'
-keys to repeat motion forward/backward."
-  (interactive "p")
-  (unless (region-active-p) (set-mark (point)))
-  (setq count (- count))
-  (let ((char (read-char "F")))
-    (helix-motion-loop (dir count)
-      (helix-find-char char dir nil))))
-
-;; t
-(defun helix-till-char-forward (count)
-  "Prompt user for CHAR and move before the next COUNT'th occurrence of it.
-Right after this command while hints are active, you can use `n' and `N'
-keys to repeat motion forward/backward."
-  (interactive "p")
-  (unless (region-active-p) (set-mark (point)))
-  (let ((char (read-char "t")))
-    (helix-motion-loop (dir count)
-      (helix-find-char char dir t))))
-
-;; T
-(defun helix-till-char-backward (count)
-  "Prompt user for CHAR and move before the prevous COUNT'th occurrence of it.
-Right after this command while hints are active, you can use `n' and `N'
-keys to repeat motion forward/backward."
-  (interactive "p")
-  (unless (region-active-p) (set-mark (point)))
-  (setq count (- count))
-  (let ((char (read-char "T")))
-    (helix-motion-loop (dir count)
-      (helix-find-char char dir t))))
-
-;; /
-(defun helix-search-forward (count)
-  (interactive "p")
-  (when (helix-search-interactively)
-    (setq helix-search--direction 1)
-    (helix-search-next count)))
-
-;; ?
-(defun helix-search-backward (count)
-  (interactive "p")
-  (when (helix-search-interactively -1)
-    (setq helix-search--direction -1)
-    (helix-search-next count)))
-
-;; n
-(defun helix-search-next (count)
-  "Select next COUNT search match."
-  (interactive "p")
-  (unless helix-search--direction (setq helix-search--direction 1))
-  (when (and helix-search--direction
-             (< helix-search--direction 0))
-    (setq count (- count)))
-  (let ((regexp (helix-search-pattern))
-        (region-dir (if (use-region-p) (helix-region-direction) 1))
-        ;; Center point after jump to search result if it is out of the screen.
-        (scroll-conservatively 0))
-    (helix-motion-loop (dir count)
-      (when (save-excursion (helix-re-search-with-wrap regexp dir))
-        (-let (((beg . end) (helix-match-bounds)))
-          (cond ((and helix--extend-selection (use-region-p))
-                 (helix-create-fake-cursor-from-point))
-                ;; Push mark on first execution.
-                ;; TODO: Take into account `helix-keep-search-highlight-commands'
-                ;; commands.
-                ((not (memq last-command '(helix-search-next helix-search-previous)))
-                 (push-mark nil t)))
-          (helix-set-region beg end region-dir))))
-    ;; Update the screen so that the temporary value for
-    ;; `scroll-conservatively' is taken into account.
-    (redisplay)
-    (helix-highlight-search-pattern regexp)))
-
-;; N
-(defun helix-search-previous (count)
-  "Select previous COUNT search match."
-  (interactive "p")
-  (helix-search-next (- count)))
-
-;; *
-(defun helix-construct-search-pattern ()
-  "Construct search pattern from all current selections and store it to / register.
-Auto-detect word boundaries at the beginning and end of the search pattern."
-  (interactive)
-  (let ((quote (if helix-use-pcre-regex #'rxt-quote-pcre #'regexp-quote))
-        patterns)
-    (helix-with-each-cursor
-      (when (use-region-p)
-        (let* ((beg (region-beginning))
-               (end (region-end))
-               (open-word-boundary
-                (cond ((eql beg (pos-bol))
-                       (->> (buffer-substring-no-properties beg (1+ beg))
-                            (string-match-p "[[:word:]]")))
-                      (t
-                       (->> (buffer-substring-no-properties (1- beg) (1+ beg))
-                            (string-match-p "[^[:word:]][[:word:]]")))))
-               (close-word-boundary
-                (cond ((eql end (pos-eol))
-                       (->> (buffer-substring-no-properties (1- end) end)
-                            (string-match-p "[[:word:]]")))
-                      (t
-                       (->> (buffer-substring-no-properties (1- end) (1+ end))
-                            (string-match-p "[[:word:]][^[:word:]]")))))
-               (string (->> (buffer-substring-no-properties (point) (mark))
-                            (funcall quote))))
-          (push (concat (if open-word-boundary "\\b")
-                        string
-                        (if close-word-boundary "\\b"))
-                patterns))))
-    (setq patterns (nreverse (-uniq patterns)))
-    (let* ((separator (if helix-use-pcre-regex "|" "\\|"))
-           (regexp (apply #'concat (-interpose separator patterns))))
-      (set-register '/ regexp)
-      (message "Register / set: %s" regexp)
-      (helix-highlight-search-pattern regexp))))
-
-;; M-*
-(defun helix-construct-search-pattern-no-bounds ()
-  "Construct search pattern from all current selection and store it to / register.
-Do not auto-detect word boundaries in the search pattern."
-  (interactive)
-  (let ((quote (if helix-use-pcre-regex #'rxt-quote-pcre #'regexp-quote))
-        patterns)
-    (helix-with-each-cursor
-      (when (use-region-p)
-        (push (funcall quote (buffer-substring-no-properties (point) (mark)))
-              patterns)))
-    (setq patterns (nreverse patterns))
-    (let* ((separator (if helix-use-pcre-regex "|" "\\|"))
-           (regexp (apply #'concat (-interpose separator patterns))))
-      (set-register '/ regexp)
-      (message "Register / set: %s" regexp)
-      (helix-highlight-search-pattern regexp))))
-
-;;; Mark
+;;;; Mark
 
 (defun helix-mark-map-digit-argument (arg)
   "Like `digit-argument' but keep `helix-mark-map' active."
@@ -1396,6 +1245,158 @@ Do not auto-detect word boundaries in the search pattern."
       (-let (((l _ _ r) bounds))
         (set-mark l)
         (goto-char r)))))
+
+;;; Search
+
+;; f
+(defun helix-find-char-forward (count)
+  "Prompt user for CHAR and move to the next COUNT'th occurrence of it.
+Right after this command while hints are active, you can use `n' and `N'
+keys to repeat motion forward/backward."
+  (interactive "p")
+  (unless (region-active-p) (set-mark (point)))
+  (let ((char (read-char "f")))
+    (helix-motion-loop (dir count)
+      (helix-find-char char dir nil))))
+
+;; F
+(defun helix-find-char-backward (count)
+  "Prompt user for CHAR and move to the previous COUNT'th occurrence of it.
+Right after this command while hints are active, you can use `n' and `N'
+keys to repeat motion forward/backward."
+  (interactive "p")
+  (unless (region-active-p) (set-mark (point)))
+  (setq count (- count))
+  (let ((char (read-char "F")))
+    (helix-motion-loop (dir count)
+      (helix-find-char char dir nil))))
+
+;; t
+(defun helix-till-char-forward (count)
+  "Prompt user for CHAR and move before the next COUNT'th occurrence of it.
+Right after this command while hints are active, you can use `n' and `N'
+keys to repeat motion forward/backward."
+  (interactive "p")
+  (unless (region-active-p) (set-mark (point)))
+  (let ((char (read-char "t")))
+    (helix-motion-loop (dir count)
+      (helix-find-char char dir t))))
+
+;; T
+(defun helix-till-char-backward (count)
+  "Prompt user for CHAR and move before the prevous COUNT'th occurrence of it.
+Right after this command while hints are active, you can use `n' and `N'
+keys to repeat motion forward/backward."
+  (interactive "p")
+  (unless (region-active-p) (set-mark (point)))
+  (setq count (- count))
+  (let ((char (read-char "T")))
+    (helix-motion-loop (dir count)
+      (helix-find-char char dir t))))
+
+;; /
+(defun helix-search-forward (count)
+  (interactive "p")
+  (when (helix-search-interactively)
+    (setq helix-search--direction 1)
+    (helix-search-next count)))
+
+;; ?
+(defun helix-search-backward (count)
+  (interactive "p")
+  (when (helix-search-interactively -1)
+    (setq helix-search--direction -1)
+    (helix-search-next count)))
+
+;; n
+(defun helix-search-next (count)
+  "Select next COUNT search match."
+  (interactive "p")
+  (unless helix-search--direction (setq helix-search--direction 1))
+  (when (and helix-search--direction
+             (< helix-search--direction 0))
+    (setq count (- count)))
+  (let ((regexp (helix-search-pattern))
+        (region-dir (if (use-region-p) (helix-region-direction) 1))
+        ;; Center point after jump to search result if it is out of the screen.
+        (scroll-conservatively 0))
+    (helix-motion-loop (dir count)
+      (when (save-excursion (helix-re-search-with-wrap regexp dir))
+        (-let (((beg . end) (helix-match-bounds)))
+          (cond ((and helix--extend-selection (use-region-p))
+                 (helix-create-fake-cursor-from-point))
+                ;; Push mark on first execution.
+                ;; TODO: Take into account `helix-keep-search-highlight-commands'
+                ;; commands.
+                ((not (memq last-command '(helix-search-next helix-search-previous)))
+                 (push-mark nil t)))
+          (helix-set-region beg end region-dir))))
+    ;; Update the screen so that the temporary value for
+    ;; `scroll-conservatively' is taken into account.
+    (redisplay)
+    (helix-highlight-search-pattern regexp)))
+
+;; N
+(defun helix-search-previous (count)
+  "Select previous COUNT search match."
+  (interactive "p")
+  (helix-search-next (- count)))
+
+;; *
+(defun helix-construct-search-pattern ()
+  "Construct search pattern from all current selections and store it to / register.
+Auto-detect word boundaries at the beginning and end of the search pattern."
+  (interactive)
+  (let ((quote (if helix-use-pcre-regex #'rxt-quote-pcre #'regexp-quote))
+        patterns)
+    (helix-with-each-cursor
+      (when (use-region-p)
+        (let* ((beg (region-beginning))
+               (end (region-end))
+               (open-word-boundary
+                (cond ((eql beg (pos-bol))
+                       (->> (buffer-substring-no-properties beg (1+ beg))
+                            (string-match-p "[[:word:]]")))
+                      (t
+                       (->> (buffer-substring-no-properties (1- beg) (1+ beg))
+                            (string-match-p "[^[:word:]][[:word:]]")))))
+               (close-word-boundary
+                (cond ((eql end (pos-eol))
+                       (->> (buffer-substring-no-properties (1- end) end)
+                            (string-match-p "[[:word:]]")))
+                      (t
+                       (->> (buffer-substring-no-properties (1- end) (1+ end))
+                            (string-match-p "[[:word:]][^[:word:]]")))))
+               (string (->> (buffer-substring-no-properties (point) (mark))
+                            (funcall quote))))
+          (push (concat (if open-word-boundary "\\b")
+                        string
+                        (if close-word-boundary "\\b"))
+                patterns))))
+    (setq patterns (nreverse (-uniq patterns)))
+    (let* ((separator (if helix-use-pcre-regex "|" "\\|"))
+           (regexp (apply #'concat (-interpose separator patterns))))
+      (set-register '/ regexp)
+      (message "Register / set: %s" regexp)
+      (helix-highlight-search-pattern regexp))))
+
+;; M-*
+(defun helix-construct-search-pattern-no-bounds ()
+  "Construct search pattern from all current selection and store it to / register.
+Do not auto-detect word boundaries in the search pattern."
+  (interactive)
+  (let ((quote (if helix-use-pcre-regex #'rxt-quote-pcre #'regexp-quote))
+        patterns)
+    (helix-with-each-cursor
+      (when (use-region-p)
+        (push (funcall quote (buffer-substring-no-properties (point) (mark)))
+              patterns)))
+    (setq patterns (nreverse patterns))
+    (let* ((separator (if helix-use-pcre-regex "|" "\\|"))
+           (regexp (apply #'concat (-interpose separator patterns))))
+      (set-register '/ regexp)
+      (message "Register / set: %s" regexp)
+      (helix-highlight-search-pattern regexp))))
 
 ;;; Surround
 
