@@ -21,19 +21,6 @@
 
 ;;; Macros
 
-(defmacro helix--add-to-alist (alist &rest elements)
-  "Add the association of KEY and VAL to the value of ALIST.
-If the list already contains an entry for KEY, update that entry;
-otherwise prepend it to the list.
-
-\(fn ALIST [KEY VAL]...)"
-  (declare (indent defun))
-  `(progn
-     ,@(cl-loop for (key val) on elements by #'cddr
-                collect `(setf (alist-get ,key ,alist nil nil #'equal)
-                               ,val))
-     ,alist))
-
 (defmacro helix-define-advice (symbol args &rest body)
   "This macro wraps `define-advice' and extends it to automatically
 add/remove advice when `helix-mode' is toggled on or off.
@@ -74,6 +61,19 @@ add/remove advice when `helix-mode' is toggled on or off.
        (deactivate-mark)
        (progn ,@body)
      (activate-mark)))
+
+(defmacro helix-add-to-alist (alist &rest elements)
+  "Add the association of KEY and VAL to the value of ALIST.
+If the list already contains an entry for KEY, update that entry;
+otherwise prepend it to the list.
+
+\(fn ALIST [KEY VAL]...)"
+  (declare (indent defun))
+  `(progn
+     ,@(cl-loop for (key val) on elements by #'cddr
+                collect `(setf (alist-get ,key ,alist nil nil #'equal)
+                               ,val))
+     ,alist))
 
 ;;; Motions
 
@@ -462,32 +462,6 @@ after RIGHT.
                                     (- right-end (length right)))))
                  (list left-beg left-end right-beg right-end)))))))
 
-(defun helix-looking-at (str &optional direction regexp?)
-  "Return t if text directly after point toward the DIRECTION
-matches string STR.
-
-If REGEXP? is non-nil STR will be searched as regexp pattern,
-else it will be searched literally.
-
-When REGEXP? is non-nil this function modifies the match data
-that `match-beginning', `match-end' and `match-data' access."
-  (unless direction (setq direction 1))
-  (cond ((and regexp? (< 0 direction))
-         (looking-at str))
-        ((and regexp? (< direction 0))
-         (looking-back str (line-beginning-position)))
-        ((< 0 direction)
-         (let* ((pnt (point))
-                (pos (+ pnt (length str))))
-           (and (<= pos (point-max))
-                (string-equal (buffer-substring-no-properties pnt pos) str))))
-        ((< direction 0)
-         (let* ((pnt (point))
-                (pos (- pnt (length str))))
-           (and (<= (point-min) pos)
-                (string-equal (buffer-substring-no-properties pos pnt)
-                              str))))))
-
 (defun helix-search-out (pair &optional direction scope regexp? balanced?)
   "This function assumes, that point is somewhere inside LEFT RIGHT
 enclosed text region, and return the position before LEFT or after
@@ -748,6 +722,32 @@ If nothing found, wrap around the buffer and search up to the point."
         (if (re-search-forward regexp point t direction)
             (message "Wrapped around buffer")))))
 
+(defun helix-looking-at (str &optional direction regexp?)
+  "Return t if text directly after point toward the DIRECTION
+matches string STR.
+
+If REGEXP? is non-nil STR will be searched as regexp pattern,
+otherwise it will be searched literally.
+
+When REGEXP? is non-nil this function modifies the match data
+that `match-beginning', `match-end' and `match-data' access."
+  (unless direction (setq direction 1))
+  (cond ((and regexp? (< 0 direction))
+         (looking-at str))
+        ((and regexp? (< direction 0))
+         (looking-back str (line-beginning-position)))
+        ((< 0 direction)
+         (let* ((pnt (point))
+                (pos (+ pnt (length str))))
+           (and (<= pos (point-max))
+                (string-equal (buffer-substring-no-properties pnt pos) str))))
+        ((< direction 0)
+         (let* ((pnt (point))
+                (pos (- pnt (length str))))
+           (and (<= (point-min) pos)
+                (string-equal (buffer-substring-no-properties pos pnt)
+                              str))))))
+
 (defun helix-all-elements-are-equal-p (list)
   "Return t if all elemetns in the LIST are `equal' each other."
   (let ((first (-first-item list)))
@@ -762,20 +762,6 @@ If nothing found, wrap around the buffer and search up to the point."
     (or (eq cursor-type 'bar)
         (and (listp cursor-type)
              (eq (car cursor-type) 'bar)))))
-
-;; FIXME: Is it really faster?
-(defun helix-line-number-at-pos (&optional pos absolute)
-  "Faster implementation of `line-number-at-pos'."
-  (if pos
-      (save-excursion
-        (if absolute
-            (save-restriction
-              (widen)
-              (goto-char pos)
-              (string-to-number (format-mode-line "%l")))
-          (goto-char pos)
-          (string-to-number (format-mode-line "%l"))))
-    (string-to-number (format-mode-line "%l"))))
 
 (defun helix-set-region (start end &optional direction)
   "Make active region between START and END position.
@@ -916,6 +902,11 @@ right after the point."
              ;; Second char of 2 chars comment closer
              (and (/= 0 (logand (ash 1 19) s))
                   (nth 4 (syntax-ppss (- pos 2))))))))))
+
+(defun helix-overlay-live-p (overlay)
+  "Return non-nil if OVERLAY is not deleted from buffer."
+  (if-let* ((buffer (overlay-buffer overlay)))
+      (buffer-live-p buffer)))
 
 (provide 'helix-common)
 ;;; helix-common.el ends here

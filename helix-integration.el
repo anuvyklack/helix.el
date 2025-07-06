@@ -18,6 +18,59 @@
 (require 'helix-commands)
 (require 'keypad)
 
+;;; Integration multiple cursors with Emacs functionality
+
+;; M-x
+(helix-define-advice execute-extended-command (:after (&rest _) helix)
+  "Execute selected command for all cursors."
+  (setq helix-this-command this-command))
+
+(helix-define-advice current-kill (:before (n &optional _do-not-move) helix)
+  "Make sure pastes from other programs are added to `kill-ring's
+of all cursors when yanking."
+  (when-let* ((interprogram-paste (and (= n 0)
+                                       interprogram-paste-function
+                                       (funcall interprogram-paste-function))))
+    (when (listp interprogram-paste)
+      ;; Use `reverse' to avoid modifying external data.
+      (setq interprogram-paste (reverse interprogram-paste)))
+    ;; Add `interprogram-paste' to `kill-ring's of all cursors real and
+    ;; fake. This is what `current-kill' do internally, but we have to do
+    ;; it ourselves, because `interprogram-paste-function' is not a pure
+    ;; function — it returns something only once.
+    (let ((interprogram-cut-function nil)
+          (interprogram-paste-function nil))
+      ;; real cursor
+      (if (listp interprogram-paste)
+          (mapc 'kill-new interprogram-paste)
+        (kill-new interprogram-paste))
+      ;; fake cursors
+      (dolist (cursor (helix-all-fake-cursors))
+        (let ((kill-ring (overlay-get cursor 'kill-ring))
+              (kill-ring-yank-pointer (overlay-get cursor 'kill-ring-yank-pointer)))
+          (if (listp interprogram-paste)
+              (mapc 'kill-new interprogram-paste)
+            (kill-new interprogram-paste))
+          (overlay-put cursor 'kill-ring kill-ring)
+          (overlay-put cursor 'kill-ring-yank-pointer kill-ring-yank-pointer))))))
+
+(helix-define-advice execute-kbd-macro (:around (orig-fun &rest args))
+  "`execute-kbd-macro' should never be run for fake cursors.
+The real cursor will execute the keyboard macro, resulting in new commands
+in the command loop, and the fake cursors can pick up on those instead."
+  (unless helix--executing-command-for-fake-cursor
+    (apply orig-fun args)))
+
+(helix-cache-input read-char)
+(helix-cache-input read-quoted-char)
+(helix-cache-input read-from-kill-ring)
+(helix-cache-input read-char-from-minibuffer)
+(helix-cache-input register-read-with-preview)  ; used by read-string
+
+;; Commands that don't work with multiple-cursors
+(helix-unsupported-command isearch-forward)
+(helix-unsupported-command isearch-backward)
+
 ;;; Keypad
 
 (helix-define-advice keypad (:after ())

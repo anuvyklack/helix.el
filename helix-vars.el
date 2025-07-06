@@ -12,6 +12,16 @@
 (defvar helix-mode nil)
 (declare-function helix-local-mode "helix-core.el")
 
+(defmacro helix-defvar-local (symbol &optional initvalue docstring)
+  "The same as `defvar-local' but additionaly marks SYMBOL as permanent
+buffer local variable."
+  (declare (indent defun)
+           (doc-string 3)
+           (debug (symbolp &optional form stringp)))
+  `(prog1 (defvar ,symbol ,initvalue ,docstring)
+     (make-variable-buffer-local ',symbol)
+     (put ',symbol 'permanent-local t)))
+
 ;;; Customization group
 
 (defgroup helix nil
@@ -207,81 +217,6 @@ For these commands:
     helix-move-window-right)
   "List of commands which should preserve search highlighting overlays.")
 
-(defgroup helix-cjk nil
-  "CJK support."
-  :prefix "helix-cjk-"
-  :group 'helix)
-
-(defcustom helix-cjk-emacs-word-boundary nil
-  "Determine word boundary exactly the same way as Emacs does."
-  :type 'boolean
-  :group 'helix-cjk)
-
-(defcustom helix-cjk-word-separating-categories
-  '(;; Kanji
-    (?C . ?H) (?C . ?K) (?C . ?k) (?C . ?A) (?C . ?G)
-    ;; Hiragana
-    (?H . ?C) (?H . ?K) (?H . ?k) (?H . ?A) (?H . ?G)
-    ;; Katakana
-    (?K . ?C) (?K . ?H) (?K . ?k) (?K . ?A) (?K . ?G)
-    ;; half-width Katakana
-    (?k . ?C) (?k . ?H) (?k . ?K) ; (?k . ?A) (?k . ?G)
-    ;; full-width alphanumeric
-    (?A . ?C) (?A . ?H) (?A . ?K) ; (?A . ?k) (?A . ?G)
-    ;; full-width Greek
-    (?G . ?C) (?G . ?H) (?G . ?K) ; (?G . ?k) (?G . ?A)
-    )
-  "List of pair (cons) of categories to determine word boundary
-used in `helix-cjk-word-boundary-p'. See the documentation of
-`word-separating-categories'. Use `describe-categories' to see
-the list of categories."
-  :type '(alist :key-type (choice character (const nil))
-          :value-type (choice character (const nil)))
-  :group 'helix-cjk)
-
-(defcustom helix-cjk-word-combining-categories
-  '(;; default value in word-combining-categories
-    (nil . ?^) (?^ . nil)
-    ;; Roman
-    (?r . ?k) (?r . ?A) (?r . ?G)
-    ;; half-width Katakana
-    (?k . ?r) (?k . ?A) (?k . ?G)
-    ;; full-width alphanumeric
-    (?A . ?r) (?A . ?k) (?A . ?G)
-    ;; full-width Greek
-    (?G . ?r) (?G . ?k) (?G . ?A)
-    )
-  "List of pair (cons) of categories to determine word boundary
-used in `helix-cjk-word-boundary-p'. See the documentation of
-`word-combining-categories'. Use `describe-categories' to see the
-list of categories."
-  :type '(alist :key-type (choice character (const nil))
-          :value-type (choice character (const nil)))
-  :group 'helix-cjk)
-
-;;; Variables
-
-(defmacro helix-defvar-local (symbol &optional initvalue docstring)
-  "The same as `defvar-local' but additionaly marks SYMBOL as permanent
-buffer local variable."
-  (declare (indent defun)
-           (doc-string 3)
-           (debug (symbolp &optional form stringp)))
-  `(prog1 (defvar ,symbol ,initvalue ,docstring)
-     (make-variable-buffer-local ',symbol)
-     (put ',symbol 'permanent-local t)))
-
-(defvar helix-global-keymaps-alist nil
-  "Association list of global Helix keymaps.
-Entries have the form (STATE . KEYMAP), where STATE is a Helix state.")
-
-(helix-defvar-local helix-mode-map-alist nil
-  "Association list of keymaps for current Helix state.
-
-This symbol lies in `emulation-mode-map-alists' and its contents are updated
-every time the Helix state changes.  Elements have the form (MODE . KEYMAP),
-with the first keymaps having higher priority.")
-
 (helix-defvar-local helix-surround-alist
   `((?\) :insert ("(" . ")") :search ("(" . ")") :balanced t)
     (?\} :insert ("{" . "}") :search ("{" . "}") :balanced t)
@@ -341,6 +276,71 @@ This function populates the buffer local `helix-surround-alist' variable,
 and thus should be called from major-modes hooks.
 
 See the defaul value and `helix-integration.el' file for examples.")
+
+(defgroup helix-cjk nil
+  "CJK support."
+  :prefix "helix-cjk-"
+  :group 'helix)
+
+;; (defcustom helix-cjk-emacs-word-boundary nil
+;;   "Determine word boundary exactly the same way as Emacs does."
+;;   :type 'boolean
+;;   :group 'helix-cjk)
+
+(defcustom helix-cjk-word-separating-categories
+  '(;; Kanji
+    (?C . ?H) (?C . ?K) (?C . ?k) (?C . ?A) (?C . ?G)
+    ;; Hiragana
+    (?H . ?C) (?H . ?K) (?H . ?k) (?H . ?A) (?H . ?G)
+    ;; Katakana
+    (?K . ?C) (?K . ?H) (?K . ?k) (?K . ?A) (?K . ?G)
+    ;; half-width Katakana
+    (?k . ?C) (?k . ?H) (?k . ?K) ; (?k . ?A) (?k . ?G)
+    ;; full-width alphanumeric
+    (?A . ?C) (?A . ?H) (?A . ?K) ; (?A . ?k) (?A . ?G)
+    ;; full-width Greek
+    (?G . ?C) (?G . ?H) (?G . ?K) ; (?G . ?k) (?G . ?A)
+    )
+  "List of pair (cons) of categories to determine word boundary
+used in `helix-cjk-word-boundary-p'. See the documentation of
+`word-separating-categories'. Use `describe-categories' to see
+the list of categories."
+  :type '(alist :key-type (choice character (const nil))
+          :value-type (choice character (const nil)))
+  :group 'helix-cjk)
+
+(defcustom helix-cjk-word-combining-categories
+  '(;; default value in word-combining-categories
+    (nil . ?^) (?^ . nil)
+    ;; Roman
+    (?r . ?k) (?r . ?A) (?r . ?G)
+    ;; half-width Katakana
+    (?k . ?r) (?k . ?A) (?k . ?G)
+    ;; full-width alphanumeric
+    (?A . ?r) (?A . ?k) (?A . ?G)
+    ;; full-width Greek
+    (?G . ?r) (?G . ?k) (?G . ?A)
+    )
+  "List of pair (cons) of categories to determine word boundary
+used in `helix-cjk-word-boundary-p'. See the documentation of
+`word-combining-categories'. Use `describe-categories' to see the
+list of categories."
+  :type '(alist :key-type (choice character (const nil))
+          :value-type (choice character (const nil)))
+  :group 'helix-cjk)
+
+;;; Variables
+
+(defvar helix-global-keymaps-alist nil
+  "Association list of global Helix keymaps.
+Entries have the form (STATE . KEYMAP), where STATE is a Helix state.")
+
+(helix-defvar-local helix-mode-map-alist nil
+  "Association list of keymaps for current Helix state.
+
+This symbol lies in `emulation-mode-map-alists' and its contents are updated
+every time the Helix state changes.  Elements have the form (MODE . KEYMAP),
+with the first keymaps having higher priority.")
 
 (helix-defvar-local helix-state nil
   "The current Helix state.")
