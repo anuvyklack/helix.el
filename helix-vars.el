@@ -10,7 +10,7 @@
 ;;; Code:
 
 (defvar helix-mode nil)
-(declare-function helix-local-mode "helix-core.el")
+(declare-function helix-local-mode "helix-core")
 
 (defmacro helix-defvar-local (symbol &optional initvalue docstring)
   "The same as `defvar-local' but additionaly marks SYMBOL as permanent
@@ -338,7 +338,6 @@ Entries have the form (STATE . KEYMAP), where STATE is a Helix state.")
 
 (helix-defvar-local helix-mode-map-alist nil
   "Association list of keymaps for current Helix state.
-
 This symbol lies in `emulation-mode-map-alists' and its contents are updated
 every time the Helix state changes.  Elements have the form (MODE . KEYMAP),
 with the first keymaps having higher priority.")

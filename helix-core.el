@@ -117,7 +117,7 @@ want COMMAND to be executed only for original ones."
         ((not (minibufferp))
          (helix-local-mode 1))))
 
-(helix-define-advice select-window (:after (&rest _) helix)
+(helix-define-advice select-window (:after (&rest _))
   (helix-update-cursor))
 
 ;;; Helix states

@@ -80,11 +80,11 @@
   (funcall-interactively 'previous-line count))
 
 ;; w
-(defun helix-forward-word-start (count &optional bigword)
+(defun helix-forward-word-start (count &optional bigword?)
   "Move to the COUNT-th next word start.
-If BIGWORD move over WORD-s."
+If BIGWORD? move over WORD-s."
   (interactive "p")
-  (let ((thing (if bigword 'helix-WORD 'helix-word)))
+  (let ((thing (if bigword? 'helix-WORD 'helix-word)))
     (when (zerop (forward-thing thing (1- count)))
       (if helix--extend-selection
           (or (region-active-p) (set-mark (point)))
@@ -101,12 +101,12 @@ If BIGWORD move over WORD-s."
   (helix-forward-word-start count :bigword))
 
 ;; b
-(defun helix-backward-word-start (count &optional bigword)
+(defun helix-backward-word-start (count &optional bigword?)
   "Move to the COUNT-th previous word start.
-If BIGWORD move over WORD-s."
+If BIGWORD? move over WORD-s."
   (interactive "p")
   (setq count (- count))
-  (let ((thing (if bigword 'helix-WORD 'helix-word)))
+  (let ((thing (if bigword? 'helix-WORD 'helix-word)))
     (when (zerop (forward-thing thing (1+ count)))
       (if helix--extend-selection
           (or (region-active-p) (set-mark (point)))
@@ -121,11 +121,11 @@ If BIGWORD move over WORD-s."
   (helix-backward-word-start count :bigword))
 
 ;; e
-(defun helix-forward-word-end (count &optional bigword)
+(defun helix-forward-word-end (count &optional bigword?)
   "Move to the COUNT-th next word end.
-If BIGWORD move over WORD-s."
+If BIGWORD? move over WORD-s."
   (interactive "p")
-  (let ((thing (if bigword 'helix-WORD 'helix-word)))
+  (let ((thing (if bigword? 'helix-WORD 'helix-word)))
     (when (zerop (forward-thing thing (1- count)))
       (if helix--extend-selection
           (or (region-active-p) (set-mark (point)))
