@@ -505,8 +505,7 @@ If no selection — delete COUNT chars after point."
   (interactive)
   (helix-ensure-region-direction 1)
   ;; `yank' sets `this-command' to `yank' internally
-  (let (deactivate-mark)
-    (yank)))
+  (yank))
 
 ;; P
 (defun helix-paste-before ()
@@ -514,8 +513,7 @@ If no selection — delete COUNT chars after point."
   (interactive)
   (helix-ensure-region-direction -1)
   ;; `yank' sets `this-command' to `yank' internally
-  (let (deactivate-mark)
-    (yank)))
+  (yank))
 
 ;; C-p
 (defun helix-paste-pop (count)
