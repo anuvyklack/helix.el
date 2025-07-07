@@ -647,12 +647,8 @@ balanced expressions."
   (let ((old-point (point))
         (old-mark (or (mark t) (point)))
         (deactivate-mark nil))
-    (push-mark (point))
-    (set-marker (mark-marker) old-mark)
-    (cl-letf (((symbol-function 'push-mark) #'ignore))
-      (apply orig-fun args))
-    (when (eql (marker-position (mark-marker))
-               old-mark)
+    (apply orig-fun args)
+    (when (= (mark-marker) old-mark)
       (set-mark old-point))))
 
 ;;; Utils
