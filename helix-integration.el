@@ -71,6 +71,15 @@ in the command loop, and the fake cursors can pick up on those instead."
 (helix-unsupported-command isearch-forward)
 (helix-unsupported-command isearch-backward)
 
+;;; Keep selection after command execution
+(dolist (command '(fill-region ;; gq
+                   comment-or-uncomment-region ;; gc
+                   comment-dwim))
+  (eval `(helix-define-advice ,command (:around (orig-fun &rest args))
+           "Don't deactivate region."
+           (let (deactivate-mark)
+             (apply orig-fun args)))))
+
 ;;; Keypad
 
 (helix-define-advice keypad (:after ())
