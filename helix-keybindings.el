@@ -109,6 +109,9 @@
   "~"   #'helix-invert-case
   "g u" #'helix-downcase
   "g U" #'helix-upcase
+  "="   #'indent-region
+  "<"   #'indent-rigidly-left
+  ">"   #'indent-rigidly-right
 
   ;; Selections
   "<escape>" #'helix-normal-state-escape
