@@ -43,15 +43,16 @@
 ;; Commands, after which `helix-merge-overlapping-regions' will be executed
 (mapc #'(lambda (cmd)
           (put cmd 'helix-merge-regions t))
-      `(helix-first-non-blank     ;; gh
+      `(helix-expand-line-selection ;; x
+        helix-first-non-blank       ;; gh
         helix-beginning-of-line-command ;; gs
-        helix-end-of-line-command ;; gl
-        helix-copy-selection      ;; C
-        helix-copy-selection-up   ;; M-c
-        helix-search-forward      ;; /
-        helix-search-backward     ;; ?
-        helix-search-next         ;; n
-        helix-search-previous     ;; N
+        helix-end-of-line-command   ;; gl
+        helix-copy-selection        ;; C
+        helix-copy-selection-up     ;; M-c
+        helix-search-forward        ;; /
+        helix-search-backward       ;; ?
+        helix-search-next           ;; n
+        helix-search-previous       ;; N
         ;; All `helix-mark-*' commands
         ,@(apropos-internal "^helix-mark" 'commandp)))
 
