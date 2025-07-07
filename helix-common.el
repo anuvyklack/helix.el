@@ -56,7 +56,7 @@ add/remove advice when `helix-mode' is toggled on or off.
 
 (defmacro helix-with-deactivate-mark (&rest body)
   "Evaluate BODY with mark temporary deactivated."
-  (declare (debug t))
+  (declare (indent 0) (debug t))
   `(prog2
        (deactivate-mark)
        (progn ,@body)

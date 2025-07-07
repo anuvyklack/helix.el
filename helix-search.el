@@ -287,23 +287,23 @@ RANGES is a list of cons cells with positions (START . END)."
                                                  :ranges ranges
                                                  :invert invert))
   (helix-with-deactivate-mark
-   (when-let* ((pattern (condition-case nil
-                            (minibuffer-with-setup-hook #'helix-select--start-session
-                              (helix-read-regexp "select: "))
-                          (quit)))
-               ((stringp pattern))
-               ((not (string-empty-p pattern)))
-               (regexp (helix-pcre-to-elisp pattern))
-               (region-ranges (-mapcat (-lambda ((beg . end))
-                                         (helix-regexp-match-ranges
-                                          regexp beg end invert))
-                                       ranges)))
-     (set-register '/ pattern)
-     (setq helix--extend-selection nil)
-     (helix-create-cursors region-ranges)
-     (helix-update-cursor)
-     (setq helix--extend-selection nil)
-     :success)))
+    (when-let* ((pattern (condition-case nil
+                             (minibuffer-with-setup-hook #'helix-select--start-session
+                               (helix-read-regexp "select: "))
+                           (quit)))
+                ((stringp pattern))
+                ((not (string-empty-p pattern)))
+                (regexp (helix-pcre-to-elisp pattern))
+                (region-ranges (-mapcat (-lambda ((beg . end))
+                                          (helix-regexp-match-ranges
+                                           regexp beg end invert))
+                                        ranges)))
+      (set-register '/ pattern)
+      (setq helix--extend-selection nil)
+      (helix-create-cursors region-ranges)
+      (helix-update-cursor)
+      (setq helix--extend-selection nil)
+      :success)))
 
 (defun helix-select--start-session ()
   "Start interactive select minibuffer session."
