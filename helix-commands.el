@@ -890,7 +890,7 @@ entered regexp withing current selections."
             (-setq (point . mark) bounds)
           (-setq (mark . point) bounds))
         (if-let* ((cursor (helix-fake-cursor-at point))
-                  ((eql mark (overlay-get cursor 'mark))))
+                  ((= mark (overlay-get cursor 'mark))))
             nil ;; Do nothing — fake cursor is already at desired position.
           ;; else
           (helix-create-fake-cursor-from-point)
