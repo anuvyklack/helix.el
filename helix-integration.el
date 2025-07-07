@@ -72,9 +72,12 @@ in the command loop, and the fake cursors can pick up on those instead."
 (helix-unsupported-command isearch-backward)
 
 ;;; Keep selection after command execution
-(dolist (command '(fill-region ;; gq
-                   comment-or-uncomment-region ;; gc
-                   comment-dwim))
+(dolist (command '(fill-region          ;; gq
+                   indent-region        ;; =
+                   indent-rigidly-left  ;; >
+                   indent-rigidly-right ;; <
+                   comment-dwim         ;; gc
+                   comment-or-uncomment-region))
   (eval `(helix-define-advice ,command (:around (orig-fun &rest args))
            "Don't deactivate region."
            (let (deactivate-mark)
