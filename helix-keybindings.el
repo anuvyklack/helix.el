@@ -158,6 +158,7 @@
 
   ;; Misc
   "g c" #'comment-or-uncomment-region
+  ;; "g c" #'comment-dwim
   "g f" #'find-file-at-point
   "g x" #'browse-url-at-point
   "g q" #'fill-region
