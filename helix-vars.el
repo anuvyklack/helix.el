@@ -152,9 +152,7 @@ rate allows highlights to update while scrolling."
   :group 'helix)
 
 (defcustom helix-jump-commands
-  '(pop-global-mark
-    pop-to-mark-command
-    xref-find-definitions
+  '(xref-find-definitions
     xref-find-references
     xref-go-back
     xref-go-forward
