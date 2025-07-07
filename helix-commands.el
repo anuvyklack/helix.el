@@ -258,13 +258,14 @@ Use visual line when `visual-line-mode' is active."
      (t
       (up-list -1)))))
 
-;;; Easymotion / Avy
+;;; Avy (Easymotion)
 
 ;; gw
 (defun helix-avy-word-forward ()
   "Move to a word start after the point, choosing it with Avy."
   (interactive)
   (helix-remove-all-fake-cursors)
+  (push-mark)
   (let ((mark (and helix--extend-selection
                    (not (region-active-p))
                    (point)))
@@ -282,6 +283,7 @@ Use visual line when `visual-line-mode' is active."
   "Move to a word start before the point, choosing it with Avy."
   (interactive)
   (helix-remove-all-fake-cursors)
+  (push-mark)
   (let ((mark (and helix--extend-selection
                    (not (region-active-p))
                    (point)))
@@ -300,6 +302,7 @@ Use visual line when `visual-line-mode' is active."
   "Move to a WORD start after the point, choosing it with Avy."
   (interactive)
   (helix-remove-all-fake-cursors)
+  (push-mark)
   (let ((mark (and helix--extend-selection
                    (not (region-active-p))
                    (point)))
@@ -317,6 +320,7 @@ Use visual line when `visual-line-mode' is active."
   "Move to a WORD start before the point, choosing it with Avy."
   (interactive)
   (helix-remove-all-fake-cursors)
+  (push-mark)
   (let ((mark (and helix--extend-selection
                    (not (region-active-p))
                    (point)))
@@ -335,6 +339,7 @@ Use visual line when `visual-line-mode' is active."
   "Move to a next line, choosing it with Avy."
   (interactive)
   (helix-remove-all-fake-cursors)
+  (push-mark)
   (unless helix--extend-selection
     (deactivate-mark))
   (let ((temporary-goal-column (current-column)))
@@ -346,6 +351,7 @@ Use visual line when `visual-line-mode' is active."
   "Move to a previous line, choosing it with Avy."
   (interactive)
   (helix-remove-all-fake-cursors)
+  (push-mark)
   (unless helix--extend-selection
     (deactivate-mark))
   (let ((temporary-goal-column (current-column)))
