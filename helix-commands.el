@@ -607,11 +607,6 @@ Like `helix-paste-pop' but with negative COUNT argument."
     (let (deactivate-mark)
       (upcase-region start end))))
 
-;; gq
-(helix-define-advice fill-region (:around (orig-fun &rest args))
-  (let (deactivate-mark)
-    (apply orig-fun args)))
-
 ;;; Selections
 
 ;; v
