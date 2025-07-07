@@ -31,6 +31,10 @@
 (require 'helix-common)
 (require 'helix-multiple-cursors-core)
 
+(defvar edebug-mode nil)
+(defvar edebug-mode-map)
+(declare-function helix-remove-all-fake-cursors "helix-commands")
+
 ;;; Helix minor mode
 
 (defun helix--pre-commad-hook ()
@@ -66,8 +70,6 @@ want COMMAND to be executed only for original ones."
     (helix--single-undo-step-end)
     (setq helix-this-command nil
           helix--input-cache nil)))
-
-(declare-function helix-remove-all-fake-cursors "helix-commands")
 
 (define-minor-mode helix-local-mode
   "Minor mode for setting up Helix in a current buffer."
@@ -295,10 +297,6 @@ CHECKED-MODES is used internally and should not be set initially."
 (defun helix-update-active-keymaps ()
   "Reset keymaps for current Helix state."
   (helix-activate-state-keymaps helix-state))
-
-(defvar edebug-mode nil)
-(defvar edebug-mode-map)
-(add-hook 'edebug-mode-hook #'helix-update-active-keymaps)
 
 (defun helix-activate-state-keymaps (state)
   "Set the value of the `helix-mode-map-alist' in the current buffer
