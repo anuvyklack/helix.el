@@ -425,8 +425,9 @@ Use visual line when `visual-line-mode' is active."
 (defun helix-add-blank-line-above (count)
   "Add COUNT blank lines above."
   (interactive "p")
-  (save-excursion
+  (helix-save-region
     (let (deactivate-mark)
+      (helix-ensure-region-direction -1)
       (move-beginning-of-line nil)
       (newline count))))
 

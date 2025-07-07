@@ -62,6 +62,25 @@ add/remove advice when `helix-mode' is toggled on or off.
        (progn ,@body)
      (activate-mark)))
 
+(defmacro helix-save-region (&rest body)
+  "Evaluate BODY with preserving original region."
+  (declare (indent 0) (debug t))
+  (let ((beg (gensym "region-beg"))
+        (end (gensym "region-end"))
+        (dir (gensym "region-dir")))
+    `(if (use-region-p)
+         (let ((,beg (-doto (make-marker)
+                       (set-marker-insertion-type t)
+                       (set-marker (region-beginning))))
+               (,end (set-marker (make-marker) (region-end)))
+               (,dir (helix-region-direction)))
+           ,@body
+           (helix-set-region ,beg ,end ,dir)
+           (set-marker ,beg nil)
+           (set-marker ,end nil))
+       ;; else
+       ,@body)))
+
 (defmacro helix-add-to-alist (alist &rest elements)
   "Add the association of KEY and VAL to the value of ALIST.
 If the list already contains an entry for KEY, update that entry;
