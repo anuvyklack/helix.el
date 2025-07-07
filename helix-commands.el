@@ -238,12 +238,25 @@ Use visual line when `visual-line-mode' is active."
   (forward-thing 'paragraph count))
 
 ;; mm
+;; TODO: The most bare-boned version. Need upgrade.
 (defun helix-jump-to-match-item ()
-  "Jump between matching items."
+  "Jump between matching brackets."
   (interactive)
-  (unless helix--extend-selection
+  (if helix--extend-selection
+      (or (region-active-p) (set-mark (point)))
     (deactivate-mark))
-  (evilmi-jump-items-native))
+  (ignore-errors
+    (cond
+     ;; before open bracket
+     ((and (/= (point) (point-max))
+           (eq 4 (syntax-class (syntax-after (point)))))
+      (forward-list 1))
+     ;; after close bracket
+     ((and (/= (point) (point-min))
+           (eq 5 (syntax-class (syntax-after (1- (point))))))
+      (forward-list -1))
+     (t
+      (up-list -1)))))
 
 ;;; Easymotion / Avy
 
