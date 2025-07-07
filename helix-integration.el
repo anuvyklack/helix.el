@@ -71,7 +71,13 @@ in the command loop, and the fake cursors can pick up on those instead."
 (helix-unsupported-command isearch-forward)
 (helix-unsupported-command isearch-backward)
 
-;;; Keep selection after command execution
+;;; Selection (mark & region)
+
+(helix-define-advice push-mark (:around (orig-fun &rest args))
+  (let ((mark (or (mark t) (point))))
+    (apply orig-fun args)
+    (set-marker (mark-marker) mark)))
+
 (dolist (command '(fill-region          ;; gq
                    indent-region        ;; =
                    indent-rigidly-left  ;; >
