@@ -540,7 +540,8 @@ If no selection — delete COUNT chars after point."
   "Replace just-pasted text with next COUNT element from `kill-ring'.
 Wrapper around `yank-pop'."
   (interactive "p")
-  (let ((yank-pop (command-remapping 'yank-pop))
+  (let ((yank-pop (or (command-remapping 'yank-pop)
+                      #'yank-pop))
         (deactivate-mark nil))
     (call-interactively yank-pop count)))
 
@@ -549,7 +550,8 @@ Wrapper around `yank-pop'."
   "Replace just-pasted text with previous COUNT element from `kill-ring'.
 Like `helix-paste-pop' but with negative COUNT argument."
   (interactive "p")
-  (let ((yank-pop (command-remapping 'yank-pop))
+  (let ((yank-pop (or (command-remapping 'yank-pop)
+                      #'yank-pop))
         (deactivate-mark nil))
     (call-interactively yank-pop (- count))))
 
