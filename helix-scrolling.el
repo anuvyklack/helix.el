@@ -252,7 +252,7 @@ If COUNT > 1 scroll smoothly."
   ;; HACK: Interpolation is imperfect: the line may be not on top, or point can
   ;; move to the next line. So we scroll a little bit before the top, and then
   ;; finish with `recenter' getting a clear result.
-  (let* ((line-height (window-font-height))
+  (let* ((line-height (default-line-height))
          (posn-y-at-point (cdr (posn-x-y (posn-at-point))))
          (delta (- posn-y-at-point
                    (/ line-height 4))))
@@ -272,7 +272,7 @@ If COUNT > 1 scroll smoothly."
   (let* ((window-height (- (window-text-height nil t)
                            (window-mode-line-height)
                            (window-tab-line-height)))
-         (line-height (window-font-height))
+         (line-height (default-line-height))
          (posn-y-at-point (cdr (posn-x-y (posn-at-point))))
          (delta (- window-height
                    posn-y-at-point
