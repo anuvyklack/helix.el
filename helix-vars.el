@@ -418,7 +418,6 @@ cursors editing.")
     helix-end-of-line-command      ;; gl
     helix-forward-paragraph        ;; ]p or }}
     helix-backward-paragraph       ;; [p or {{
-    helix-change                   ;; c
     helix-cut                      ;; d
     helix-delete                   ;; D
     helix-copy                     ;; y
@@ -549,6 +548,7 @@ cursors editing.")
     helix-append-line                        ;; A
     helix-open-below                         ;; o
     helix-open-above                         ;; O
+    helix-change                             ;; c
     helix-smooth-scroll-up                   ;; C-u
     helix-smooth-scroll-down                 ;; C-d
     helix-smooth-scroll-page-up              ;; C-b
