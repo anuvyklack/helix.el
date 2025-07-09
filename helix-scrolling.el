@@ -47,17 +47,19 @@ If PAGES is non-nil scroll over pages instead of lines."
     ;; partially visible. If you try to scroll smoothly from this position the
     ;; point will jump unpredictably. Fix initial position in this case.
     (when (eql posn-y-at-point 0) (recenter 0))
-    ;; If point goes off the screen as the result of the scroll
-    (when (> delta (- window-height posn-y-at-point))
-      (cond (restricted
-             (setq delta (- window-height
-                            posn-y-at-point
-                            (/ line-height 3))
-                   at-bottom? t))
-            ;; If not restricted, disable selection unless we want to extend it
-            ((not helix--extend-selection)
-             (deactivate-mark))))
-    (pixel-scroll-precision-interpolate delta nil 1)
+    ;; `screen-space' is the height of the part of the screen toward the
+    ;; scrolling direction.
+    (let ((screen-space (- window-height posn-y-at-point)))
+      ;; If point goes off the screen as the result of the scroll
+      (when (> delta (- screen-space line-height))
+        (cond (restricted
+               (setq delta (- screen-space (/ line-height 3))
+                     at-bottom? t))
+              ;; If not restricted, disable selection unless we want to extend it
+              ((not helix--extend-selection)
+               (deactivate-mark)))))
+    (when (> delta line-height)
+      (pixel-scroll-precision-interpolate delta nil 1))
     (when at-bottom? (recenter -1))))
 
 (defun helix--smooth-scroll-down (count &optional restricted pages?)
@@ -77,14 +79,16 @@ If PAGES is non-nil scroll over pages instead of lines."
     ;; partially visible. If you try to scroll smoothly from this position the
     ;; point will jump unpredictably. Fix initial position in this case.
     (when (eql posn-y-at-point 0) (recenter 0))
-    (when (> delta posn-y-at-point)
+    (when (> delta (- posn-y-at-point
+                      line-height))
       (cond (restricted
              (setq delta (- posn-y-at-point
                             (/ line-height 3))
                    at-top? t))
             ((not helix--extend-selection)
              (deactivate-mark))))
-    (pixel-scroll-precision-interpolate (- delta) nil 1)
+    (when (> delta line-height)
+      (pixel-scroll-precision-interpolate (- delta) nil 1))
     (when at-top? (recenter 0))))
 
 ;; C-u
