@@ -1318,13 +1318,12 @@ keys to repeat motion forward/backward."
     (helix-motion-loop (dir count)
       (when (save-excursion (helix-re-search-with-wrap regexp dir))
         (-let (((beg . end) (helix-match-bounds)))
-          (cond ((and helix--extend-selection (use-region-p))
-                 (helix-create-fake-cursor-from-point))
-                ;; Push mark on first execution.
-                ;; TODO: Take into account `helix-keep-search-highlight-commands'
-                ;; commands.
-                ((not (memq last-command '(helix-search-next helix-search-previous)))
-                 (push-mark nil t)))
+          ;; Push mark on first invocation.
+          (unless (or (memq last-command '(helix-search-next helix-search-previous))
+                      (helix-search--keep-highlight last-command))
+            (push-mark nil t))
+          (when (and helix--extend-selection (use-region-p))
+            (helix-create-fake-cursor-from-point))
           (helix-set-region beg end region-dir))))
     ;; Update the screen so that the temporary value for
     ;; `scroll-conservatively' is taken into account.
