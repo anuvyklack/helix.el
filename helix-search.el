@@ -40,11 +40,12 @@ DIRECTION must be either 1 or -1."
       (when helix-search--hl (helix-highlight-delete helix-search--hl))
       (setq helix-search--hl hl)))
   (add-hook 'pre-command-hook  #'helix-highlight-search-pattern--cleanup-hook nil t)
-  ;; Update highlighting after `helix-keep-search-highlight-commands'.
+  ;; Update highlighting after commands for which
+  ;; `helix-search--keep-highlight' returns t.
   (add-hook 'post-command-hook #'helix-highlight-search-pattern--update-hook nil t))
 
 (defun helix-highlight-search-pattern--cleanup-hook ()
-  (unless (memq this-command helix-keep-search-highlight-commands)
+  (unless (helix-search--keep-highlight this-command)
     (setq helix-search--direction nil)
     (when helix-search--timer
       (cancel-timer helix-search--timer)
@@ -54,6 +55,10 @@ DIRECTION must be either 1 or -1."
       (setq helix-search--hl nil))
     (remove-hook 'pre-command-hook  #'helix-highlight-search-pattern--cleanup-hook t)
     (remove-hook 'post-command-hook #'helix-highlight-search-pattern--update-hook t)))
+
+(defun helix-search--keep-highlight (command)
+  (or (get command 'scroll-command)
+      (memq command helix-keep-search-highlight-commands)))
 
 (defun helix-highlight-search-pattern--update-hook (&optional _ _ _)
   (when helix-search--timer
