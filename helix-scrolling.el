@@ -37,9 +37,10 @@ If PAGES is non-nil scroll over pages instead of lines."
   (let* ((window-height (- (window-text-height nil t)
                            (window-mode-line-height)
                            (window-tab-line-height)))
+         (line-height (default-line-height))
          (delta (cond ((eql count 0) (/ window-height 2))
                       (pages? (* count window-height))
-                      (t (* count (default-line-height)))))
+                      (t (* count line-height))))
          (posn-y-at-point (cdr (posn-x-y (posn-at-point))))
          at-bottom?)
     ;; BUG: When jump lands at the top of the screen the point could be only
@@ -51,7 +52,7 @@ If PAGES is non-nil scroll over pages instead of lines."
       (cond (restricted
              (setq delta (- window-height
                             posn-y-at-point
-                            (/ (default-line-height) 3))
+                            (/ line-height 3))
                    at-bottom? t))
             ;; If not restricted, disable selection unless we want to extend it
             ((not helix--extend-selection)
@@ -66,9 +67,10 @@ If PAGES is non-nil scroll over pages instead of lines."
   (let* ((window-height (- (window-text-height nil t)
                            (window-mode-line-height)
                            (window-tab-line-height)))
+         (line-height (default-line-height))
          (delta (cond ((eql count 0) (/ window-height 2))
                       (pages? (* count window-height))
-                      (t (* count (default-line-height)))))
+                      (t (* count line-height))))
          (posn-y-at-point (cdr (posn-x-y (posn-at-point))))
          at-top?)
     ;; BUG: When jump lands at the top of the screen the point could be only
@@ -78,7 +80,7 @@ If PAGES is non-nil scroll over pages instead of lines."
     (when (> delta posn-y-at-point)
       (cond (restricted
              (setq delta (- posn-y-at-point
-                            (/ (default-line-height) 3))
+                            (/ line-height 3))
                    at-top? t))
             ((not helix--extend-selection)
              (deactivate-mark))))
