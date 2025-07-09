@@ -180,22 +180,6 @@ For these commands:
     helix-rotate-selections-backward
     helix-search-next
     helix-search-previous
-    ;; scrolling
-    helix-smooth-scroll-page-up
-    helix-smooth-scroll-page-down
-    helix-smooth-scroll-down
-    helix-smooth-scroll-up
-    helix-mix-scroll-line-down
-    helix-mix-scroll-line-up
-    helix-scroll-line-down
-    helix-scroll-line-up
-    helix-smooth-scroll-line-to-center
-    helix-smooth-scroll-line-not-to-very-top
-    helix-smooth-scroll-line-to-top
-    helix-smooth-scroll-line-to-bottom
-    pixel-scroll-precision
-    pixel-scroll-start-momentum
-    mwheel-scroll
     ;; switch windows
     helix-window-split
     helix-window-vsplit
@@ -212,7 +196,9 @@ For these commands:
     helix-move-window-left
     helix-move-window-down
     helix-move-window-up
-    helix-move-window-right)
+    helix-move-window-right
+    ;; scrolling
+    pixel-scroll-start-momentum)
   "List of commands which should preserve search highlighting overlays.")
 
 (helix-defvar-local helix-surround-alist

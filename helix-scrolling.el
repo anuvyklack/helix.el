@@ -225,6 +225,8 @@ If COUNT > 1 scroll smoothly."
     (when (eql posn-y-at-point 0) (recenter 0))
     (pixel-scroll-precision-interpolate delta nil 1)))
 
+(put 'helix-smooth-scroll-line-to-center 'scroll-command t)
+
 ;; zz (another version)
 (defun helix-smooth-scroll-line-not-to-very-top ()
   "Smoothly scroll current line not to the very top of the window."
@@ -238,6 +240,8 @@ If COUNT > 1 scroll smoothly."
                    posn-y-at-point)))
     (when (eql posn-y-at-point 0) (recenter 0))
     (pixel-scroll-precision-interpolate delta nil 1)))
+
+(put 'helix-smooth-scroll-line-not-to-very-top 'scroll-command t)
 
 ;; zt
 (defun helix-smooth-scroll-line-to-top ()
@@ -253,6 +257,8 @@ If COUNT > 1 scroll smoothly."
     (when (eql posn-y-at-point 0) (recenter 0))
     (pixel-scroll-precision-interpolate (- delta) nil 1)
     (recenter 0)))
+
+(put 'helix-smooth-scroll-line-to-top 'scroll-command t)
 
 ;; zb
 (defun helix-smooth-scroll-line-to-bottom ()
@@ -272,6 +278,8 @@ If COUNT > 1 scroll smoothly."
     (when (eql posn-y-at-point 0) (recenter 0))
     (pixel-scroll-precision-interpolate delta nil 1)
     (recenter -1)))
+
+(put 'helix-smooth-scroll-line-to-bottom 'scroll-command t)
 
 (provide 'helix-scrolling)
 ;;; helix-scrolling.el ends here
