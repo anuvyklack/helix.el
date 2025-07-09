@@ -684,10 +684,12 @@ and which for all to `helix-mc-list-file' file."
   "Return non-nil if regions need to be merged after COMMAND."
   (and helix-multiple-cursors-mode
        mark-active
-       (let ((p (get command 'helix-merge-regions)))
-         (or (and (eq p 'extend-selection)
-                  helix--extend-selection)
-             p))))
+       (cond ((symbolp command)
+              (pcase (get command 'helix-merge-regions)
+                ('extend-selection helix--extend-selection)
+                (val val)))
+             ((functionp command) ;; `command' is a lambda
+              t))))
 
 (defun helix-merge-overlapping-regions ()
   "Merge overlapping regions."
