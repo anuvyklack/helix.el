@@ -25,6 +25,8 @@
   "Execute selected command for all cursors."
   (setq helix-this-command this-command))
 
+(put 'execute-extended-command 'multiple-cursors 'false)
+
 (helix-define-advice current-kill (:before (n &optional _do-not-move) helix)
   "Make sure pastes from other programs are added to `kill-ring's
 of all cursors when yanking."
@@ -100,11 +102,14 @@ in the command loop, and the fake cursors can pick up on those instead."
 
 ;;; Keypad
 
-(helix-define-advice keypad (:after ())
-  "Execute selected command for all cursors."
-  (setq helix-this-command this-command))
-
 (with-eval-after-load 'keypad
+  (helix-define-advice keypad (:after ())
+    "Execute selected command for all cursors."
+    (setq helix-this-command this-command))
+
+  (put 'keypad 'multiple-cursors 'false)
+  (put 'keypad-describe-key 'multiple-cursors 'false)
+
   (helix-keymap-set nil 'normal
     "SPC"      #'keypad
     "C-h k"    #'keypad-describe-key
@@ -152,7 +157,8 @@ in the command loop, and the fake cursors can pick up on those instead."
 ;;; Consult
 
 (with-eval-after-load 'consult
-  (helix-cache-input consult--read))
+  (helix-cache-input consult--read)
+  (put 'consult-yank-pop 'multiple-cursors t))
 
 ;;; Lisp
 
@@ -172,7 +178,8 @@ in the command loop, and the fake cursors can pick up on those instead."
 (helix-set-initial-state 'helpful-mode 'normal)
 (with-eval-after-load 'helpful
   (helix-keymap-set helpful-mode-map 'normal
-    "q" #'quit-window))
+    "q" #'quit-window)
+  (put 'helpful-variable 'multiple-cursors 'false))
 
 ;;; Org mode
 

@@ -105,7 +105,8 @@ and fake ones."
   (helix--smooth-scroll-up (helix--get-scroll-count count)
                            helix-multiple-cursors-mode))
 
-(put 'helix-scroll-line-up 'scroll-command t)
+(put 'helix-smooth-scroll-up 'scroll-command t)
+(put 'helix-smooth-scroll-up 'multiple-cursors 'false)
 
 ;; C-d
 (defun helix-smooth-scroll-down (count)
@@ -121,7 +122,8 @@ and fake ones."
   (helix--smooth-scroll-down (helix--get-scroll-count count)
                              helix-multiple-cursors-mode))
 
-(put 'helix-scroll-line-down 'scroll-command t)
+(put 'helix-smooth-scroll-down 'scroll-command t)
+(put 'helix-smooth-scroll-down 'multiple-cursors 'false)
 
 ;; C-b
 (defun helix-smooth-scroll-page-up (count)
@@ -132,6 +134,7 @@ backward instead."
   (helix--smooth-scroll-up count helix-multiple-cursors-mode t))
 
 (put 'helix-smooth-scroll-page-up 'scroll-command t)
+(put 'helix-smooth-scroll-page-up 'multiple-cursors 'false)
 
 ;; C-f
 (defun helix-smooth-scroll-page-down (count)
@@ -142,6 +145,7 @@ instead."
   (helix--smooth-scroll-down count helix-multiple-cursors-mode t))
 
 (put 'helix-smooth-scroll-page-down 'scroll-command t)
+(put 'helix-smooth-scroll-page-down 'multiple-cursors 'false)
 
 ;; C-e
 (defun helix-mix-scroll-line-down (count)
@@ -153,6 +157,7 @@ If COUNT > 1 scroll smoothly."
     (helix-smooth-scroll-line-down count)))
 
 (put 'helix-mix-scroll-line-down 'scroll-command t)
+(put 'helix-mix-scroll-line-down 'multiple-cursors 'false)
 
 ;; C-e
 (defun helix-scroll-line-down (count)
@@ -168,6 +173,7 @@ If COUNT > 1 scroll smoothly."
       (scroll-up count))))
 
 (put 'helix-scroll-line-down 'scroll-command t)
+(put 'helix-scroll-line-down 'multiple-cursors 'false)
 
 ;; C-e
 (defun helix-smooth-scroll-line-down (count)
@@ -177,6 +183,7 @@ If COUNT > 1 scroll smoothly."
     (helix--smooth-scroll-down count helix-multiple-cursors-mode)))
 
 (put 'helix-smooth-scroll-line-down 'scroll-command t)
+(put 'helix-smooth-scroll-line-down 'multiple-cursors 'false)
 
 ;; C-y
 (defun helix-mix-scroll-line-up (count)
@@ -188,6 +195,7 @@ If COUNT > 1 scroll smoothly."
     (helix-smooth-scroll-line-up count)))
 
 (put 'helix-mix-scroll-line-up 'scroll-command t)
+(put 'helix-mix-scroll-line-up 'multiple-cursors 'false)
 
 ;; C-y
 (defun helix-scroll-line-up (count)
@@ -207,6 +215,7 @@ If COUNT > 1 scroll smoothly."
       (scroll-down count))))
 
 (put 'helix-scroll-line-up 'scroll-command t)
+(put 'helix-scroll-line-up 'multiple-cursors 'false)
 
 ;; C-y
 (defun helix-smooth-scroll-line-up (count)
@@ -216,6 +225,7 @@ If COUNT > 1 scroll smoothly."
     (helix--smooth-scroll-up count helix-multiple-cursors-mode)))
 
 (put 'helix-smooth-scroll-line-up 'scroll-command t)
+(put 'helix-smooth-scroll-line-up 'multiple-cursors 'false)
 
 ;; zz
 (defun helix-smooth-scroll-line-to-center ()
@@ -232,6 +242,7 @@ If COUNT > 1 scroll smoothly."
     (pixel-scroll-precision-interpolate delta nil 1)))
 
 (put 'helix-smooth-scroll-line-to-center 'scroll-command t)
+(put 'helix-smooth-scroll-line-to-center 'multiple-cursors 'false)
 
 ;; zz (another version)
 (defun helix-smooth-scroll-line-not-to-very-top ()
@@ -248,6 +259,7 @@ If COUNT > 1 scroll smoothly."
     (pixel-scroll-precision-interpolate delta nil 1)))
 
 (put 'helix-smooth-scroll-line-not-to-very-top 'scroll-command t)
+(put 'helix-smooth-scroll-line-not-to-very-top 'multiple-cursors 'false)
 
 ;; zt
 (defun helix-smooth-scroll-line-to-top ()
@@ -265,6 +277,7 @@ If COUNT > 1 scroll smoothly."
     (recenter 0)))
 
 (put 'helix-smooth-scroll-line-to-top 'scroll-command t)
+(put 'helix-smooth-scroll-line-to-top 'multiple-cursors 'false)
 
 ;; zb
 (defun helix-smooth-scroll-line-to-bottom ()
@@ -286,6 +299,7 @@ If COUNT > 1 scroll smoothly."
     (recenter -1)))
 
 (put 'helix-smooth-scroll-line-to-bottom 'scroll-command t)
+(put 'helix-smooth-scroll-line-to-bottom 'multiple-cursors 'false)
 
 (provide 'helix-scrolling)
 ;;; helix-scrolling.el ends here
