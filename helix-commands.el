@@ -33,6 +33,8 @@
       (helix-extend-selection -1)
     (deactivate-mark)))
 
+(put 'helix-normal-state-escape 'multiple-cursors t)
+
 ;;; Motions
 
 ;; h
@@ -44,6 +46,9 @@
     (deactivate-mark))
   (backward-char count))
 
+(put 'helix-backward-char 'multiple-cursors t)
+(put 'helix-backward-char 'helix-merge-regions 'extend-selection)
+
 ;; l
 (defun helix-forward-char (count)
   "Move forward COUNT chars."
@@ -52,6 +57,9 @@
       (or (region-active-p) (set-mark (point)))
     (deactivate-mark))
   (forward-char count))
+
+(put 'helix-forward-char 'multiple-cursors t)
+(put 'helix-forward-char 'helix-merge-regions 'extend-selection)
 
 ;; j
 (defun helix-next-line (count)
@@ -66,6 +74,9 @@
   (setq this-command 'next-line)
   (funcall-interactively 'next-line count))
 
+(put 'helix-next-line 'multiple-cursors t)
+(put 'helix-next-line 'helix-merge-regions 'extend-selection)
+
 ;; k
 (defun helix-previous-line (count)
   "Move to the previous COUNT line."
@@ -78,6 +89,9 @@
   ;; `previous-line'.
   (setq this-command 'previous-line)
   (funcall-interactively 'previous-line count))
+
+(put 'helix-previous-line 'multiple-cursors t)
+(put 'helix-previous-line 'helix-merge-regions 'extend-selection)
 
 ;; w
 (defun helix-forward-word-start (count &optional bigword?)
@@ -94,11 +108,17 @@ If BIGWORD? move over WORD-s."
           (forward-thing thing))
       (helix-skip-whitespaces))))
 
+(put 'helix-forward-word-start 'multiple-cursors t)
+(put 'helix-forward-word-start 'helix-merge-regions 'extend-selection)
+
 ;; W
 (defun helix-forward-WORD-start (count)
   "Move to the COUNT-th next WORD start."
   (interactive "p")
   (helix-forward-word-start count :bigword))
+
+(put 'helix-forward-WORD-start 'multiple-cursors t)
+(put 'helix-forward-WORD-start 'helix-merge-regions 'extend-selection)
 
 ;; b
 (defun helix-backward-word-start (count &optional bigword?)
@@ -114,11 +134,17 @@ If BIGWORD? move over WORD-s."
         (set-mark (point)))
       (forward-thing thing -1))))
 
+(put 'helix-backward-word-start 'multiple-cursors t)
+(put 'helix-backward-word-start 'helix-merge-regions 'extend-selection)
+
 ;; B
 (defun helix-backward-WORD-start (count)
   "Move to the COUNT-th previous WORD start."
   (interactive "p")
   (helix-backward-word-start count :bigword))
+
+(put 'helix-backward-WORD-start 'multiple-cursors t)
+(put 'helix-backward-WORD-start 'helix-merge-regions 'extend-selection)
 
 ;; e
 (defun helix-forward-word-end (count &optional bigword?)
@@ -133,11 +159,17 @@ If BIGWORD? move over WORD-s."
         (set-mark (point)))
       (forward-thing thing))))
 
+(put 'helix-forward-word-end 'multiple-cursors t)
+(put 'helix-forward-word-end 'helix-merge-regions 'extend-selection)
+
 ;; E
 (defun helix-forward-WORD-end (count)
   "Move COUNT-th next WORD end."
   (interactive "p")
   (helix-forward-word-end count :bigword))
+
+(put 'helix-forward-WORD-end 'multiple-cursors t)
+(put 'helix-forward-WORD-end 'helix-merge-regions 'extend-selection)
 
 ;; gg
 (defun helix-goto-first-line (num)
@@ -164,6 +196,8 @@ Push mark at previous position, unless extending selection."
       (forward-line 1)
     (recenter 0)))
 
+(put 'helix-forward-WORD-end 'multiple-cursors 'false)
+
 ;; G
 (defun helix-goto-last-line ()
   "Move point the end of the buffer."
@@ -177,6 +211,8 @@ Push mark at previous position, unless extending selection."
   (push-mark)
   (goto-char (point-max)))
 
+(put 'helix-goto-last-line 'multiple-cursors 'false)
+
 ;; gs
 (defun helix-beginning-of-line-command ()
   "Move point to beginning of current line.
@@ -187,6 +223,9 @@ Use visual line when `visual-line-mode' is active."
       (or (region-active-p) (set-mark (point)))
     (set-mark (point)))
   (helix-beginning-of-line))
+
+(put 'helix-beginning-of-line-command 'multiple-cursors t)
+(put 'helix-beginning-of-line-command 'helix-merge-regions t)
 
 ;; gh
 (defun helix-first-non-blank ()
@@ -199,6 +238,9 @@ Use visual line when `visual-line-mode' is active."
   (helix-beginning-of-line)
   (skip-syntax-forward " " (line-end-position))
   (backward-prefix-chars))
+
+(put 'helix-first-non-blank 'multiple-cursors t)
+(put 'helix-first-non-blank 'helix-merge-regions t)
 
 ;; gl
 (defun helix-end-of-line-command ()
@@ -218,7 +260,10 @@ Use visual line when `visual-line-mode' is active."
     (setq temporary-goal-column most-positive-fixnum
           this-command 'next-line)))
 
-;; ]p
+(put 'helix-end-of-line-command 'multiple-cursors t)
+(put 'helix-end-of-line-command 'helix-merge-regions t)
+
+;; ]p or }}
 (defun helix-forward-paragraph (count)
   "Move to the end of the COUNT next paragraph."
   (interactive "p")
@@ -227,7 +272,9 @@ Use visual line when `visual-line-mode' is active."
     (set-mark (point)))
   (forward-thing 'paragraph count))
 
-;; [p
+(put 'helix-forward-paragraph 'multiple-cursors t)
+
+;; [p or {{
 (defun helix-backward-paragraph (count)
   "Move to the beginning of the COUNT previous paragraph."
   (interactive "p")
@@ -236,6 +283,8 @@ Use visual line when `visual-line-mode' is active."
       (or (region-active-p) (set-mark (point)))
     (set-mark (point)))
   (forward-thing 'paragraph count))
+
+(put 'helix-backward-paragraph 'multiple-cursors t)
 
 ;; mm
 ;; TODO: The most bare-boned version. Need upgrade.
@@ -258,6 +307,8 @@ Use visual line when `visual-line-mode' is active."
      (t
       (up-list -1)))))
 
+(put 'helix-jump-to-match-item 'multiple-cursors t)
+
 ;;; Avy (Easymotion)
 
 ;; gw
@@ -278,6 +329,8 @@ Use visual line when `visual-line-mode' is active."
              (set-mark (point))))
       (forward-thing 'helix-word))))
 
+(put 'helix-avy-word-forward 'multiple-cursors 'false)
+
 ;; gb
 (defun helix-avy-word-backward ()
   "Move to a word start before the point, choosing it with Avy."
@@ -297,6 +350,8 @@ Use visual line when `visual-line-mode' is active."
              (set-mark (point))
              (forward-thing 'helix-word))))))
 
+(put 'helix-avy-word-backward 'multiple-cursors 'false)
+
 ;; gW
 (defun helix-avy-WORD-forward ()
   "Move to a WORD start after the point, choosing it with Avy."
@@ -314,6 +369,8 @@ Use visual line when `visual-line-mode' is active."
             ((not helix--extend-selection)
              (set-mark (point))))
       (forward-thing 'helix-WORD))))
+
+(put 'helix-avy-WORD-forward 'multiple-cursors 'false)
 
 ;; gB
 (defun helix-avy-WORD-backward ()
@@ -334,6 +391,8 @@ Use visual line when `visual-line-mode' is active."
              (set-mark (point))
              (forward-thing 'helix-WORD))))))
 
+(put 'helix-avy-WORD-backward 'multiple-cursors 'false)
+
 ;; gj
 (defun helix-avy-next-line ()
   "Move to a next line, choosing it with Avy."
@@ -345,6 +404,8 @@ Use visual line when `visual-line-mode' is active."
   (let ((temporary-goal-column (current-column)))
     (-> (helix-collect-positions #'next-line)
         (avy-process))))
+
+(put 'helix-avy-next-line 'multiple-cursors 'false)
 
 ;; gk
 (defun helix-avy-previous-line ()
@@ -358,6 +419,8 @@ Use visual line when `visual-line-mode' is active."
     (-> (helix-collect-positions #'previous-line)
         (avy-process))))
 
+(put 'helix-avy-previous-line 'multiple-cursors 'false)
+
 ;;; Changes
 
 ;; i
@@ -368,6 +431,8 @@ Use visual line when `visual-line-mode' is active."
     (helix-ensure-region-direction -1))
   (helix-insert-state 1))
 
+(put 'helix-insert 'multiple-cursors 'false)
+
 ;; a
 (defun helix-append ()
   "Switch to Insert state after region."
@@ -375,6 +440,8 @@ Use visual line when `visual-line-mode' is active."
   (helix-with-each-cursor
     (helix-ensure-region-direction 1))
   (helix-insert-state 1))
+
+(put 'helix-append 'multiple-cursors 'false)
 
 ;; I
 (defun helix-insert-line ()
@@ -386,6 +453,8 @@ Use visual line when `visual-line-mode' is active."
     (set-marker (mark-marker) (point)))
   (helix-insert-state 1))
 
+(put 'helix-insert-line 'multiple-cursors 'false)
+
 ;; A
 (defun helix-append-line ()
   "Switch to Insert state at the end of the current line."
@@ -396,6 +465,8 @@ Use visual line when `visual-line-mode' is active."
     (set-marker (mark-marker) (point)))
   (helix-insert-state 1))
 
+(put 'helix-append-line 'multiple-cursors 'false)
+
 ;; o
 (defun helix-open-below ()
   "Insert a new line below point and switch to Insert state."
@@ -405,6 +476,8 @@ Use visual line when `visual-line-mode' is active."
     (newline-and-indent)
     (set-marker (mark-marker) (point)))
   (helix-insert-state 1))
+
+(put 'helix-open-below 'multiple-cursors 'false)
 
 ;; O
 (defun helix-open-above ()
@@ -418,6 +491,8 @@ Use visual line when `visual-line-mode' is active."
     (set-marker (mark-marker) (point)))
   (helix-insert-state 1))
 
+(put 'helix-open-above 'multiple-cursors 'false)
+
 ;; ] SPC
 (defun helix-add-blank-line-below (count)
   "Add COUNT blank lines below."
@@ -426,6 +501,8 @@ Use visual line when `visual-line-mode' is active."
     (let (deactivate-mark)
       (move-end-of-line nil)
       (newline count))))
+
+(put 'helix-add-blank-line-below 'multiple-cursors t)
 
 ;; [ SPC
 (defun helix-add-blank-line-above (count)
@@ -436,6 +513,8 @@ Use visual line when `visual-line-mode' is active."
       (helix-ensure-region-direction -1)
       (move-beginning-of-line nil)
       (newline count))))
+
+(put 'helix-add-blank-line-above 'multiple-cursors t)
 
 ;; c
 (defun helix-change ()
@@ -456,6 +535,8 @@ Use visual line when `visual-line-mode' is active."
           ((bolp)
            (indent-according-to-mode))))
   (helix-insert-state 1))
+
+(put 'helix-change 'multiple-cursors 'false)
 
 ;; TODO:
 ;; - If point is surrounded by (balanced) whitespace and a brace delimiter
@@ -480,6 +561,8 @@ If no selection — delete COUNT chars before point."
     (delete-char (- count)))
   (helix-extend-selection -1))
 
+(put 'helix-cut 'multiple-cursors t)
+
 ;; D
 (defun helix-delete (count)
   "Delete text in region, without modifying the `kill-ring'.
@@ -490,6 +573,8 @@ If no selection — delete COUNT chars after point."
     (delete-char count))
   (helix-extend-selection -1))
 
+(put 'helix-delete 'multiple-cursors t)
+
 ;; u
 (defun helix-undo ()
   "Cancel current region then undo."
@@ -498,6 +583,8 @@ If no selection — delete COUNT chars after point."
   (let (deactivate-mark)
     (undo-only)))
 
+(put 'helix-undo 'multiple-cursors 'false)
+
 ;; U
 (defun helix-redo ()
   "Cancel current region then redo."
@@ -505,6 +592,8 @@ If no selection — delete COUNT chars after point."
   (deactivate-mark)
   (let (deactivate-mark)
     (undo-redo)))
+
+(put 'helix-redo 'multiple-cursors 'false)
 
 ;; y
 (defun helix-copy ()
@@ -520,6 +609,8 @@ If no selection — delete COUNT chars after point."
       (pulse-momentary-highlight-region beg end)
       (message "Copied into kill-ring"))))
 
+(put 'helix-copy 'multiple-cursors t)
+
 ;; p
 (defun helix-paste-after ()
   "Paste after selection."
@@ -528,6 +619,8 @@ If no selection — delete COUNT chars after point."
   ;; `yank' sets `this-command' to `yank' internally
   (yank))
 
+(put 'helix-paste-after 'multiple-cursors t)
+
 ;; P
 (defun helix-paste-before ()
   "Paste before selection."
@@ -535,6 +628,8 @@ If no selection — delete COUNT chars after point."
   (helix-ensure-region-direction -1)
   ;; `yank' sets `this-command' to `yank' internally
   (yank))
+
+(put 'helix-paste-before 'multiple-cursors t)
 
 ;; C-p
 (defun helix-paste-pop (count)
@@ -546,6 +641,8 @@ Wrapper around `yank-pop'."
         (deactivate-mark nil))
     (call-interactively yank-pop count)))
 
+(put 'helix-paste-pop 'multiple-cursors t)
+
 ;; C-n
 (defun helix-paste-undo-pop (count)
   "Replace just-pasted text with previous COUNT element from `kill-ring'.
@@ -556,6 +653,8 @@ Like `helix-paste-pop' but with negative COUNT argument."
         (deactivate-mark nil))
     (call-interactively yank-pop (- count))))
 
+(put 'helix-paste-undo-pop 'multiple-cursors t)
+
 ;; R
 (defun helix-replace-with-kill-ring ()
   "Replace selection content with yanked text from `kill-ring'."
@@ -564,6 +663,8 @@ Like `helix-paste-pop' but with negative COUNT argument."
     (let (deactivate-mark)
       (delete-region (region-beginning) (region-end))
       (yank))))
+
+(put 'helix-replace-with-kill-ring 'multiple-cursors t)
 
 ;; J
 (defun helix-join-line ()
@@ -598,6 +699,8 @@ Like `helix-paste-pop' but with negative COUNT argument."
       (helix-set-region beg end dir)
       (set-marker end nil))))
 
+(put 'helix-join-line 'multiple-cursors t)
+
 ;; ~
 (defun helix-invert-case ()
   "Invert case of characters."
@@ -612,6 +715,8 @@ Like `helix-paste-pop' but with negative COUNT argument."
     ;; else
     (helix-invert-case-in-region (point) (1+ (point)))))
 
+(put 'helix-invert-case 'multiple-cursors t)
+
 ;; ` or gu
 (defun helix-downcase (start end)
   "Convert text in selection to lower case."
@@ -620,6 +725,8 @@ Like `helix-paste-pop' but with negative COUNT argument."
     (let (deactivate-mark)
       (downcase-region start end))))
 
+(put 'helix-downcase 'multiple-cursors t)
+
 ;; M-` or gU
 (defun helix-upcase (start end)
   "Convert text in selection to upper case."
@@ -627,6 +734,8 @@ Like `helix-paste-pop' but with negative COUNT argument."
   (when (use-region-p)
     (let (deactivate-mark)
       (upcase-region start end))))
+
+(put 'helix-upcase 'multiple-cursors t)
 
 ;;; Selections
 
@@ -648,11 +757,15 @@ If ARG positive number — enable, negative — disable."
         (set-cursor-color (face-attribute 'helix-extend-selection-cursor
                                           :background))))))
 
+(put 'helix-extend-selection 'multiple-cursors t)
+
 ;; ;
 (defun helix-collapse-selection ()
   "Collapse region onto a single cursor."
   (interactive)
   (deactivate-mark))
+
+(put 'helix-collapse-selection 'multiple-cursors t)
 
 ;; x
 (defun helix-expand-line-selection (count)
@@ -666,6 +779,9 @@ if region is backward — point is before mark — expand upwise."
     (let* ((line (if visual-line-mode 'visual-line 'line))
            (count (* count (helix-region-direction))))
       (forward-thing line count))))
+
+(put 'helix-expand-line-selection 'multiple-cursors t)
+(put 'helix-expand-line-selection 'helix-merge-regions t)
 
 ;; X
 (defun helix-contract-line-selection (count)
@@ -689,6 +805,8 @@ Counterpart to `helix-expand-line-selection' that does the exact opposite."
              (forward-thing line count)
              (when(<= (point) beg)
                (helix-set-region beg end dir)))))))
+
+(put 'helix-contract-line-selection 'multiple-cursors t)
 
 (defun helix-expand-selection-to-full-lines ()
   "Create a line-wise selection, using visual or logical lines.
@@ -742,6 +860,8 @@ Return t if does anything, otherwise return nil."
 (helix-define-advice mark-whole-buffer (:before ())
   (helix-remove-all-fake-cursors))
 
+(put 'mark-whole-buffer 'multiple-cursors 'false)
+
 ;; s
 (defun helix-select-regex (&optional invert)
   "Create new selections for all matches to the regexp entered withing current
@@ -773,11 +893,15 @@ entered regexp withing current selections."
                ;; Restore original region
                (helix-set-region beg end dir))))))
 
+(put 'helix-select-regex 'multiple-cursors 'false)
+
 ;; S
 (defun helix-split-region ()
   "Split each selection according to the regexp entered."
   (interactive)
   (helix-select-regex t))
+
+(put 'helix-split-region 'multiple-cursors 'false)
 
 ;; M-s
 (defun helix-split-region-on-newline ()
@@ -794,17 +918,23 @@ entered regexp withing current selections."
       (helix-with-each-cursor
         (helix-extend-selection -1)))))
 
+(put 'helix-split-region-on-newline 'multiple-cursors 'false)
+
 ;; K
 (defun helix-keep-selections ()
   "Keep selections that match to the regexp entered."
   (interactive)
   (helix-filter-selections))
 
+(put 'helix-keep-selections 'multiple-cursors 'false)
+
 ;; M-K
 (defun helix-remove-selections ()
   "Remove selections that match to the regexp entered."
   (interactive)
   (helix-filter-selections t))
+
+(put 'helix-remove-selections 'multiple-cursors 'false)
 
 ;; _
 (defun helix-trim-whitespaces-from-selection ()
@@ -816,6 +946,8 @@ entered regexp withing current selections."
       (helix-exchange-point-and-mark)
       (helix-skip-chars " \t\r\n" dir)
       (helix-exchange-point-and-mark))))
+
+(put 'helix-trim-whitespaces-from-selection 'multiple-cursors t)
 
 ;; &
 (defun helix-align-selections ()
@@ -850,6 +982,8 @@ entered regexp withing current selections."
                       (t
                        (insert str)))))))))))
 
+(put 'helix-align-selections 'multiple-cursors 'false)
+
 ;; C
 (defun helix-copy-selection (count)
   "Copy selections COUNT times down if COUNT is positive, or up if negative."
@@ -860,11 +994,17 @@ entered regexp withing current selections."
           (helix--copy-region dir)
         (helix--copy-cursor dir)))))
 
+(put 'helix-copy-selection 'multiple-cursors 'false)
+(put 'helix-copy-selection 'helix-merge-regions t)
+
 ;; M-c
 (defun helix-copy-selection-up (count)
   "Copy each selection COUNT times up."
   (interactive "p")
   (helix-copy-selection (- count)))
+
+(put 'helix-copy-selection-up 'multiple-cursors 'false)
+(put 'helix-copy-selection-up 'helix-merge-regions t)
 
 (defun helix--copy-cursor (direction)
   "Copy point toward the DIRECTION."
@@ -934,6 +1074,8 @@ at START-COLUMN, ends at END-COLUMN and consists of NUMBER-OF-LINES."
   (when helix-multiple-cursors-mode
     (helix-multiple-cursors-mode -1)))
 
+(put 'helix-remove-all-fake-cursors 'multiple-cursors 'false)
+
 ;; M-,
 (defun helix-remove-main-cursor ()
   "Delete main cursor and activate the next fake one."
@@ -942,6 +1084,8 @@ at START-COLUMN, ends at END-COLUMN and consists of NUMBER-OF-LINES."
     (helix-restore-point-from-fake-cursor (or (helix-next-fake-cursor (point))
                                               (helix-first-fake-cursor)))
     (helix-maybe-disable-multiple-cursors-mode)))
+
+(put 'helix-remove-main-cursor 'multiple-cursors 'false)
 
 ;; M-minus
 (defun helix-merge-selections ()
@@ -961,6 +1105,8 @@ at START-COLUMN, ends at END-COLUMN and consists of NUMBER-OF-LINES."
       (helix-remove-all-fake-cursors)
       (helix-set-region beg end 1))))
 
+(put 'helix-merge-selections 'multiple-cursors 'false)
+
 ;; (
 (defun helix-rotate-selections-backward (count)
   "Rotate main selection backward COUNT times."
@@ -973,6 +1119,8 @@ at START-COLUMN, ends at END-COLUMN and consists of NUMBER-OF-LINES."
           (helix-create-fake-cursor-from-point)
           (helix-restore-point-from-fake-cursor cursor)))
       (redisplay))))
+
+(put 'helix-rotate-selections-backward 'multiple-cursors 'false)
 
 ;; )
 (defun helix-rotate-selections-forward (count)
@@ -987,6 +1135,8 @@ at START-COLUMN, ends at END-COLUMN and consists of NUMBER-OF-LINES."
           (helix-restore-point-from-fake-cursor cursor))))
     (redisplay)))
 
+(put 'helix-rotate-selections-forward 'multiple-cursors 'false)
+
 ;; M-(
 (defun helix-rotate-selections-content-backward (count)
   "Rotate selections content backward COUNT times."
@@ -999,6 +1149,8 @@ at START-COLUMN, ends at END-COLUMN and consists of NUMBER-OF-LINES."
             (nreverse)
             (helix--rotate-selections-content))))))
 
+(put 'helix-rotate-selections-content-backward 'multiple-cursors 'false)
+
 ;; M-)
 (defun helix-rotate-selections-content-forward (count)
   "Rotate selections content forward COUNT times."
@@ -1009,6 +1161,8 @@ at START-COLUMN, ends at END-COLUMN and consists of NUMBER-OF-LINES."
       (helix-with-real-cursor-as-fake
         (-> (helix-all-fake-cursors t)
             (helix--rotate-selections-content))))))
+
+(put 'helix-rotate-selections-content-forward 'multiple-cursors 'false)
 
 (defun helix--rotate-selections-content (cursors)
   "Rotate regions content for all CURSORS in the order they are in list."
@@ -1032,7 +1186,7 @@ at START-COLUMN, ends at END-COLUMN and consists of NUMBER-OF-LINES."
 
 ;; (keymap-lookup nil "M-<down-mouse-1>")
 
-;; M-right mouse
+;; M-<right-mouse>
 (defun helix-toggle-cursor-on-click (event)
   "Add a cursor where you click, or remove a fake cursor that is
 already there."
@@ -1051,6 +1205,8 @@ already there."
         ;; (deactivate-mark)
         (helix-create-fake-cursor pos pos)))))
 
+(put 'helix-toggle-cursor-on-click 'multiple-cursors 'false)
+
 ;;;; Mark
 
 (defun helix-mark-map-digit-argument (arg)
@@ -1058,6 +1214,8 @@ already there."
   (interactive "P")
   (digit-argument arg)
   (set-transient-map helix-mark-map))
+
+(put 'helix-mark-map-digit-argument 'multiple-cursors 'false)
 
 ;; Do not show `helix-mark-map-digit-argument' in which-key popup.
 (with-eval-after-load 'which-key
@@ -1070,20 +1228,32 @@ already there."
   (interactive "p")
   (helix-mark-inner-thing 'helix-word count))
 
+(put 'helix-mark-inner-word 'multiple-cursors t)
+(put 'helix-mark-inner-word 'helix-merge-regions t)
+
 ;; miW
 (defun helix-mark-inner-WORD (count)
   (interactive "p")
   (helix-mark-inner-thing 'helix-WORD count))
+
+(put 'helix-mark-inner-WORD 'multiple-cursors t)
+(put 'helix-mark-inner-WORD 'helix-merge-regions t)
 
 ;; maw
 (defun helix-mark-a-word ()
   (interactive)
   (helix--mark-a-word-1 nil))
 
+(put 'helix-mark-a-word 'multiple-cursors t)
+(put 'helix-mark-a-word 'helix-merge-regions t)
+
 ;; maW
 (defun helix-mark-a-WORD ()
   (interactive)
   (helix--mark-a-word-1 t))
+
+(put 'helix-mark-a-WORD 'multiple-cursors t)
+(put 'helix-mark-a-WORD 'helix-merge-regions t)
 
 (defun helix--mark-a-word-1 (bigword?)
   "Inner implementation of `helix-mark-a-word' and `helix-mark-a-WORD' commands."
@@ -1114,6 +1284,9 @@ already there."
   (interactive "p")
   (helix-mark-inner-thing 'helix-sentence count))
 
+(put 'helix-mark-inner-sentence 'multiple-cursors t)
+(put 'helix-mark-inner-sentence 'helix-merge-regions t)
+
 ;; mas
 (defun helix-mark-a-sentence ()
   (interactive)
@@ -1135,11 +1308,17 @@ already there."
                   (cons thing-beg thing-end))))
         (helix-set-region beg end)))))
 
+(put 'helix-mark-a-sentence 'multiple-cursors t)
+(put 'helix-mark-a-sentence 'helix-merge-regions t)
+
 ;; mip
 (defun helix-mark-inner-paragraph (count)
   (interactive "p")
   (push-mark nil t)
   (helix-mark-inner-thing 'paragraph count))
+
+(put 'helix-mark-inner-paragraph 'multiple-cursors t)
+(put 'helix-mark-inner-paragraph 'helix-merge-regions t)
 
 ;; map
 (defun helix-mark-a-paragraph ()
@@ -1147,16 +1326,25 @@ already there."
   (push-mark nil t)
   (helix-mark-a-thing 'paragraph))
 
+(put 'helix-mark-a-paragraph 'multiple-cursors t)
+(put 'helix-mark-a-paragraph 'helix-merge-regions t)
+
 ;; mif
 (defun helix-mark-inner-function (count)
   (interactive "p")
   (helix-mark-inner-thing 'helix-function count)
   (helix-exchange-point-and-mark))
 
+(put 'helix-mark-inner-function 'multiple-cursors t)
+(put 'helix-mark-inner-function 'helix-merge-regions t)
+
 ;; maf
 (defun helix-mark-a-function ()
   (interactive)
   (helix-mark-a-thing 'helix-function))
+
+(put 'helix-mark-a-function 'multiple-cursors t)
+(put 'helix-mark-a-function 'helix-merge-regions t)
 
 ;; mi"
 (defun helix-mark-inner-double-quoted ()
@@ -1164,11 +1352,17 @@ already there."
   (-when-let ((beg . end) (helix-bounds-of-quoted-at-point ?\"))
     (helix-set-region (1+ beg) (1- end))))
 
+(put 'helix-mark-inner-double-quoted 'multiple-cursors t)
+(put 'helix-mark-inner-double-quoted 'helix-merge-regions t)
+
 ;; ma"
 (defun helix-mark-a-double-quoted ()
   (interactive)
   (-when-let ((beg . end) (helix-bounds-of-quoted-at-point ?\"))
     (helix-set-region beg end)))
+
+(put 'helix-mark-a-double-quoted 'multiple-cursors t)
+(put 'helix-mark-a-double-quoted 'helix-merge-regions t)
 
 ;; mi'
 (defun helix-mark-inner-single-quoted ()
@@ -1176,11 +1370,17 @@ already there."
   (-when-let ((beg . end) (helix-bounds-of-quoted-at-point ?'))
     (helix-set-region (1+ beg) (1- end))))
 
+(put 'helix-mark-inner-single-quoted 'multiple-cursors t)
+(put 'helix-mark-inner-single-quoted 'helix-merge-regions t)
+
 ;; ma'
 (defun helix-mark-a-single-quoted ()
   (interactive)
   (-when-let ((beg . end) (helix-bounds-of-quoted-at-point ?'))
     (helix-set-region beg end)))
+
+(put 'helix-mark-a-single-quoted 'multiple-cursors t)
+(put 'helix-mark-a-single-quoted 'helix-merge-regions t)
 
 ;; mi`
 (defun helix-mark-inner-back-quoted ()
@@ -1188,11 +1388,17 @@ already there."
   (-when-let ((beg . end) (helix-bounds-of-quoted-at-point ?`))
     (helix-set-region (1+ beg) (1- end))))
 
+(put 'helix-mark-inner-back-quoted 'multiple-cursors t)
+(put 'helix-mark-inner-back-quoted 'helix-merge-regions t)
+
 ;; ma`
 (defun helix-mark-a-back-quoted ()
   (interactive)
   (-when-let ((beg . end) (helix-bounds-of-quoted-at-point ?`))
     (helix-set-region beg end)))
+
+(put 'helix-mark-a-back-quoted 'multiple-cursors t)
+(put 'helix-mark-a-back-quoted 'helix-merge-regions t)
 
 ;; mi( mi)
 (defun helix-mark-inner-paren ()
@@ -1200,11 +1406,17 @@ already there."
   (-when-let ((_ beg end _) (helix-4-bounds-of-brackets-at-point ?\( ?\)))
     (helix-set-region beg end)))
 
+(put 'helix-mark-inner-paren 'multiple-cursors t)
+(put 'helix-mark-inner-paren 'helix-merge-regions t)
+
 ;; ma( ma)
 (defun helix-mark-a-paren ()
   (interactive)
   (-when-let ((beg . end) (helix-bounds-of-brackets-at-point ?\( ?\)))
     (helix-set-region beg end)))
+
+(put 'helix-mark-a-paren 'multiple-cursors t)
+(put 'helix-mark-a-paren 'helix-merge-regions t)
 
 ;; mi[ mi]
 (defun helix-mark-inner-bracket ()
@@ -1212,11 +1424,17 @@ already there."
   (-when-let ((_ beg end _) (helix-4-bounds-of-brackets-at-point ?\[ ?\]))
     (helix-set-region beg end)))
 
+(put 'helix-mark-inner-bracket 'multiple-cursors t)
+(put 'helix-mark-inner-bracket 'helix-merge-regions t)
+
 ;; ma[ ma]
 (defun helix-mark-a-bracket ()
   (interactive)
   (-when-let ((beg . end) (helix-bounds-of-brackets-at-point ?\[ ?\]))
     (helix-set-region beg end)))
+
+(put 'helix-mark-a-bracket 'multiple-cursors t)
+(put 'helix-mark-a-bracket 'helix-merge-regions t)
 
 ;; mi{ mi}
 (defun helix-mark-inner-curly ()
@@ -1224,11 +1442,17 @@ already there."
   (-when-let ((_ beg end _) (helix-4-bounds-of-brackets-at-point ?{ ?}))
     (helix-set-region beg end)))
 
+(put 'helix-mark-inner-curly 'multiple-cursors t)
+(put 'helix-mark-inner-curly 'helix-merge-regions t)
+
 ;; ma{ ma}
 (defun helix-mark-a-curly ()
   (interactive)
   (-when-let ((beg . end) (helix-bounds-of-brackets-at-point ?{ ?}))
     (helix-set-region beg end)))
+
+(put 'helix-mark-a-curly 'multiple-cursors t)
+(put 'helix-mark-a-curly 'helix-merge-regions t)
 
 ;; mi< mi>
 (defun helix-mark-inner-angle ()
@@ -1236,11 +1460,41 @@ already there."
   (-when-let ((_ beg end _) (helix-4-bounds-of-brackets-at-point ?< ?>))
     (helix-set-region beg end)))
 
+(put 'helix-mark-inner-angle 'multiple-cursors t)
+(put 'helix-mark-inner-angle 'helix-merge-regions t)
+
 ;; ma< ma>
 (defun helix-mark-an-angle ()
   (interactive)
   (-when-let ((beg _ _ end) (helix-4-bounds-of-brackets-at-point ?< ?>))
     (helix-set-region beg end)))
+
+(put 'helix-mark-an-angle 'multiple-cursors t)
+(put 'helix-mark-an-angle 'helix-merge-regions t)
+
+(defun helix-mark-inner-surround ()
+  (interactive)
+  (when-let* ((char (if (characterp last-command-event)
+                        last-command-event
+                      (get last-command-event 'ascii-character)))
+              (bounds (helix-surround--4-bounds char)))
+    (-let (((_ beg end _) bounds))
+      (helix-set-region beg end))))
+
+(put 'helix-mark-inner-surround 'multiple-cursors t)
+(put 'helix-mark-inner-surround 'helix-merge-regions t)
+
+(defun helix-mark-a-surround ()
+  (interactive)
+  (when-let* ((char (if (characterp last-command-event)
+                        last-command-event
+                      (get last-command-event 'ascii-character)))
+              (bounds (helix-surround--4-bounds char)))
+    (-let (((beg _ _ end) bounds))
+      (helix-set-region beg end))))
+
+(put 'helix-mark-a-surround 'multiple-cursors t)
+(put 'helix-mark-a-surround 'helix-merge-regions t)
 
 ;;; Search
 
@@ -1255,6 +1509,9 @@ keys to repeat motion forward/backward."
     (helix-motion-loop (dir count)
       (helix-find-char char dir nil))))
 
+(put 'helix-find-char-forward 'multiple-cursors t)
+(put 'helix-find-char-forward 'helix-merge-regions 'extend-selection)
+
 ;; F
 (defun helix-find-char-backward (count)
   "Prompt user for CHAR and move to the previous COUNT'th occurrence of it.
@@ -1267,6 +1524,9 @@ keys to repeat motion forward/backward."
     (helix-motion-loop (dir count)
       (helix-find-char char dir nil))))
 
+(put 'helix-find-char-backward 'multiple-cursors t)
+(put 'helix-find-char-backward 'helix-merge-regions 'extend-selection)
+
 ;; t
 (defun helix-till-char-forward (count)
   "Prompt user for CHAR and move before the next COUNT'th occurrence of it.
@@ -1277,6 +1537,9 @@ keys to repeat motion forward/backward."
   (let ((char (read-char "t")))
     (helix-motion-loop (dir count)
       (helix-find-char char dir t))))
+
+(put 'helix-till-char-forward 'multiple-cursors t)
+(put 'helix-till-char-forward 'helix-merge-regions 'extend-selection)
 
 ;; T
 (defun helix-till-char-backward (count)
@@ -1290,6 +1553,9 @@ keys to repeat motion forward/backward."
     (helix-motion-loop (dir count)
       (helix-find-char char dir t))))
 
+(put 'helix-till-char-backward 'multiple-cursors t)
+(put 'helix-till-char-backward 'helix-merge-regions 'extend-selection)
+
 ;; /
 (defun helix-search-forward (count)
   (interactive "p")
@@ -1297,12 +1563,18 @@ keys to repeat motion forward/backward."
     (setq helix-search--direction 1)
     (helix-search-next count)))
 
+(put 'helix-search-forward 'multiple-cursors 'false)
+(put 'helix-search-forward 'helix-merge-regions t)
+
 ;; ?
 (defun helix-search-backward (count)
   (interactive "p")
   (when (helix-search-interactively -1)
     (setq helix-search--direction -1)
     (helix-search-next count)))
+
+(put 'helix-search-backward 'multiple-cursors 'false)
+(put 'helix-search-backward 'helix-merge-regions t)
 
 ;; n
 (defun helix-search-next (count)
@@ -1331,11 +1603,17 @@ keys to repeat motion forward/backward."
     (redisplay)
     (helix-highlight-search-pattern regexp)))
 
+(put 'helix-search-next 'multiple-cursors 'false)
+(put 'helix-search-next 'helix-merge-regions t)
+
 ;; N
 (defun helix-search-previous (count)
   "Select previous COUNT search match."
   (interactive "p")
   (helix-search-next (- count)))
+
+(put 'helix-search-previous 'multiple-cursors 'false)
+(put 'helix-search-previous 'helix-merge-regions t)
 
 ;; *
 (defun helix-construct-search-pattern ()
@@ -1375,6 +1653,8 @@ Auto-detect word boundaries at the beginning and end of the search pattern."
       (message "Register / set: %s" regexp)
       (helix-highlight-search-pattern regexp))))
 
+(put 'helix-construct-search-pattern 'multiple-cursors 'false)
+
 ;; M-*
 (defun helix-construct-search-pattern-no-bounds ()
   "Construct search pattern from all current selection and store it to / register.
@@ -1392,6 +1672,8 @@ Do not auto-detect word boundaries in the search pattern."
       (set-register '/ regexp)
       (message "Register / set: %s" regexp)
       (helix-highlight-search-pattern regexp))))
+
+(put 'helix-construct-search-pattern-no-bounds 'multiple-cursors 'false)
 
 ;;; Surround
 
@@ -1484,6 +1766,8 @@ lines and reindent the region."
         (indent-region new-beg new-end)))
     (helix-extend-selection -1)))
 
+(put 'helix-surround 'multiple-cursors t)
+
 ;; md
 (defun helix-surround-delete ()
   (interactive)
@@ -1493,7 +1777,9 @@ lines and reindent the region."
       (delete-region right-beg right-end)
       (delete-region left-beg left-end))))
 
-;; mr mc
+(put 'helix-surround-delete 'multiple-cursors t)
+
+;; mr
 (defun helix-surround-change ()
   (interactive)
   (when-let* ((char (read-char "Delete pair: "))
@@ -1517,23 +1803,7 @@ lines and reindent the region."
         (goto-char left-beg)
         (insert left)))))
 
-(defun helix-mark-inner-surround ()
-  (interactive)
-  (when-let* ((char (if (characterp last-command-event)
-                        last-command-event
-                      (get last-command-event 'ascii-character)))
-              (bounds (helix-surround--4-bounds char)))
-    (-let (((_ beg end _) bounds))
-      (helix-set-region beg end))))
-
-(defun helix-mark-a-surround ()
-  (interactive)
-  (when-let* ((char (if (characterp last-command-event)
-                        last-command-event
-                      (get last-command-event 'ascii-character)))
-              (bounds (helix-surround--4-bounds char)))
-    (-let (((beg _ _ end) bounds))
-      (helix-set-region beg end))))
+(put 'helix-surround-change 'multiple-cursors t)
 
 ;;; Window navigation
 
@@ -1552,11 +1822,15 @@ parent of the splitted window are rebalanced."
       (set-window-parameter new-window 'quit-restore quit-restore)))
   (balance-windows (window-parent)))
 
+(put 'helix-window-vsplit 'multiple-cursors 'false)
+
 (defun helix-window-left (count)
   "Move the cursor to new COUNT-th window left of the current one."
   (interactive "p")
   (dotimes (_ count)
     (windmove-left)))
+
+(put 'helix-window-left 'multiple-cursors 'false)
 
 (defun helix-window-right (count)
   "Move the cursor to new COUNT-th window right of the current one."
@@ -1564,17 +1838,23 @@ parent of the splitted window are rebalanced."
   (dotimes (_ count)
     (windmove-right)))
 
+(put 'helix-window-right 'multiple-cursors 'false)
+
 (defun helix-window-up (count)
   "Move the cursor to new COUNT-th window up of the current one."
   (interactive "p")
   (dotimes (_ count)
     (windmove-up)))
 
+(put 'helix-window-up 'multiple-cursors 'false)
+
 (defun helix-window-down (count)
   "Move the cursor to new COUNT-th window down of the current one."
   (interactive "p")
   (dotimes (_ count)
     (windmove-down)))
+
+(put 'helix-window-down 'multiple-cursors 'false)
 
 (defmacro helix-save-side-windows (&rest body)
   "Toggle side windows, evaluate BODY, restore side windows."
@@ -1607,20 +1887,28 @@ parent of the splitted window are rebalanced."
   (interactive)
   (helix-move-window 'left))
 
+(put 'helix-move-window-left 'multiple-cursors 'false)
+
 (defun helix-move-window-right ()
   "Swap window with one to the right."
   (interactive)
   (helix-move-window 'right))
+
+(put 'helix-move-window-right 'multiple-cursors 'false)
 
 (defun helix-move-window-up ()
   "Swap window with one upwards."
   (interactive)
   (helix-move-window 'up))
 
+(put 'helix-move-window-up 'multiple-cursors 'false)
+
 (defun helix-move-window-down ()
   "Swap window with one downwards."
   (interactive)
   (helix-move-window 'down))
+
+(put 'helix-move-window-down 'multiple-cursors 'false)
 
 (defun helix-window-delete ()
   "Delete the current window or tab.
@@ -1636,6 +1924,8 @@ Rebalance all children of the deleted window's parent window."
       ;; balance-windows raises an error if the parent does not have
       ;; any further children (then rebalancing is not necessary anyway)
       (ignore-errors (balance-windows parent)))))
+
+(put 'helix-window-delete 'multiple-cursors 'false)
 
 (provide 'helix-commands)
 ;;; helix-commands.el ends here
