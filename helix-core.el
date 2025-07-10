@@ -43,7 +43,13 @@ The COMMAND should be executed for fake cursors first, because it can
 create fake cursors itself, like `helix-copy-selection' does, and we
 want COMMAND to be executed only for original ones."
   (unless helix--executing-command-for-fake-cursor
-    (setq helix-this-command this-command)
+    ;; FIXME: Need to intercept into Edebug: when in Edebug `this-command'
+    ;; in `pre-command-hook' is the Edebugs command you invoced, and then
+    ;; Edebug set it to correct value inside somewhere inside this Edebug
+    ;; command. So we need to find where does it happen and add advice to
+    ;; set `helix-this-command' to this value.
+    (unless  edebug-mode ;; this is bad termporary solution
+      (setq helix-this-command this-command))
     (when (and (symbolp this-command)
                (get this-command 'helix-deactivate-mark))
       (deactivate-mark))
