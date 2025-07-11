@@ -1504,7 +1504,9 @@ already there."
 Right after this command while hints are active, you can use `n' and `N'
 keys to repeat motion forward/backward."
   (interactive "p")
-  (unless (region-active-p) (set-mark (point)))
+  (if helix--extend-selection
+      (or (region-active-p) (set-mark (point)))
+    (set-mark (point)))
   (let ((char (read-char "f")))
     (helix-motion-loop (dir count)
       (helix-find-char char dir nil))))
@@ -1518,7 +1520,9 @@ keys to repeat motion forward/backward."
 Right after this command while hints are active, you can use `n' and `N'
 keys to repeat motion forward/backward."
   (interactive "p")
-  (unless (region-active-p) (set-mark (point)))
+  (if helix--extend-selection
+      (or (region-active-p) (set-mark (point)))
+    (set-mark (point)))
   (setq count (- count))
   (let ((char (read-char "F")))
     (helix-motion-loop (dir count)
@@ -1533,7 +1537,9 @@ keys to repeat motion forward/backward."
 Right after this command while hints are active, you can use `n' and `N'
 keys to repeat motion forward/backward."
   (interactive "p")
-  (unless (region-active-p) (set-mark (point)))
+  (if helix--extend-selection
+      (or (region-active-p) (set-mark (point)))
+    (set-mark (point)))
   (let ((char (read-char "t")))
     (helix-motion-loop (dir count)
       (helix-find-char char dir t))))
@@ -1547,7 +1553,9 @@ keys to repeat motion forward/backward."
 Right after this command while hints are active, you can use `n' and `N'
 keys to repeat motion forward/backward."
   (interactive "p")
-  (unless (region-active-p) (set-mark (point)))
+  (if helix--extend-selection
+      (or (region-active-p) (set-mark (point)))
+    (set-mark (point)))
   (setq count (- count))
   (let ((char (read-char "T")))
     (helix-motion-loop (dir count)
