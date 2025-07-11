@@ -1597,7 +1597,10 @@ keys to repeat motion forward/backward."
         ;; Center point after jump to search result if it is out of the screen.
         (scroll-conservatively 0))
     (helix-motion-loop (dir count)
-      (when (save-excursion (helix-re-search-with-wrap regexp dir))
+      (when (and (save-excursion (helix-re-search-with-wrap regexp dir))
+                 (or (eq search-invisible t)
+                     (not (-let [(beg . end) (helix-match-bounds)]
+                            (isearch-range-invisible beg end)))))
         (-let (((beg . end) (helix-match-bounds)))
           ;; Push mark on first invocation.
           (unless (or (memq last-command '(helix-search-next helix-search-previous))
