@@ -35,7 +35,7 @@
 REGIONS should be a list of cons cells (START . END) with bounds of regions."
   (when regions
     (--each regions
-      (-let (((mark . point) it))
+      (-let [(mark . point) it]
         (helix-create-fake-cursor point mark)))))
 
 (defun helix-refresh-fake-cursor (cursor)
