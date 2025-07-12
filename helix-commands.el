@@ -469,9 +469,13 @@ Use visual line when `visual-line-mode' is active."
 
 ;; o
 (defun helix-open-below ()
-  "Insert a new line below point and switch to Insert state."
+  "Open new line below selection."
   (interactive)
   (helix-with-each-cursor
+    (when (use-region-p)
+      (helix-ensure-region-direction 1)
+      (pcase (helix-linewise-selection-p)
+        ('line (backward-char))))
     (move-end-of-line nil)
     (newline-and-indent)
     (set-marker (mark-marker) (point)))
@@ -481,9 +485,11 @@ Use visual line when `visual-line-mode' is active."
 
 ;; O
 (defun helix-open-above ()
-  "Insert a new line above point and switch to Insert state."
+  "Open new line above selection."
   (interactive)
   (helix-with-each-cursor
+    (when (use-region-p)
+      (helix-ensure-region-direction -1))
     (move-beginning-of-line nil)
     (newline)
     (forward-line -1)
@@ -495,24 +501,32 @@ Use visual line when `visual-line-mode' is active."
 
 ;; ] SPC
 (defun helix-add-blank-line-below (count)
-  "Add COUNT blank lines below."
+  "Add COUNT blank lines below selection."
   (interactive "p")
-  (save-excursion
-    (let (deactivate-mark)
-      (move-end-of-line nil)
-      (newline count))))
+  (let ((deactivate-mark nil)
+        (point (point))
+        region)
+    (when (use-region-p)
+      (setq region (list (region-beginning) (region-end) (helix-region-direction)))
+      (helix-ensure-region-direction 1)
+      (pcase (helix-linewise-selection-p)
+        ('line (backward-char))))
+    (move-end-of-line nil)
+    (newline count)
+    (if region
+        (apply #'helix-set-region region)
+      (goto-char point))))
 
 (put 'helix-add-blank-line-below 'multiple-cursors t)
 
 ;; [ SPC
 (defun helix-add-blank-line-above (count)
-  "Add COUNT blank lines above."
+  "Add COUNT blank lines above selection."
   (interactive "p")
   (helix-save-region
-    (let (deactivate-mark)
-      (helix-ensure-region-direction -1)
-      (move-beginning-of-line nil)
-      (newline count))))
+    (helix-ensure-region-direction -1)
+    (move-beginning-of-line nil)
+    (newline count)))
 
 (put 'helix-add-blank-line-above 'multiple-cursors t)
 
@@ -613,7 +627,7 @@ If no selection — delete COUNT chars after point."
     (if-let* ((kill (current-kill 0 :do-not-move))
               (last-char (elt kill (1- (length kill))))
               ((eq ?\n last-char)) ;; Kill entry ends with newline?
-              ((not (helix-linewise-selection-p))))
+              ((not (eq (helix-linewise-selection-p) 'line))))
         (progn
           (forward-line 1)
           (set-mark (point))
@@ -894,12 +908,10 @@ entered regexp withing current selections."
                  (-each cursors #'helix-restore-fake-cursor-in-buffer)
                  (helix-restore-point-from-fake-cursor real-cursor)))))
         (t
-         (let ((dir (helix-region-direction))
-               (beg (region-beginning))
-               (end (region-end)))
+         (let ((region (list (region-beginning) (region-end) (helix-region-direction))))
            (or (helix-select-interactively-in (region-bounds) invert)
                ;; Restore original region
-               (helix-set-region beg end dir))))))
+               (apply #'helix-set-region region))))))
 
 (put 'helix-select-regex 'multiple-cursors 'false)
 
@@ -1767,7 +1779,7 @@ lines and reindent the region."
              (end (-doto (make-marker)
                     (set-marker-insertion-type t)
                     (set-marker (region-end))))
-             (linewise? (helix-linewise-selection-p)))
+             (linewise? (eq (helix-linewise-selection-p) 'line)))
         (when linewise?
           (setq left  (s-trim left)
                 right (s-trim right)))
