@@ -9,17 +9,23 @@
 ;;
 ;;; Commentary:
 ;;
-;; The core functionality for multiple cursors. This module is heavily inspired
-;; by `multiple-cursors.el' package from Magnar Sveen.
+;; The core functionality for multiple cursors. The code is inspired by
+;; `multiple-cursors.el' package from Magnar Sveen.
 ;;
-;; Command is first executed for real cursor by Emacs command loop and then in
-;; `post-command-hook' it executed by all fake cursors. Fake cursor is an
-;; overlay that emulates cursor and stores inside point, mark, kill-ring and
-;; some other variables (full list is in `helix-fake-cursor-specific-vars').
-;; Executing command for fake cursor looks as follows: set point and mark to
-;; positions saved in fake cursor overlay, restore all variables from it,
-;; execute command in this environment, store point, mark and new state into
-;; fake cursor overlay.
+;; How multiple cursors works internally. Command is firstly executed for real
+;; cursor by Emacs command loop. Then in `post-command-hook' it executed for all
+;; fake cursors. Fake cursor is an overlay that emulates cursor and stores
+;; inside point, mark, kill-ring and some other variables (full list is in
+;; `helix-fake-cursor-specific-vars'). Executing command for fake cursor looks
+;; as follows: set point and mark to positions saved in fake cursor overlay,
+;; restore all variables from it, execute command in this environment, store
+;; point, mark and new state into fake cursor overlay.
+;;
+;; Each command should has `multiple-cursors' symbol property. If it is `t' —
+;; command will be execute for all cursors. Any other value except `nil' — it
+;; will be executed only once for real (main) cursor. If `multiple-cursors'
+;; property is `nil' i.e. absent user will be prompted how execute this command
+;; and choosen value is permanently stored in `helix-whitelist-file' file.
 ;;
 ;; ID 0 is always corresponding to real cursor.
 
@@ -205,7 +211,7 @@ The current state is stored in the overlay for later retrieval."
 CURSOR-OR-ID can be either:
 - fake cursor overlay;
 - fake cursor ID;
-- nil or 0 — real point and mark will be set.
+- nil or 0 — real cursor (point) and mark will be set.
 
 If MARK is passed, for real cursor active region will be set,
 for a fake cursor overlay looking like active region between
@@ -214,11 +220,11 @@ POINT and MARK will be set."
     ((or 'nil 0)
      (goto-char point)
      (when mark (set-mark mark)))
-    ((and id (pred numberp))
+    ((and (pred numberp) id)
      (if-let* ((cursor (gethash id helix--cursors-table)))
          (helix-move-fake-cursor cursor point mark)
        (helix-create-fake-cursor point mark id)))
-    ((and cursor (pred helix-fake-cursor-p))
+    ((and (pred helix-fake-cursor-p) cursor)
      (helix-move-fake-cursor cursor point mark))))
 
 (defun helix-move-fake-cursor (cursor point &optional mark)
@@ -489,6 +495,7 @@ evaluate BODY, update fake CURSOR."
        (helix-update-fake-cursor-state ,cursor))))
 
 (defmacro helix-with-each-cursor (&rest body)
+  "Evaluate BODY for all cursors: real and fake ones."
   (declare (indent 0) (debug t))
   `(progn
      ;; First execute BODY for the fake cursors so that BODY can create new
@@ -511,14 +518,7 @@ evaluate BODY, update fake CURSOR."
   (setq helix--input-cache nil))
 
 (defun helix--execute-command-for-all-fake-cursors (command)
-  "Call COMMAND interactively for each fake cursor.
-
-Two lists of commands are used: the `run-once' list and the `run-for-all'
-list. If a command is in neither of these lists, the user will be prompted
-for the proper action and then the choice will be saved.
-
-Some commands are so unsupported that they are even prevented for
-the original cursor, to inform about the lack of support."
+  "Call COMMAND interactively for each fake cursor."
   (when helix-multiple-cursors-mode
     (cond ((and (symbolp command)
                 (get command 'helix-unsupported))
@@ -567,7 +567,7 @@ Restore it after BODY evaluation if it is still alive."
                 (helix-restore-point-from-fake-cursor (helix-first-fake-cursor))))
          (helix-maybe-disable-multiple-cursors-mode)))))
 
-;;; Minor mode
+;;; Multiple cursors minor mode
 
 ;;;###autoload
 (define-minor-mode helix-multiple-cursors-mode
@@ -820,7 +820,7 @@ from being executed when `helix-multiple-cursors-mode' is active."
                     (called-interactively-p 'any))
          (apply orig-fun args)))))
 
-;; Mark following commands to be execute for all cursors.
+;; Execute following commands only for ALL cursor.
 (mapc #'(lambda (command)
           (put command 'multiple-cursors t))
       '(comment-dwim         ;; gc
@@ -908,7 +908,7 @@ from being executed when `helix-multiple-cursors-mode' is active."
         smart-up
         smart-down))
 
-;; Mark following commands to be execute only for main cursor.
+;; Execute following commands only for MAIN cursor.
 (mapc #'(lambda (command)
           (put command 'multiple-cursors 'false))
       '(helix-normal-state  ;; ESC

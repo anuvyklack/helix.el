@@ -86,8 +86,7 @@ in the command loop, and the fake cursors can pick up on those instead."
                    indent-region        ;; =
                    indent-rigidly-left  ;; >
                    indent-rigidly-right ;; <
-                   comment-dwim         ;; gc
-                   comment-or-uncomment-region))
+                   comment-dwim))       ;; gc
   (eval `(helix-define-advice ,command (:around (orig-fun &rest args))
            "Don't deactivate region."
            (let (deactivate-mark)
@@ -104,15 +103,15 @@ in the command loop, and the fake cursors can pick up on those instead."
   (put 'keypad-describe-key 'multiple-cursors 'false)
 
   (helix-keymap-set nil 'normal
-    "SPC"      #'keypad
-    "C-h k"    #'keypad-describe-key
-    "<f1> k"   #'keypad-describe-key
-    "<help> k" #'keypad-describe-key)
+    "SPC"      'keypad
+    "C-h k"    'keypad-describe-key
+    "<f1> k"   'keypad-describe-key
+    "<help> k" 'keypad-describe-key)
   (helix-keymap-set nil 'motion
-    "SPC"      #'keypad
-    "C-h k"    #'keypad-describe-key
-    "<f1> k"   #'keypad-describe-key
-    "<help> k" #'keypad-describe-key))
+    "SPC"      'keypad
+    "C-h k"    'keypad-describe-key
+    "<f1> k"   'keypad-describe-key
+    "<help> k" 'keypad-describe-key))
 
 ;;; Eldoc
 (with-eval-after-load 'eldoc
@@ -138,27 +137,26 @@ in the command loop, and the fake cursors can pick up on those instead."
                      'helix-till-char-forward    ;; t
                      'helix-till-char-backward)) ;; T
 
-;;; Edebug
+;;; Winner mode
+(with-eval-after-load 'winner
+  (helix-keymap-set helix-window-map nil
+    "u" #'winner-undo
+    "U" #'winner-redo))
 
+;;; Edebug
 (with-eval-after-load 'edebug
   (add-hook 'edebug-mode-hook #'helix-update-active-keymaps)
-  (keymap-unset edebug-mode-map "SPC")
-  (keymap-set edebug-mode-map "s" #'edebug-step-mode)
-  (keymap-unset edebug-mode-map "h")
-  (keymap-set edebug-mode-map "H" #'edebug-goto-here))
+  (keymap-unset edebug-mode-map "SPC") ; edebug-step-mode
+  (keymap-unset edebug-mode-map "h") ; edebug-goto-here
+  (helix-keymap-set edebug-mode-map nil
+    "s" #'edebug-step-mode
+    "H" #'edebug-goto-here
+    "C-c h" #'edebug-goto-here))
 
 ;;; Consult
-
 (with-eval-after-load 'consult
   (helix-cache-input consult--read)
   (put 'consult-yank-pop 'multiple-cursors t))
-
-;;; Lisp
-
-(add-hook 'lisp-mode-hook
-          #'(lambda ()
-              (helix-surround-add-pair ?` '("`" . "'"))
-              (helix-surround-add-pair ?' '("`" . "'"))))
 
 ;;; Help
 
@@ -173,6 +171,27 @@ in the command loop, and the fake cursors can pick up on those instead."
   (helix-keymap-set helpful-mode-map 'normal
     "q" #'quit-window)
   (put 'helpful-variable 'multiple-cursors 'false))
+
+;;; Special mode
+(helix-keymap-set special-mode-map nil ;; 'motion
+  "h" #'left-char
+  "j" #'next-line
+  "k" #'previous-line
+  "l" #'right-char)
+
+;;; Messages buffer
+(helix-set-initial-state 'messages-buffer-mode 'normal)
+
+;;; Corfu
+(with-eval-after-load 'corfu
+  (add-hook 'helix-insert-state-exit-hook #'corfu-quit))
+
+;;; Lisp mode
+
+(add-hook 'emacs-lisp-mode-hook #'helix-surround-emacs-lisp)
+(defun helix-surround-emacs-lisp ()
+  (helix-surround-add-pair ?` (cons "`" "'"))
+  (helix-surround-add-pair ?' (cons "`" "'")))
 
 ;;; Org mode
 
@@ -225,14 +244,14 @@ in the command loop, and the fake cursors can pick up on those instead."
           (match-end 2)
           (match-end 4))))
 
-(add-hook 'org-mode-hook
-          #'(lambda ()
-              (helix-surround-add-pair ?/ '("/" . "/") #'helix-surround--4-bounds-of-org-emphasis)
-              (helix-surround-add-pair ?* '("*" . "*") #'helix-surround--4-bounds-of-org-emphasis)
-              (helix-surround-add-pair ?_ '("_" . "_") #'helix-surround--4-bounds-of-org-emphasis)
-              (helix-surround-add-pair ?+ '("+" . "+") #'helix-surround--4-bounds-of-org-emphasis)
-              (helix-surround-add-pair ?= '("=" . "=") #'helix-surround--4-bounds-of-org-verbatim)
-              (helix-surround-add-pair ?~ '("~" . "~") #'helix-surround--4-bounds-of-org-verbatim)))
+(add-hook 'org-mode-hook #'helix-surround-org-mode)
+(defun helix-surround-org-mode ()
+  (helix-surround-add-pair ?/ (cons "/" "/") #'helix-surround--4-bounds-of-org-emphasis)
+  (helix-surround-add-pair ?* (cons "*" "*") #'helix-surround--4-bounds-of-org-emphasis)
+  (helix-surround-add-pair ?_ (cons "_" "_") #'helix-surround--4-bounds-of-org-emphasis)
+  (helix-surround-add-pair ?+ (cons "+" "+") #'helix-surround--4-bounds-of-org-emphasis)
+  (helix-surround-add-pair ?= (cons "=" "=") #'helix-surround--4-bounds-of-org-verbatim)
+  (helix-surround-add-pair ?~ (cons "~" "~") #'helix-surround--4-bounds-of-org-verbatim))
 
 (with-eval-after-load 'org
   (helix-keymap-set org-mode-map 'normal
@@ -259,11 +278,6 @@ in the command loop, and the fake cursors can pick up on those instead."
     "m ~"   #'helix-mark-inner-org-verbatim
     "m i ~" #'helix-mark-inner-org-verbatim
     "m a ~" #'helix-mark-an-org-verbatim))
-
-;;; Corfu
-
-(with-eval-after-load 'corfu
-  (add-hook 'helix-insert-state-exit-hook #'corfu-quit))
 
 (provide 'helix-integration)
 ;;; helix-integration.el ends here

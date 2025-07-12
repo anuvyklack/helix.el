@@ -35,15 +35,15 @@
 (defvar edebug-mode-map)
 (declare-function helix-remove-all-fake-cursors "helix-commands")
 
-;;; Helix minor mode
+;;; Helix mode
 
 (defun helix--pre-commad-hook ()
   (unless helix--executing-command-for-fake-cursor
-    ;; FIXME: Need to intercept into Edebug: when in Edebug `this-command'
-    ;; in `pre-command-hook' is the Edebugs command you invoced, and then
-    ;; Edebug set it to correct value inside somewhere inside this Edebug
-    ;; command. So we need to find where does it happen and add advice to
-    ;; set `helix-this-command' to this value.
+    ;; FIXME: Need to intercept into Edebug mode.
+    ;; When in Edebug `this-command' in `pre-command-hook' is the Edebugs
+    ;; command you invoked, and then Edebug set it to the function you debuging
+    ;; somewhere inside this Edebug command. So we need to find where does it
+    ;; happen and add advice to set `helix-this-command' to this value.
     (unless  edebug-mode ;; this is bad termporary solution
       (setq helix-this-command this-command))
     (when (and (symbolp this-command)
@@ -59,9 +59,9 @@
                ;; We need to handle these! They will generate actual commands
                ;; that are also run in the command loop.
                (functionp helix-this-command))
-      ;; Wrap in `condition-case' to protect this function from being removed
-      ;; from `pre-command-hook', because the function throwing the error is
-      ;; unconditionally removed from `pre-command-hook'.
+      ;; Wrap in `condition-case' to protect `helix--post-command-hook' from
+      ;; being removed from `post-command-hook', because the function throwing
+      ;; the error is unconditionally removed from `post-command-hook'.
       (condition-case error
           (helix--execute-command-for-all-fake-cursors helix-this-command)
         (error
@@ -108,7 +108,7 @@
           (add-hook 'minibuffer-setup-hook #'helix-local-mode))
         (add-hook 'window-configuration-change-hook #'helix-update-cursor))
     ;; else
-    (cl-loop for (fun _where advice) in helix--advices
+    (cl-loop for (fun _how advice) in helix--advices
              do (advice-remove fun advice))
     (remove-hook 'minibuffer-setup-hook #'helix-local-mode)
     (remove-hook 'window-configuration-change-hook #'helix-update-cursor)))
@@ -123,6 +123,14 @@
 
 (helix-define-advice select-window (:after (&rest _))
   (helix-update-cursor))
+
+;; (helix-define-advice use-global-map (:after (&rest _))
+;;   "Refresh Helix keymaps."
+;;   (helix-update-active-keymaps))
+;;
+;; (helix-define-advice use-local-map (:after (&rest _))
+;;   "Refresh Helix keymaps."
+;;   (helix-update-active-keymaps))
 
 ;;; Helix states
 
@@ -189,9 +197,10 @@ current buffer, than Helix will start in %s." state-name))
                                       ,(format "Hooks to run on exit %s." state-name))
                                (dolist (func ',exit-hook-value)
                                  (add-hook ',exit-hook func)))))
-       ;; state function
+       ;; State variable
        (helix-defvar-local ,variable nil
          ,(format "Non nil if Helix is in %s." state-name))
+       ;; State function
        (defun ,statefun (&optional arg)
          ,(format "Switch Helix into %s.
 When ARG is non-positive integer and Helix is in %s — disable it.\n\n%s"
@@ -376,7 +385,7 @@ For example:
       \"b\" #\\='bar)"
   (declare (indent defun))
   (when (and state (not (helix-state-p state)))
-    (user-error "Helix state `%s' not known to be defined" state))
+    (user-error "Helix state `%s' is not known to be defined" state))
   (unless (cl-evenp (length rest))
     (user-error "The number of `key definition' pairs is not even"))
   (let ((map (cond ((and keymap state)
@@ -403,6 +412,9 @@ For example:
       keymap))
 
 ;;; Cursor shape and color
+
+;; set-window-cursor-type
+;; window-cursor-type
 
 (defun helix-update-cursor ()
   "Update the cursor for current Helix STATE in current buffer."

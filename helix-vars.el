@@ -85,12 +85,16 @@ a list of the above."
 
 (defface helix-normal-state-fake-cursor
   '((t (:inverse-video t)))
+  ;; '((t (:foreground "white"
+  ;;       :background "gray55")))
   "The face used for fake cursors when Helix is in Normal state."
   :group 'helix)
 
 (defface helix-insert-state-fake-cursor
   '((t (:foreground "white"
-        :background "SkyBlue3")))
+        :background "SkyBlue3"
+        ;; :background "#458588"
+        )))
   "The face used for fake cursors when Helix is in Insert state."
   :group 'helix)
 
@@ -166,8 +170,8 @@ For these commands:
 - Overlapping selections will be merged."
   :type '(list symbol)
   :group 'helix
-  :set #'(lambda (sym value)
-           (set-default sym value)
+  :set #'(lambda (symbol value)
+           (set-default symbol value)
            (mapc #'(lambda (cmd)
                      (put cmd 'helix-deactivate-mark t)
                      (put cmd 'helix-merge-regions 'extend-selection))
@@ -303,8 +307,7 @@ the list of categories."
     ;; full-width alphanumeric
     (?A . ?r) (?A . ?k) (?A . ?G)
     ;; full-width Greek
-    (?G . ?r) (?G . ?k) (?G . ?A)
-    )
+    (?G . ?r) (?G . ?k) (?G . ?A))
   "List of pair (cons) of categories to determine word boundary
 used in `helix-cjk-word-boundary-p'. See the documentation of
 `word-combining-categories'. Use `describe-categories' to see the
