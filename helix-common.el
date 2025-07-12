@@ -73,7 +73,8 @@ add/remove advice when `helix-mode' is toggled on or off.
                        (set-marker-insertion-type t)
                        (set-marker (region-beginning))))
                (,end (set-marker (make-marker) (region-end)))
-               (,dir (helix-region-direction)))
+               (,dir (helix-region-direction))
+               (deactivate-mark nil))
            ,@body
            (helix-set-region ,beg ,end ,dir)
            (set-marker ,beg nil)
