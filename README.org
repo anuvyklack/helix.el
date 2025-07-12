@@ -1,5 +1,7 @@
 #+title: Helix Emulation Layer
 
+* Helix Emulation Layer
+
 [[https://helix-editor.com/][Helix Editor]] emulation layer. It also can be called "Hell" (Helix Emulation Layer)
 to continue the tradition started by [[https://github.com/emacs-evil/evil][Evil]].
 
@@ -66,7 +68,6 @@ in Emacs.
 
 ** Commands that are not implemented
 
-- =<= / =>= (indent ) — On their way.
 - =.= (repeat) — Need to decide what it should repeat.
 - =r= — replace
 - =C-i= / =C-o=, =C-s= — jumplist
@@ -75,10 +76,10 @@ in Emacs.
 
 ** Acknowledgments
 
-Helix depends on [[https://github.com/magnars/dash.el][dash.el]], [[https://github.com/joddie/pcre2el][pcre2el]], [[https://github.com/abo-abo/avy][avy]] and [[https://github.com/redguardtoo/evil-matchit][evil-matchit]] wonderful packages.
+Helix depends on [[https://github.com/magnars/dash.el][dash.el]], [[https://github.com/joddie/pcre2el][pcre2el]], and [[https://github.com/abo-abo/avy][avy]] wonderful packages.
 
-Helix is heavily inspired by: [[https://github.com/emacs-evil/evil][evil]], [[https://github.com/magnars/multiple-cursors.el][multiple-cursors.el]], [[https://github.com/meow-edit/meow][meow]], [[https://github.com/cute-jumper/embrace.el][emmbace.el]],
-[[https://github.com/mkleehammer/surround][surround]], [[https://github.com/aome510/kak.el][kak.el]], [[https://github.com/doomemacs/doomemacs][doomemacs]], [[https://github.com/bbatsov/crux][crux]]
+Helix is heavily inspired by: [[https://github.com/emacs-evil/evil][evil]], [[https://github.com/magnars/multiple-cursors.el][multiple-cursors.el]], [[https://github.com/meow-edit/meow][meow]], [[https://github.com/mkleehammer/surround][surround]],
+[[https://github.com/aome510/kak.el][kak.el]], [[https://github.com/doomemacs/doomemacs][doomemacs]], [[https://github.com/bbatsov/crux][crux]].
 
 You are welcome to go and give them all a star!
 

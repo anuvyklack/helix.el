@@ -124,6 +124,14 @@
 (helix-define-advice select-window (:after (&rest _))
   (helix-update-cursor))
 
+;; (helix-define-advice use-global-map (:after (&rest _))
+;;   "Refresh Helix keymaps."
+;;   (helix-update-active-keymaps))
+;;
+;; (helix-define-advice use-local-map (:after (&rest _))
+;;   "Refresh Helix keymaps."
+;;   (helix-update-active-keymaps))
+
 ;;; Helix states
 
 (defmacro helix-define-state (state doc &rest body)
@@ -189,9 +197,10 @@ current buffer, than Helix will start in %s." state-name))
                                       ,(format "Hooks to run on exit %s." state-name))
                                (dolist (func ',exit-hook-value)
                                  (add-hook ',exit-hook func)))))
-       ;; state function
+       ;; State variable
        (helix-defvar-local ,variable nil
          ,(format "Non nil if Helix is in %s." state-name))
+       ;; State function
        (defun ,statefun (&optional arg)
          ,(format "Switch Helix into %s.
 When ARG is non-positive integer and Helix is in %s — disable it.\n\n%s"
@@ -403,6 +412,9 @@ For example:
       keymap))
 
 ;;; Cursor shape and color
+
+;; set-window-cursor-type
+;; window-cursor-type
 
 (defun helix-update-cursor ()
   "Update the cursor for current Helix STATE in current buffer."

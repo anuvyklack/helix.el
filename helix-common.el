@@ -793,8 +793,7 @@ negative number — at the beginning."
   "Exchange point and mark if region direction mismatch DIRECTION.
 DIRECTION should be 1 or -1."
   (when (use-region-p)
-    (unless (eql (helix-region-direction)
-                 direction)
+    (unless (eql direction (helix-region-direction))
       (helix-exchange-point-and-mark))))
 
 (defun helix-undo-command-p (command)

@@ -160,12 +160,13 @@
   "z b" #'helix-smooth-scroll-line-to-bottom
 
   ;; Misc
-  "g c" #'comment-dwim
-  "g f" #'find-file-at-point
-  "g x" #'browse-url-at-point
-  "g q" #'fill-region
-  "] b" #'next-buffer
-  "[ b" #'previous-buffer
+  "C-o"   #'pop-to-mark-command
+  "g c"   #'comment-dwim
+  "g f"   #'find-file-at-point
+  "g x"   #'browse-url-at-point
+  "g q"   #'fill-region
+  "] b"   #'next-buffer
+  "[ b"   #'previous-buffer
   "] SPC" #'helix-add-blank-line-below
   "[ SPC" #'helix-add-blank-line-above)
 
@@ -318,8 +319,6 @@
 ;;; Motion state
 
 (helix-keymap-set nil 'motion
-  "M-u" #'universal-argument
-
   "C-w" 'helix-window-map
   "<backspace>" #'execute-extended-command
 

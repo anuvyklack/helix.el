@@ -204,6 +204,7 @@ RANGES is a list of cons cells with positions (START . END)."
       (helix-pcre-to-elisp pattern)
     (user-error "Register / is empty")))
 
+;; FIXME: Cursor in the minibuffer blinks on each input.
 (defun helix-search-interactively (&optional direction)
   "DIRECTION should be either 1 or -1."
   (unless direction (setq direction 1))
