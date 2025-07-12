@@ -283,18 +283,18 @@ functions."
 Works only with THINGs, that returns the count of steps left to move,
 such as `paragraph'."
   (-when-let ((thing-beg . thing-end) (bounds-of-thing-at-point thing))
-    (-let (((beg . end)
-            (or (progn
-                  (goto-char thing-end)
-                  (-if-let ((_ . space-end)
-                            (helix-bounds-of-complement-of-thing-at-point thing))
-                      (cons thing-beg space-end)))
-                (progn
-                  (goto-char thing-beg)
-                  (-if-let ((space-beg . _)
-                            (helix-bounds-of-complement-of-thing-at-point thing))
-                      (cons space-beg thing-end)))
-                (cons thing-beg thing-end))))
+    (-let [(beg . end)
+           (or (progn
+                 (goto-char thing-end)
+                 (-if-let ((_ . space-end)
+                           (helix-bounds-of-complement-of-thing-at-point thing))
+                     (cons thing-beg space-end)))
+               (progn
+                 (goto-char thing-beg)
+                 (-if-let ((space-beg . _)
+                           (helix-bounds-of-complement-of-thing-at-point thing))
+                     (cons space-beg thing-end)))
+               (cons thing-beg thing-end))]
       (helix-set-region beg end))))
 
 (defun helix-bounds-of-complement-of-thing-at-point (thing)
@@ -415,7 +415,7 @@ after RIGHT."
                      string-or-comment-bounds
                      nil t)))
       ;; If inside comment or string use manual algorithm.
-      (-let (((beg _ _ end) bounds))
+      (-let [(beg _ _ end) bounds]
         (cons beg end))
     ;; Else if not or nothing have found — go out ...
     (when string-or-comment-bounds

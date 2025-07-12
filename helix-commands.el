@@ -832,7 +832,7 @@ is active, otherwise logical lines."
                (goto-char (cdr (bounds-of-thing-at-point line))) ; right end
                t)))
           (t ;; no region
-           (-let (((beg . end) (bounds-of-thing-at-point line)))
+           (-let [(beg . end) (bounds-of-thing-at-point line)]
              (set-mark beg)
              (goto-char end)
              t)))))
@@ -850,14 +850,14 @@ Return t if does anything, otherwise return nil."
       ;; new END
       (goto-char end)
       (unless (helix-bolp)
-        (-let (((line-beg . _) (bounds-of-thing-at-point line)))
+        (-let [(line-beg . _) (bounds-of-thing-at-point line)]
           (unless (< line-beg beg)
             (setq end line-beg
                   result t))))
       ;; new BEG
       (goto-char beg)
       (unless (helix-bolp)
-        (-let (((_ . line-end) (bounds-of-thing-at-point line)))
+        (-let [(_ . line-end) (bounds-of-thing-at-point line)]
           (unless (<= end line-end)
             (setq beg line-end
                   result t))))
@@ -1267,24 +1267,24 @@ already there."
   "Inner implementation of `helix-mark-a-word' and `helix-mark-a-WORD' commands."
   (let ((thing (if bigword? 'helix-WORD 'helix-word)))
     (-when-let ((thing-beg . thing-end) (bounds-of-thing-at-point thing))
-      (-let (((beg . end)
-              (or (progn
-                    (goto-char thing-end)
-                    (helix-with-restriction (line-beginning-position) (line-end-position)
-                      (-if-let ((_ . space-end)
-                                (helix-bounds-of-complement-of-thing-at-point thing))
-                          (cons thing-beg space-end))))
-                  (progn
-                    (goto-char thing-beg)
-                    (helix-with-restriction
-                        (save-excursion
-                          (back-to-indentation)
-                          (point))
-                        (line-end-position)
-                      (-if-let ((space-beg . _)
-                                (helix-bounds-of-complement-of-thing-at-point thing))
-                          (cons space-beg thing-end))))
-                  (cons thing-beg thing-end))))
+      (-let [(beg . end)
+             (or (progn
+                   (goto-char thing-end)
+                   (helix-with-restriction (line-beginning-position) (line-end-position)
+                     (-if-let ((_ . space-end)
+                               (helix-bounds-of-complement-of-thing-at-point thing))
+                         (cons thing-beg space-end))))
+                 (progn
+                   (goto-char thing-beg)
+                   (helix-with-restriction
+                       (save-excursion
+                         (back-to-indentation)
+                         (point))
+                       (line-end-position)
+                     (-if-let ((space-beg . _)
+                               (helix-bounds-of-complement-of-thing-at-point thing))
+                         (cons space-beg thing-end))))
+                 (cons thing-beg thing-end))]
         (helix-set-region beg end)))))
 
 ;; mis
@@ -1300,20 +1300,20 @@ already there."
   (interactive)
   (let ((thing 'helix-sentence))
     (-when-let ((thing-beg . thing-end) (bounds-of-thing-at-point thing))
-      (-let (((beg . end)
-              (or (progn
-                    (goto-char thing-end)
-                    (helix-with-restriction (line-beginning-position) (line-end-position)
-                      (-if-let ((_ . space-end)
-                                (helix-bounds-of-complement-of-thing-at-point thing))
-                          (cons thing-beg space-end))))
-                  (progn
-                    (goto-char thing-beg)
-                    (helix-with-restriction (line-beginning-position) (line-end-position)
-                      (-if-let ((space-beg . _)
-                                (helix-bounds-of-complement-of-thing-at-point thing))
-                          (cons space-beg thing-end))))
-                  (cons thing-beg thing-end))))
+      (-let [(beg . end)
+             (or (progn
+                   (goto-char thing-end)
+                   (helix-with-restriction (line-beginning-position) (line-end-position)
+                     (-if-let ((_ . space-end)
+                               (helix-bounds-of-complement-of-thing-at-point thing))
+                         (cons thing-beg space-end))))
+                 (progn
+                   (goto-char thing-beg)
+                   (helix-with-restriction (line-beginning-position) (line-end-position)
+                     (-if-let ((space-beg . _)
+                               (helix-bounds-of-complement-of-thing-at-point thing))
+                         (cons space-beg thing-end))))
+                 (cons thing-beg thing-end))]
         (helix-set-region beg end)))))
 
 (put 'helix-mark-a-sentence 'multiple-cursors t)
@@ -1486,7 +1486,7 @@ already there."
                         last-command-event
                       (get last-command-event 'ascii-character)))
               (bounds (helix-surround--4-bounds char)))
-    (-let (((_ beg end _) bounds))
+    (-let [(_ beg end _) bounds]
       (helix-set-region beg end))))
 
 (put 'helix-mark-inner-surround 'multiple-cursors t)
@@ -1498,7 +1498,7 @@ already there."
                         last-command-event
                       (get last-command-event 'ascii-character)))
               (bounds (helix-surround--4-bounds char)))
-    (-let (((beg _ _ end) bounds))
+    (-let [(beg _ _ end) bounds]
       (helix-set-region beg end))))
 
 (put 'helix-mark-a-surround 'multiple-cursors t)
@@ -1609,7 +1609,7 @@ keys to repeat motion forward/backward."
                  (or (eq search-invisible t)
                      (not (-let [(beg . end) (helix-match-bounds)]
                             (isearch-range-invisible beg end)))))
-        (-let (((beg . end) (helix-match-bounds)))
+        (-let [(beg . end) (helix-match-bounds)]
           ;; Push mark on first invocation.
           (unless (or (memq last-command '(helix-search-next helix-search-previous))
                       (helix-search--keep-highlight last-command))
@@ -1792,7 +1792,7 @@ lines and reindent the region."
   (interactive)
   (when-let* ((key (read-char "Delete pair: "))
               (bounds (helix-surround--4-bounds key)))
-    (-let (((left-beg left-end right-beg right-end) bounds))
+    (-let [(left-beg left-end right-beg right-end) bounds]
       (delete-region right-beg right-end)
       (delete-region left-beg left-end))))
 
