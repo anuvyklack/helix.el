@@ -169,7 +169,7 @@ If INVERT is non-nil return list with complements of ranges that match REGEXP."
 RANGES is a list of cons cells with positions (START . END)."
   (when ranges
     (let (result)
-      (-let (((r-start . r-end) (car ranges)))
+      (-let [(r-start . r-end) (car ranges)]
         (unless (eql r-start start)
           (push (cons start r-start) result)
           (setq start r-end)))
@@ -243,7 +243,7 @@ RANGES is a list of cons cells with positions (START . END)."
         (if-let* (((not (string-empty-p pattern)))
                   (regexp (helix-pcre-to-elisp pattern))
                   ((helix-re-search-with-wrap regexp dir)))
-            (-let* (((beg . end) (helix-match-bounds)))
+            (-let [(beg . end) (helix-match-bounds)]
               (goto-char (if (< dir 0) beg end))
               (if helix-search--overlay
                   (move-overlay helix-search--overlay beg end)

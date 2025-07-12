@@ -354,7 +354,7 @@ RANGES is a list of cons cells (START . END) with bounds of regions.
 The real region will be set for the first range in RANGES, and fake one
 for others."
   (when ranges
-    (-let (((mark . point) (car ranges)))
+    (-let [(mark . point) (car ranges)]
       (set-mark mark)
       (goto-char point))
     (cl-loop for (mark . point) in (cdr ranges)
@@ -716,7 +716,7 @@ and which for all to `helix-whitelist-file' file."
             id delete real-cursor?)
         (dolist (region-data group-or-overlapping-regions)
           ;; rid - region ID, b - region beginning, e - region end
-          (-let (((rid b e) region-data))
+          (-let [(rid b e) region-data]
             (when (< b beg)
               (setq beg b)
               (when (< dir 0)
@@ -759,7 +759,7 @@ cursor."
         current-group
         (current-end (point-min)))
     (dolist (item alist)
-      (-let (((_ start end) item))
+      (-let [(_ start end) item]
         (if (< start current-end)
             (push item current-group)
           ;; else
