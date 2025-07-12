@@ -552,12 +552,7 @@ Use visual line when `visual-line-mode' is active."
 If no selection — delete COUNT chars before point."
   (interactive "p")
   (if (use-region-p)
-      (pcase (helix-linewise-selection-p)
-        ('line (helix-copy-line)
-               (delete-region (region-beginning) (region-end)))
-        (_
-         (kill-region nil nil t)))
-    ;; else
+      (kill-region nil nil t)
     (delete-char (- count)))
   (helix-extend-selection -1))
 
@@ -603,9 +598,7 @@ If no selection — delete COUNT chars after point."
     (let ((beg (region-beginning))
           (end (region-end))
           (deactivate-mark nil))
-      (pcase (helix-linewise-selection-p)
-        ('line (helix-copy-line))
-        (_ (copy-region-as-kill beg end)))
+      (copy-region-as-kill beg end)
       (pulse-momentary-highlight-region beg end)
       (message "Copied into kill-ring"))))
 
@@ -616,8 +609,20 @@ If no selection — delete COUNT chars after point."
   "Paste after selection."
   (interactive)
   (helix-ensure-region-direction 1)
-  ;; `yank' sets `this-command' to `yank' internally
-  (yank))
+  (let ((deactivate-mark nil))
+    (if-let* ((kill (current-kill 0 :do-not-move))
+              (last-char (elt kill (1- (length kill))))
+              ((eq ?\n last-char)) ;; Kill entry ends with newline?
+              ((not (helix-linewise-selection-p))))
+        (progn
+          (forward-line 1)
+          (set-mark (point))
+          ;; `yank' sets `this-command' to `yank' internally, so we don't have to
+          (yank))
+      ;; else
+      (set-mark (point))
+      (yank)))
+  (activate-mark))
 
 (put 'helix-paste-after 'multiple-cursors t)
 
@@ -626,8 +631,11 @@ If no selection — delete COUNT chars after point."
   "Paste before selection."
   (interactive)
   (helix-ensure-region-direction -1)
-  ;; `yank' sets `this-command' to `yank' internally
-  (yank))
+  (let ((deactivate-mark nil))
+    (helix-beginning-of-line)
+    (set-mark (point))
+    ;; `yank' sets `this-command' to `yank' internally, so we don't have to
+    (yank)))
 
 (put 'helix-paste-before 'multiple-cursors t)
 

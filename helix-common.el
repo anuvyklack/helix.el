@@ -609,48 +609,6 @@ balanced expressions."
                       ((< (point) (cdr bounds))))
                 bounds)))))))
 
-;;; Paste
-
-(defun helix-copy-line ()
-  "Copy selection as line into `kill-ring'."
-  (interactive)
-  (let* ((beg (region-beginning))
-         (end (region-end))
-         (text (filter-buffer-substring beg end))
-         ;; (yank-handler (list #'helix-yank-line-handler nil t))
-         (yank-handler (list #'helix-yank-line-handler)))
-    ;; Ensure the text ends with a newline. This is required
-    ;; if the deleted lines were the last lines in the buffer.
-    (when (or (zerop (length text))
-              (/= (aref text (1- (length text))) ?\n))
-      (setq text (concat text "\n")))
-    (put-text-property 0 (length text) 'yank-handler yank-handler text)
-    (kill-new text)))
-
-(defun helix-yank-line-handler (text)
-  "Insert the TEXT linewise."
-  (pcase helix-this-command ;; real-this-command
-    ('helix-paste-before (helix-beginning-of-line)
-                         (set-marker (mark-marker) (point))
-                         (insert text))
-    ((and 'helix-paste-after
-          (guard (not (helix-linewise-selection-p))))
-     (helix-end-of-line)
-     (insert "\n")
-     (set-mark (point))
-     (insert text)
-     (delete-char -1)) ; delete the last newline
-    (_ (insert text))))
-
-(helix-define-advice yank (:around (orig-fun &rest args))
-  "Correctly set region after paste."
-  (let ((old-point (point))
-        (old-mark (or (mark t) (point)))
-        (deactivate-mark nil))
-    (apply orig-fun args)
-    (when (= (mark-marker) old-mark)
-      (set-mark old-point))))
-
 ;;; Utils
 
 (defun helix-bolp ()
