@@ -622,21 +622,7 @@ If no selection — delete COUNT chars after point."
 (defun helix-paste-after ()
   "Paste after selection."
   (interactive)
-  (helix-ensure-region-direction 1)
-  (let ((deactivate-mark nil))
-    (if-let* ((kill (current-kill 0 :do-not-move))
-              (last-char (elt kill (1- (length kill))))
-              ((eq ?\n last-char)) ;; Kill entry ends with newline?
-              ((not (eq (helix-linewise-selection-p) 'line))))
-        (progn
-          (forward-line 1)
-          (set-mark (point))
-          ;; `yank' sets `this-command' to `yank' internally, so we don't have to
-          (yank))
-      ;; else
-      (set-mark (point))
-      (yank)))
-  (activate-mark))
+  (helix-paste 1))
 
 (put 'helix-paste-after 'multiple-cursors t)
 
@@ -644,12 +630,7 @@ If no selection — delete COUNT chars after point."
 (defun helix-paste-before ()
   "Paste before selection."
   (interactive)
-  (helix-ensure-region-direction -1)
-  (let ((deactivate-mark nil))
-    (helix-beginning-of-line)
-    (set-mark (point))
-    ;; `yank' sets `this-command' to `yank' internally, so we don't have to
-    (yank)))
+  (helix-paste -1))
 
 (put 'helix-paste-before 'multiple-cursors t)
 
@@ -684,7 +665,7 @@ Like `helix-paste-pop' but with negative COUNT argument."
   (when (use-region-p)
     (let (deactivate-mark)
       (delete-region (region-beginning) (region-end))
-      (yank))))
+      (helix-yank))))
 
 (put 'helix-replace-with-kill-ring 'multiple-cursors t)
 
