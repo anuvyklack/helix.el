@@ -75,13 +75,6 @@ in the command loop, and the fake cursors can pick up on those instead."
 
 ;;; Selection (mark & region)
 
-(helix-define-advice push-mark (:around (orig-fun &rest args))
-  "Push point on the `mark-ring' instead of mark."
-  (let ((mark (or (mark t) (point))))
-    (set-marker (mark-marker) (point))
-    (apply orig-fun args)
-    (set-marker (mark-marker) mark)))
-
 (helix-define-advice pop-to-mark-command (:around (orig-fun))
   "When region is active, skip active mark and jump to one before it."
   (if (use-region-p)

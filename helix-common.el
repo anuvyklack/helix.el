@@ -610,6 +610,75 @@ balanced expressions."
                       ((< (point) (cdr bounds))))
                 bounds)))))))
 
+;;; Copy/paste
+
+(defun helix-push-mark (&optional position nomsg activate)
+  "Set mark to the POSITION and push it on the `mark-ring'.
+If NOMSG is nil show `Mark set' message in echo area."
+  (unless position (setq position (point)))
+  (let ((old (nth mark-ring-max mark-ring))
+        (history-delete-duplicates nil))
+    (add-to-history 'mark-ring
+                    (set-marker (make-marker) position)
+                    mark-ring-max t)
+    (when old
+      (set-marker old nil)))
+  (set-marker (mark-marker) (or position (point)) (current-buffer))
+  ;; Don't push the mark on the global mark ring if the last global
+  ;; mark pushed was in this same buffer.
+  (unless (and global-mark-ring
+               (eq (marker-buffer (car global-mark-ring)) (current-buffer)))
+    (let ((old (nth global-mark-ring-max global-mark-ring))
+          (history-delete-duplicates nil))
+      (add-to-history 'global-mark-ring
+                      (set-marker (make-marker) position)
+                      global-mark-ring-max t)
+      (when old
+        (set-marker old nil))))
+  (or nomsg executing-kbd-macro (> (minibuffer-depth) 0)
+      (message "Mark set"))
+  (when activate
+    (set-mark (mark t)))
+  nil)
+
+(defun helix-yank (&optional arg)
+  "Helix `yank' wrapper."
+  (interactive)
+  (cl-letf (((symbol-function 'push-mark) #'helix-push-mark)
+            (deactivate-mark nil))
+    ;; `yank' sets `this-command' to `yank' internally, so we don't have to
+    (yank arg)))
+
+(defun helix-paste (direction)
+  "Paste before/after selection depending on DIRECTION."
+  (let ((region-dir (if (use-region-p)
+                        (helix-region-direction)
+                      1)))
+    (helix-ensure-region-direction direction)
+    (when-let* ((kill (current-kill 0 :do-not-move))
+                (last-char (elt kill (1- (length kill))))
+                ((eq ?\n last-char)) ;; Kill entry ends with newline?
+                ((not (eq (helix-linewise-selection-p) 'line))))
+      (if (natnump direction)
+          (forward-line 1)
+        (forward-line 0)))
+    (helix-yank)
+    (activate-mark)
+    (helix-ensure-region-direction region-dir)))
+
+;; (helix-define-advice yank (:around (orig-fun &rest args))
+;;   "Correctly set region after paste."
+;;   (let ((old-point (point))
+;;         (old-mark (or (mark t) (point)))
+;;         (deactivate-mark nil))
+;;     (push-mark (point))
+;;     (set-marker (mark-marker) old-mark)
+;;     (cl-letf (((symbol-function 'push-mark) #'ignore))
+;;       (apply orig-fun args))
+;;     (when (eql (marker-position (mark-marker))
+;;                old-mark)
+;;       (set-mark old-point))))
+
 ;;; Utils
 
 (defun helix-bolp ()
