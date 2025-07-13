@@ -807,17 +807,15 @@ a hash key, to distinguish different calls of FN-NAME within one command.
 Calls with equal PROMPT or without it would be undistinguishable."
   `(helix-define-advice ,fn-name (:around (orig-fun &rest args) helix)
      "Cache the users input to use it with multiple cursors."
-     (if (not (bound-and-true-p helix-multiple-cursors-mode))
-         (apply orig-fun args)
-       (let* (;; Use PROMPT argument as a hash key to distinguish different
-              ;; calls of `read-char' like functions within one command.
-              (prompt (car-safe args))
-              (key (list ,(symbol-name fn-name) prompt))
-              (value (alist-get key helix--input-cache nil nil #'equal)))
-         (unless value
-           (setq value (apply orig-fun args))
-           (push (cons key value) helix--input-cache))
-         value))))
+     (if (bound-and-true-p helix-multiple-cursors-mode)
+         (let* (;; Use PROMPT argument as a hash key to distinguish different
+                ;; calls of `read-char' like functions within one command.
+                (prompt (car-safe args))
+                (key (list ,(symbol-name fn-name) prompt)))
+           (with-memoization (alist-get key helix--input-cache nil nil #'equal)
+             (apply orig-fun args)))
+       ;; else
+       (apply orig-fun args))))
 
 (defmacro helix-unsupported-command (command)
   "Adds command to list of unsupported commands and prevents it
