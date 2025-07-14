@@ -23,6 +23,8 @@
 (defvar helix-search--timer nil)
 (defvar helix-search--buffer nil)
 (defvar helix-search--point nil)
+(defvar helix-search--window-start nil)
+(defvar helix-search--window-end nil)
 (defvar helix-search--overlay nil "Main overlay that will become next search.")
 (defvar helix-search--direction nil "1 or -1.")
 (helix-defvar-local helix-search--hl nil "The `helix-highlight' object for interactive search sessions.")
@@ -208,6 +210,8 @@ RANGES is a list of cons cells with positions (START . END)."
   (unless direction (setq direction 1))
   (setq helix-search--buffer (current-buffer)
         helix-search--point (point)
+        helix-search--window-start (window-start)
+        helix-search--window-end (window-end)
         helix-search--direction direction
         helix-search--hl (helix-highlight-create :buffer (current-buffer)
                                                  :face 'helix-lazy-highlight))
@@ -234,10 +238,11 @@ RANGES is a list of cons cells with positions (START . END)."
 (defun helix-search--do-update ()
   (let ((pattern (minibuffer-contents-no-properties)))
     (with-selected-window (minibuffer-selected-window)
+      ;; (with-current-buffer helix-search--buffer)
       (let ((dir helix-search--direction)
             (hl helix-search--hl)
-            ;; Center point after jump to a search result if it is out of the
-            ;; screen.
+            ;; Center point after jump to a search result
+            ;; if it lands out of the screen.
             (scroll-conservatively 0))
         (goto-char helix-search--point)
         (if-let* (((not (string-empty-p pattern)))
@@ -248,22 +253,22 @@ RANGES is a list of cons cells with positions (START . END)."
               (if helix-search--overlay
                   (move-overlay helix-search--overlay beg end)
                 (setq helix-search--overlay
-                      (let ((ov (make-overlay beg end nil t nil)))
-                        (overlay-put ov 'face 'helix-region-face)
-                        (overlay-put ov 'priority 99)
-                        ov)))
+                      (-doto (make-overlay beg end nil t nil)
+                        (overlay-put 'face 'helix-region-face)
+                        (overlay-put 'priority 99))))
               (setf (helix-highlight-regexp hl) regexp)
-              (helix-highlight-update hl)
-              ;; Update the screen so that the temporary value for
-              ;; `scroll-conservatively' is taken into account.
-              (redisplay))
+              (helix-highlight-update hl))
           ;; else
           (when helix-search--overlay
             (delete-overlay helix-search--overlay))
           (helix-highlight-delete hl)
-          (let ((str "Search failed"))
-            (put-text-property 0 (length str) 'face 'error str)
-            (message "%s" str)))))))
+          (helix-echo "Search failed" 'error))
+        (when (and (<= helix-search--window-start (point) helix-search--window-end)
+                   (/= (window-start) helix-search--window-start))
+          (set-window-start nil helix-search--window-start))
+        ;; Update the screen so that the temporary value for
+        ;; `scroll-conservatively' is taken into account.
+        (redisplay)))))
 
 (defun helix-search--stop-session ()
   "Stop interactive select."
