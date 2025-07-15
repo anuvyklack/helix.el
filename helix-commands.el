@@ -1142,13 +1142,7 @@ at START-COLUMN, ends at END-COLUMN and consists of NUMBER-OF-LINES."
 (defun helix-rotate-selections-content-backward (count)
   "Rotate selections content backward COUNT times."
   (interactive "p")
-  (when (and helix-multiple-cursors-mode
-             (use-region-p))
-    (dotimes (_ count)
-      (helix-with-real-cursor-as-fake
-        (-> (helix-all-fake-cursors t)
-            (nreverse)
-            (helix--rotate-selections-content))))))
+  (helix--rotate-selections-content count :backward))
 
 (put 'helix-rotate-selections-content-backward 'multiple-cursors 'false)
 
@@ -1156,17 +1150,34 @@ at START-COLUMN, ends at END-COLUMN and consists of NUMBER-OF-LINES."
 (defun helix-rotate-selections-content-forward (count)
   "Rotate selections content forward COUNT times."
   (interactive "p")
-  (when (and helix-multiple-cursors-mode
-             (use-region-p))
-    (dotimes (_ count)
-      (helix-with-real-cursor-as-fake
-        (-> (helix-all-fake-cursors t)
-            (helix--rotate-selections-content))))))
+  (helix--rotate-selections-content count))
 
 (put 'helix-rotate-selections-content-forward 'multiple-cursors 'false)
 
-(defun helix--rotate-selections-content (cursors)
-  "Rotate regions content for all CURSORS in the order they are in list."
+(defun helix--rotate-selections-content (count &optional backward)
+  (when (and helix-multiple-cursors-mode
+             (use-region-p))
+    (let ((dir (helix-region-direction)))
+      ;; To correctly rotate the content of adjacent selections, we all
+      ;; regions need to have negative direction.  This is due to marker
+      ;; insertion type of point and mark markers of fake cursor (see
+      ;; `set-marker-insertion-type'). Point-marker insertion type is t,
+      ;; mark-marker — nil.  We want beginning of a region to be advanced
+      ;; on insertion at its position, and end of a region — not.
+      (when (natnump dir)
+        (helix-with-each-cursor (helix-exchange-point-and-mark)))
+      (helix-with-real-cursor-as-fake
+        (let ((cursors (helix-all-fake-cursors :sort)))
+          (when backward
+            (setq cursors (nreverse cursors)))
+          (dotimes (_ count)
+            (helix--rotate-selections-content-1 cursors))))
+      ;; Restore original regions direction.
+      (unless (eql dir (helix-region-direction))
+        (helix-with-each-cursor (helix-exchange-point-and-mark))))))
+
+(defun helix--rotate-selections-content-1 (cursors)
+  "Rotate regions content for all CURSORS."
   (let* ((first-cursor (car cursors))
          (content (buffer-substring (overlay-get first-cursor 'point)
                                     (overlay-get first-cursor 'mark))))
@@ -1177,12 +1188,12 @@ at START-COLUMN, ends at END-COLUMN and consists of NUMBER-OF-LINES."
 (defun helix-exchange-fake-region-content (cursor content)
   "Exchange the CURSORs region content with CONTENT and return the old one."
   (helix-with-fake-cursor cursor
-    (let ((dir (helix-region-direction))
-          (deactivate-mark) ;; Do not deactivate mark after insertion.
+    (let ((deactivate-mark nil) ;; Do not deactivate mark after insertion.
+          (dir (helix-region-direction))
           (new-content (buffer-substring (point) (mark))))
       (delete-region (point) (mark))
       (insert content)
-      (when (< dir 0) (helix-exchange-point-and-mark))
+      (helix-ensure-region-direction dir)
       new-content)))
 
 ;; (keymap-lookup nil "M-<down-mouse-1>")
