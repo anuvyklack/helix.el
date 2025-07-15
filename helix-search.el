@@ -198,7 +198,7 @@ RANGES is a list of cons cells with positions (START . END)."
       regex)))
 
 (defun helix-search-pattern ()
-  "Return regexp from register \"/\", or nil."
+  "Return regexp from \"/\" register."
   (if-let* ((pattern (get-register '/))
             ((stringp pattern))
             ((not (string-empty-p pattern))))
@@ -225,8 +225,8 @@ RANGES is a list of cons cells with positions (START . END)."
 
 (defun helix-search--start-session ()
   "Start interactive search."
-  (add-hook 'after-change-functions #'helix-search--update-hook nil t)
-  (add-hook 'minibuffer-exit-hook #'helix-search--stop-session nil t))
+  (add-hook 'after-change-functions #'helix-search--update-hook nil :local)
+  (add-hook 'minibuffer-exit-hook #'helix-search--stop-session nil :local))
 
 (defun helix-search--update-hook (&optional _ _ _)
   (when helix-search--timer
@@ -235,20 +235,26 @@ RANGES is a list of cons cells with positions (START . END)."
         (run-at-time helix-update-highlight-delay nil
                      #'helix-search--do-update)))
 
+(defun helixf-search--search (regexp dir)
+  (if (helix-re-search-with-wrap regexp dir)
+      (let ((match (helix-match-bounds)))
+        (if (or (eq search-invisible t)
+                (not (isearch-range-invisible (car match) (cdr match))))
+            match))))
+
 (defun helix-search--do-update ()
   (let ((pattern (minibuffer-contents-no-properties)))
     (with-selected-window (minibuffer-selected-window)
       ;; (with-current-buffer helix-search--buffer)
       (let ((dir helix-search--direction)
             (hl helix-search--hl)
-            ;; Center point after jump to a search result
-            ;; if it lands out of the screen.
+            ;; Recenter point after jump if it lands out of the screen.
             (scroll-conservatively 0))
         (goto-char helix-search--point)
         (if-let* (((not (string-empty-p pattern)))
                   (regexp (helix-pcre-to-elisp pattern))
-                  ((helix-re-search-with-wrap regexp dir)))
-            (-let [(beg . end) (helix-match-bounds)]
+                  (match-range (helixf-search--search regexp dir)))
+            (-let [(beg . end) match-range]
               (goto-char (if (< dir 0) beg end))
               (if helix-search--overlay
                   (move-overlay helix-search--overlay beg end)
