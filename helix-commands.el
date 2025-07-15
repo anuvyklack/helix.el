@@ -1108,21 +1108,6 @@ at START-COLUMN, ends at END-COLUMN and consists of NUMBER-OF-LINES."
 
 (put 'helix-merge-selections 'multiple-cursors 'false)
 
-;; (
-(defun helix-rotate-selections-backward (count)
-  "Rotate main selection backward COUNT times."
-  (interactive "p")
-  (when helix-multiple-cursors-mode
-    (let ((scroll-conservatively 0))
-      (dotimes (_ count)
-        (let ((cursor (or (helix-previous-fake-cursor (point))
-                          (helix-last-fake-cursor))))
-          (helix-create-fake-cursor-from-point)
-          (helix-restore-point-from-fake-cursor cursor)))
-      (redisplay))))
-
-(put 'helix-rotate-selections-backward 'multiple-cursors 'false)
-
 ;; )
 (defun helix-rotate-selections-forward (count)
   "Rotate main selection forward COUNT times."
@@ -1138,13 +1123,20 @@ at START-COLUMN, ends at END-COLUMN and consists of NUMBER-OF-LINES."
 
 (put 'helix-rotate-selections-forward 'multiple-cursors 'false)
 
-;; M-(
-(defun helix-rotate-selections-content-backward (count)
-  "Rotate selections content backward COUNT times."
+;; (
+(defun helix-rotate-selections-backward (count)
+  "Rotate main selection backward COUNT times."
   (interactive "p")
-  (helix--rotate-selections-content count :backward))
+  (when helix-multiple-cursors-mode
+    (let ((scroll-conservatively 0))
+      (dotimes (_ count)
+        (let ((cursor (or (helix-previous-fake-cursor (point))
+                          (helix-last-fake-cursor))))
+          (helix-create-fake-cursor-from-point)
+          (helix-restore-point-from-fake-cursor cursor)))
+      (redisplay))))
 
-(put 'helix-rotate-selections-content-backward 'multiple-cursors 'false)
+(put 'helix-rotate-selections-backward 'multiple-cursors 'false)
 
 ;; M-)
 (defun helix-rotate-selections-content-forward (count)
@@ -1153,6 +1145,14 @@ at START-COLUMN, ends at END-COLUMN and consists of NUMBER-OF-LINES."
   (helix--rotate-selections-content count))
 
 (put 'helix-rotate-selections-content-forward 'multiple-cursors 'false)
+
+;; M-(
+(defun helix-rotate-selections-content-backward (count)
+  "Rotate selections content backward COUNT times."
+  (interactive "p")
+  (helix--rotate-selections-content count :backward))
+
+(put 'helix-rotate-selections-content-backward 'multiple-cursors 'false)
 
 (defun helix--rotate-selections-content (count &optional backward)
   (when (and helix-multiple-cursors-mode
