@@ -178,13 +178,13 @@ Returns the count of steps left to move.  If moving forward, that is
 COUNT minus number of steps moved; if backward, COUNT plus number moved.
 
 \(fn (DIRECTION COUNT) BODY...)"
-  (declare (indent defun)
+  (declare (indent 1)
            (debug ((symbolp form) body)))
-  (let ((dir (pop spec))
-        (count (pop spec))
-        (n (gensym "n")))
-    `(let ((,dir (helix-sign ,count))
-           (,n ,count))
+  (let* ((dir (pop spec))
+         (count (pop spec))
+         (n (gensym "n")))
+    `(let* ((,n ,count)
+            (,dir (helix-sign ,n)))
        (while (and (/= ,n 0)
                    (/= (point) (progn ,@body (point))))
          (setq ,n (- ,n ,dir)))
@@ -206,8 +206,7 @@ on sign of COUNT.
 Word is:
 - sequence of characters matching `[[:word:]]'
 - sequence non-word non-whitespace characters matching `[^[:word:]\\n\\r\\t\\f ]'"
-  (unless count (setq count 1))
-  (helix-motion-loop (dir count)
+  (helix-motion-loop (dir (or count 1))
     (helix-skip-chars "\r\n" dir)
     (helix-skip-whitespaces dir)
     (or (helix-line-boundary-p dir)
@@ -222,8 +221,7 @@ Returns the count of WORD left to move, positive or negative depending
 on sign of COUNT.
 
 WORD is any space separated sequence of characters."
-  (unless count (setq count 1))
-  (helix-motion-loop (dir count)
+  (helix-motion-loop (dir (or count 1))
     (helix-skip-chars "\r\n" dir)
     (helix-skip-whitespaces dir)
     (unless (helix-line-boundary-p dir)
@@ -235,8 +233,7 @@ Returns then count of sentences left to move, positive of negative depending
 on sign of COUNT.
 
 What is sentence is defined by `forward-sentence-function'."
-  (unless count (setq count 1))
-  (helix-motion-loop (dir count)
+  (helix-motion-loop (dir (or count 1))
     (ignore-errors (forward-sentence dir))))
 
 (defun forward-helix-function (&optional count)
@@ -246,8 +243,7 @@ on sign of COUNT.
 
 What is function is defined by `beginning-of-defun' and `end-of-defun'
 functions."
-  (unless count (setq count 1))
-  (helix-motion-loop (dir count)
+  (helix-motion-loop (dir (or count 1))
     (if (< dir 0) (beginning-of-defun) (end-of-defun))))
 
 ;; `helix-comment' thing
