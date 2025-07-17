@@ -1019,7 +1019,8 @@ entered regexp withing current selections."
                               when (eql (move-to-column column) column)
                               return (point))))
               ((not (helix-fake-cursor-at pos))))
-    (helix-create-fake-cursor-from-point)
+    (unless (helix-fake-cursor-at (point))
+      (helix-create-fake-cursor-from-point))
     (goto-char pos)))
 
 (defun helix--copy-region (&optional direction)
