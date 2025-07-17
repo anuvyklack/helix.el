@@ -97,31 +97,46 @@ otherwise prepend it to the list.
 
 ;;; Motions
 
-(defun helix-forward-beginning-of-thing (thing &optional count skip-empty-lines)
-  "Move to the beginning of next COUNT-th THING.
+(defun helix-forward-next-thing (thing &optional count)
+  "Move forward to the end of the COUNT-th next THING.
+`forward-thing' sometimes moves to the  boundary of the current THING
+\(the one point is at). This function skips this step and guarantee to
+move to the next THING."
+  (unless count (setq count 1))
+  (if (eql count 0) 0
+    (-when-let ((beg . end) (bounds-of-thing-at-point thing))
+      (goto-char (if (natnump count) end beg)))
+    (forward-thing thing count)))
+
+(defun helix-forward-beginning-of-thing (thing &optional count)
+  "Move to the beginning of COUNT-th next THING.
 Move backward if COUNT is negative.
+Returns the count of steps left to move.
 
-When SKIP-EMPTY-LINES is non-nil skip all blank lines along the way.
-This is needed, for example, for `helix-word': two `helix-word's divided
-with empty lines, are considered adjoined when moving over them.
-
-Works only with THINGs, that returns the count of steps left to move,
+Works only with THING, that returns the count of steps left to move,
 such as `helix-word', `helix-sentence', `paragraph', `line'."
   (unless count (setq count 1))
-  (cond ((= count 0) 0)
-        ((< count 0)
-         (forward-thing thing count))
-        (t (when skip-empty-lines (skip-chars-forward "\r\n"))
-           (when-let* ((bounds (bounds-of-thing-at-point thing))
-                       ((< (point) (cdr bounds))))
-             (goto-char (cdr bounds))
-             (when skip-empty-lines (skip-chars-forward "\r\n")))
-           (let ((rest (forward-thing thing count)))
-             (cond ((zerop rest)
-                    (forward-thing thing -1)
-                    (when skip-empty-lines (skip-chars-backward "\r\n")))
-                   ((eobp) (backward-char))) ; assuming that buffer ends with newline
-             rest))))
+  (if (eql count 0) 0
+    (let ((rest (helix-forward-next-thing thing count)))
+      (when (and (/= rest count)
+                 (natnump count))
+        (forward-thing thing -1))
+      rest)))
+
+(defun helix-forward-end-of-thing (thing &optional count)
+  "Move to the end of COUNT-th next THING.
+Move backward if COUNT is negative.
+Returns the count of steps left to move.
+
+Works only with THING, that returns the count of steps left to move,
+such as `helix-word', `helix-sentence', `paragraph', `line'."
+  (unless count (setq count 1))
+  (if (eql count 0) 0
+    (let ((rest (helix-forward-next-thing thing count)))
+      (when (and (/= rest count)
+                 (< count 0))
+        (forward-thing thing))
+      rest)))
 
 (defun helix-skip-chars (chars &optional direction)
   "Move point toward the DIRECTION stopping after a char is not in CHARS string.
@@ -198,6 +213,7 @@ COUNT minus number of steps moved; if backward, COUNT plus number moved.
 ;; (put 'visual-line 'beginning-op 'beginning-of-visual-line)
 ;; (put 'visual-line 'end-op       'end-of-visual-line)
 
+;; `helix-word' thing
 (defun forward-helix-word (&optional count)
   "Move point forward COUNT words (backward if COUNT is negative).
 Returns the count of word left to move, positive or negative depending
@@ -215,6 +231,7 @@ Word is:
               (word-combining-categories  helix-cjk-word-combining-categories))
           (forward-word dir)))))
 
+;; `helix-WORD' thing
 (defun forward-helix-WORD (&optional count)
   "Move point forward COUNT WORDs (backward if COUNT is negative).
 Returns the count of WORD left to move, positive or negative depending
@@ -227,6 +244,7 @@ WORD is any space separated sequence of characters."
     (unless (helix-line-boundary-p dir)
       (helix-skip-chars "^\n\r\t\f " dir))))
 
+;; `helix-sentence' thing
 (defun forward-helix-sentence (&optional count)
   "Move point forward COUNT sentences (backward if COUNT is negative).
 Returns then count of sentences left to move, positive of negative depending
@@ -236,6 +254,7 @@ What is sentence is defined by `forward-sentence-function'."
   (helix-motion-loop (dir (or count 1))
     (ignore-errors (forward-sentence dir))))
 
+;; `helix-function' thing
 (defun forward-helix-function (&optional count)
   "Move point forward COUNT functions (backward if COUNT is negative).
 Returns then count of sentences left to move, positive of negative depending
@@ -245,6 +264,12 @@ What is function is defined by `beginning-of-defun' and `end-of-defun'
 functions."
   (helix-motion-loop (dir (or count 1))
     (if (< dir 0) (beginning-of-defun) (end-of-defun))))
+
+;; `helix-sexp' thing
+(defun forward-helix-sexp (&optional count)
+  (helix-motion-loop (dir (or count 1))
+    (ignore-errors
+      (forward-sexp dir))))
 
 ;; `helix-comment' thing
 (put 'helix-comment 'bounds-of-thing-at-point #'helix-bounds-of-comment-at-point-ppss)
