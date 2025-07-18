@@ -305,10 +305,6 @@
   "K"   #'helix-move-window-up
   "L"   #'helix-move-window-right)
 
-;;; Multiple cursors
-
-(keymap-set helix-multiple-cursors-map "C-g" #'helix-remove-all-fake-cursors)
-
 ;;; Insert state
 
 (helix-keymap-set nil 'insert
