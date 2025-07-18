@@ -443,15 +443,33 @@ Use visual line when `visual-line-mode' is active."
 
 (put 'helix-append 'multiple-cursors 'false)
 
+(defun helix--insert-or-append-on-line (direction)
+  "Switch to insert state at beginning or end of current line
+depending on DIRECTION."
+  ;; Remain only one cursor on each line.
+  (when helix-multiple-cursors-mode
+    (helix-with-real-cursor-as-fake
+      ;; Line numbers start from 1, so 0 as initial value is out of scope.
+      (let ((current-line 0))
+        (-each (helix-all-fake-cursors :sort)
+          (lambda (cursor)
+            (let ((line (line-number-at-pos
+                         (overlay-get cursor 'point))))
+              (if (eql line current-line)
+                  (helix--delete-fake-cursor cursor)
+                (setq current-line line))))))))
+  (helix-with-each-cursor
+    (if (natnump direction)
+        (helix-end-of-line)
+      (helix-first-non-blank))
+    (set-marker (mark-marker) (point)))
+  (helix-insert-state 1))
+
 ;; I
 (defun helix-insert-line ()
   "Switch to insert state at beginning of current line."
   (interactive)
-  (helix-with-each-cursor
-    (deactivate-mark)
-    (helix-first-non-blank)
-    (set-marker (mark-marker) (point)))
-  (helix-insert-state 1))
+  (helix--insert-or-append-on-line -1))
 
 (put 'helix-insert-line 'multiple-cursors 'false)
 
@@ -459,11 +477,7 @@ Use visual line when `visual-line-mode' is active."
 (defun helix-append-line ()
   "Switch to Insert state at the end of the current line."
   (interactive)
-  (helix-with-each-cursor
-    (deactivate-mark)
-    (helix-end-of-line)
-    (set-marker (mark-marker) (point)))
-  (helix-insert-state 1))
+  (helix--insert-or-append-on-line 1))
 
 (put 'helix-append-line 'multiple-cursors 'false)
 
