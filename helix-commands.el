@@ -196,7 +196,7 @@ Push mark at previous position, unless extending selection."
       (forward-line 1)
     (recenter 0)))
 
-(put 'helix-forward-WORD-end 'multiple-cursors 'false)
+(put 'helix-goto-first-line 'multiple-cursors 'false)
 
 ;; G
 (defun helix-goto-last-line ()
