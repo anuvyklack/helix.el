@@ -378,9 +378,7 @@ Default value is 0 - scroll half the screen.")
 
 (defvar helix-multiple-cursors-map (make-sparse-keymap)
   "Transient keymap for `helix-multiple-cursors-mode'.
-It is active while there are multiple cursors.
-Main goal of the keymap is to rebind `C-g' to conclude multiple
-cursors editing.")
+It is active while there are multiple cursors.")
 
 (defvar helix-commands-to-run-for-all-cursors nil
   "Commands to execute for all cursors.")
