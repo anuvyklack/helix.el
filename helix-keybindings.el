@@ -146,26 +146,12 @@
   "n"   #'helix-search-next
   "N"   #'helix-search-previous
 
-  ;; Scrolling
-  "C-b" #'helix-smooth-scroll-page-up
-  "C-f" #'helix-smooth-scroll-page-down
-  "C-d" #'helix-smooth-scroll-down
-  "C-u" #'helix-smooth-scroll-up
-  "C-e" #'helix-mix-scroll-line-down
-  "C-y" #'helix-mix-scroll-line-up
-  ;; "z z" #'helix-smooth-scroll-line-to-center
-  "z z" #'helix-smooth-scroll-line-not-to-very-top
-  "z t" #'helix-smooth-scroll-line-to-top
-  "z b" #'helix-smooth-scroll-line-to-bottom
-
   ;; Misc
   "C-o"   #'pop-to-mark-command
   "g c"   #'comment-dwim
   "g f"   #'find-file-at-point
   "g x"   #'browse-url-at-point
   "g q"   #'fill-region
-  "] b"   #'next-buffer
-  "[ b"   #'previous-buffer
   "] SPC" #'helix-add-blank-line-below
   "[ SPC" #'helix-add-blank-line-above)
 
@@ -306,30 +292,31 @@
   "K"   #'helix-move-window-up
   "L"   #'helix-move-window-right)
 
+;;; Common keybindings between Normal and Motion states
+
+(dolist (state '(normal motion))
+  (helix-keymap-set nil state
+    "C-w" 'helix-window-map
+    "<backspace>" #'execute-extended-command
+    "] b" #'next-buffer
+    "[ b" #'previous-buffer
+
+    ;; Scrolling
+    "C-b" #'helix-smooth-scroll-page-up
+    "C-f" #'helix-smooth-scroll-page-down
+    "C-d" #'helix-smooth-scroll-down
+    "C-u" #'helix-smooth-scroll-up
+    "C-e" #'helix-mix-scroll-line-down
+    "C-y" #'helix-mix-scroll-line-up
+    ;; "z z" #'helix-smooth-scroll-line-to-center
+    "z z" #'helix-smooth-scroll-line-not-to-very-top
+    "z t" #'helix-smooth-scroll-line-to-top
+    "z b" #'helix-smooth-scroll-line-to-bottom))
+
 ;;; Insert state
 
 (helix-keymap-set nil 'insert
   "<escape>" #'helix-normal-state)
-
-;;; Motion state
-
-(helix-keymap-set nil 'motion
-  "C-w" 'helix-window-map
-  "<backspace>" #'execute-extended-command
-  "] b" #'next-buffer
-  "[ b" #'previous-buffer
-
-  ;; Scrolling
-  "C-b" #'helix-smooth-scroll-page-up
-  "C-f" #'helix-smooth-scroll-page-down
-  "C-d" #'helix-smooth-scroll-down
-  "C-u" #'helix-smooth-scroll-up
-  "C-e" #'helix-mix-scroll-line-down
-  "C-y" #'helix-mix-scroll-line-up
-  ;; "z z" #'helix-smooth-scroll-line-to-center
-  "z z" #'helix-smooth-scroll-line-not-to-very-top
-  "z t" #'helix-smooth-scroll-line-to-top
-  "z b" #'helix-smooth-scroll-line-to-bottom)
 
 (provide 'helix-keybindings)
 ;;; helix-keybindings.el ends here
