@@ -219,6 +219,9 @@ When ARG is non-positive integer and Helix is in %s — disable it.\n\n%s"
            (setq helix-state ',state
                  ,variable t)
            ,@body
+           ;; Switch color of all cursors.
+           (helix-with-each-cursor
+             (setq helix--extend-selection nil))
            (run-hooks ',enter-hook))
          (helix-update-active-keymaps)
          (helix-update-cursor)
