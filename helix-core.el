@@ -3,7 +3,7 @@
 ;; Author: Yuriy Artemyev <anuvyklack@gmail.com>
 ;; Maintainer: Yuriy Artemyev <anuvyklack@gmail.com>
 ;; Version: 0.0.1
-;; Package-Requires: ((emacs "28.3"))
+;; Package-Requires: ((emacs "29.1"))
 ;;
 ;; This file is not part of GNU Emacs.
 ;;
@@ -224,14 +224,14 @@ When ARG is non-positive integer and Helix is in %s — disable it.\n\n%s"
            ,@body
            ;; Switch color and shape of all cursors.
            (setq helix--extend-selection nil)
-           (helix-update-cursor)
+           (helix-update-cursor) ;; main cursor
            (when helix-multiple-cursors-mode
              (helix-save-window-scroll
                (helix-save-excursion
                 (dolist (cursor (helix-all-fake-cursors))
                   (helix-with-fake-cursor cursor
-                    (setq helix--extend-selection nil)))))
-             (run-hooks ',enter-hook)))
+                    (setq helix--extend-selection nil))))))
+           (run-hooks ',enter-hook))
          (helix-update-active-keymaps)
          (force-mode-line-update)))))
 

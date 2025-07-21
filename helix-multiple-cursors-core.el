@@ -352,8 +352,10 @@ and bind it to CURSOR."
   (goto-char (overlay-get overlay 'point))
   (set-marker (mark-marker) (overlay-get overlay 'mark))
   (dolist (var helix-fake-cursor-specific-vars)
-    (when (boundp var)
-      (set var (overlay-get overlay var))))
+    (set var (overlay-get overlay var))
+    ;; (when (boundp var)
+    ;;   (set var (overlay-get overlay var)))
+    )
   (helix--delete-region-overlay overlay)
   (delete-overlay overlay))
 
@@ -616,6 +618,7 @@ in current buffer."
   (unless (helix-any-fake-cursors-p)
     (helix-multiple-cursors-mode -1)))
 
+;; helix-multiple-cursors--disable-incompatible-minor-modes
 (defun helix-mc--disable-incompatible-minor-modes ()
   "Disable incompatible minor modes while there are multiple cursors
 in the buffer."
@@ -806,7 +809,7 @@ a hash key, to distinguish different calls of FN-NAME within one command.
 Calls with equal PROMPT or without it would be undistinguishable."
   `(helix-define-advice ,fn-name (:around (orig-fun &rest args) helix)
      "Cache the users input to use it with multiple cursors."
-     (if (bound-and-true-p helix-multiple-cursors-mode)
+     (if helix-multiple-cursors-mode
          (let* (;; Use PROMPT argument as a hash key to distinguish different
                 ;; calls of `read-char' like functions within one command.
                 (prompt (car-safe args))

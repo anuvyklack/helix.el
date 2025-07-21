@@ -3,7 +3,7 @@
 ;; Author: Yuriy Artemyev <anuvyklack@gmail.com>
 ;; Maintainer: Yuriy Artemyev <anuvyklack@gmail.com>
 ;; Version: 0.0.1
-;; Package-Requires: ((emacs "28.3"))
+;; Package-Requires: ((emacs "29.1"))
 ;;
 ;; This file is not part of GNU Emacs.
 ;;
@@ -84,7 +84,7 @@ or a list of the above."
   :type '(set symbol (cons symbol symbol) string function)
   :group 'helix)
 
-(defcustom helix-motion-state-cursor 'hollow
+(defcustom helix-motion-state-cursor 'hbar
   "Cursor apperance when Helix is in Motion state.
 Can be a cursor type as per `cursor-type', a color string as passed to
 `set-cursor-color', a zero-argument function for changing the cursor, or
@@ -115,8 +115,7 @@ shifting subsequent content to the right."
   :set #'(lambda (symbol value)
            (set symbol (cond ((characterp value)
                               (char-to-string value))
-                             ((and (stringp value)
-                                   (length= value 1))
+                             ((and (stringp value) (length= value 1))
                               value)
                              (t
                               (char-to-string ?\u2000))))))
@@ -322,6 +321,8 @@ list of categories."
 ;;; Faces
 
 (defface helix-normal-state-fake-cursor
+  ;; '((t (:inverse-video t)))
+  ;; '((t (:height 21 :foreground "white" :background "gray55")))
   `((t (:height ,(window-default-font-height)
         :background "red")))
   "The face used for fake cursors when Helix is in Normal state."
@@ -329,7 +330,9 @@ list of categories."
 
 (defface helix-insert-state-fake-cursor
   '((t (:foreground "white"
-        :background "SkyBlue3")))
+        :background "SkyBlue3"
+        ;; :background "#458588"
+        )))
   "The face used for fake cursors when Helix is in Insert state."
   :group 'helix)
 
@@ -456,9 +459,6 @@ The command that that will be executed for each fake cursor.")
 (helix-defvar-local helix--temporarily-disabled-minor-modes nil
   "The list of temporarily disabled minor-modes while there are
 multiple cursors.")
-
-(defvar helix--executing-command-for-fake-cursor nil
-  "Non-nil if `this-command' is currently executing for fake cursor.")
 
 (helix-defvar-local helix--in-single-undo-step nil
   "Non-nil while we are in the single undo step.")

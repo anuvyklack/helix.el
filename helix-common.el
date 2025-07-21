@@ -3,7 +3,7 @@
 ;; Author: Yuriy Artemyev <anuvyklack@gmail.com>
 ;; Maintainer: Yuriy Artemyev <anuvyklack@gmail.com>
 ;; Version: 0.0.1
-;; Package-Requires: ((emacs "28.3"))
+;; Package-Requires: ((emacs "29.1"))
 ;;
 ;; This file is not part of GNU Emacs.
 ;;
@@ -828,19 +828,6 @@ If NOMSG is nil show `Mark set' message in echo area."
     (helix-ensure-region-direction region-dir)
     (helix-maybe-enable-linewise-selection)))
 
-;; (helix-define-advice yank (:around (orig-fun &rest args))
-;;   "Correctly set region after paste."
-;;   (let ((old-point (point))
-;;         (old-mark (or (mark t) (point)))
-;;         (deactivate-mark nil))
-;;     (push-mark (point))
-;;     (set-marker (mark-marker) old-mark)
-;;     (cl-letf (((symbol-function 'push-mark) #'ignore))
-;;       (apply orig-fun args))
-;;     (when (eql (marker-position (mark-marker))
-;;                old-mark)
-;;       (set-mark old-point))))
-
 ;;; Utils
 
 (defun helix-bolp ()
@@ -1154,8 +1141,8 @@ right after the point."
 
 (defun helix-overlay-live-p (overlay)
   "Return non-nil if OVERLAY is not deleted from buffer."
-  (if-let* ((buffer (overlay-buffer overlay)))
-      (buffer-live-p buffer)))
+  (-some-> (overlay-buffer overlay)
+    (buffer-live-p)))
 
 (defun helix-carry-linewise-selection ()
   (when helix-linewise-selection

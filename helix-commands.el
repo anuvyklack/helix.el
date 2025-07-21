@@ -474,6 +474,10 @@ Use visual line when `visual-line-mode' is active."
 (defun helix-insert ()
   "Switch to Insert state before region."
   (interactive)
+  ;; (when (and (use-region-p)
+  ;;            (< (mark) (point)))
+  ;;   (helix-with-each-cursor
+  ;;     (helix-ensure-region-direction -1)))
   (helix-with-each-cursor
     (helix-ensure-region-direction -1))
   (helix-insert-state 1))
@@ -484,6 +488,10 @@ Use visual line when `visual-line-mode' is active."
 (defun helix-append ()
   "Switch to Insert state after region."
   (interactive)
+  ;; (when (and (use-region-p)
+  ;;            (< (point) (mark)))
+  ;;   (helix-with-each-cursor
+  ;;     (helix-ensure-region-direction 1)))
   (helix-with-each-cursor
     (helix-ensure-region-direction 1))
   (helix-insert-state 1))
@@ -586,10 +594,14 @@ depending on DIRECTION."
   (interactive)
   (helix-with-each-cursor
     (cond ((use-region-p)
+           ;; (helix-carry-linewise-selection)
            (setq helix-linewise-selection nil)
            (let ((line-selected? (helix-linewise-selection-p)))
              (kill-region nil nil t)
              (pcase line-selected?
+               ;; ('line (newline)
+               ;;        (backward-char)
+               ;;        (indent-according-to-mode))
                ('visual-line (insert " ")
                              (backward-char)))))
           ((not (helix-bolp))
@@ -1124,12 +1136,10 @@ entered regexp withing current selections."
          (beg (region-beginning))
          (end (region-end))
          (num-of-lines (count-lines beg end))
-         (beg-column (save-excursion
-                       (goto-char beg)
-                       (current-column)))
-         (end-column (save-excursion
-                       (goto-char end)
-                       (current-column))))
+         (beg-column (save-excursion (goto-char beg)
+                                     (current-column)))
+         (end-column (save-excursion (goto-char end)
+                                     (current-column))))
     (when-let* ((bounds (save-excursion
                           (goto-char (if (< direction 0) beg end))
                           (helix--bounds-of-following-region
