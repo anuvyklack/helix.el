@@ -354,7 +354,7 @@ use `helix-state-property'.")
 Determine how many lines should be scrolled.
 Default value is 0 - scroll half the screen.")
 
-(defvar helix-window-map (make-sparse-keymap)
+(defvar helix-window-map nil
   "Keymap for window-related commands.")
 
 (defvar helix-regex-history nil

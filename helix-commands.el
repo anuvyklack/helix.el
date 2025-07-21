@@ -654,7 +654,8 @@ Like `helix-paste-pop' but with negative COUNT argument."
   (when (use-region-p)
     (let (deactivate-mark)
       (delete-region (region-beginning) (region-end))
-      (helix-yank))))
+      (helix-yank)
+      (helix-extend-selection -1))))
 
 (put 'helix-replace-with-kill-ring 'multiple-cursors t)
 
@@ -765,11 +766,12 @@ If ARG positive number — enable, negative — disable."
 If region is forward — mark is before point — expand selection downwise,
 if region is backward — point is before mark — expand upwise."
   (interactive "p")
-  (when (helix-expand-selection-to-full-lines)
-    (setq count (- count (helix-sign count))))
+  (setq count (abs count))
+  (and (helix-expand-selection-to-full-lines)
+       (cl-decf count))
   (unless (zerop count)
-    (let* ((line (if visual-line-mode 'visual-line 'line))
-           (count (* count (helix-region-direction))))
+    (setq count (* count (helix-region-direction)))
+    (let ((line (if visual-line-mode 'visual-line 'line)))
       (forward-thing line count))))
 
 (put 'helix-expand-line-selection 'multiple-cursors t)
@@ -784,10 +786,10 @@ Counterpart to `helix-expand-line-selection' that does the exact opposite."
   (and (helix-reduce-selection-to-full-lines)
        (cl-decf count))
   (unless (zerop count)
-    (let* ((line (if visual-line-mode 'visual-line 'line))
-           (beg (region-beginning))
-           (end (region-end))
-           (dir (helix-region-direction)))
+    (let ((line (if visual-line-mode 'visual-line 'line))
+          (beg (region-beginning))
+          (end (region-end))
+          (dir (helix-region-direction)))
       (cond ((natnump dir)
              (cl-dotimes (_ count)
                (forward-thing line -1)
@@ -962,8 +964,8 @@ entered regexp withing current selections."
            ;; Line numbers start from 1, so 0 as initial value is out of scope.
            (cursors (let ((current-line 0))
                       (-remove #'(lambda (cursor)
-                                   (let* ((line (line-number-at-pos
-                                                 (overlay-get cursor 'point))))
+                                   (let ((line (line-number-at-pos
+                                                (overlay-get cursor 'point))))
                                      (or (eql line current-line)
                                          (ignore (setq current-line line)))))
                                (helix-all-fake-cursors :sort))))
