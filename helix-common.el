@@ -739,9 +739,8 @@ balanced expressions."
 
 ;;; Copy/paste
 
-(defun helix-push-mark (&optional position nomsg activate)
-  "Set mark to the POSITION and push it on the `mark-ring'.
-If NOMSG is nil show `Mark set' message in echo area."
+(defun helix-push-point (&optional position)
+  "Push POSITION (point by default) on the `mark-ring'."
   (unless position (setq position (point)))
   (let ((old (nth mark-ring-max mark-ring))
         (history-delete-duplicates nil))
@@ -750,11 +749,11 @@ If NOMSG is nil show `Mark set' message in echo area."
                     mark-ring-max t)
     (when old
       (set-marker old nil)))
-  (set-marker (mark-marker) (or position (point)) (current-buffer))
   ;; Don't push the mark on the global mark ring if the last global
   ;; mark pushed was in this same buffer.
   (unless (and global-mark-ring
-               (eq (marker-buffer (car global-mark-ring)) (current-buffer)))
+               (eq (marker-buffer (car global-mark-ring))
+                   (current-buffer)))
     (let ((old (nth global-mark-ring-max global-mark-ring))
           (history-delete-duplicates nil))
       (add-to-history 'global-mark-ring
@@ -762,6 +761,13 @@ If NOMSG is nil show `Mark set' message in echo area."
                       global-mark-ring-max t)
       (when old
         (set-marker old nil))))
+  nil)
+
+(defun helix-push-mark (&optional position nomsg activate)
+  "Set mark to the POSITION and push it on the `mark-ring'.
+If NOMSG is nil show `Mark set' message in echo area."
+  (helix-push-point position)
+  (set-marker (mark-marker) (or position (point)) (current-buffer))
   (or nomsg executing-kbd-macro (> (minibuffer-depth) 0)
       (message "Mark set"))
   (when activate
