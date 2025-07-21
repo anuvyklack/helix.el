@@ -257,7 +257,29 @@ Use visual line when `visual-line-mode' is active."
   (if helix--extend-selection
       (or (region-active-p) (set-mark (point)))
     (set-mark (point)))
-  (helix-forward-beginning-of-thing 'paragraph (- count)))
+  (forward-thing 'paragraph (- count)))
+
+(put 'helix-backward-paragraph 'multiple-cursors t)
+
+;; ]f
+(defun helix-forward-function (count)
+  "Move to the end of the COUNT next function."
+  (interactive "p")
+  (if helix--extend-selection
+      (or (region-active-p) (set-mark (point)))
+    (set-mark (point)))
+  (helix-forward-beginning-of-thing 'helix-function count))
+
+(put 'helix-forward-function 'multiple-cursors t)
+
+;; [f
+(defun helix-backward-function (count)
+  "Move to the beginning of the COUNT previous paragraph."
+  (interactive "p")
+  (if helix--extend-selection
+      (or (region-active-p) (set-mark (point)))
+    (set-mark (point)))
+  (forward-thing 'helix-function (- count)))
 
 (put 'helix-backward-paragraph 'multiple-cursors t)
 
