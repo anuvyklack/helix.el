@@ -161,7 +161,7 @@ Push mark at previous position, unless extending selection."
     ;; else
     (set-marker (mark-marker) (point))
     (deactivate-mark))
-  (helix-push-mark)
+  (helix-push-point)
   (goto-char (if num
                  (+ (point-min)
                     (/ (* (- (point-max) (point-min))
@@ -184,7 +184,7 @@ Push mark at previous position, unless extending selection."
     ;; else
     (set-marker (mark-marker) (point))
     (deactivate-mark))
-  (helix-push-mark)
+  (helix-push-point)
   (goto-char (point-max)))
 
 (put 'helix-goto-last-line 'multiple-cursors 'false)
@@ -291,7 +291,7 @@ Use visual line when `visual-line-mode' is active."
   "Move to a word start after the point, choosing it with Avy."
   (interactive)
   (helix-remove-all-fake-cursors)
-  (helix-push-mark)
+  (helix-push-point)
   (let ((mark (and helix--extend-selection
                    (not (region-active-p))
                    (point)))
@@ -311,7 +311,7 @@ Use visual line when `visual-line-mode' is active."
   "Move to a word start before the point, choosing it with Avy."
   (interactive)
   (helix-remove-all-fake-cursors)
-  (helix-push-mark)
+  (helix-push-point)
   (let ((mark (and helix--extend-selection
                    (not (region-active-p))
                    (point)))
@@ -332,7 +332,7 @@ Use visual line when `visual-line-mode' is active."
   "Move to a WORD start after the point, choosing it with Avy."
   (interactive)
   (helix-remove-all-fake-cursors)
-  (helix-push-mark)
+  (helix-push-point)
   (let ((mark (and helix--extend-selection
                    (not (region-active-p))
                    (point)))
@@ -352,7 +352,7 @@ Use visual line when `visual-line-mode' is active."
   "Move to a WORD start before the point, choosing it with Avy."
   (interactive)
   (helix-remove-all-fake-cursors)
-  (helix-push-mark)
+  (helix-push-point)
   (let ((mark (and helix--extend-selection
                    (not (region-active-p))
                    (point)))
@@ -373,7 +373,7 @@ Use visual line when `visual-line-mode' is active."
   "Move to a next line, choosing it with Avy."
   (interactive)
   (helix-remove-all-fake-cursors)
-  (helix-push-mark)
+  (helix-push-point)
   (unless helix--extend-selection
     (deactivate-mark))
   (let ((temporary-goal-column (current-column)))
@@ -387,7 +387,7 @@ Use visual line when `visual-line-mode' is active."
   "Move to a previous line, choosing it with Avy."
   (interactive)
   (helix-remove-all-fake-cursors)
-  (helix-push-mark)
+  (helix-push-point)
   (unless helix--extend-selection
     (deactivate-mark))
   (let ((temporary-goal-column (current-column)))
@@ -1295,7 +1295,7 @@ already there."
 ;; mip
 (defun helix-mark-inner-paragraph (count)
   (interactive "p")
-  (helix-push-mark)
+  (helix-push-point)
   (helix-mark-inner-thing 'paragraph count))
 
 (put 'helix-mark-inner-paragraph 'multiple-cursors t)
@@ -1304,7 +1304,7 @@ already there."
 ;; map
 (defun helix-mark-a-paragraph ()
   (interactive)
-  (helix-push-mark)
+  (helix-push-point)
   (helix-mark-a-thing 'paragraph))
 
 (put 'helix-mark-a-paragraph 'multiple-cursors t)
@@ -1582,7 +1582,7 @@ keys to repeat motion forward/backward."
         ;; Push mark on first invocation.
         (unless (or (memq last-command '(helix-search-next helix-search-previous))
                     (helix-search--keep-highlight last-command))
-          (helix-push-mark))
+          (helix-push-point))
         (when (and helix--extend-selection (use-region-p))
           (helix-create-fake-cursor-from-point))
         (helix-set-region beg end region-dir)))
