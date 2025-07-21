@@ -1594,15 +1594,15 @@ keys to repeat motion forward/backward."
   "Select next COUNT search match."
   (interactive "p")
   (unless helix-search--direction (setq helix-search--direction 1))
-  (when (and helix-search--direction
-             (< helix-search--direction 0))
+  (when (< helix-search--direction 0)
     (setq count (- count)))
   (let ((regexp (helix-search-pattern))
         (region-dir (if (use-region-p) (helix-region-direction) 1))
         ;; Recenter point after jump if it lands out of the screen.
         (scroll-conservatively 0))
     (helix-motion-loop (search-dir count)
-      (-when-let ((beg . end) (helixf-search--search regexp search-dir))
+      (-when-let ((beg . end) (save-excursion
+                                (helixf-search--search regexp search-dir)))
         ;; Push mark on first invocation.
         (unless (or (memq last-command '(helix-search-next helix-search-previous))
                     (helix-search--keep-highlight last-command))
