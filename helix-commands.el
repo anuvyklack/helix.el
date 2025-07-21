@@ -925,16 +925,26 @@ entered regexp withing current selections."
 (defun helix-split-region-on-newline ()
   "Split selections on line boundaries."
   (interactive)
-  (let (any?)
-    (helix-with-each-cursor
-      (when-let* (((use-region-p))
-                  (ranges (helix-regexp-match-ranges
-                           ".+$" (region-beginning) (region-end))))
-        (helix-create-cursors ranges)
-        (setq any? t)))
-    (when any?
-      (helix-with-each-cursor
-        (helix-extend-selection -1)))))
+  (helix-with-each-cursor
+    (helix-extend-selection -1)
+    (when (use-region-p)
+      (let ((end (region-end)))
+        (helix-ensure-region-direction 1)
+        (goto-char (mark-marker))
+        (catch 'done
+          (let (border)
+            (while t
+              (helix-end-of-line)
+              (when (<= end (point))
+                (goto-char end)
+                (throw 'done nil))
+              (setq border (point))
+              (forward-char)
+              (when (<= end (point))
+                (goto-char border)
+                (throw 'done nil))
+              (helix-create-fake-cursor border (mark))
+              (set-marker (mark-marker) (point)))))))))
 
 (put 'helix-split-region-on-newline 'multiple-cursors 'false)
 
