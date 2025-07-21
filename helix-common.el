@@ -97,31 +97,45 @@ otherwise prepend it to the list.
 
 ;;; Motions
 
-(defun helix-forward-beginning-of-thing (thing &optional count skip-empty-lines)
-  "Move to the beginning of next COUNT-th THING.
+(defun helix-forward-next-thing (thing &optional count)
+  "Move forward to the end of the COUNT-th next THING.
+`forward-thing' first moves to the  boundary of the current THING, then to the
+next THING. This function skips first step and always moves to the next THING."
+  (unless count (setq count 1))
+  (if (eql count 0) 0
+    (-when-let ((beg . end) (bounds-of-thing-at-point thing))
+      (goto-char (if (natnump count) end beg)))
+    (forward-thing thing count)))
+
+(defun helix-forward-beginning-of-thing (thing &optional count)
+  "Move to the beginning of COUNT-th next THING.
 Move backward if COUNT is negative.
+Returns the count of steps left to move.
 
-When SKIP-EMPTY-LINES is non-nil skip all blank lines along the way.
-This is needed, for example, for `helix-word': two `helix-word's divided
-with empty lines, are considered adjoined when moving over them.
-
-Works only with THINGs, that returns the count of steps left to move,
+Works only with THING, that returns the count of steps left to move,
 such as `helix-word', `helix-sentence', `paragraph', `line'."
   (unless count (setq count 1))
-  (cond ((= count 0) 0)
-        ((< count 0)
-         (forward-thing thing count))
-        (t (when skip-empty-lines (skip-chars-forward "\r\n"))
-           (when-let* ((bounds (bounds-of-thing-at-point thing))
-                       ((< (point) (cdr bounds))))
-             (goto-char (cdr bounds))
-             (when skip-empty-lines (skip-chars-forward "\r\n")))
-           (let ((rest (forward-thing thing count)))
-             (cond ((zerop rest)
-                    (forward-thing thing -1)
-                    (when skip-empty-lines (skip-chars-backward "\r\n")))
-                   ((eobp) (backward-char))) ; assuming that buffer ends with newline
-             rest))))
+  (if (eql count 0) 0
+    (let ((rest (helix-forward-next-thing thing count)))
+      (when (and (/= rest count)
+                 (natnump count))
+        (forward-thing thing -1))
+      rest)))
+
+(defun helix-forward-end-of-thing (thing &optional count)
+  "Move to the end of COUNT-th next THING.
+Move backward if COUNT is negative.
+Returns the count of steps left to move.
+
+Works only with THING, that returns the count of steps left to move,
+such as `helix-word', `helix-sentence', `paragraph', `line'."
+  (unless count (setq count 1))
+  (if (eql count 0) 0
+    (let ((rest (helix-forward-next-thing thing count)))
+      (when (and (/= rest count)
+                 (< count 0))
+        (forward-thing thing))
+      rest)))
 
 (defun helix-skip-chars (chars &optional direction)
   "Move point toward the DIRECTION stopping after a char is not in CHARS string.
