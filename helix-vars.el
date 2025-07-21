@@ -65,21 +65,21 @@ rendered or shift text."
   :type 'boolean
   :group 'helix)
 
-(defcustom helix-normal-state-main-cursor
+(defcustom helix-normal-state-cursor
   `(bar ,(face-attribute 'cursor :background))
   "Cursor apperance when Helix is in Norman state.
 Can be a cursor type as per `cursor-type', a color string as passed to
-`set-cursor-color', a zero-argument function for changing the cursor, or
-a list of the above."
+`set-cursor-color', a zero-argument function for changing the cursor,
+or a list of the above."
   :type '(set symbol (cons symbol symbol) string function)
   :group 'helix)
 
-(defcustom helix-insert-state-main-cursor
+(defcustom helix-insert-state-cursor
   `(box ,(face-attribute 'cursor :background))
   "Cursor apperance when Helix is in Insert state.
 Can be a cursor type as per `cursor-type', a color string as passed to
-`set-cursor-color', a zero-argument function for changing the cursor, or
-a list of the above."
+`set-cursor-color', a zero-argument function for changing the cursor,
+or a list of the above."
   :type '(set symbol (cons symbol symbol) string function)
   :group 'helix)
 
