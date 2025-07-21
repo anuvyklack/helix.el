@@ -787,10 +787,8 @@ If NOMSG is nil show `Mark set' message in echo area."
                         (helix-region-direction)
                       1)))
     (helix-ensure-region-direction direction)
-    (when-let* ((kill (current-kill 0 :do-not-move))
-                (last-char (elt kill (1- (length kill))))
-                ((eq ?\n last-char)) ;; Kill entry ends with newline?
-                ((not (eq (helix-linewise-selection-p) 'line))))
+    (when (and (helix-ends-with-newline (current-kill 0 :do-not-move))
+               (not (eq (helix-linewise-selection-p) 'line)))
       (if (natnump direction)
           (forward-line 1)
         (forward-line 0)))
@@ -958,6 +956,11 @@ that `match-beginning', `match-end' and `match-data' access."
            (and (<= (point-min) pos)
                 (string-equal (buffer-substring-no-properties pos pnt)
                               string))))))
+
+(defun helix-ends-with-newline (string)
+  "Return t if STRING ends with newline character."
+  (eql (aref string (1- (length string)))
+       ?\n))
 
 (defun helix-all-elements-are-equal-p (list)
   "Return t if all elemetns in the LIST are `equal' each other."
