@@ -223,11 +223,11 @@ POINT and MARK will be set."
     ((or 'nil 0)
      (goto-char point)
      (when mark (set-mark mark)))
-    ((and id (pred numberp))
+    ((and (pred numberp) id)
      (if-let* ((cursor (gethash id helix--cursors-table)))
          (helix-move-fake-cursor cursor point mark)
        (helix-create-fake-cursor point mark id)))
-    ((and cursor (pred helix-fake-cursor-p))
+    ((and (pred helix-fake-cursor-p) cursor)
      (helix-move-fake-cursor cursor point mark))))
 
 (defun helix-move-fake-cursor (cursor point &optional mark)

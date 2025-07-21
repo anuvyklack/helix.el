@@ -973,14 +973,14 @@ entered regexp withing current selections."
   (interactive)
   (helix-with-real-cursor-as-fake
     (let* (;; Filter cursors to remain only the first one on each line.
-           ;; Line numbers start from 1, so 0 is out of scope.
+           ;; Line numbers start from 1, so 0 as initial value is out of scope.
            (cursors (let ((current-line 0))
                       (-remove #'(lambda (cursor)
                                    (let* ((line (line-number-at-pos
                                                  (overlay-get cursor 'point))))
                                      (or (eql line current-line)
                                          (ignore (setq current-line line)))))
-                               (helix-all-fake-cursors t))))
+                               (helix-all-fake-cursors :sort))))
            (column (-reduce-from #'(lambda (column cursor)
                                      (goto-char (overlay-get cursor 'point))
                                      (max column (current-column)))
@@ -991,14 +991,14 @@ entered regexp withing current selections."
           (helix-with-fake-cursor cursor
             (unless (eql (current-column) column)
               (let ((deactivate-mark) ;; Don't deactivate mark after insertion.
-                    (str (s-repeat (- column (current-column)) " ")))
+                    (padding (s-repeat (- column (current-column)) " ")))
                 (cond ((and (use-region-p)
                             (> (helix-region-direction) 0))
                        (helix-exchange-point-and-mark)
-                       (insert str)
+                       (insert padding)
                        (helix-exchange-point-and-mark))
                       (t
-                       (insert str)))))))))))
+                       (insert padding)))))))))))
 
 (put 'helix-align-selections 'multiple-cursors 'false)
 
@@ -1036,9 +1036,8 @@ entered regexp withing current selections."
       (helix-create-fake-cursor-from-point))
     (goto-char pos)))
 
-(defun helix--copy-region (&optional direction)
+(defun helix--copy-region (direction)
   "Copy region toward the DIRECTION."
-  (unless direction (setq direction 1))
   (let* ((region-dir (helix-region-direction))
          (beg (region-beginning))
          (end (region-end))
