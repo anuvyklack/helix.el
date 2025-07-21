@@ -19,26 +19,25 @@
 (helix-define-state normal
   "Normal state."
   :cursor helix-normal-state-main-cursor
-  :keymap (define-keymap :full t :suppress t)
-  (when helix-normal-state
-    ;; We need to run through all the cursors to switch their color.
-    (helix-with-each-cursor
-      (when helix--region-was-active-on-insert
-        (activate-mark)))
-    (setq helix--region-was-active-on-insert nil)))
+  :keymap (define-keymap :full t :suppress t))
 
 (helix-define-state insert
   "Insert state."
   :cursor helix-insert-state-main-cursor
-  (when helix-insert-state
-    (setq helix--region-was-active-on-insert (region-active-p))
-    (helix-with-each-cursor
-      (deactivate-mark)
-      (setq helix--extend-selection nil))))
+  (if helix-insert-state
+      (when (region-active-p)
+        (setq helix--region-was-active-on-insert t)
+        (helix-with-each-cursor
+          (deactivate-mark)))
+    ;; else
+    (when helix--region-was-active-on-insert
+      (helix-with-each-cursor
+        (activate-mark)))
+    (setq helix--region-was-active-on-insert nil)))
 
 (helix-define-state motion
   "Motion state."
-  :cursor 'hollow)
+  :cursor helix-motion-state-cursor)
 
 (provide 'helix-states)
 ;;; helix-states.el ends here
