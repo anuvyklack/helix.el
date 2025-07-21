@@ -3,7 +3,7 @@
 ;; Author: Yuriy Artemyev <anuvyklack@gmail.com>
 ;; Maintainer: Yuriy Artemyev <anuvyklack@gmail.com>
 ;; Version: 0.0.1
-;; Package-Requires: ((emacs "28.3"))
+;; Package-Requires: ((emacs "29.1"))
 ;;
 ;; This file is not part of GNU Emacs.
 ;;
@@ -84,7 +84,7 @@ or a list of the above."
   :type '(set symbol (cons symbol symbol) string function)
   :group 'helix)
 
-(defcustom helix-motion-state-cursor 'hollow
+(defcustom helix-motion-state-cursor 'hbar
   "Cursor apperance when Helix is in Motion state.
 Can be a cursor type as per `cursor-type', a color string as passed to
 `set-cursor-color', a zero-argument function for changing the cursor, or
@@ -115,8 +115,7 @@ shifting subsequent content to the right."
   :set #'(lambda (symbol value)
            (set symbol (cond ((characterp value)
                               (char-to-string value))
-                             ((and (stringp value)
-                                   (length= value 1))
+                             ((and (stringp value) (length= value 1))
                               value)
                              (t
                               (char-to-string ?\u2000))))))

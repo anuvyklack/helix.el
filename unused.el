@@ -134,7 +134,7 @@ I.e.:
       (-each rest-cursors #'helix--delete-fake-cursor)
       ;; Swap BEG and END if backward direction.
       (when (< dir 0)
-        (pcase-setq `(,beg . ,end) (cons end beg)))
+        (cl-rotatef beg end))
       (cond ((eql id 0) ;; ID 0 denotes real cursors
              (helix-remove-fake-cursor cursor)
              (goto-char end)
