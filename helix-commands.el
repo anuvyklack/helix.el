@@ -1252,20 +1252,6 @@ already there."
 
 ;;;; Mark
 
-(defun helix-mark-map-digit-argument (arg)
-  "Like `digit-argument' but keep `helix-mark-map' active."
-  (interactive "P")
-  (digit-argument arg)
-  (set-transient-map helix-mark-map))
-
-(put 'helix-mark-map-digit-argument 'multiple-cursors 'false)
-
-;; Do not show `helix-mark-map-digit-argument' in which-key popup.
-(with-eval-after-load 'which-key
-  (defvar which-key-replacement-alist)
-  (cl-pushnew '((nil . "helix-mark-map-digit-argument") . ignore)
-              which-key-replacement-alist))
-
 ;; miw
 (defun helix-mark-inner-word (count)
   (interactive "p")
