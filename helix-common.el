@@ -192,20 +192,18 @@ such as `helix-word', `helix-sentence', `paragraph', `line'."
   "Move point toward the DIRECTION stopping after a char is not in CHARS string.
 Move backward when DIRECTION is negative number, forward — otherwise.
 Return t if point has moved."
-  (unless direction (setq direction 1))
-  (/= 0 (if (< direction 0)
-            (skip-chars-backward chars)
-          (skip-chars-forward chars))))
+  (/= 0 (if (natnump (or direction 1))
+            (skip-chars-forward chars)
+          (skip-chars-backward chars))))
 
 (defun helix-skip-whitespaces (&optional direction)
   "Move point toward the DIRECTION across whitespace.
 Move backward when DIRECTION is negative number, forward — otherwise.
 Return the distance traveled positive or negative depending on DIRECTION."
-  (unless direction (setq direction 1))
   ;; Alternative: (helix-skip-chars " \t" dir)
-  (if (< direction 0)
-      (skip-syntax-backward " " (line-beginning-position))
-    (skip-syntax-forward " " (line-end-position))
+  (if (natnump (or direction 1))
+      (skip-syntax-forward " " (line-end-position))
+    (skip-syntax-backward " " (line-beginning-position))
     ;; (let ((steps (skip-syntax-forward " " (line-end-position))))
     ;;   (if (/= steps 0)
     ;;       (let ((pnt (point)))
@@ -219,7 +217,9 @@ Return the distance traveled positive or negative depending on DIRECTION."
 If DIRECTION is positive number get following char,
 negative — preceding char."
   (unless direction (setq direction 1))
-  (if (< direction 0) (preceding-char) (following-char)))
+  (if (natnump (or direction 1))
+      (following-char)
+    (preceding-char)))
 
 (defun helix-beginning-of-line ()
   "Move point to beginning of current line.
@@ -346,7 +346,7 @@ on sign of COUNT.
 What is function is defined by `beginning-of-defun' and `end-of-defun'
 functions."
   (helix-motion-loop (dir (or count 1))
-    (if (< dir 0) (beginning-of-defun) (end-of-defun))))
+    (if (natnump dir) (end-of-defun) (beginning-of-defun))))
 
 ;; `helix-sexp' thing
 (defun forward-helix-sexp (&optional count)
@@ -373,15 +373,14 @@ functions."
   (unless count (setq count 1))
   (when (zerop count)
     (error "Cannot mark zero %s" thing))
-  (let ((bounds (bounds-of-thing-at-point thing)))
-    (cond (bounds
-           (set-mark (car bounds))
-           (goto-char (cdr bounds))
-           (setq count (1- count)))
-          (t
-           (forward-thing thing)
-           (forward-thing thing -1)
-           (set-mark (point)))))
+  (if-let* ((bounds (bounds-of-thing-at-point thing)))
+      (progn
+        (set-mark (car bounds))
+        (goto-char (cdr bounds))
+        (cl-decf count))
+    (forward-thing thing)
+    (forward-thing thing -1)
+    (set-mark (point)))
   (forward-thing thing count))
 
 (defun helix-mark-a-thing (thing)
@@ -980,7 +979,7 @@ that `match-beginning', `match-end' and `match-data' access."
 If DIRECTION is positive number — place point at the END,
 negative number — at the beginning."
   (cond ((or (null direction)
-             (> direction 0))
+             (natnump direction))
          (set-mark start)
          (goto-char end))
         (t
