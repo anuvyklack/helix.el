@@ -246,6 +246,12 @@ functions."
   (helix-motion-loop (dir (or count 1))
     (if (< dir 0) (beginning-of-defun) (end-of-defun))))
 
+;; `helix-sexp' thing
+(defun forward-helix-sexp (&optional count)
+  (helix-motion-loop (dir (or count 1))
+    (ignore-errors
+      (forward-sexp dir))))
+
 ;; `helix-comment' thing
 (put 'helix-comment 'bounds-of-thing-at-point #'helix-bounds-of-comment-at-point-ppss)
 (defun helix-bounds-of-comment-at-point-ppss ()
