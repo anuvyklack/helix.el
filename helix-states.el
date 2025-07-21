@@ -18,12 +18,12 @@
 
 (helix-define-state normal
   "Normal state."
-  :cursor helix-normal-state-main-cursor
+  :cursor helix-normal-state-cursor
   :keymap (define-keymap :full t :suppress t))
 
 (helix-define-state insert
   "Insert state."
-  :cursor helix-insert-state-main-cursor
+  :cursor helix-insert-state-cursor
   (if helix-insert-state
       (when (region-active-p)
         (setq helix--region-was-active-on-insert t)
