@@ -16,7 +16,7 @@
 (require 'cl-lib)
 (require 'dash)
 (require 'thingatpt)
-(provide 'pcre2el)
+(require 'pcre2el)
 (require 'helix-vars)
 
 ;;; Macros
@@ -268,6 +268,7 @@ functions."
 
 ;; `helix-comment' thing
 (put 'helix-comment 'bounds-of-thing-at-point #'helix-bounds-of-comment-at-point-ppss)
+
 (defun helix-bounds-of-comment-at-point-ppss ()
   "Return the bounds of a comment at point using Parse-Partial-Sexp Scanner."
   (save-excursion
@@ -736,12 +737,8 @@ positive — end of line."
 
 (defun helix-exchange-point-and-mark ()
   "Exchange point and mark without activating the region."
-  ;; (goto-char (prog1 (mark t)
-  ;;              (set-marker (mark-marker) (point) (current-buffer))))
-  (let* ((point (point))
-         (mark  (or (mark t) point)))
-    (set-marker (mark-marker) point)
-    (goto-char mark)))
+  (goto-char (prog1 (mark t)
+               (set-marker (mark-marker) (point) (current-buffer)))))
 
 (defun helix-linewise-selection-p ()
   "Return non-nil if active region exactly spans whole line(s).
@@ -812,7 +809,7 @@ that `match-beginning', `match-end' and `match-data' access."
 If nothing found, wrap around the buffer and search up to the point."
   (unless direction (setq direction 1))
   (when (and (use-region-p)
-             (not (eql direction (helix-region-direction))))
+             (/= direction (helix-region-direction)))
     (goto-char (mark-marker)))
   (or (re-search-forward regexp nil t direction)
       ;; If nothing found — wrap around buffer end and try again.
@@ -878,8 +875,7 @@ negative number — at the beginning."
   "Exchange point and mark if region direction mismatch DIRECTION.
 DIRECTION should be 1 or -1."
   (when (use-region-p)
-    (unless (eql (helix-region-direction)
-                 direction)
+    (unless (eql direction (helix-region-direction))
       (helix-exchange-point-and-mark))))
 
 (defun helix-undo-command-p (command)
@@ -964,6 +960,7 @@ FUN on each invocation should move point."
 
 (defun helix-letters-are-self-insert-p ()
   "Return t if any of the a-z keys are bound to self-insert command."
+  ;; (mapcar #'char-to-string (number-sequence ?a ?z))
   (cl-dolist (key '("a" "b" "c" "d" "e" "f" "g" "h" "i" "j" "k" "l" "m"
                     "n" "o" "p" "q" "r" "s" "t" "u" "v" "w" "x" "y" "z"))
     (if-let* ((cmd (key-binding key))

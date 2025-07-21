@@ -162,8 +162,8 @@ For these commands:
 - Overlapping selections will be merged."
   :type '(list symbol)
   :group 'helix
-  :set #'(lambda (sym value)
-           (set-default sym value)
+  :set #'(lambda (symbol value)
+           (set-default symbol value)
            (mapc #'(lambda (cmd)
                      (put cmd 'helix-deactivate-mark t)
                      (put cmd 'helix-merge-regions 'extend-selection))
@@ -299,8 +299,7 @@ the list of categories."
     ;; full-width alphanumeric
     (?A . ?r) (?A . ?k) (?A . ?G)
     ;; full-width Greek
-    (?G . ?r) (?G . ?k) (?G . ?A)
-    )
+    (?G . ?r) (?G . ?k) (?G . ?A))
   "List of pair (cons) of categories to determine word boundary
 used in `helix-cjk-word-boundary-p'. See the documentation of
 `word-combining-categories'. Use `describe-categories' to see the

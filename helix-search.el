@@ -451,8 +451,8 @@ If INVERT is non-nil — remove selections that match regexp."
                     ((or ?\r ?\n) "\n") ;; RET
                     ;; (?\e) ;; ESC
                     ;; (?\d) ;; DEL (backspace)
-                    (_ (char-fold-to-regexp (char-to-string char)))
-                    ;; (_ (regexp-quote (char-to-string key)))
+                    ;; (_ (char-fold-to-regexp (char-to-string char)))
+                    (_ (regexp-quote (char-to-string char)))
                     ))
          (hl (helix-highlight-create :buffer (current-buffer)
                                      :regexp pattern

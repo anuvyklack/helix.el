@@ -152,7 +152,9 @@ I.e.:
 
 (defun helix-overlapping-overlays (overlays)
   "Return list with overlapping overlays grouped together."
-  (setq overlays (sort overlays #'helix--compare-by-overlay-start))
+  (setq overlays (sort overlays #'(lambda (o1 o2)
+                                    (< (overlay-start o1)
+                                       (overlay-start o2)))))
   (let ((result nil)
         (current-group nil)
         (current-end (point-min)))
