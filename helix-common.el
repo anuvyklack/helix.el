@@ -233,6 +233,39 @@ Use visual line when `visual-line-mode' is active."
       (end-of-visual-line)
     (move-end-of-line 1)))
 
+(defun helix--forward-word-start (thing count)
+  "Move to the COUNT-th next start of a word-like THING."
+  (setq count (abs count))
+  (when (zerop (forward-thing thing (1- count)))
+    (if helix--extend-selection
+        (or (region-active-p) (set-mark (point)))
+      (skip-chars-forward "\r\n")
+      (set-mark (point)))
+    (or (helilx-whitespace? (following-char))
+        (forward-thing thing))
+    (helix-skip-whitespaces)))
+
+(defun helix--backward-word-start (thing count)
+  "Move to the COUNT-th previous start of a word-like THING."
+  (setq count (- (abs count)))
+  (when (zerop (forward-thing thing (1+ count)))
+    (if helix--extend-selection
+        (or (region-active-p) (set-mark (point)))
+      (skip-chars-backward "\r\n")
+      (set-mark (point)))
+    (forward-thing thing -1)))
+
+(defun helix--forward-word-end (thing count)
+  "Move to the COUNT-th next word-like THING end."
+  (interactive "p")
+  (setq count (abs count))
+  (when (zerop (forward-thing thing (1- count)))
+    (if helix--extend-selection
+        (or (region-active-p) (set-mark (point)))
+      (skip-chars-forward "\r\n")
+      (set-mark (point)))
+    (forward-thing thing)))
+
 (defmacro helix-motion-loop (spec &rest body)
   "Loop a certain number of times.
 Evaluate BODY repeatedly COUNT times with DIRECTION bound to 1 or -1,
@@ -391,6 +424,28 @@ such as `helix-word', `helix-sentence', `paragraph', `line'."
               ((and (<= beg (point) end)
                     (< beg end))))
         (cons beg end))))
+
+(defun helix--mark-a-word (thing)
+  "Inner implementation of `helix-mark-a-word' and `helix-mark-a-WORD' commands."
+  (-when-let ((thing-beg . thing-end) (bounds-of-thing-at-point thing))
+    (-let [(beg . end)
+           (or (progn
+                 (goto-char thing-end)
+                 (helix-with-restriction
+                     (line-beginning-position) (line-end-position)
+                   (-if-let ((_ . space-end)
+                             (helix-bounds-of-complement-of-thing-at-point thing))
+                       (cons thing-beg space-end))))
+               (progn
+                 (goto-char thing-beg)
+                 (helix-with-restriction
+                     (save-excursion (back-to-indentation) (point))
+                     (line-end-position)
+                   (-if-let ((space-beg . _)
+                             (helix-bounds-of-complement-of-thing-at-point thing))
+                       (cons space-beg thing-end))))
+               (cons thing-beg thing-end))]
+      (helix-set-region beg end))))
 
 ;;; Surround
 

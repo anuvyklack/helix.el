@@ -94,19 +94,10 @@
 (put 'helix-previous-line 'helix-merge-regions 'extend-selection)
 
 ;; w
-(defun helix-forward-word-start (count &optional bigword?)
-  "Move to the COUNT-th next word start.
-If BIGWORD? move over WORD-s."
+(defun helix-forward-word-start (count)
+  "Move to the COUNT-th next word start."
   (interactive "p")
-  (let ((thing (if bigword? 'helix-WORD 'helix-word)))
-    (when (zerop (forward-thing thing (1- count)))
-      (if helix--extend-selection
-          (or (region-active-p) (set-mark (point)))
-        (skip-chars-forward "\r\n")
-        (set-mark (point)))
-      (or (helilx-whitespace? (following-char))
-          (forward-thing thing))
-      (helix-skip-whitespaces))))
+  (helix--forward-word-start 'helix-word count))
 
 (put 'helix-forward-word-start 'multiple-cursors t)
 (put 'helix-forward-word-start 'helix-merge-regions 'extend-selection)
@@ -115,24 +106,16 @@ If BIGWORD? move over WORD-s."
 (defun helix-forward-WORD-start (count)
   "Move to the COUNT-th next WORD start."
   (interactive "p")
-  (helix-forward-word-start count :bigword))
+  (helix--forward-word-start 'helix-WORD count))
 
 (put 'helix-forward-WORD-start 'multiple-cursors t)
 (put 'helix-forward-WORD-start 'helix-merge-regions 'extend-selection)
 
 ;; b
-(defun helix-backward-word-start (count &optional bigword?)
-  "Move to the COUNT-th previous word start.
-If BIGWORD? move over WORD-s."
+(defun helix-backward-word-start (count)
+  "Move to the COUNT-th previous word start."
   (interactive "p")
-  (setq count (- count))
-  (let ((thing (if bigword? 'helix-WORD 'helix-word)))
-    (when (zerop (forward-thing thing (1+ count)))
-      (if helix--extend-selection
-          (or (region-active-p) (set-mark (point)))
-        (skip-chars-backward "\r\n")
-        (set-mark (point)))
-      (forward-thing thing -1))))
+  (helix--backward-word-start 'helix-word count))
 
 (put 'helix-backward-word-start 'multiple-cursors t)
 (put 'helix-backward-word-start 'helix-merge-regions 'extend-selection)
@@ -141,23 +124,16 @@ If BIGWORD? move over WORD-s."
 (defun helix-backward-WORD-start (count)
   "Move to the COUNT-th previous WORD start."
   (interactive "p")
-  (helix-backward-word-start count :bigword))
+  (helix--backward-word-start 'helix-WORD count))
 
 (put 'helix-backward-WORD-start 'multiple-cursors t)
 (put 'helix-backward-WORD-start 'helix-merge-regions 'extend-selection)
 
 ;; e
-(defun helix-forward-word-end (count &optional bigword?)
-  "Move to the COUNT-th next word end.
-If BIGWORD? move over WORD-s."
+(defun helix-forward-word-end (count)
+  "Move to the COUNT-th next word end."
   (interactive "p")
-  (let ((thing (if bigword? 'helix-WORD 'helix-word)))
-    (when (zerop (forward-thing thing (1- count)))
-      (if helix--extend-selection
-          (or (region-active-p) (set-mark (point)))
-        (skip-chars-forward "\r\n")
-        (set-mark (point)))
-      (forward-thing thing))))
+  (helix--forward-word-end 'helix-word count))
 
 (put 'helix-forward-word-end 'multiple-cursors t)
 (put 'helix-forward-word-end 'helix-merge-regions 'extend-selection)
@@ -166,7 +142,7 @@ If BIGWORD? move over WORD-s."
 (defun helix-forward-WORD-end (count)
   "Move COUNT-th next WORD end."
   (interactive "p")
-  (helix-forward-word-end count :bigword))
+  (helix--forward-word-end 'helix-WORD count))
 
 (put 'helix-forward-WORD-end 'multiple-cursors t)
 (put 'helix-forward-WORD-end 'helix-merge-regions 'extend-selection)
@@ -1271,7 +1247,7 @@ already there."
 ;; maw
 (defun helix-mark-a-word ()
   (interactive)
-  (helix--mark-a-word-1 nil))
+  (helix--mark-a-word 'helix-word))
 
 (put 'helix-mark-a-word 'multiple-cursors t)
 (put 'helix-mark-a-word 'helix-merge-regions t)
@@ -1279,34 +1255,10 @@ already there."
 ;; maW
 (defun helix-mark-a-WORD ()
   (interactive)
-  (helix--mark-a-word-1 t))
+  (helix--mark-a-word 'helix-WORD))
 
 (put 'helix-mark-a-WORD 'multiple-cursors t)
 (put 'helix-mark-a-WORD 'helix-merge-regions t)
-
-(defun helix--mark-a-word-1 (bigword?)
-  "Inner implementation of `helix-mark-a-word' and `helix-mark-a-WORD' commands."
-  (let ((thing (if bigword? 'helix-WORD 'helix-word)))
-    (-when-let ((thing-beg . thing-end) (bounds-of-thing-at-point thing))
-      (-let [(beg . end)
-             (or (progn
-                   (goto-char thing-end)
-                   (helix-with-restriction (line-beginning-position) (line-end-position)
-                     (-if-let ((_ . space-end)
-                               (helix-bounds-of-complement-of-thing-at-point thing))
-                         (cons thing-beg space-end))))
-                 (progn
-                   (goto-char thing-beg)
-                   (helix-with-restriction
-                       (save-excursion
-                         (back-to-indentation)
-                         (point))
-                       (line-end-position)
-                     (-if-let ((space-beg . _)
-                               (helix-bounds-of-complement-of-thing-at-point thing))
-                         (cons space-beg thing-end))))
-                 (cons thing-beg thing-end))]
-        (helix-set-region beg end)))))
 
 ;; mis
 (defun helix-mark-inner-sentence (count)
