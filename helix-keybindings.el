@@ -147,6 +147,103 @@
   "n"   #'helix-search-next
   "N"   #'helix-search-previous
 
+  "m" (helix-define-keymap-with-digit-argument helix-mark-map
+        ;; Surround
+        "m" #'helix-jump-to-match-item
+        "s" #'helix-surround
+        "d" #'helix-surround-delete
+        "r" #'helix-surround-change
+
+        ;; Mark
+        "w"   #'helix-mark-inner-word
+        "i w" #'helix-mark-inner-word
+        "a w" #'helix-mark-a-word
+        "W"   #'helix-mark-inner-WORD
+        "i W" #'helix-mark-inner-WORD
+        "a W" #'helix-mark-a-WORD
+        "i s" #'helix-mark-inner-sentence
+        "a s" #'helix-mark-a-sentence
+        "f"   #'helix-mark-inner-function
+        "i f" #'helix-mark-inner-function
+        "a f" #'helix-mark-a-function
+        "p"   #'helix-mark-inner-paragraph
+        "i p" #'helix-mark-inner-paragraph
+        "a p" #'helix-mark-a-paragraph
+
+        "\""   #'helix-mark-inner-double-quoted
+        "i \"" #'helix-mark-inner-double-quoted
+        "a \"" #'helix-mark-a-double-quoted
+        "'"    #'helix-mark-inner-single-quoted
+        "i '"  #'helix-mark-inner-single-quoted
+        "a '"  #'helix-mark-a-single-quoted
+        "`"    #'helix-mark-inner-back-quoted
+        "i `"  #'helix-mark-inner-back-quoted
+        "a `"  #'helix-mark-a-back-quoted
+
+        "("   #'helix-mark-inner-paren
+        ")"   #'helix-mark-inner-paren
+        "i (" #'helix-mark-inner-paren
+        "i )" #'helix-mark-inner-paren
+        "a (" #'helix-mark-a-paren
+        "a )" #'helix-mark-a-paren
+
+        "["   #'helix-mark-inner-bracket
+        "]"   #'helix-mark-inner-bracket
+        "i [" #'helix-mark-inner-bracket
+        "i ]" #'helix-mark-inner-bracket
+        "a [" #'helix-mark-a-bracket
+        "a ]" #'helix-mark-a-bracket
+
+        "{"   #'helix-mark-inner-curly
+        "}"   #'helix-mark-inner-curly
+        "i {" #'helix-mark-inner-curly
+        "i }" #'helix-mark-inner-curly
+        "a {" #'helix-mark-a-curly
+        "a }" #'helix-mark-a-curly
+
+        "<"   #'helix-mark-inner-angle
+        ">"   #'helix-mark-inner-angle
+        "i <" #'helix-mark-inner-angle
+        "i >" #'helix-mark-inner-angle
+        "a <" #'helix-mark-an-angle
+        "a >" #'helix-mark-an-angle
+
+        "!"   #'helix-mark-inner-surround
+        "@"   #'helix-mark-inner-surround
+        "#"   #'helix-mark-inner-surround
+        "$"   #'helix-mark-inner-surround
+        "%"   #'helix-mark-inner-surround
+        "^"   #'helix-mark-inner-surround
+        "&"   #'helix-mark-inner-surround
+        "*"   #'helix-mark-inner-surround
+        "~"   #'helix-mark-inner-surround
+        "="   #'helix-mark-inner-surround
+        "_"   #'helix-mark-inner-surround
+
+        "i !" #'helix-mark-inner-surround
+        "i @" #'helix-mark-inner-surround
+        "i #" #'helix-mark-inner-surround
+        "i $" #'helix-mark-inner-surround
+        "i %" #'helix-mark-inner-surround
+        "i ^" #'helix-mark-inner-surround
+        "i &" #'helix-mark-inner-surround
+        "i *" #'helix-mark-inner-surround
+        "i ~" #'helix-mark-inner-surround
+        "i =" #'helix-mark-inner-surround
+        "i _" #'helix-mark-inner-surround
+
+        "a !" #'helix-mark-a-surround
+        "a @" #'helix-mark-a-surround
+        "a #" #'helix-mark-a-surround
+        "a $" #'helix-mark-a-surround
+        "a %" #'helix-mark-a-surround
+        "a ^" #'helix-mark-a-surround
+        "a &" #'helix-mark-a-surround
+        "a *" #'helix-mark-a-surround
+        "a ~" #'helix-mark-a-surround
+        "a =" #'helix-mark-a-surround
+        "a _" #'helix-mark-a-surround)
+
   ;; Misc
   "C-o"   #'pop-to-mark-command
   "g c"   #'comment-dwim
@@ -155,118 +252,6 @@
   "g q"   #'fill-region
   "] SPC" #'helix-add-blank-line-below
   "[ SPC" #'helix-add-blank-line-above)
-
-;;;; Mark
-
-(helix-keymap-set nil 'normal "m" 'helix-mark-map)
-(define-prefix-command 'helix-mark-map)
-(helix-keymap-set helix-mark-map nil
-  "0"   #'helix-mark-map-digit-argument
-  "1"   #'helix-mark-map-digit-argument
-  "2"   #'helix-mark-map-digit-argument
-  "3"   #'helix-mark-map-digit-argument
-  "4"   #'helix-mark-map-digit-argument
-  "5"   #'helix-mark-map-digit-argument
-  "6"   #'helix-mark-map-digit-argument
-  "7"   #'helix-mark-map-digit-argument
-  "8"   #'helix-mark-map-digit-argument
-  "9"   #'helix-mark-map-digit-argument
-
-  "m"   #'helix-jump-to-match-item
-
-  "w"   #'helix-mark-inner-word
-  "i w" #'helix-mark-inner-word
-  "a w" #'helix-mark-a-word
-  "W"   #'helix-mark-inner-WORD
-  "i W" #'helix-mark-inner-WORD
-  "a W" #'helix-mark-a-WORD
-  "i s" #'helix-mark-inner-sentence
-  "a s" #'helix-mark-a-sentence
-  "f"   #'helix-mark-inner-function
-  "i f" #'helix-mark-inner-function
-  "a f" #'helix-mark-a-function
-  "p"   #'helix-mark-inner-paragraph
-  "i p" #'helix-mark-inner-paragraph
-  "a p" #'helix-mark-a-paragraph
-
-  "\""   #'helix-mark-inner-double-quoted
-  "i \"" #'helix-mark-inner-double-quoted
-  "a \"" #'helix-mark-a-double-quoted
-  "'"    #'helix-mark-inner-single-quoted
-  "i '"  #'helix-mark-inner-single-quoted
-  "a '"  #'helix-mark-a-single-quoted
-  "`"    #'helix-mark-inner-back-quoted
-  "i `"  #'helix-mark-inner-back-quoted
-  "a `"  #'helix-mark-a-back-quoted
-
-  "("   #'helix-mark-inner-paren
-  ")"   #'helix-mark-inner-paren
-  "i (" #'helix-mark-inner-paren
-  "i )" #'helix-mark-inner-paren
-  "a (" #'helix-mark-a-paren
-  "a )" #'helix-mark-a-paren
-
-  "["   #'helix-mark-inner-bracket
-  "]"   #'helix-mark-inner-bracket
-  "i [" #'helix-mark-inner-bracket
-  "i ]" #'helix-mark-inner-bracket
-  "a [" #'helix-mark-a-bracket
-  "a ]" #'helix-mark-a-bracket
-
-  "{"   #'helix-mark-inner-curly
-  "}"   #'helix-mark-inner-curly
-  "i {" #'helix-mark-inner-curly
-  "i }" #'helix-mark-inner-curly
-  "a {" #'helix-mark-a-curly
-  "a }" #'helix-mark-a-curly
-
-  "<"   #'helix-mark-inner-angle
-  ">"   #'helix-mark-inner-angle
-  "i <" #'helix-mark-inner-angle
-  "i >" #'helix-mark-inner-angle
-  "a <" #'helix-mark-an-angle
-  "a >" #'helix-mark-an-angle
-
-  "!" #'helix-mark-inner-surround
-  "@" #'helix-mark-inner-surround
-  "#" #'helix-mark-inner-surround
-  "$" #'helix-mark-inner-surround
-  "%" #'helix-mark-inner-surround
-  "^" #'helix-mark-inner-surround
-  "&" #'helix-mark-inner-surround
-  "*" #'helix-mark-inner-surround
-  "~" #'helix-mark-inner-surround
-  "=" #'helix-mark-inner-surround
-  "_" #'helix-mark-inner-surround
-
-  "i !" #'helix-mark-inner-surround
-  "i @" #'helix-mark-inner-surround
-  "i #" #'helix-mark-inner-surround
-  "i $" #'helix-mark-inner-surround
-  "i %" #'helix-mark-inner-surround
-  "i ^" #'helix-mark-inner-surround
-  "i &" #'helix-mark-inner-surround
-  "i *" #'helix-mark-inner-surround
-  "i ~" #'helix-mark-inner-surround
-  "i =" #'helix-mark-inner-surround
-  "i _" #'helix-mark-inner-surround
-
-  "a !" #'helix-mark-a-surround
-  "a @" #'helix-mark-a-surround
-  "a #" #'helix-mark-a-surround
-  "a $" #'helix-mark-a-surround
-  "a %" #'helix-mark-a-surround
-  "a ^" #'helix-mark-a-surround
-  "a &" #'helix-mark-a-surround
-  "a *" #'helix-mark-a-surround
-  "a ~" #'helix-mark-a-surround
-  "a =" #'helix-mark-a-surround
-  "a _" #'helix-mark-a-surround
-
-  ;; Surround
-  "s" #'helix-surround
-  "d" #'helix-surround-delete
-  "r" #'helix-surround-change)
 
 ;;;; Windows
 
