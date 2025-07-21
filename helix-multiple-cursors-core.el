@@ -798,7 +798,7 @@ a hash key, to distinguish different calls of FN-NAME within one command.
 Calls with equal PROMPT or without it would be undistinguishable."
   `(helix-define-advice ,fn-name (:around (orig-fun &rest args) helix)
      "Cache the users input to use it with multiple cursors."
-     (if (bound-and-true-p helix-multiple-cursors-mode)
+     (if helix-multiple-cursors-mode
          (let* (;; Use PROMPT argument as a hash key to distinguish different
                 ;; calls of `read-char' like functions within one command.
                 (prompt (car-safe args))

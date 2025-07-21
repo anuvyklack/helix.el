@@ -5,7 +5,7 @@
 ;; Created: March 27, 2025
 ;; Version: 0.0.1
 ;; Homepage: https://github.com/anuvyklack/helix
-;; Package-Requires: ((emacs "28.3"))
+;; Package-Requires: ((emacs "29.1"))
 ;;
 ;; This file is not part of GNU Emacs.
 ;;
