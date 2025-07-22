@@ -733,22 +733,26 @@ Like `helix-paste-pop' but with negative COUNT argument."
 (put 'helix-invert-case 'multiple-cursors t)
 
 ;; ` or gu
-(defun helix-downcase (start end)
-  "Convert text in selection to lower case."
-  (interactive "r")
-  (when (use-region-p)
-    (let (deactivate-mark)
-      (downcase-region start end))))
+(defun helix-downcase ()
+  "Convert text in selection to lower case.
+With no selection downcase the character after point."
+  (interactive)
+  (if (use-region-p)
+      (let (deactivate-mark)
+        (downcase-region (region-beginning) (region-end)))
+    (downcase-region (point) (progn (forward-char) (point)))))
 
 (put 'helix-downcase 'multiple-cursors t)
 
 ;; M-` or gU
-(defun helix-upcase (start end)
-  "Convert text in selection to upper case."
-  (interactive "r")
-  (when (use-region-p)
-    (let (deactivate-mark)
-      (upcase-region start end))))
+(defun helix-upcase ()
+  "Convert text in selection to upper case.
+With no selection upcase the character after point."
+  (interactive)
+  (if (use-region-p)
+      (let (deactivate-mark)
+        (upcase-region (region-beginning) (region-end)))
+    (upcase-region (point) (progn (forward-char) (point)))))
 
 (put 'helix-upcase 'multiple-cursors t)
 
