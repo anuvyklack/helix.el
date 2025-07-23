@@ -1699,46 +1699,55 @@ Do not auto-detect word boundaries in the search pattern."
 
 ;;; Surround
 
-(defun helix-surround-add-pair (key insert &optional search regexp? balanced?)
+(cl-defun helix-surround-add-pair (key pair &key search regexp balanced)
   "Add a new insert-delete pattern for Helix surround functionality.
-KEY       - A character that will activates this pattern.
-INSERT    - Cons cell (LEFT . RIGHT) with strings, or function that returns such
-            cons cell. The strigs that will be inserted by `helix-surround' and
-            `helix-surround-change' functions.
-SEARCH    - Any of:
-            1. Cons cell with strings (LEFT . RIGHT). Should be patterns that
-               will be used to search of two substrings to delete in
-               `helix-surround-delete' and `helix-surround-change'functions.
-               If not specified INSERT pair will be used.
-            2. Function that return cons cell with strings (LEFT . RIGHT) like
-               in 1.
-            3. Function that returns list
-                        (LEFT-START LEFT-END RIGHT-START RIGHT-END)
-               with 4 positions of START/END of LEFT and RIGHT delimeters.
-               Example:
-                          LEFT                              RIGHT
-                        |<tag> |Lorem ipsum dolor sit amet| </tag>|
-                        ^      ^                          ^       ^
-               LEFT-START      LEFT-END         RIGHT-START       RIGHT-END
 
-Following parameters are taken into account only when SEARCH argument is a cons
+Positional arguments:
+
+KEY        A character that will activates this pattern.
+
+PAIR       Cons cell (LEFT . RIGHT) with strings, or function that returns such
+           cons cell. The strigs that will be inserted by `helix-surround' and
+           `helix-surround-change' functions.
+
+Keyword arguments:
+
+:SEARCH    Any of:
+           1. Cons cell with strings (LEFT . RIGHT) of patterns that will be used
+              to search of two substrings to delete by `helix-surround-delete'
+              and `helix-surround-change' functions.
+           2. nil — the value from PAIR argument will be used instead.
+           3. Function that return cons cell with strings (LEFT . RIGHT) like
+              in 1.
+           4. Function that returns list
+                       (LEFT-START LEFT-END RIGHT-START RIGHT-END)
+              with 4 positions of START/END of LEFT and RIGHT delimeters.
+              Example:
+                         LEFT                              RIGHT
+                       |<tag> |Lorem ipsum dolor sit amet| </tag>|
+                       ^      ^                          ^       ^
+              LEFT-START      LEFT-END         RIGHT-START       RIGHT-END
+
+Following parameters are taken into account only when :SEARCH argument is a cons
 cell with stirngs (LEFT . RIGHT) or a function, that returns such cons cell. If
-SEARCH is a function that returns list with 4 positions, they will be ignored.
+:SEARCH is a function that returns list with 4 positions, they will be ignored.
 
-REGEXP?   - If non-nil then strings specified in SEARCH argument will be treated
-            as regexp patterns, otherwise they will be searched literally.
-BALANCED? - When non-nil all nested balanced LEFT RIGHT pairs will be skipped,
-            else the first found pattern will be accepted.
+:REGEXP    If non-nil then strings specified in :SEARCH argument will be treated
+           as regexp patterns. Otherwise they will be searched literally.
+
+:BALANCED  When non-nil all nested balanced LEFT RIGHT pairs will be skipped,
+           else the first found pattern will be accepted.
 
 This function populates the buffer local `helix-surround-alist' variable,
 and thus should be called from major-modes hooks.
 
-See the defaul value of `helix-surround-alist' variable and
-`helix-integration.el' file for examples."
-  (push (cons key (list :insert insert
-                        :search (or search insert)
-                        :regexp regexp?
-                        :balanced balanced?))
+See the defaul value of `helix-surround-alist' variable and `helix-integration.el'
+file for examples."
+  (declare (indent 2))
+  (push (cons key `(:insert ,pair
+                    :search ,(or search pair)
+                    :regexp ,regexp
+                    :balanced ,balanced))
         helix-surround-alist))
 
 (defun helix-surround--read-char ()
