@@ -16,7 +16,6 @@
 (require 'helix-commands)
 (require 'helix-scrolling)
 (require 'helix-core)
-(require 'helix-states)
 (require 'keypad)
 
 ;;; Universal argument

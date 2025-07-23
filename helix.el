@@ -16,7 +16,7 @@
 ;;; Code:
 
 (require 'helix-vars)
-(require 'helix-states)
+(require 'helix-core)
 (require 'helix-commands)
 (require 'helix-keybindings)
 (require 'helix-integration)

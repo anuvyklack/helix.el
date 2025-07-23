@@ -21,7 +21,6 @@
 (require 'helix-common)
 (require 'helix-core)
 (require 'helix-multiple-cursors-core)
-(require 'helix-states)
 (require 'helix-search)
 (provide 'pulse)
 (require 'avy)
