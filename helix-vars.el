@@ -261,8 +261,7 @@ For these commands:
          :search (lambda ()
                    (-when-let ((beg . end) (helix-bounds-of-quoted-at-point ?\"))
                      (list beg (1+ beg) (1- end) end)))))
-  "Association list with (KEY . SPEC) elements for Helix surrounding
-functionality.
+  "Association list with (KEY . SPEC) elements for Helix surrounding functionality.
 
 KEY is a character. SPEC is a plist with next keys:
 
@@ -274,7 +273,7 @@ KEY is a character. SPEC is a plist with next keys:
          1. Cons cell with strings (LEFT . RIGHT). Should be patterns that
             will be used to search of two substrings to delete in
             `helix-surround-delete' and `helix-surround-change' functions.
-            If not specified INSERT pair will be used.
+            If not specified `:insert' pair will be used.
          2. Function that return cons cell with strings (LEFT . RIGHT) like
             in 1.
          3. Function that returns list with 4 positions:
@@ -286,11 +285,11 @@ KEY is a character. SPEC is a plist with next keys:
                      ^      ^                          ^       ^
             LEFT-START      LEFT-END         RIGHT-START       RIGHT-END
 
-Following keys are taken into account only when `:SEARCH' argument is a cons cell
+Following keys are taken into account only when `:search' argument is a cons cell
 with strings (LEFT . RIGHT) or a function, that returns such cons cell. If
-`:SEARCH' is a function that returns list with 4 positions, they will be ignored.
+`:search' is a function that returns list with 4 positions, they will be ignored.
 
-`:regexp'    If non-nil then LEFT and RIGHT strings specified in `:SEARCH' will be
+`:regexp'    If non-nil then LEFT and RIGHT strings specified in `:search' will be
            treated as regexp patterns. Otherwise they will be searched literally.
 
 `:balanced'  When non-nil all nested balanced LEFT RIGHT pairs will be skipped.
