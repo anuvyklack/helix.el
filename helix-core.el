@@ -306,6 +306,31 @@ CHECKED-MODES is used internally and should not be set initially."
   (add-to-list (helix-state-property state :modes)
                mode))
 
+;;; Normal, Insert and Motion states
+
+(helix-define-state normal
+  "Normal state."
+  :cursor helix-normal-state-cursor
+  :keymap (define-keymap :full t :suppress t))
+
+(helix-define-state insert
+  "Insert state."
+  :cursor helix-insert-state-cursor
+  (if helix-insert-state
+      (when (region-active-p)
+        (setq helix--region-was-active-on-insert t)
+        (helix-with-each-cursor
+          (deactivate-mark)))
+    ;; else
+    (when helix--region-was-active-on-insert
+      (helix-with-each-cursor
+        (activate-mark)))
+    (setq helix--region-was-active-on-insert nil)))
+
+(helix-define-state motion
+  "Motion state."
+  :cursor helix-motion-state-cursor)
+
 ;;; Keymaps
 
 (defun helix-update-active-keymaps ()
