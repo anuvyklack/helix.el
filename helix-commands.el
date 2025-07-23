@@ -424,8 +424,10 @@ Use visual line when `visual-line-mode' is active."
 (defun helix-insert ()
   "Switch to Insert state before region."
   (interactive)
-  (helix-with-each-cursor
-    (helix-ensure-region-direction -1))
+  (when (and (use-region-p)
+             (< (mark) (point)))
+    (helix-with-each-cursor
+      (helix-ensure-region-direction -1)))
   (helix-insert-state 1))
 
 (put 'helix-insert 'multiple-cursors 'false)
@@ -434,8 +436,10 @@ Use visual line when `visual-line-mode' is active."
 (defun helix-append ()
   "Switch to Insert state after region."
   (interactive)
-  (helix-with-each-cursor
-    (helix-ensure-region-direction 1))
+  (when (and (use-region-p)
+             (< (point) (mark)))
+    (helix-with-each-cursor
+      (helix-ensure-region-direction 1)))
   (helix-insert-state 1))
 
 (put 'helix-append 'multiple-cursors 'false)
