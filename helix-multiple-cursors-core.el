@@ -268,7 +268,7 @@ Return CURSOR."
       (cond ((and helix-match-fake-cursor-style
                   (helix-cursor-is-bar-p))
              (overlay-put cursor 'face nil)
-             (overlay-put cursor 'before-string (propertize "|" 'face face))
+             (overlay-put cursor 'before-string (propertize helix-bar-fake-cursor 'face face))
              (overlay-put cursor 'after-string nil))
             ((eolp)
              (overlay-put cursor 'face nil)

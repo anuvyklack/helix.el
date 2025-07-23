@@ -53,15 +53,10 @@ buffer local variable."
   :type 'integer
   :group 'helix)
 
-(defcustom helix-match-fake-cursor-style nil
-  "If non-nil, attempt to match the cursor style that the user
-has selected. Namely, use vertical bars the user has configured
-Emacs to use that cursor.
-
-If nil, just use standard rectangle cursors for all fake cursors.
-
-In some modes/themes, the bar fake cursors are either not
-rendered or shift text."
+(defcustom helix-match-fake-cursor-style t
+  "If non-nil, attempt to match the `cursor-type' that the user has selected.
+We only can match `bar' and `box' types.
+If nil, the `box' cursor type will be used for all fake cursors."
   :type 'boolean
   :group 'helix)
 
@@ -91,8 +86,38 @@ a list of the above."
   :type '(set symbol (cons symbol symbol) string function)
   :group 'helix)
 
+(defcustom helix-bar-fake-cursor ?\u2000
+  "Character used as the fake cursor when `cursor-type' is `bar'
+and `helix-match-fake-cursor-style' is non-nil.
+
+The value must be either a character or a single-character string,
+representing a narrow space. Recommended candidates are:
+- ?\\u2000 EN QUAD (default value)
+- ?\\u2002 EN SPACE
+- ?\\u2009 THIN SPACE
+
+The appearance depends heavily on:
+1. Your main font.
+2. The font Emacs selects for this narrow space — it should be
+   a variable-pitch font. Use `describe-char' to verify the chosen font.
+
+Note: This all is a hack since Emacs can't render two characters in one
+cell. The bar fake cursor character is virtually inserted between cells,
+shifting subsequent content to the right."
+  :type '(set character string)
+  :group 'helix
+  :set #'(lambda (symbol value)
+           (set symbol (cond ((characterp value)
+                              (char-to-string value))
+                             ((and (stringp value)
+                                   (length= value 1))
+                              value)
+                             (t
+                              (char-to-string ?\u2000))))))
+
 (defface helix-normal-state-fake-cursor
-  '((t (:inverse-video t)))
+  `((t (:height ,(window-default-font-height)
+        :background "gray55")))
   "The face used for fake cursors when Helix is in Normal state."
   :group 'helix)
 
@@ -103,7 +128,8 @@ a list of the above."
   :group 'helix)
 
 (defface helix-extend-selection-cursor
-  '((t (:background "orange")))
+  `((t (:height ,(window-default-font-height)
+        :background "orange")))
   "The face used for cursors when extending selection is active."
   :group 'helix)
 
