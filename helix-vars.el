@@ -60,6 +60,12 @@ If nil, the `box' cursor type will be used for all fake cursors."
   :type 'boolean
   :group 'helix)
 
+(defcustom helix-reactivate-selection-after-insert-state t
+  "When non-nil, the selection will be reactivated on exiting Insert state if it
+was active on entering it."
+  :type 'boolean
+  :group 'helix)
+
 (defcustom helix-normal-state-cursor
   `(bar ,(face-attribute 'cursor :background))
   "Cursor apperance when Helix is in Norman state.

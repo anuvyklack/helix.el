@@ -317,15 +317,16 @@ CHECKED-MODES is used internally and should not be set initially."
   "Insert state."
   :cursor helix-insert-state-cursor
   (if helix-insert-state
-      (when (region-active-p)
+      (when (and helix-reactivate-selection-after-insert-state
+                 (region-active-p))
         (setq helix--region-was-active-on-insert t)
         (helix-with-each-cursor
           (deactivate-mark)))
     ;; else
     (when helix--region-was-active-on-insert
       (helix-with-each-cursor
-        (activate-mark)))
-    (setq helix--region-was-active-on-insert nil)))
+        (activate-mark))
+      (setq helix--region-was-active-on-insert nil))))
 
 (helix-define-state motion
   "Motion state."
