@@ -629,7 +629,8 @@ If no selection — delete COUNT chars after point."
           (deactivate-mark nil))
       (copy-region-as-kill beg end)
       (pulse-momentary-highlight-region beg end)
-      (message "Copied into kill-ring"))))
+      (message "Copied into kill-ring"))
+    (helix-extend-selection -1)))
 
 (put 'helix-copy 'multiple-cursors t)
 
@@ -637,7 +638,8 @@ If no selection — delete COUNT chars after point."
 (defun helix-paste-after ()
   "Paste after selection."
   (interactive)
-  (helix-paste 1))
+  (helix-paste 1)
+  (helix-extend-selection -1))
 
 (put 'helix-paste-after 'multiple-cursors t)
 
@@ -645,7 +647,8 @@ If no selection — delete COUNT chars after point."
 (defun helix-paste-before ()
   "Paste before selection."
   (interactive)
-  (helix-paste -1))
+  (helix-paste -1)
+  (helix-extend-selection -1))
 
 (put 'helix-paste-before 'multiple-cursors t)
 
@@ -680,8 +683,8 @@ Like `helix-paste-pop' but with negative COUNT argument."
   (when (use-region-p)
     (let (deactivate-mark)
       (delete-region (region-beginning) (region-end))
-      (helix-yank)
-      (helix-extend-selection -1))))
+      (helix-yank))
+    (helix-extend-selection -1)))
 
 (put 'helix-replace-with-kill-ring 'multiple-cursors t)
 
