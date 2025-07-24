@@ -282,6 +282,28 @@ Use visual line when `visual-line-mode' is active."
 
 (put 'helix-backward-paragraph 'multiple-cursors t)
 
+;; ]s
+(defun helix-forward-sentence (count)
+  "Move to the end of the COUNT next sentence."
+  (interactive "p")
+  (if helix--extend-selection
+      (or (region-active-p) (set-mark (point)))
+    (set-mark (point)))
+  (helix-forward-beginning-of-thing 'helix-sentence count))
+
+(put 'helix-forward-function 'multiple-cursors t)
+
+;; [s
+(defun helix-backward-sentence (count)
+  "Move to the beginning of the COUNT previous sentence."
+  (interactive "p")
+  (if helix--extend-selection
+      (or (region-active-p) (set-mark (point)))
+    (set-mark (point)))
+  (forward-thing 'helix-sentence (- count)))
+
+(put 'helix-backward-paragraph 'multiple-cursors t)
+
 ;; mm
 ;; TODO: The most bare-boned version. Need upgrade.
 (defun helix-jump-to-match-item ()
