@@ -399,35 +399,43 @@ according to the Helix STATE."
   (if-let* ((prompt (keymap-prompt keymap)))
       (string-prefix-p "Helix keymap" prompt)))
 
-(defun helix-keymap-set (keymap state key definition &rest rest)
+(defun helix-keymap-set (keymap state &rest rest)
   "Create keybinding from KEY to DEFINITION for Helix STATE in KEYMAP.
 Accepts any number of KEY DEFINITION pairs.
 The defined keybindings will be active in specified Helix STATE.
 KEYMAP can be nil, then keybindings will be set in main STATE keymap.
 If STATE is nil this function will work like `keymap-set' with addition
 that multiple keybindings can be set at once.
+
 KEY, DEFINITION arguments are like those of `keymap-set'.
+If DEFINITION is nil, then keybinding will be unset with `keymap-unset'
+instead.
+
 For example:
 
    (helix-keymap-set text-mode-map \\='normal
-      \"f\" #\\='foo
-      \"b\" #\\='bar)"
+      \"f\" \\='foo
+      \"b\" \\='bar
+      \"n\" nil)
+
+\(fn KEYMAP STATE &rest [KEY DEFINITION]...)"
   (declare (indent defun))
   (when (and state (not (helix-state-p state)))
     (user-error "Helix state `%s' is not known to be defined" state))
   (unless (cl-evenp (length rest))
-    (user-error "The number of `key definition' pairs is not even"))
+    (user-error "The number of [KEY DEFINITION] pairs is not even"))
   (let ((map (cond ((and keymap state)
                     (or (helix-get-nested-helix-keymap keymap state)
                         (helix-create-nested-helix-keymap keymap state)))
                    (state (helix-state-property state :keymap))
                    (keymap)
                    (t (current-global-map)))))
-    (keymap-set map key definition)
     (while rest
       (let ((key (pop rest))
             (definition (pop rest)))
-        (keymap-set map key definition)))))
+        (if definition
+            (keymap-set map key definition)
+          (keymap-unset map key :remove))))))
 
 (defun helix-set-intercept-keymap (keymap)
   "Make KEYMAP override all Helix keymaps."
