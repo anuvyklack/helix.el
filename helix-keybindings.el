@@ -254,7 +254,14 @@
   "g x"   #'browse-url-at-point
   "g q"   #'fill-region
   "] SPC" #'helix-add-blank-line-below
-  "[ SPC" #'helix-add-blank-line-above)
+  "[ SPC" #'helix-add-blank-line-above
+
+  ;; Xref
+  "g d"     #'xref-find-definitions
+  "C-w g d" #'xref-find-definitions-other-window
+  "g D"     #'xref-find-references
+  "[ x"     #'xref-go-back
+  "] x"     #'xref-go-forward)
 
 ;;;; Windows
 
