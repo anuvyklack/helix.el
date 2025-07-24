@@ -77,6 +77,8 @@
   "{"   #'helix-backward-paragraph
   "] f" #'helix-forward-function
   "[ f" #'helix-backward-function
+  "] s" #'helix-forward-sentence
+  "[ s" #'helix-backward-sentence
 
   ;; Easymotion / Avy
   "g w" #'helix-avy-word-forward
