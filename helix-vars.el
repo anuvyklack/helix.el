@@ -26,7 +26,7 @@ buffer local variable."
      (make-variable-buffer-local ',symbol)
      (put ',symbol 'permanent-local t)))
 
-;;; Customization group
+;;; Customizable variables
 
 (defgroup helix nil
   "Helix emulation."
@@ -120,32 +120,6 @@ shifting subsequent content to the right."
                               value)
                              (t
                               (char-to-string ?\u2000))))))
-
-(defface helix-normal-state-fake-cursor
-  `((t (:height ,(window-default-font-height)
-        :background "gray55")))
-  "The face used for fake cursors when Helix is in Normal state."
-  :group 'helix)
-
-(defface helix-insert-state-fake-cursor
-  '((t (:foreground "white"
-        :background "SkyBlue3")))
-  "The face used for fake cursors when Helix is in Insert state."
-  :group 'helix)
-
-(defface helix-extend-selection-cursor
-  `((t (:height ,(window-default-font-height)
-        :background "orange")))
-  "The face used for cursors when extending selection is active."
-  :group 'helix)
-
-(defface helix-region-face '((t :inherit region))
-  "The face used for fake regions."
-  :group 'helix)
-
-(defface helix-lazy-highlight '((t :inherit lazy-highlight))
-  "Face for highlighting all matches in interactive search."
-  :group 'helix)
 
 (defcustom helix-mc-mode-line
   `(" mc:" (:eval (format ,(propertize "%d" 'face 'font-lock-warning-face)
@@ -347,6 +321,34 @@ list of categories."
   :type '(alist :key-type (choice character (const nil))
           :value-type (choice character (const nil)))
   :group 'helix-cjk)
+
+;;; Faces
+
+(defface helix-normal-state-fake-cursor
+  `((t (:height ,(window-default-font-height)
+        :background "red")))
+  "The face used for fake cursors when Helix is in Normal state."
+  :group 'helix)
+
+(defface helix-insert-state-fake-cursor
+  '((t (:foreground "white"
+        :background "SkyBlue3")))
+  "The face used for fake cursors when Helix is in Insert state."
+  :group 'helix)
+
+(defface helix-extend-selection-cursor
+  `((t (:height ,(window-default-font-height)
+        :background "orange")))
+  "The face used for cursors when extending selection is active."
+  :group 'helix)
+
+(defface helix-region-face '((t :inherit region))
+  "The face used for fake regions."
+  :group 'helix)
+
+(defface helix-lazy-highlight '((t :inherit lazy-highlight))
+  "Face for highlighting all matches in interactive search."
+  :group 'helix)
 
 ;;; Variables
 
