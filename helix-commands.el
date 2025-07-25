@@ -649,7 +649,8 @@ If no selection — delete COUNT chars after point."
           (end (region-end))
           (deactivate-mark nil))
       (copy-region-as-kill beg end)
-      (pulse-momentary-highlight-region beg end)
+      (unless helix--executing-command-for-fake-cursor
+        (pulse-momentary-highlight-region beg end))
       (message "Copied into kill-ring"))
     (helix-extend-selection -1)))
 
