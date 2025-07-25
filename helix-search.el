@@ -309,7 +309,7 @@ RANGES is a list of cons cells with positions (START . END)."
   (helix-with-deactivate-mark
     (when-let* ((pattern (condition-case nil
                              (minibuffer-with-setup-hook #'helix-select--start-session
-                               (helix-read-regexp "select: "))
+                               (helix-read-regexp (if invert "split: " "select: ")))
                            (quit)))
                 ((stringp pattern))
                 ((not (string-empty-p pattern)))
