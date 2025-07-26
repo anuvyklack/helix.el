@@ -342,12 +342,12 @@ list of categories."
   "The face used for cursors when extending selection is active."
   :group 'helix)
 
-(defface helix-region-face '((t :inherit region))
+(defface helix-region '((t :inherit region))
   "The face used for fake regions."
   :group 'helix)
 
-(defface helix-lazy-highlight '((t :inherit lazy-highlight))
-  "Face for highlighting all matches in interactive search."
+(defface helix-search-highlight '((t :inherit lazy-highlight))
+  "Face for lazy highlighting all matches during search."
   :group 'helix)
 
 ;;; Variables
