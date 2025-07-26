@@ -577,7 +577,6 @@ first fake cursor with `helix-create-fake-cursor', and disabled when you
 delete last one with `helix-remove-fake-cursor'."
   :global nil
   :interactive nil
-  :lighter helix-mc-mode-line
   :keymap helix-multiple-cursors-map
   (if helix-multiple-cursors-mode
       (helix-mc--disable-incompatible-minor-modes)
@@ -622,6 +621,11 @@ in the buffer."
   (dolist (mode helix--temporarily-disabled-minor-modes)
     (funcall mode 1))
   (setq helix--temporarily-disabled-minor-modes nil))
+
+(defun helix-multiple-cursors--indicator ()
+  (when helix-multiple-cursors-mode
+    (format helix-multiple-cursors-mode-line-indicator
+            (helix-number-of-cursors))))
 
 ;;; Whitelists
 
