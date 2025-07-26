@@ -38,7 +38,7 @@ DIRECTION must be either 1 or -1."
   (let ((hl (helix-highlight-create :buffer (current-buffer)
                                     :regexp regexp
                                     :direction direction
-                                    :face 'helix-lazy-highlight)))
+                                    :face 'helix-search-highlight)))
     (unless (helix-highlight-equal hl helix-search--hl)
       (when helix-search--hl (helix-highlight-delete helix-search--hl))
       (setq helix-search--hl hl)))
@@ -216,7 +216,7 @@ RANGES is a list of cons cells with positions (START . END)."
         helix-search--window-end (window-end)
         helix-search--direction direction
         helix-search--hl (helix-highlight-create :buffer (current-buffer)
-                                                 :face 'helix-lazy-highlight))
+                                                 :face 'helix-search-highlight))
   (save-excursion
     (deactivate-mark)
     (if-let* ((pattern (condition-case nil
@@ -264,7 +264,7 @@ RANGES is a list of cons cells with positions (START . END)."
                   (move-overlay helix-search--overlay beg end)
                 (setq helix-search--overlay
                       (-doto (make-overlay beg end nil t nil)
-                        (overlay-put 'face 'helix-region-face)
+                        (overlay-put 'face 'helix-region)
                         (overlay-put 'priority 99))))
               (setf (helix-highlight-regexp hl) regexp)
               (helix-highlight-update hl))
@@ -303,7 +303,7 @@ RANGES is a list of cons cells with positions (START . END)."
   (unless (use-region-p)
     (user-error "No active selection"))
   (setq helix-select--hl (helix-highlight-create :buffer (current-buffer)
-                                                 :face 'helix-region-face
+                                                 :face 'helix-region
                                                  :ranges ranges
                                                  :invert invert))
   (helix-with-deactivate-mark
@@ -401,13 +401,13 @@ If INVERT is non-nil — remove selections that match regexp."
                    do (cond (flag
                              (helix--set-cursor-overlay cursor (overlay-get cursor 'point))
                              (overlay-put (overlay-get cursor 'fake-region)
-                                          'face 'helix-region-face))
+                                          'face 'helix-region))
                             (t (helix--delete-fake-cursor cursor))))
         ;; Else restore all cursors
         (dolist (cursor cursors)
           (helix--set-cursor-overlay cursor (overlay-get cursor 'point))
           (overlay-put (overlay-get cursor 'fake-region)
-                       'face 'helix-region-face))))))
+                       'face 'helix-region))))))
 
 (defun helix-filter--start-session ()
   (add-hook 'after-change-functions #'helix-filter--update-hook nil t)
@@ -440,10 +440,10 @@ If INVERT is non-nil — remove selections that match regexp."
             ((-contains? flags t)))
       (cl-loop for overlay in regions-overlays
                for flag in flags
-               do (overlay-put overlay 'face (if flag 'helix-region-face)))
+               do (overlay-put overlay 'face (if flag 'helix-region)))
     ;; Else highlight all regions
     (dolist (ov regions-overlays)
-      (overlay-put ov 'face 'helix-region-face))))
+      (overlay-put ov 'face 'helix-region))))
 
 ;;; Find char
 
@@ -460,7 +460,7 @@ If INVERT is non-nil — remove selections that match regexp."
                     ))
          (hl (helix-highlight-create :buffer (current-buffer)
                                      :regexp pattern
-                                     :face 'helix-lazy-highlight))
+                                     :face 'helix-search-highlight))
          (case-fold-search case)
          (deactivate-mark nil))
     (let ((search #'(lambda (dir)
