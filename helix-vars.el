@@ -121,14 +121,11 @@ shifting subsequent content to the right."
                              (t
                               (char-to-string ?\u2000))))))
 
-(defcustom helix-mc-mode-line
-  `(" mc:" (:eval (format ,(propertize "%d" 'face 'font-lock-warning-face)
-                          (helix-number-of-cursors))))
+(defcustom helix-multiple-cursors-mode-line-indicator
+  #("  Cursors: %s " 1 14 (face helix-mode-line-cursors-indicator))
   "What to display in the mode line while `helix-multiple-cursors-mode' is active."
-  :type '(sexp)
+  :type '(choice string (const nil))
   :group 'helix)
-
-(put 'helix-mc-mode-line 'risky-local-variable t)
 
 (defcustom helix-whitelist-file (locate-user-emacs-file "helix-multiple-cursors")
   "File to save users preferences which commands to execute for one cursor
@@ -348,6 +345,10 @@ list of categories."
 
 (defface helix-search-highlight '((t :inherit lazy-highlight))
   "Face for lazy highlighting all matches during search."
+  :group 'helix)
+
+(defface helix-mode-line-cursors-indicator '((t :inherit warning))
+  "Face for indicator with active cursors number in mode lilne."
   :group 'helix)
 
 ;;; Variables
