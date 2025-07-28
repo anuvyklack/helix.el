@@ -923,26 +923,27 @@ selections.
 If INVERT is non-nil — create new selections for all regions that NOT match to
 entered regexp withing current selections."
   (interactive)
-  (cond (helix-multiple-cursors-mode
-         (let* ((real-cursor (helix--create-fake-cursor-1 (point) (mark t) 0))
-                (cursors (helix-all-fake-cursors))
-                (ranges (-map #'(lambda (cursor)
-                                  (if (overlay-get cursor 'mark-active)
-                                      (let ((point (overlay-get cursor 'point))
-                                            (mark  (overlay-get cursor 'mark)))
-                                        (cons (min point mark)
-                                              (max point mark)))))
-                              cursors)))
-           (-each cursors #'helix-remove-fake-cursor-from-buffer)
-           (or (helix-select-interactively-in ranges invert)
-               (progn ;; Restore original cursors
-                 (-each cursors #'helix-restore-fake-cursor-in-buffer)
-                 (helix-restore-point-from-fake-cursor real-cursor)))))
-        (t
-         (let ((region (list (region-beginning) (region-end) (helix-region-direction))))
-           (or (helix-select-interactively-in (region-bounds) invert)
-               ;; Restore original region
-               (apply #'helix-set-region region))))))
+  (if helix-multiple-cursors-mode
+      (let* ((real-cursor (helix--create-fake-cursor-1 (point) (mark t) 0))
+             (cursors (helix-all-fake-cursors))
+             (ranges (-map #'(lambda (cursor)
+                               (if (overlay-get cursor 'mark-active)
+                                   (let ((point (overlay-get cursor 'point))
+                                         (mark  (overlay-get cursor 'mark)))
+                                     (cons (min point mark)
+                                           (max point mark)))))
+                           cursors)))
+        (-each cursors #'helix-remove-fake-cursor-from-buffer)
+        (or (progn (helix-select-interactively-in ranges invert)
+                   (-each cursors #'helix--delete-fake-cursor))
+            (progn ;; Restore original cursors
+              (-each cursors #'helix-restore-fake-cursor-in-buffer)
+              (helix-restore-point-from-fake-cursor real-cursor))))
+    ;; else
+    (let ((region (list (region-beginning) (region-end) (helix-region-direction))))
+      (or (helix-select-interactively-in (region-bounds) invert)
+          ;; Restore original region
+          (apply #'helix-set-region region)))))
 
 (put 'helix-select-regex 'multiple-cursors 'false)
 
