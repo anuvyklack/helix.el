@@ -497,16 +497,16 @@ evaluate BODY, update fake CURSOR."
 (defmacro helix-with-each-cursor (&rest body)
   "Evaluate BODY for all cursors: real and fake ones."
   (declare (indent 0) (debug t))
-  `(progn
-     ;; First execute BODY for the fake cursors so that BODY can create new
-     ;; fake cursors, but overall was executed only for the original ones.
-     (when helix-multiple-cursors-mode
-       (helix-save-window-scroll
-         (helix-save-excursion
-          (dolist (cursor (helix-all-fake-cursors))
-            (helix-with-fake-cursor cursor
-              ,@body)))))
-     ;; Finaly execute for real cursor
+  `(if helix-multiple-cursors-mode
+       ;; First collect fake cursors because BODY can create new cursors,
+       ;; and we want it to be executed only for original ones.
+       (let ((cursors (helix-all-fake-cursors)))
+         ,@body
+         (helix-save-window-scroll
+           (helix-save-excursion
+            (dolist (cursor cursors)
+              (helix-with-fake-cursor cursor
+                ,@body)))))
      ,@body))
 
 (defun helix-execute-command-for-all-cursors (command)
