@@ -322,7 +322,6 @@ RANGES is a list of cons cells with positions (START . END)."
       (setq helix--extend-selection nil)
       (helix-create-cursors region-ranges)
       (helix-update-cursor)
-      (setq helix--extend-selection nil)
       :success)))
 
 (defun helix-select--start-session ()
