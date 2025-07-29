@@ -449,7 +449,7 @@ It is active while there are multiple cursors.")
 (defvar helix--whitelist-file-loaded nil
   "Non-nil when `helix-whitelist-file' file has already been loaded.")
 
-(defvar helix-this-command nil
+(helix-defvar-local helix-this-command nil
   "Like `this-command' but for fake cursors.
 The command that that will be executed by each fake cursor.")
 
@@ -467,6 +467,8 @@ multiple cursors.")
   "Stores the start of the current undo step in `buffer-undo-list'.")
 
 (helix-defvar-local helix--undo-boundary nil)
+
+(helix-defvar-local helix--input-cache nil)
 
 (provide 'helix-vars)
 ;;; helix-vars.el ends here
