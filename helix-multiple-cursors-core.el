@@ -786,10 +786,6 @@ ID 0 coresponds to the real cursor."
 
 ;;; Integration with other Emacs functionalities
 
-;; Intercept some reading commands so you won't have to
-;; answer them for every single cursor
-(defvar helix--input-cache nil)
-
 (defmacro helix-cache-input (fn-name)
   "Advice function to cache users input to use it for all cursors.
 
