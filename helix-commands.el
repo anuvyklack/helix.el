@@ -676,25 +676,23 @@ If no selection — delete COUNT chars after point."
 
 ;; C-p
 (defun helix-paste-pop (count)
-  "Replace just-pasted text with next COUNT element from `kill-ring'.
-Wrapper around `yank-pop'."
+  "Replace just-pasted text with next COUNT element from `kill-ring'."
   (interactive "p")
   (let ((yank-pop (or (command-remapping 'yank-pop)
                       #'yank-pop))
         (deactivate-mark nil))
-    (call-interactively yank-pop count)))
+    (funcall-interactively yank-pop count)))
 
 (put 'helix-paste-pop 'multiple-cursors t)
 
 ;; C-n
 (defun helix-paste-undo-pop (count)
-  "Replace just-pasted text with previous COUNT element from `kill-ring'.
-Like `helix-paste-pop' but with negative COUNT argument."
+  "Replace just-pasted text with previous COUNT element from `kill-ring'."
   (interactive "p")
   (let ((yank-pop (or (command-remapping 'yank-pop)
                       #'yank-pop))
         (deactivate-mark nil))
-    (call-interactively yank-pop (- count))))
+    (funcall-interactively yank-pop (- count))))
 
 (put 'helix-paste-undo-pop 'multiple-cursors t)
 
