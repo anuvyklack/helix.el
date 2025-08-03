@@ -43,6 +43,9 @@
     (when (and (symbolp this-command)
                (get this-command 'helix-deactivate-mark))
       (deactivate-mark))
+    (when (and helix-main-selection-overlay
+               (not (get this-command 'scroll-command)))
+      (delete-overlay helix-main-selection-overlay))
     (helix--single-undo-step-beginning)))
 
 (defun helix--post-command-hook ()
@@ -63,6 +66,10 @@
                   (error-message-string error))))
       (when (helix-merge-regions-p helix-this-command)
         (helix-merge-overlapping-regions)))
+    (cond (helix-linewise-selection
+           (helix-set-main-selection-overlay (region-beginning) (1+ (region-end))))
+          (helix-main-selection-overlay
+           (delete-overlay helix-main-selection-overlay)))
     (helix--single-undo-step-end)
     (setq helix-this-command nil
           helix--input-cache nil)))
@@ -318,16 +325,18 @@ CHECKED-MODES is used internally and should not be set initially."
   "Insert state."
   :cursor helix-insert-state-cursor
   (if helix-insert-state
-      (when (and helix-reactivate-selection-after-insert-state
-                 (region-active-p))
-        (setq helix--region-was-active-on-insert t)
+      (progn
+        (when (and helix-reactivate-selection-after-insert-state
+                   (region-active-p))
+          (setq helix--region-was-active-on-insert t))
         (helix-with-each-cursor
+          (setq helix-linewise-selection nil)
           (deactivate-mark)))
     ;; else
     (when helix--region-was-active-on-insert
+      (setq helix--region-was-active-on-insert nil)
       (helix-with-each-cursor
-        (activate-mark))
-      (setq helix--region-was-active-on-insert nil))))
+        (activate-mark)))))
 
 (helix-define-state motion
   "Motion state."

@@ -52,12 +52,13 @@ If PAGES is non-nil scroll over pages instead of lines."
     (let ((screen-space (- window-height posn-y-at-point)))
       ;; If point goes off the screen as the result of the scroll
       (when (> delta (- screen-space line-height))
-        (cond (restricted
-               (setq delta (- screen-space (/ line-height 3))
-                     at-bottom? t))
-              ;; If not restricted, disable selection unless we want to extend it
-              ((not helix--extend-selection)
-               (deactivate-mark)))))
+        (if restricted
+            (setq delta (- screen-space (/ line-height 3))
+                  at-bottom? t)
+          ;; else — not restricted
+          (setq helix-linewise-selection nil)
+          ;; Disable selection unless we want to extend it
+          (unless helix--extend-selection (deactivate-mark)))))
     (when (> delta line-height)
       (pixel-scroll-precision-interpolate delta nil 1))
     (when at-bottom? (recenter -1))))
@@ -81,12 +82,13 @@ If PAGES is non-nil scroll over pages instead of lines."
     (when (eql posn-y-at-point 0) (recenter 0))
     (when (> delta (- posn-y-at-point
                       line-height))
-      (cond (restricted
-             (setq delta (- posn-y-at-point
-                            (/ line-height 3))
-                   at-top? t))
-            ((not helix--extend-selection)
-             (deactivate-mark))))
+      (if restricted
+          (setq delta (- posn-y-at-point
+                         (/ line-height 3))
+                at-top? t)
+        ;; else
+        (setq helix-linewise-selection nil)
+        (unless helix--extend-selection (deactivate-mark))))
     (when (> delta line-height)
       (pixel-scroll-precision-interpolate (- delta) nil 1))
     (when at-top? (recenter 0))))
@@ -131,7 +133,7 @@ and fake ones."
 If multiple cursors are active, rotate the main selection COUNT times
 backward instead."
   (interactive "p")
-  (helix--smooth-scroll-up count helix-multiple-cursors-mode t))
+  (helix--smooth-scroll-up count helix-multiple-cursors-mode :full-pages))
 
 (put 'helix-smooth-scroll-page-up 'scroll-command t)
 (put 'helix-smooth-scroll-page-up 'multiple-cursors 'false)
@@ -142,7 +144,7 @@ backward instead."
 If multiple cursors are active, rotate the main selection forward COUNT times
 instead."
   (interactive "p")
-  (helix--smooth-scroll-down count helix-multiple-cursors-mode t))
+  (helix--smooth-scroll-down count helix-multiple-cursors-mode :full-pages))
 
 (put 'helix-smooth-scroll-page-down 'scroll-command t)
 (put 'helix-smooth-scroll-page-down 'multiple-cursors 'false)
@@ -165,10 +167,11 @@ If COUNT > 1 scroll smoothly."
   (interactive "p")
   (let ((point-row (cdr (posn-col-row (posn-at-point)))))
     (when (> count point-row)
-      (cond (helix-multiple-cursors-mode
-             (setq count point-row))
-            ((not helix--extend-selection)
-             (deactivate-mark))))
+      (if helix-multiple-cursors-mode
+          (setq count point-row)
+        ;; else
+        (setq helix-linewise-selection nil)
+        (unless helix--extend-selection (deactivate-mark))))
     (let ((scroll-preserve-screen-position nil))
       (scroll-up count))))
 
@@ -207,10 +210,11 @@ If COUNT > 1 scroll smoothly."
         (num-of-lines (- (window-text-height) 2))
         (point-row (1+ (cdr (posn-col-row (posn-at-point))))))
     (when (> count (- num-of-lines point-row))
-      (cond (helix-multiple-cursors-mode
-             (setq count (- num-of-lines point-row)))
-            ((not helix--extend-selection)
-             (deactivate-mark))))
+      (if helix-multiple-cursors-mode
+          (setq count (- num-of-lines point-row))
+        ;; else
+        (setq helix-linewise-selection nil)
+        (unless helix--extend-selection (deactivate-mark))))
     (let ((scroll-preserve-screen-position nil))
       (scroll-down count))))
 
