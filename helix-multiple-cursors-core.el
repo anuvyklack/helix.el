@@ -580,7 +580,6 @@ delete last one with `helix-delete-fake-cursor'."
   :keymap helix-multiple-cursors-map
   (if helix-multiple-cursors-mode
       (helix-mc--disable-incompatible-minor-modes)
-    (helix-mc--maybe-set-killed-rectangle)
     (helix--delete-all-fake-cursors)
     (helix-mc--enable-incompatible-minor-modes)))
 
@@ -596,17 +595,6 @@ and fake cursors are present in the buffer."
 in current buffer."
   (unless (helix-any-fake-cursors-p)
     (helix-multiple-cursors-mode -1)))
-
-(defun helix-mc--maybe-set-killed-rectangle ()
-  "Add the latest `kill-ring' entry for each cursor to `killed-rectangle'.
-So you can paste it in later with `yank-rectangle'."
-  (when (helix-any-fake-cursors-p)
-    (let ((entries (helix-with-real-cursor-as-fake
-                     (-map #'(lambda (cursor)
-                               (car-safe (overlay-get cursor 'kill-ring)))
-                           (helix-all-fake-cursors :sort)))))
-      (unless (helix-all-elements-are-equal-p entries)
-        (setq killed-rectangle entries)))))
 
 (defun helix-mc--disable-incompatible-minor-modes ()
   "Disable incompatible minor modes while there are multiple cursors
