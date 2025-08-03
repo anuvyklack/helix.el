@@ -447,7 +447,10 @@ It is active while there are multiple cursors.")
 
 (helix-defvar-local helix-this-command nil
   "Like `this-command' but for fake cursors.
-The command that that will be executed by each fake cursor.")
+The command that that will be executed for each fake cursor.")
+
+(helix-defvar-local helix-executing-command-for-fake-cursor nil
+  "Non-nil if `this-command' is currently executing for fake cursor.")
 
 (helix-defvar-local helix--temporarily-disabled-minor-modes nil
   "The list of temporarily disabled minor-modes while there are
