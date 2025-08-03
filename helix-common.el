@@ -22,8 +22,8 @@
 ;;; Macros
 
 (defmacro helix-define-advice (symbol args &rest body)
-  "This macro wraps `define-advice' and extends it to automatically
-add/remove advice when `helix-mode' is toggled on or off.
+  "Wrapper around `define-advice' that automatically add/remove advice
+when `helix-mode' is toggled on or off.
 
 \(fn SYMBOL (HOW LAMBDA-LIST &optional NAME) &rest BODY)"
   (declare (indent 2) (doc-string 3) (debug (sexp sexp def-body)))
@@ -40,6 +40,15 @@ add/remove advice when `helix-mode' is toggled on or off.
                    :test #'equal)
        (when helix-mode
          (advice-add ',symbol ,how #',advice)))))
+
+(defmacro helix-advice-add (symbol how function)
+  "Wrapper around `advice-add' that automatically add/remove advice
+when `helix-mode' is toggled on or off"
+  `(progn
+     (cl-pushnew (list ,symbol ,how ,function) helix--advices
+                 :test #'equal)
+     (when helix-mode
+       (advice-add ,symbol ,how ,function))))
 
 (defmacro helix-with-restriction (start end &rest body)
   "Evaluate BODY with the buffer narrowed to START and END."
@@ -63,9 +72,12 @@ add/remove advice when `helix-mode' is toggled on or off.
      (activate-mark)))
 
 (defmacro helix-save-region (&rest body)
-  "Evaluate BODY with preserving original region."
+  "Evaluate BODY with preserving original region.
+The difference from `save-mark-and-excursion' is that both point and mark are
+saved as markers and correctly handle case when text was inserted before region."
   (declare (indent 0) (debug t))
-  (let ((beg (gensym "region-beg"))
+  (let ((pnt (gensym "point"))
+        (beg (gensym "region-beg"))
         (end (gensym "region-end"))
         (dir (gensym "region-dir")))
     `(if (use-region-p)
@@ -73,12 +85,17 @@ add/remove advice when `helix-mode' is toggled on or off.
                (,beg (copy-marker (region-beginning) t))
                (,end (copy-marker (region-end)))
                (,dir (helix-region-direction)))
-           ,@body
-           (helix-set-region ,beg ,end ,dir)
-           (set-marker ,beg nil)
-           (set-marker ,end nil))
+           (unwind-protect
+               (save-excursion ,@body)
+             (helix-set-region ,beg ,end ,dir)
+             (set-marker ,beg nil)
+             (set-marker ,end nil)))
        ;; else
-       ,@body)))
+       (let ((,pnt (point-marker)))
+         (unwind-protect
+             (save-excursion ,@body)
+           (goto-char ,pnt)
+           (set-marker ,pnt nil))))))
 
 (defmacro helix-add-to-alist (alist &rest elements)
   "Add the association of KEY and VAL to the value of ALIST.
@@ -143,6 +160,16 @@ KEY/DEFINITION pairs are as KEY and DEF in `keymap-set'.
                   collect
                   `(keymap-set ,symbol ,key ,def))
        ',symbol)))
+
+(defmacro helix-with-main-selection-overlay (&rest body)
+  (declare (indent defun)
+           (debug t))
+  `(progn
+     (when helix-linewise-selection
+       (helix-set-main-selection-overlay (region-beginning) (1+ (region-end))))
+     (prog1 (progn ,@body)
+       (when helix-main-selection-overlay
+         (delete-overlay helix-main-selection-overlay)))))
 
 ;;; Motions
 
@@ -233,6 +260,7 @@ Use visual line when `visual-line-mode' is active."
 
 (defun helix--forward-word-start (thing count)
   "Move to the COUNT-th next start of a word-like THING."
+  (setq helix-linewise-selection nil)
   (setq count (abs count))
   (when (zerop (forward-thing thing (1- count)))
     (if helix--extend-selection
@@ -245,6 +273,7 @@ Use visual line when `visual-line-mode' is active."
 
 (defun helix--backward-word-start (thing count)
   "Move to the COUNT-th previous start of a word-like THING."
+  (setq helix-linewise-selection nil)
   (setq count (- (abs count)))
   (when (zerop (forward-thing thing (1+ count)))
     (if helix--extend-selection
@@ -256,6 +285,7 @@ Use visual line when `visual-line-mode' is active."
 (defun helix--forward-word-end (thing count)
   "Move to the COUNT-th next word-like THING end."
   (interactive "p")
+  (setq helix-linewise-selection nil)
   (setq count (abs count))
   (when (zerop (forward-thing thing (1- count)))
     (if helix--extend-selection
@@ -379,7 +409,8 @@ functions."
     (forward-thing thing)
     (forward-thing thing -1)
     (set-mark (point)))
-  (forward-thing thing count))
+  (forward-thing thing count)
+  (helix-maybe-enable-linewise-selection))
 
 (defun helix-mark-a-thing (thing)
   "Select a THING with spacing around.
@@ -398,7 +429,8 @@ such as `paragraph', `helix-function'."
                            (helix-bounds-of-complement-of-thing-at-point thing))
                      (cons space-beg thing-end)))
                (cons thing-beg thing-end))]
-      (helix-set-region beg end))))
+      (helix-set-region beg end))
+    (helix-maybe-enable-linewise-selection)))
 
 (defun helix-bounds-of-complement-of-thing-at-point (thing)
   "Return the bounds of a complement of THING at point.
@@ -425,6 +457,7 @@ such as `helix-word', `helix-sentence', `paragraph', `line'."
 (defun helix--mark-a-word (thing)
   "Inner implementation of `helix-mark-a-word' and `helix-mark-a-WORD' commands."
   (-when-let ((thing-beg . thing-end) (bounds-of-thing-at-point thing))
+    (setq helix-linewise-selection nil)
     (-let [(beg . end)
            (or (progn
                  (goto-char thing-end)
@@ -772,7 +805,7 @@ If NOMSG is nil show `Mark set' message in echo area."
   nil)
 
 (defun helix-yank (&optional arg)
-  "Helix `yank' wrapper."
+  "Helix `yank' (paste) wrapper."
   (interactive)
   (cl-letf (((symbol-function 'push-mark) #'helix-push-mark)
             (deactivate-mark nil))
@@ -784,15 +817,16 @@ If NOMSG is nil show `Mark set' message in echo area."
   (let ((region-dir (if (use-region-p)
                         (helix-region-direction)
                       1)))
+    ;; (helix-disable-linewise-selection)
     (helix-ensure-region-direction direction)
-    (when (and (helix-ends-with-newline (current-kill 0 :do-not-move))
-               (not (eq (helix-linewise-selection-p) 'line)))
+    (when (helix-ends-with-newline (current-kill 0 :do-not-move))
       (if (natnump direction)
           (forward-line 1)
         (forward-line 0)))
     (helix-yank)
     (activate-mark)
-    (helix-ensure-region-direction region-dir)))
+    (helix-ensure-region-direction region-dir)
+    (helix-maybe-enable-linewise-selection)))
 
 ;; (helix-define-advice yank (:around (orig-fun &rest args))
 ;;   "Correctly set region after paste."
@@ -990,9 +1024,9 @@ negative number — at the beginning."
 (defun helix-ensure-region-direction (direction)
   "Exchange point and mark if region direction mismatch DIRECTION.
 DIRECTION should be 1 or -1."
-  (when (use-region-p)
-    (unless (eql direction (helix-region-direction))
-      (helix-exchange-point-and-mark))))
+  (when (and (use-region-p)
+             (/= direction (helix-region-direction)))
+    (helix-exchange-point-and-mark)))
 
 (defun helix-undo-command-p (command)
   "Return non-nil if COMMAND is implementing undo/redo functionality."
@@ -1122,6 +1156,28 @@ right after the point."
   "Return non-nil if OVERLAY is not deleted from buffer."
   (if-let* ((buffer (overlay-buffer overlay)))
       (buffer-live-p buffer)))
+
+(defun helix-carry-linewise-selection ()
+  (when helix-linewise-selection
+    (setq helix-linewise-selection nil)
+    (helix-set-region (region-beginning) (1+ (region-end))
+                      (helix-region-direction))
+    t))
+
+(defun helix-maybe-enable-linewise-selection ()
+  (when (eq (helix-linewise-selection-p) 'line)
+    (setq helix-linewise-selection t)
+    (helix-set-region (region-beginning) (1- (region-end))
+                      (helix-region-direction))))
+
+(defun helix-set-main-selection-overlay (beg end)
+  "Set overlay for main selection between BEG to END."
+  (if helix-main-selection-overlay
+      (move-overlay helix-main-selection-overlay beg end)
+    (setq helix-main-selection-overlay (-doto (make-overlay beg end)
+                                         (overlay-put 'face 'region)
+                                         ;; (overlay-put 'priority 99)
+                                         ))))
 
 (provide 'helix-common)
 ;;; helix-common.el ends here
