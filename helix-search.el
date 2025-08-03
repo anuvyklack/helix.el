@@ -218,6 +218,7 @@ RANGES is a list of cons cells with positions (START . END)."
         helix-search--hl (helix-highlight-create :buffer (current-buffer)
                                                  :face 'helix-search-highlight))
   (save-excursion
+    (setq helix-linewise-selection nil)
     (deactivate-mark)
     (if-let* ((pattern (condition-case nil
                            (minibuffer-with-setup-hook #'helix-search--start-session
@@ -319,7 +320,8 @@ RANGES is a list of cons cells with positions (START . END)."
                                            regexp beg end invert))
                                         ranges)))
       (set-register '/ pattern)
-      (setq helix--extend-selection nil)
+      (setq helix-linewise-selection nil
+            helix--extend-selection  nil)
       (helix-create-cursors region-ranges)
       (helix-update-cursor)
       :success)))
