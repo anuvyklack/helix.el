@@ -40,6 +40,7 @@
 (defun helix-backward-char (count)
   "Move backward COUNT chars."
   (interactive "p")
+  (helix-disable-linewise-selection)
   (if helix--extend-selection
       (or (region-active-p) (set-mark (point)))
     (deactivate-mark))
@@ -52,6 +53,7 @@
 (defun helix-forward-char (count)
   "Move forward COUNT chars."
   (interactive "p")
+  (helix-disable-linewise-selection)
   (if helix--extend-selection
       (or (region-active-p) (set-mark (point)))
     (deactivate-mark))
@@ -64,6 +66,7 @@
 (defun helix-next-line (count)
   "Move to the next COUNT line."
   (interactive "p")
+  (helix-disable-linewise-selection)
   (if helix--extend-selection
       (or (region-active-p) (set-mark (point)))
     (deactivate-mark))
@@ -154,7 +157,7 @@ If the buffer is narrowed, this command uses the beginning of the
 accessible part of the buffer.
 Push mark at previous position, unless extending selection."
   (interactive "P")
-  (helix-remove-all-fake-cursors)
+  (helix-delete-all-fake-cursors)
   (if helix--extend-selection
       (or (region-active-p) (set-mark (point)))
     ;; else
@@ -177,7 +180,7 @@ Push mark at previous position, unless extending selection."
 (defun helix-goto-last-line ()
   "Move point the end of the buffer."
   (interactive)
-  (helix-remove-all-fake-cursors)
+  (helix-delete-all-fake-cursors)
   (if helix--extend-selection
       (or (region-active-p) (set-mark (point)))
     ;; else
@@ -333,7 +336,7 @@ Use visual line when `visual-line-mode' is active."
 (defun helix-avy-word-forward ()
   "Move to a word start after the point, choosing it with Avy."
   (interactive)
-  (helix-remove-all-fake-cursors)
+  (helix-delete-all-fake-cursors)
   (helix-push-point)
   (let ((mark (and helix--extend-selection
                    (not (region-active-p))
@@ -353,7 +356,7 @@ Use visual line when `visual-line-mode' is active."
 (defun helix-avy-word-backward ()
   "Move to a word start before the point, choosing it with Avy."
   (interactive)
-  (helix-remove-all-fake-cursors)
+  (helix-delete-all-fake-cursors)
   (helix-push-point)
   (let ((mark (and helix--extend-selection
                    (not (region-active-p))
@@ -374,7 +377,7 @@ Use visual line when `visual-line-mode' is active."
 (defun helix-avy-WORD-forward ()
   "Move to a WORD start after the point, choosing it with Avy."
   (interactive)
-  (helix-remove-all-fake-cursors)
+  (helix-delete-all-fake-cursors)
   (helix-push-point)
   (let ((mark (and helix--extend-selection
                    (not (region-active-p))
@@ -394,7 +397,7 @@ Use visual line when `visual-line-mode' is active."
 (defun helix-avy-WORD-backward ()
   "Move to a WORD start before the point, choosing it with Avy."
   (interactive)
-  (helix-remove-all-fake-cursors)
+  (helix-delete-all-fake-cursors)
   (helix-push-point)
   (let ((mark (and helix--extend-selection
                    (not (region-active-p))
@@ -415,7 +418,7 @@ Use visual line when `visual-line-mode' is active."
 (defun helix-avy-next-line ()
   "Move to a next line, choosing it with Avy."
   (interactive)
-  (helix-remove-all-fake-cursors)
+  (helix-delete-all-fake-cursors)
   (helix-push-point)
   (unless helix--extend-selection
     (deactivate-mark))
@@ -429,7 +432,7 @@ Use visual line when `visual-line-mode' is active."
 (defun helix-avy-previous-line ()
   "Move to a previous line, choosing it with Avy."
   (interactive)
-  (helix-remove-all-fake-cursors)
+  (helix-delete-all-fake-cursors)
   (helix-push-point)
   (unless helix--extend-selection
     (deactivate-mark))
@@ -909,7 +912,7 @@ Return t if does anything, otherwise return nil."
 
 ;; %
 (helix-define-advice mark-whole-buffer (:before ())
-  (helix-remove-all-fake-cursors))
+  (helix-delete-all-fake-cursors))
 
 (put 'mark-whole-buffer 'multiple-cursors 'false)
 
@@ -1132,13 +1135,13 @@ at START-COLUMN, ends at END-COLUMN and consists of NUMBER-OF-LINES."
           (cons end start)))))
 
 ;; ,
-(defun helix-remove-all-fake-cursors ()
-  "Remove all fake cursors from current buffer."
+(defun helix-delete-all-fake-cursors ()
+  "Delete all fake cursors from current buffer."
   (interactive)
   (when helix-multiple-cursors-mode
     (helix-multiple-cursors-mode -1)))
 
-(put 'helix-remove-all-fake-cursors 'multiple-cursors 'false)
+(put 'helix-delete-all-fake-cursors 'multiple-cursors 'false)
 
 ;; M-,
 (defun helix-remove-main-cursor ()
@@ -1166,7 +1169,7 @@ at START-COLUMN, ends at END-COLUMN and consists of NUMBER-OF-LINES."
                       (overlay-get cursor 'mark)
                       (point)
                       (if (use-region-p) (mark) 0)))))
-      (helix-remove-all-fake-cursors)
+      (helix-delete-all-fake-cursors)
       (helix-set-region beg end 1))))
 
 (put 'helix-merge-selections 'multiple-cursors 'false)
@@ -1276,7 +1279,7 @@ already there."
     (when-let* ((pos (posn-point position))
                 ((numberp pos)))
       (if-let* ((cursor (helix-fake-cursor-at pos)))
-          (helix-remove-fake-cursor cursor)
+          (helix-delete-fake-cursor cursor)
         ;; (deactivate-mark)
         (helix-create-fake-cursor pos pos)))))
 

@@ -153,7 +153,7 @@ IDs' are used to keep track of cursors for undo."
   "This variable maintains the original maximum number of cursors.
 When `helix-create-fake-cursor' is called and `helix-max-cursors-number' is
 overridden, this value serves as a backup so that `helix-max-cursors-number'
-can take on a new value. When `helix--delete-fake-cursors' is called,
+can take on a new value. When `helix--delete-all-fake-cursors' is called,
 the values are reset.")
 
 (defun helix-create-fake-cursor (point &optional mark id)
@@ -170,7 +170,7 @@ The current state is stored in the overlay for later retrieval."
               ((<= helix-max-cursors-number num)))
     (if (yes-or-no-p (format "%d active cursors. Continue? " num))
         (setq helix-max-cursors-number (read-number "Enter a new, temporary maximum: "))
-      (helix--delete-fake-cursors)
+      (helix--delete-all-fake-cursors)
       (error "Aborted: too many cursors")))
   (prog1 (helix--create-fake-cursor-1 point mark id)
     (helix-maybe-enable-multiple-cursors-mode)))
@@ -188,9 +188,9 @@ The current state is stored in the overlay for later retrieval."
       (puthash id cursor helix--cursors-table)
       cursor)))
 
-(defun helix--delete-fake-cursors ()
+(defun helix--delete-all-fake-cursors ()
   "Remove all fake cursors overlays form current buffer.
-It is likely that you need `helix-remove-all-fake-cursors' function,
+It is likely that you need `helix-delete-all-fake-cursors' function,
 not this one."
   (when helix--max-cursors-original
     (setq helix-max-cursors-number helix--max-cursors-original
@@ -237,7 +237,7 @@ POINT and MARK will be set."
     (helix--delete-region-overlay cursor))
   cursor)
 
-(defun helix-remove-fake-cursor (cursor)
+(defun helix-delete-fake-cursor (cursor)
   "Delete fake CURSOR and disable `helix-multiple-cursors-mode' if no
 more fake cursors are remaining."
   (helix--delete-fake-cursor cursor)
@@ -572,16 +572,16 @@ Restore it after BODY evaluation if it is still alive."
 ;;;###autoload
 (define-minor-mode helix-multiple-cursors-mode
   "Minor mode, which is active when there are multiple cursors in the buffer.
-No need activate it manually: it is activated automatically when you create
+No need to activate it manually: it is activated automatically when you create
 first fake cursor with `helix-create-fake-cursor', and disabled when you
-delete last one with `helix-remove-fake-cursor'."
+delete last one with `helix-delete-fake-cursor'."
   :global nil
   :interactive nil
   :keymap helix-multiple-cursors-map
   (if helix-multiple-cursors-mode
       (helix-mc--disable-incompatible-minor-modes)
     (helix-mc--maybe-set-killed-rectangle)
-    (helix--delete-fake-cursors)
+    (helix--delete-all-fake-cursors)
     (helix-mc--enable-incompatible-minor-modes)))
 
 (defun helix-maybe-enable-multiple-cursors-mode ()
