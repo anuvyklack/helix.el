@@ -653,7 +653,7 @@ If no selection — delete COUNT chars after point."
             (end (region-end))
             (deactivate-mark nil))
         (copy-region-as-kill beg end)
-        (unless helix--executing-command-for-fake-cursor
+        (unless helix-executing-command-for-fake-cursor
           (pulse-momentary-highlight-region beg end)
           (message "Copied into kill-ring")))
       (helix-extend-selection -1)))
@@ -810,12 +810,12 @@ If ARG positive number — enable, negative — disable."
   (if helix--extend-selection
       (when (or (null arg) (< arg 0))
         (setq helix--extend-selection nil)
-        (unless helix--executing-command-for-fake-cursor
+        (unless helix-executing-command-for-fake-cursor
           (helix-update-cursor)))
     ;; else
     (when (or (null arg) (< 0 arg))
       (setq helix--extend-selection t)
-      (unless helix--executing-command-for-fake-cursor
+      (unless helix-executing-command-for-fake-cursor
         (set-cursor-color (face-attribute 'helix-extend-selection-cursor
                                           :background))))))
 

@@ -487,7 +487,7 @@ the data needed for multiple cursors functionality."
   "Move point to the fake CURSOR, restore the environment from it,
 evaluate BODY, update fake CURSOR."
   (declare (indent defun) (debug (symbolp &rest form)))
-  `(let ((helix--executing-command-for-fake-cursor t))
+  `(let ((helix-executing-command-for-fake-cursor t))
      (helix--restore-point-state ,cursor)
      (unwind-protect
          (progn ,@body)
