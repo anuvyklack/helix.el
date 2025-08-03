@@ -647,17 +647,30 @@ If no selection — delete COUNT chars after point."
 (defun helix-copy ()
   "Copy selection into `kill-ring'."
   (interactive)
-  (when (use-region-p)
-    (let ((beg (region-beginning))
-          (end (region-end))
-          (deactivate-mark nil))
-      (copy-region-as-kill beg end)
-      (unless helix--executing-command-for-fake-cursor
-        (pulse-momentary-highlight-region beg end))
-      (message "Copied into kill-ring"))
-    (helix-extend-selection -1)))
+  (helix-with-each-cursor
+    (when (use-region-p)
+      (let ((beg (region-beginning))
+            (end (region-end))
+            (deactivate-mark nil))
+        (copy-region-as-kill beg end)
+        (unless helix--executing-command-for-fake-cursor
+          (pulse-momentary-highlight-region beg end)
+          (message "Copied into kill-ring")))
+      (helix-extend-selection -1)))
+  (helix-maybe-set-killed-rectangle))
 
-(put 'helix-copy 'multiple-cursors t)
+(put 'helix-copy 'multiple-cursors 'false)
+
+(defun helix-maybe-set-killed-rectangle ()
+  "Add the latest `kill-ring' entry for each cursor to `killed-rectangle',
+unless they all are equal. You can paste them later with `yank-rectangle'."
+  (when helix-multiple-cursors-mode
+    (let ((entries (helix-with-real-cursor-as-fake
+                     (-map #'(lambda (cursor)
+                               (car-safe (overlay-get cursor 'kill-ring)))
+                           (helix-all-fake-cursors :sort)))))
+      (unless (helix-all-elements-are-equal-p entries)
+        (setq killed-rectangle entries)))))
 
 ;; p
 (defun helix-paste-after ()
