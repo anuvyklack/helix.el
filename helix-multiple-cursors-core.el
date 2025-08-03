@@ -289,7 +289,7 @@ and bind it to CURSOR."
         (move-overlay region point mark)
       ;; else
       (setq region (-doto (make-overlay point mark nil nil t)
-                     (overlay-put 'face 'helix-region)
+                     (overlay-put 'face 'region)
                      (overlay-put 'type 'fake-region)
                      (overlay-put 'priority 99)
                      (overlay-put 'id (overlay-get cursor 'id))))

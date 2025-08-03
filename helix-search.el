@@ -264,7 +264,7 @@ RANGES is a list of cons cells with positions (START . END)."
                   (move-overlay helix-search--overlay beg end)
                 (setq helix-search--overlay
                       (-doto (make-overlay beg end nil t nil)
-                        (overlay-put 'face 'helix-region)
+                        (overlay-put 'face 'region)
                         (overlay-put 'priority 99))))
               (setf (helix-highlight-regexp hl) regexp)
               (helix-highlight-update hl))
@@ -303,7 +303,7 @@ RANGES is a list of cons cells with positions (START . END)."
   (unless (use-region-p)
     (user-error "No active selection"))
   (setq helix-select--hl (helix-highlight-create :buffer (current-buffer)
-                                                 :face 'helix-region
+                                                 :face 'region
                                                  :ranges ranges
                                                  :invert invert))
   (helix-with-deactivate-mark
@@ -400,13 +400,13 @@ If INVERT is non-nil — remove selections that match regexp."
                    do (cond (flag
                              (helix--set-cursor-overlay cursor (overlay-get cursor 'point))
                              (overlay-put (overlay-get cursor 'fake-region)
-                                          'face 'helix-region))
+                                          'face 'region))
                             (t (helix--delete-fake-cursor cursor))))
         ;; Else restore all cursors
         (dolist (cursor cursors)
           (helix--set-cursor-overlay cursor (overlay-get cursor 'point))
           (overlay-put (overlay-get cursor 'fake-region)
-                       'face 'helix-region))))))
+                       'face 'region))))))
 
 (defun helix-filter--start-session ()
   (add-hook 'after-change-functions #'helix-filter--update-hook nil t)
@@ -439,10 +439,10 @@ If INVERT is non-nil — remove selections that match regexp."
             ((-contains? flags t)))
       (cl-loop for overlay in regions-overlays
                for flag in flags
-               do (overlay-put overlay 'face (if flag 'helix-region)))
+               do (overlay-put overlay 'face (if flag 'region)))
     ;; Else highlight all regions
     (dolist (ov regions-overlays)
-      (overlay-put ov 'face 'helix-region))))
+      (overlay-put ov 'face 'region))))
 
 ;;; Find char
 
