@@ -429,6 +429,7 @@ It is active while there are multiple cursors.")
                                           kill-ring-yank-pointer
                                           yank-undo-function
                                           temporary-goal-column
+                                          helix-linewise-selection
                                           dabbrev--abbrev-char-regexp
                                           dabbrev--check-other-buffers
                                           dabbrev--friend-buffer-list
@@ -465,6 +466,10 @@ multiple cursors.")
 (helix-defvar-local helix--undo-boundary nil)
 
 (helix-defvar-local helix--input-cache nil)
+
+(helix-defvar-local helix-linewise-selection nil)
+
+(helix-defvar-local helix-main-selection-overlay nil)
 
 (provide 'helix-vars)
 ;;; helix-vars.el ends here

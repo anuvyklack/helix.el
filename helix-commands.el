@@ -28,9 +28,12 @@
 (defun helix-normal-state-escape ()
   "Command for ESC key in Helix Normal state."
   (interactive)
-  (if helix--extend-selection
-      (helix-extend-selection -1)
-    (deactivate-mark)))
+  (cond (helix-linewise-selection
+         (setq helix-linewise-selection nil))
+        (helix--extend-selection
+         (helix-extend-selection -1))
+        (t
+         (deactivate-mark))))
 
 (put 'helix-normal-state-escape 'multiple-cursors t)
 
@@ -40,7 +43,7 @@
 (defun helix-backward-char (count)
   "Move backward COUNT chars."
   (interactive "p")
-  (helix-disable-linewise-selection)
+  (setq helix-linewise-selection nil)
   (if helix--extend-selection
       (or (region-active-p) (set-mark (point)))
     (deactivate-mark))
@@ -53,7 +56,7 @@
 (defun helix-forward-char (count)
   "Move forward COUNT chars."
   (interactive "p")
-  (helix-disable-linewise-selection)
+  (setq helix-linewise-selection nil)
   (if helix--extend-selection
       (or (region-active-p) (set-mark (point)))
     (deactivate-mark))
@@ -66,7 +69,7 @@
 (defun helix-next-line (count)
   "Move to the next COUNT line."
   (interactive "p")
-  (helix-disable-linewise-selection)
+  (setq helix-linewise-selection nil)
   (if helix--extend-selection
       (or (region-active-p) (set-mark (point)))
     (deactivate-mark))
@@ -83,6 +86,7 @@
 (defun helix-previous-line (count)
   "Move to the previous COUNT line."
   (interactive "p")
+  (setq helix-linewise-selection nil)
   (if helix--extend-selection
       (or (region-active-p) (set-mark (point)))
     (deactivate-mark))
@@ -158,6 +162,7 @@ accessible part of the buffer.
 Push mark at previous position, unless extending selection."
   (interactive "P")
   (helix-delete-all-fake-cursors)
+  (setq helix-linewise-selection nil)
   (if helix--extend-selection
       (or (region-active-p) (set-mark (point)))
     ;; else
@@ -181,6 +186,7 @@ Push mark at previous position, unless extending selection."
   "Move point the end of the buffer."
   (interactive)
   (helix-delete-all-fake-cursors)
+  (setq helix-linewise-selection nil)
   (if helix--extend-selection
       (or (region-active-p) (set-mark (point)))
     ;; else
@@ -195,8 +201,9 @@ Push mark at previous position, unless extending selection."
 (defun helix-beginning-of-line-command ()
   "Move point to beginning of current line.
 Use visual line when `visual-line-mode' is active."
-  (declare (interactive-only helix-beginning-of-line))
+  (declare (interactive-only helix-beginning-of-line-command))
   (interactive)
+  (setq helix-linewise-selection nil)
   (if helix--extend-selection
       (or (region-active-p) (set-mark (point)))
     (set-mark (point)))
@@ -210,6 +217,7 @@ Use visual line when `visual-line-mode' is active."
   "Move point to beginning of current line skipping indentation.
 Use visual line when `visual-line-mode' is active."
   (interactive)
+  (setq helix-linewise-selection nil)
   (if helix--extend-selection
       (or (region-active-p) (set-mark (point)))
     (set-mark (point)))
@@ -224,8 +232,9 @@ Use visual line when `visual-line-mode' is active."
 (defun helix-end-of-line-command ()
   "Move point to end of current line.
 Use visual line when `visual-line-mode' is active."
-  (declare (interactive-only helix-end-of-line))
+  (declare (interactive-only helix-end-of-line-command))
   (interactive)
+  (setq helix-linewise-selection nil)
   (if helix--extend-selection
       (or (region-active-p) (set-mark (point)))
     (set-mark (point)))
@@ -245,10 +254,12 @@ Use visual line when `visual-line-mode' is active."
 (defun helix-forward-paragraph (count)
   "Move to the end of the COUNT next paragraph."
   (interactive "p")
+  (helix-carry-linewise-selection)
   (if helix--extend-selection
       (or (region-active-p) (set-mark (point)))
     (set-mark (point)))
-  (helix-forward-beginning-of-thing 'paragraph count))
+  (helix-forward-beginning-of-thing 'paragraph count)
+  (helix-maybe-enable-linewise-selection))
 
 (put 'helix-forward-paragraph 'multiple-cursors t)
 
@@ -256,10 +267,12 @@ Use visual line when `visual-line-mode' is active."
 (defun helix-backward-paragraph (count)
   "Move to the beginning of the COUNT previous paragraph."
   (interactive "p")
+  (helix-carry-linewise-selection)
   (if helix--extend-selection
       (or (region-active-p) (set-mark (point)))
     (set-mark (point)))
-  (forward-thing 'paragraph (- count)))
+  (forward-thing 'paragraph (- count))
+  (helix-maybe-enable-linewise-selection))
 
 (put 'helix-backward-paragraph 'multiple-cursors t)
 
@@ -267,10 +280,12 @@ Use visual line when `visual-line-mode' is active."
 (defun helix-forward-function (count)
   "Move to the end of the COUNT next function."
   (interactive "p")
+  (helix-carry-linewise-selection)
   (if helix--extend-selection
       (or (region-active-p) (set-mark (point)))
     (set-mark (point)))
-  (helix-forward-beginning-of-thing 'helix-function count))
+  (helix-forward-beginning-of-thing 'helix-function count)
+  (helix-maybe-enable-linewise-selection))
 
 (put 'helix-forward-function 'multiple-cursors t)
 
@@ -278,10 +293,12 @@ Use visual line when `visual-line-mode' is active."
 (defun helix-backward-function (count)
   "Move to the beginning of the COUNT previous paragraph."
   (interactive "p")
+  (helix-carry-linewise-selection)
   (if helix--extend-selection
       (or (region-active-p) (set-mark (point)))
     (set-mark (point)))
-  (forward-thing 'helix-function (- count)))
+  (forward-thing 'helix-function (- count))
+  (helix-maybe-enable-linewise-selection))
 
 (put 'helix-backward-paragraph 'multiple-cursors t)
 
@@ -289,6 +306,7 @@ Use visual line when `visual-line-mode' is active."
 (defun helix-forward-sentence (count)
   "Move to the end of the COUNT next sentence."
   (interactive "p")
+  (helix-carry-linewise-selection)
   (if helix--extend-selection
       (or (region-active-p) (set-mark (point)))
     (set-mark (point)))
@@ -300,6 +318,7 @@ Use visual line when `visual-line-mode' is active."
 (defun helix-backward-sentence (count)
   "Move to the beginning of the COUNT previous sentence."
   (interactive "p")
+  (helix-carry-linewise-selection)
   (if helix--extend-selection
       (or (region-active-p) (set-mark (point)))
     (set-mark (point)))
@@ -312,6 +331,7 @@ Use visual line when `visual-line-mode' is active."
 (defun helix-jump-to-match-item ()
   "Jump between matching brackets."
   (interactive)
+  (setq helix-linewise-selection nil)
   (if helix--extend-selection
       (or (region-active-p) (set-mark (point)))
     (deactivate-mark))
@@ -337,6 +357,7 @@ Use visual line when `visual-line-mode' is active."
   "Move to a word start after the point, choosing it with Avy."
   (interactive)
   (helix-delete-all-fake-cursors)
+  (setq helix-linewise-selection nil)
   (helix-push-point)
   (let ((mark (and helix--extend-selection
                    (not (region-active-p))
@@ -357,6 +378,7 @@ Use visual line when `visual-line-mode' is active."
   "Move to a word start before the point, choosing it with Avy."
   (interactive)
   (helix-delete-all-fake-cursors)
+  (setq helix-linewise-selection nil)
   (helix-push-point)
   (let ((mark (and helix--extend-selection
                    (not (region-active-p))
@@ -378,6 +400,7 @@ Use visual line when `visual-line-mode' is active."
   "Move to a WORD start after the point, choosing it with Avy."
   (interactive)
   (helix-delete-all-fake-cursors)
+  (setq helix-linewise-selection nil)
   (helix-push-point)
   (let ((mark (and helix--extend-selection
                    (not (region-active-p))
@@ -398,6 +421,7 @@ Use visual line when `visual-line-mode' is active."
   "Move to a WORD start before the point, choosing it with Avy."
   (interactive)
   (helix-delete-all-fake-cursors)
+  (setq helix-linewise-selection nil)
   (helix-push-point)
   (let ((mark (and helix--extend-selection
                    (not (region-active-p))
@@ -419,6 +443,7 @@ Use visual line when `visual-line-mode' is active."
   "Move to a next line, choosing it with Avy."
   (interactive)
   (helix-delete-all-fake-cursors)
+  (setq helix-linewise-selection nil)
   (helix-push-point)
   (unless helix--extend-selection
     (deactivate-mark))
@@ -433,6 +458,7 @@ Use visual line when `visual-line-mode' is active."
   "Move to a previous line, choosing it with Avy."
   (interactive)
   (helix-delete-all-fake-cursors)
+  (setq helix-linewise-selection nil)
   (helix-push-point)
   (unless helix--extend-selection
     (deactivate-mark))
@@ -448,10 +474,8 @@ Use visual line when `visual-line-mode' is active."
 (defun helix-insert ()
   "Switch to Insert state before region."
   (interactive)
-  (when (and (use-region-p)
-             (< (mark) (point)))
-    (helix-with-each-cursor
-      (helix-ensure-region-direction -1)))
+  (helix-with-each-cursor
+    (helix-ensure-region-direction -1))
   (helix-insert-state 1))
 
 (put 'helix-insert 'multiple-cursors 'false)
@@ -460,13 +484,27 @@ Use visual line when `visual-line-mode' is active."
 (defun helix-append ()
   "Switch to Insert state after region."
   (interactive)
-  (when (and (use-region-p)
-             (< (point) (mark)))
-    (helix-with-each-cursor
-      (helix-ensure-region-direction 1)))
+  (helix-with-each-cursor
+    (helix-ensure-region-direction 1))
   (helix-insert-state 1))
 
 (put 'helix-append 'multiple-cursors 'false)
+
+;; I
+(defun helix-insert-line ()
+  "Switch to insert state at beginning of current line."
+  (interactive)
+  (helix--insert-or-append-on-line -1))
+
+(put 'helix-insert-line 'multiple-cursors 'false)
+
+;; A
+(defun helix-append-line ()
+  "Switch to Insert state at the end of the current line."
+  (interactive)
+  (helix--insert-or-append-on-line 1))
+
+(put 'helix-append-line 'multiple-cursors 'false)
 
 (defun helix--insert-or-append-on-line (direction)
   "Switch to insert state at beginning or end of current line
@@ -490,31 +528,13 @@ depending on DIRECTION."
     (set-marker (mark-marker) (point)))
   (helix-insert-state 1))
 
-;; I
-(defun helix-insert-line ()
-  "Switch to insert state at beginning of current line."
-  (interactive)
-  (helix--insert-or-append-on-line -1))
-
-(put 'helix-insert-line 'multiple-cursors 'false)
-
-;; A
-(defun helix-append-line ()
-  "Switch to Insert state at the end of the current line."
-  (interactive)
-  (helix--insert-or-append-on-line 1))
-
-(put 'helix-append-line 'multiple-cursors 'false)
-
 ;; o
 (defun helix-open-below ()
   "Open new line below selection."
   (interactive)
   (helix-with-each-cursor
     (when (use-region-p)
-      (helix-ensure-region-direction 1)
-      (pcase (helix-linewise-selection-p)
-        ('line (backward-char))))
+      (helix-ensure-region-direction 1))
     (move-end-of-line nil)
     (newline-and-indent)
     (set-marker (mark-marker) (point)))
@@ -542,19 +562,10 @@ depending on DIRECTION."
 (defun helix-add-blank-line-below (count)
   "Add COUNT blank lines below selection."
   (interactive "p")
-  (let ((deactivate-mark nil)
-        (point (point))
-        region)
-    (when (use-region-p)
-      (setq region (list (region-beginning) (region-end) (helix-region-direction)))
-      (helix-ensure-region-direction 1)
-      (pcase (helix-linewise-selection-p)
-        ('line (backward-char))))
+  (helix-save-region
+    (helix-ensure-region-direction 1)
     (move-end-of-line nil)
-    (newline count)
-    (if region
-        (apply #'helix-set-region region)
-      (goto-char point))))
+    (newline count)))
 
 (put 'helix-add-blank-line-below 'multiple-cursors t)
 
@@ -575,12 +586,10 @@ depending on DIRECTION."
   (interactive)
   (helix-with-each-cursor
     (cond ((use-region-p)
+           (setq helix-linewise-selection nil)
            (let ((line-selected? (helix-linewise-selection-p)))
              (kill-region nil nil t)
              (pcase line-selected?
-               ('line (newline)
-                      (backward-char)
-                      (indent-according-to-mode))
                ('visual-line (insert " ")
                              (backward-char)))))
           ((not (helix-bolp))
@@ -604,9 +613,11 @@ depending on DIRECTION."
   "Kill (cut) text in region. I.e. delete text and put it in the `kill-ring'.
 If no selection — delete COUNT chars before point."
   (interactive "p")
-  (if (use-region-p)
-      (kill-region nil nil t)
-    (delete-char (- count)))
+  (cond ((use-region-p)
+         (helix-carry-linewise-selection)
+         (kill-region nil nil t))
+        (t
+         (delete-char (- count))))
   (helix-extend-selection -1))
 
 (put 'helix-cut 'multiple-cursors t)
@@ -616,9 +627,11 @@ If no selection — delete COUNT chars before point."
   "Delete text in region, without modifying the `kill-ring'.
 If no selection — delete COUNT chars after point."
   (interactive "p")
-  (if (use-region-p)
-      (delete-region (region-beginning) (region-end))
-    (delete-char count))
+  (cond ((use-region-p)
+         (helix-carry-linewise-selection)
+         (delete-region (region-beginning) (region-end)))
+        (t
+         (delete-char count)))
   (helix-extend-selection -1))
 
 (put 'helix-delete 'multiple-cursors t)
@@ -627,6 +640,7 @@ If no selection — delete COUNT chars after point."
 (defun helix-undo ()
   "Cancel current region then undo."
   (interactive)
+  (setq helix-linewise-selection nil)
   (deactivate-mark)
   (let (deactivate-mark)
     (undo-only)))
@@ -637,6 +651,7 @@ If no selection — delete COUNT chars after point."
 (defun helix-redo ()
   "Cancel current region then redo."
   (interactive)
+  (setq helix-linewise-selection nil)
   (deactivate-mark)
   (let (deactivate-mark)
     (undo-redo)))
@@ -652,6 +667,8 @@ If no selection — delete COUNT chars after point."
       (let ((beg (region-beginning))
             (end (region-end))
             (deactivate-mark nil))
+        (when helix-linewise-selection
+          (cl-incf end))
         (copy-region-as-kill beg end)
         (unless helix-executing-command-for-fake-cursor
           (pulse-momentary-highlight-region beg end)
@@ -694,6 +711,7 @@ unless they all are equal. You can paste them later with `yank-rectangle'."
 (defun helix-paste-pop (count)
   "Replace just-pasted text with next COUNT element from `kill-ring'."
   (interactive "p")
+  (setq helix-linewise-selection nil)
   (let ((yank-pop (or (command-remapping 'yank-pop)
                       #'yank-pop))
         (deactivate-mark nil))
@@ -705,6 +723,7 @@ unless they all are equal. You can paste them later with `yank-rectangle'."
 (defun helix-paste-undo-pop (count)
   "Replace just-pasted text with previous COUNT element from `kill-ring'."
   (interactive "p")
+  (setq helix-linewise-selection nil)
   (let ((yank-pop (or (command-remapping 'yank-pop)
                       #'yank-pop))
         (deactivate-mark nil))
@@ -717,9 +736,12 @@ unless they all are equal. You can paste them later with `yank-rectangle'."
   "Replace selection content with yanked text from `kill-ring'."
   (interactive)
   (when (use-region-p)
+    (when (helix-ends-with-newline (current-kill 0 :do-not-move))
+      (helix-carry-linewise-selection))
     (let (deactivate-mark)
       (delete-region (region-beginning) (region-end))
       (helix-yank))
+    (helix-maybe-enable-linewise-selection)
     (helix-extend-selection -1)))
 
 (put 'helix-replace-with-kill-ring 'multiple-cursors t)
@@ -728,16 +750,14 @@ unless they all are equal. You can paste them later with `yank-rectangle'."
 (defun helix-join-line ()
   "Join the selected lines."
   (interactive)
-  (let ((deactivate-mark nil)
-        (region? (use-region-p))
-        beg end dir)
-    (when region?
-      (setq beg (region-beginning)
-            end (copy-marker (region-end))
-            dir (helix-region-direction)))
-    (let ((count (let ((count (if region? (count-lines beg end) 1)))
-                   (if (> count 1) (1- count) count))))
-      (when region? (goto-char beg))
+  (helix-save-region
+    (let* ((deactivate-mark nil)
+           (region? (use-region-p))
+           (count (let ((n (if region?
+                               (count-lines (region-beginning) (region-end))
+                             1)))
+                    (if (> n 1) (1- n) n))))
+      (when region? (goto-char (region-beginning)))
       ;; All these `let' bindings are actually move point.
       (let ((in-comment? (helix-comment-at-pos-p
                           (progn (move-beginning-of-line nil)
@@ -752,10 +772,7 @@ unless they all are equal. You can paste them later with `yank-rectangle'."
       (dotimes (_ count)
         (forward-line 0)
         (delete-char -1)
-        (fixup-whitespace)))
-    (when region?
-      (helix-set-region beg end dir)
-      (set-marker end nil))))
+        (fixup-whitespace)))))
 
 (put 'helix-join-line 'multiple-cursors t)
 
@@ -781,7 +798,7 @@ unless they all are equal. You can paste them later with `yank-rectangle'."
 With no selection downcase the character after point."
   (interactive)
   (if (use-region-p)
-      (let (deactivate-mark)
+      (let ((deactivate-mark nil))
         (downcase-region (region-beginning) (region-end)))
     (downcase-region (point) (progn (forward-char) (point)))))
 
@@ -825,6 +842,7 @@ If ARG positive number — enable, negative — disable."
 (defun helix-collapse-selection ()
   "Collapse region onto a single cursor."
   (interactive)
+  (setq helix-linewise-selection nil)
   (deactivate-mark))
 
 (put 'helix-collapse-selection 'multiple-cursors t)
@@ -836,12 +854,13 @@ If region is forward — mark is before point — expand selection downwise,
 if region is backward — point is before mark — expand upwise."
   (interactive "p")
   (setq count (abs count))
-  (and (helix-expand-selection-to-full-lines)
+  (and (helix--expand-selection-to-full-lines)
        (cl-decf count))
   (unless (zerop count)
     (setq count (* count (helix-region-direction)))
     (let ((line (if visual-line-mode 'visual-line 'line)))
-      (forward-thing line count))))
+      (forward-thing line count)))
+  (helix-maybe-enable-linewise-selection))
 
 (put 'helix-expand-line-selection 'multiple-cursors t)
 (put 'helix-expand-line-selection 'helix-merge-regions t)
@@ -871,25 +890,27 @@ Counterpart to `helix-expand-line-selection' that does the exact opposite."
                (if (< (point) end)
                    (setq beg (point))
                  (cl-return)))))
-      (helix-set-region beg end dir))))
+      (helix-set-region beg end dir)))
+  (helix-maybe-enable-linewise-selection))
 
 (put 'helix-contract-line-selection 'multiple-cursors t)
 
-(defun helix-expand-selection-to-full-lines ()
+(defun helix--expand-selection-to-full-lines ()
   "Create a line-wise selection, using visual or logical lines.
 When region is active: expand selection to line boundaries to encompass full
 line(s). Otherwise, select current line. Uses visual lines if `visual-line-mode'
 is active, otherwise logical lines."
   (let ((line (if visual-line-mode 'visual-line 'line)))
-    (cond ((use-region-p)
-           (unless (helix-linewise-selection-p)
-             (let ((beg (region-beginning))
-                   (end (region-end)))
-               (goto-char beg)
-               (set-mark (car (bounds-of-thing-at-point line))) ; left end
-               (goto-char end)
-               (goto-char (cdr (bounds-of-thing-at-point line))) ; right end
-               t)))
+    (cond ((helix-carry-linewise-selection)
+           nil)
+          ((use-region-p)
+           (let ((beg (region-beginning))
+                 (end (region-end)))
+             (goto-char beg)
+             (set-mark (car (bounds-of-thing-at-point line))) ; left end
+             (goto-char end)
+             (goto-char (cdr (bounds-of-thing-at-point line))) ; right end
+             t))
           (t ;; no region
            (-let [(beg . end) (bounds-of-thing-at-point line)]
              (set-mark beg)
@@ -899,33 +920,35 @@ is active, otherwise logical lines."
 (defun helix-reduce-selection-to-full-lines ()
   "Remove non full line parts from both ends of the selection.
 Return t if does anything, otherwise return nil."
-  (when (and (use-region-p)
-             (not (helix-linewise-selection-p)))
-    (let ((line (if visual-line-mode 'visual-line 'line))
-          (beg (region-beginning))
-          (end (region-end))
-          (dir (helix-region-direction))
-          result)
-      ;; new END
-      (goto-char end)
-      (unless (helix-bolp)
-        (-let [(line-beg . _) (bounds-of-thing-at-point line)]
-          (unless (< line-beg beg)
-            (setq end line-beg
-                  result t))))
-      ;; new BEG
-      (goto-char beg)
-      (unless (helix-bolp)
-        (-let [(_ . line-end) (bounds-of-thing-at-point line)]
-          (unless (<= end line-end)
-            (setq beg line-end
-                  result t))))
-      (helix-set-region beg end dir)
-      result)))
+  (cond ((helix-carry-linewise-selection)
+         nil)
+        ((use-region-p)
+         (let ((line (if visual-line-mode 'visual-line 'line))
+               (beg (region-beginning))
+               (end (region-end))
+               (dir (helix-region-direction))
+               result)
+           ;; new END
+           (goto-char end)
+           (unless (helix-bolp)
+             (-let [(line-beg . _) (bounds-of-thing-at-point line)]
+               (unless (< line-beg beg)
+                 (setq end line-beg
+                       result t))))
+           ;; new BEG
+           (goto-char beg)
+           (unless (helix-bolp)
+             (-let [(_ . line-end) (bounds-of-thing-at-point line)]
+               (unless (<= end line-end)
+                 (setq beg line-end
+                       result t))))
+           (helix-set-region beg end dir)
+           result))))
 
 ;; %
 (helix-define-advice mark-whole-buffer (:before ())
-  (helix-delete-all-fake-cursors))
+  (helix-delete-all-fake-cursors)
+  (setq helix-linewise-selection t))
 
 (put 'mark-whole-buffer 'multiple-cursors 'false)
 
@@ -938,7 +961,7 @@ If INVERT is non-nil — create new selections for all regions that NOT match to
 entered regexp withing current selections."
   (interactive)
   (if helix-multiple-cursors-mode
-      (let* ((real-cursor (helix--create-fake-cursor-1 (point) (mark t) 0))
+      (let* ((real-cursor (helix--create-fake-cursor-1 0))
              (cursors (helix-all-fake-cursors))
              (ranges (-map #'(lambda (cursor)
                                (if (overlay-get cursor 'mark-active)
@@ -991,7 +1014,7 @@ entered regexp withing current selections."
               (when (<= end (point))
                 (goto-char border)
                 (throw 'done nil))
-              (helix-create-fake-cursor border (mark))
+              (helix-create-fake-cursor border (mark) helix-linewise-selection)
               (set-marker (mark-marker) (point)))))))))
 
 (put 'helix-split-region-on-newline 'multiple-cursors 'false)
@@ -1065,6 +1088,7 @@ entered regexp withing current selections."
   "Copy selections COUNT times down if COUNT is positive, or up if negative."
   (interactive "p")
   (helix-with-each-cursor
+    (setq helix-linewise-selection nil)
     (helix-motion-loop (dir count)
       (if (use-region-p)
           (helix--copy-region dir)
@@ -1161,6 +1185,7 @@ at START-COLUMN, ends at END-COLUMN and consists of NUMBER-OF-LINES."
   "Delete main cursor and activate the next fake one."
   (interactive)
   (when helix-multiple-cursors-mode
+    (setq helix-linewise-selection nil)
     (helix-restore-point-from-fake-cursor (or (helix-next-fake-cursor (point))
                                               (helix-first-fake-cursor)))
     (helix-maybe-disable-multiple-cursors-mode)))
@@ -1172,6 +1197,7 @@ at START-COLUMN, ends at END-COLUMN and consists of NUMBER-OF-LINES."
   "Merge all cursors into single selection."
   (interactive)
   (when helix-multiple-cursors-mode
+    (setq helix-linewise-selection nil)
     (let ((beg (let ((cursor (helix-first-fake-cursor)))
                  (min (overlay-get cursor 'point)
                       (overlay-get cursor 'mark)
@@ -1557,6 +1583,7 @@ already there."
 Right after this command while hints are active, you can use `n' and `N'
 keys to repeat motion forward/backward."
   (interactive "p")
+  (setq helix-linewise-selection nil)
   (if helix--extend-selection
       (or (region-active-p) (set-mark (point)))
     (set-mark (point)))
@@ -1573,6 +1600,7 @@ keys to repeat motion forward/backward."
 Right after this command while hints are active, you can use `n' and `N'
 keys to repeat motion forward/backward."
   (interactive "p")
+  (setq helix-linewise-selection nil)
   (if helix--extend-selection
       (or (region-active-p) (set-mark (point)))
     (set-mark (point)))
@@ -1590,6 +1618,7 @@ keys to repeat motion forward/backward."
 Right after this command while hints are active, you can use `n' and `N'
 keys to repeat motion forward/backward."
   (interactive "p")
+  (setq helix-linewise-selection nil)
   (if helix--extend-selection
       (or (region-active-p) (set-mark (point)))
     (set-mark (point)))
@@ -1606,6 +1635,7 @@ keys to repeat motion forward/backward."
 Right after this command while hints are active, you can use `n' and `N'
 keys to repeat motion forward/backward."
   (interactive "p")
+  (setq helix-linewise-selection nil)
   (if helix--extend-selection
       (or (region-active-p) (set-mark (point)))
     (set-mark (point)))
@@ -1641,6 +1671,7 @@ keys to repeat motion forward/backward."
 (defun helix-search-next (count)
   "Select next COUNT search match."
   (interactive "p")
+  (setq helix-linewise-selection nil)
   (unless helix-search--direction (setq helix-search--direction 1))
   (when (< helix-search--direction 0)
     (setq count (- count)))
@@ -1791,16 +1822,16 @@ file for examples."
 (defun helix-surround--read-char ()
   "Read char from minibuffer and return (LEFT . RIGHT) pair with strings
 to surround with."
-  (let* ((char (read-char "surround: "))
-         (pair-or-fun-or-nil (-some->
-                                 (alist-get char helix-surround-alist)
-                               (plist-get :insert))))
-    (pcase pair-or-fun-or-nil
-      ((and (pred functionp) fn)
-       (funcall fn))
-      ((and (pred consp) pair)
-       pair)
-      (_ (cons char char)))))
+  (helix-with-main-selection-overlay
+    (let* ((char (read-char "surround: "))
+           (pair-or-fun-or-nil (-some-> (alist-get char helix-surround-alist)
+                                 (plist-get :insert))))
+      (pcase pair-or-fun-or-nil
+        ((and (pred functionp) fn)
+         (funcall fn))
+        ((and (pred consp) pair)
+         pair)
+        (_ (cons (char-to-string char) (char-to-string char)))))))
 
 ;; Cache the function output to use with all cursors.
 (helix-cache-input helix-surround--read-char)
@@ -1822,10 +1853,10 @@ lines and reindent the region."
                 right (s-trim right)))
         (goto-char beg)
         (insert left)
-        (when linewise? (newline))
+        (when helix-linewise-selection (newline))
         (goto-char end)
+        (when helix-linewise-selection (newline))
         (insert right)
-        (when linewise? (newline))
         (indent-region beg end)
         (set-marker beg nil)
         (set-marker end nil)))
