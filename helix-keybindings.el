@@ -135,7 +135,7 @@
   "M-s" #'helix-split-region-on-newline
   "K"   #'helix-keep-selections
   "M-K" #'helix-remove-selections
-  ","   #'helix-remove-all-fake-cursors
+  ","   #'helix-delete-all-fake-cursors
   "M-," #'helix-remove-main-cursor
   "M--" #'helix-merge-selections
   ";"   #'helix-collapse-selection

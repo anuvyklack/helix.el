@@ -33,7 +33,7 @@
 
 (defvar edebug-mode nil)
 (defvar edebug-mode-map)
-(declare-function helix-remove-all-fake-cursors "helix-commands")
+(declare-function helix-delete-all-fake-cursors "helix-commands")
 
 ;;; Helix mode
 
@@ -78,12 +78,12 @@
         (helix-load-whitelists)
         (add-hook 'pre-command-hook #'helix--pre-commad-hook nil t)
         (add-hook 'post-command-hook #'helix--post-command-hook 90 t)
-        (add-hook 'after-revert-hook #'helix-remove-all-fake-cursors nil t)
+        (add-hook 'after-revert-hook #'helix-delete-all-fake-cursors nil t)
         (helix-change-state (helix-initial-state)))
     ;; else
     (remove-hook 'post-command-hook #'helix--post-command-hook t)
     (remove-hook 'pre-command-hook #'helix--pre-commad-hook t)
-    (remove-hook 'after-revert-hook #'helix-remove-all-fake-cursors t)
+    (remove-hook 'after-revert-hook #'helix-delete-all-fake-cursors t)
     (helix--single-undo-step-end)
     (setq helix-this-command nil
           helix--input-cache nil)
