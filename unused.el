@@ -136,7 +136,7 @@ I.e.:
       (when (< dir 0)
         (pcase-setq `(,beg . ,end) (cons end beg)))
       (cond ((eql id 0) ;; ID 0 denotes real cursors
-             (helix-remove-fake-cursor cursor)
+             (helix-delete-fake-cursor cursor)
              (goto-char end)
              (set-mark beg))
             (t
