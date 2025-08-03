@@ -38,7 +38,7 @@
 ;;; Helix mode
 
 (defun helix--pre-commad-hook ()
-  (unless helix--executing-command-for-fake-cursor
+  (unless helix-executing-command-for-fake-cursor
     (setq helix-this-command this-command)
     (when (and (symbolp this-command)
                (get this-command 'helix-deactivate-mark))
@@ -46,7 +46,7 @@
     (helix--single-undo-step-beginning)))
 
 (defun helix--post-command-hook ()
-  (unless helix--executing-command-for-fake-cursor
+  (unless helix-executing-command-for-fake-cursor
     (when (and helix-multiple-cursors-mode
                (not (eq helix-this-command #'ignore))
                ;; TODO: This condition skips keyboard macros.

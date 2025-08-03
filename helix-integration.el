@@ -60,7 +60,7 @@ of all cursors when yanking."
   "`execute-kbd-macro' should never be run for fake cursors.
 The real cursor will execute the keyboard macro, resulting in new commands
 in the command loop, and the fake cursors can pick up on those instead."
-  (unless helix--executing-command-for-fake-cursor
+  (unless helix-executing-command-for-fake-cursor
     (apply orig-fun args)))
 
 (helix-cache-input read-char)
