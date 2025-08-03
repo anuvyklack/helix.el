@@ -136,8 +136,8 @@ returned by `helix-cursors-positions' function."
                (unless (assoc id cursors-positions #'eql)
                  (helix--delete-fake-cursor cursor)))
            helix--cursors-table)
-  (dolist (id-point-mark cursors-positions)
-    (apply #'helix-set-cursor id-point-mark))
+  (dolist (id-point-mark-linewise cursors-positions)
+    (apply #'helix-set-cursor id-point-mark-linewise))
   (helix-maybe-disable-multiple-cursors-mode)
   (push `(apply helix--undo-step-start ,cursors-positions)
         buffer-undo-list))
@@ -156,7 +156,7 @@ overridden, this value serves as a backup so that `helix-max-cursors-number'
 can take on a new value. When `helix--delete-all-fake-cursors' is called,
 the values are reset.")
 
-(defun helix-create-fake-cursor (point &optional mark id)
+(defun helix-create-fake-cursor (point &optional mark linewise? id)
   "Create a fake cursor at POINT position.
 If MARK is passed a fake active region overlay between POINT
 and MARK will be created.
@@ -172,19 +172,25 @@ The current state is stored in the overlay for later retrieval."
         (setq helix-max-cursors-number (read-number "Enter a new, temporary maximum: "))
       (helix--delete-all-fake-cursors)
       (error "Aborted: too many cursors")))
-  (prog1 (helix--create-fake-cursor-1 point mark id)
+  (prog1 (helix--create-fake-cursor-1 id point mark linewise?)
     (helix-maybe-enable-multiple-cursors-mode)))
 
-(defun helix--create-fake-cursor-1 (point &optional mark id)
+(defun helix--create-fake-cursor-1 (id &optional point mark linewise?)
   (unless id (setq id (helix--new-fake-cursor-id)))
+  (unless point (setq point (point)))
+  (unless mark (setq mark (or (mark t) point)))
+  (unless linewise? (setq linewise? helix-linewise-selection))
   (save-excursion
     (goto-char point)
-    (let ((cursor (helix--set-cursor-overlay nil (point))))
-      (overlay-put cursor 'id (or id (helix--new-fake-cursor-id)))
+    (let ((cursor (helix--set-cursor-overlay nil point)))
+      (overlay-put cursor 'id id)
       (overlay-put cursor 'type 'fake-cursor)
       (overlay-put cursor 'priority 100)
       (helix--store-point-state cursor point mark)
-      (helix--set-region-overlay cursor point mark)
+      (overlay-put cursor 'helix-linewise-selection linewise?)
+      (when (and mark-active mark
+                 (/= point mark))
+        (helix--set-region-overlay cursor point mark))
       (puthash id cursor helix--cursors-table)
       cursor)))
 
@@ -203,9 +209,12 @@ based on point and mark.
 
 Assign the ID to the new cursor, if specified.
 The current state is stored in the overlay for later retrieval."
-  (helix-create-fake-cursor (point) (if (use-region-p) (mark)) id))
+  (helix-create-fake-cursor (point)
+                            (if (use-region-p) (mark))
+                            helix-linewise-selection
+                            id))
 
-(defun helix-set-cursor (cursor-or-id point &optional mark)
+(defun helix-set-cursor (cursor-or-id point &optional mark linewise?)
   "Move or create cursor at POINT position.
 
 CURSOR-OR-ID can be either:
@@ -219,22 +228,26 @@ POINT and MARK will be set."
   (pcase cursor-or-id
     ((or 'nil 0)
      (goto-char point)
-     (when mark (set-mark mark)))
+     (when mark (set-mark mark))
+     (setq helix-linewise-selection linewise?))
     ((and (pred numberp) id)
      (if-let* ((cursor (gethash id helix--cursors-table)))
-         (helix-move-fake-cursor cursor point mark)
-       (helix-create-fake-cursor point mark id)))
+         (helix-move-fake-cursor cursor point mark linewise?)
+       ;; else
+       (helix-create-fake-cursor point mark linewise? id)))
     ((and (pred helix-fake-cursor-p) cursor)
-     (helix-move-fake-cursor cursor point mark))))
+     (helix-move-fake-cursor cursor point mark linewise?))))
 
-(defun helix-move-fake-cursor (cursor point &optional mark)
+(defun helix-move-fake-cursor (cursor point &optional mark linewise?)
   "Set fake CURSOR to new POINT and MARK and update its state."
   (set-marker (overlay-get cursor 'point) point)
   (set-marker (overlay-get cursor 'mark) (or mark point))
   (helix--set-cursor-overlay cursor point)
-  (if (and mark mark-active)
-      (helix--set-region-overlay cursor point mark)
-    (helix--delete-region-overlay cursor))
+  (cond ((and mark mark-active)
+         (overlay-put cursor 'helix-linewise-selection linewise?)
+         (helix--set-region-overlay cursor point mark))
+        (t
+         (helix--delete-region-overlay cursor)))
   cursor)
 
 (defun helix-delete-fake-cursor (cursor)
@@ -280,20 +293,21 @@ Return CURSOR."
              (overlay-put cursor 'after-string nil))))
     cursor))
 
-(defun helix--set-region-overlay (cursor point mark)
-  "Set the overlay looking like active region between POINT and MARK
+(defun helix--set-region-overlay (cursor beg end)
+  "Set the overlay looking like active region between BEG and END
 and bind it to CURSOR."
-  (when (and mark-active mark
-             (not (eql point mark)))
-    (if-let* ((region (overlay-get cursor 'fake-region)))
-        (move-overlay region point mark)
-      ;; else
-      (setq region (-doto (make-overlay point mark nil nil t)
-                     (overlay-put 'face 'region)
-                     (overlay-put 'type 'fake-region)
-                     (overlay-put 'priority 99)
-                     (overlay-put 'id (overlay-get cursor 'id))))
-      (overlay-put cursor 'fake-region region))))
+  (when (overlay-get cursor 'helix-linewise-selection)
+    (when (< end beg) (cl-rotatef beg end))
+    (cl-incf end))
+  (if-let* ((region (overlay-get cursor 'fake-region)))
+      (move-overlay region beg end)
+    ;; else
+    (setq region (-doto (make-overlay beg end nil nil t)
+                   (overlay-put 'face 'region)
+                   (overlay-put 'type 'fake-region)
+                   (overlay-put 'priority 99)
+                   (overlay-put 'id (overlay-get cursor 'id))))
+    (overlay-put cursor 'fake-region region)))
 
 (defun helix--delete-fake-cursor (cursor)
   "Delete CURSOR overlay."
@@ -357,14 +371,16 @@ for others."
              do (helix-create-fake-cursor point mark))))
 
 (defun helix-remove-fake-cursor-from-buffer (cursor)
+  "Disable the fake-CURSOR display in the buffer without deleting it."
   (helix--delete-region-overlay cursor)
   (delete-overlay cursor)
   cursor)
 
 (defun helix-restore-fake-cursor-in-buffer (cursor)
-  (let ((point (overlay-get cursor 'point))
-        (mark  (overlay-get cursor 'mark)))
-    (helix-set-cursor cursor point mark)))
+  (helix-set-cursor cursor
+                    (overlay-get cursor 'point)
+                    (overlay-get cursor 'mark)
+                    (overlay-get cursor 'helix-linewise-selection)))
 
 (defun helix-fake-cursor-p (overlay)
   "Return t if an OVERLAY is a fake cursor."
@@ -451,10 +467,14 @@ MARK is nil if cursor has no region."
                (mark (if-let* (((overlay-get cursor 'mark-active))
                                (mark (marker-position (overlay-get cursor 'mark)))
                                ((/= point mark)))
-                         mark)))
+                         mark))
+               (linewise? (overlay-get cursor 'helix-linewise-selection)))
           (unless (eql id 0)
-            (push (list id point mark) alist)))))
-    (push (list 0 (point) (if (use-region-p) (mark)))
+            (push (list id point mark linewise?)
+                  alist)))))
+    (push (list 0 (point)
+                (if (use-region-p) (mark))
+                helix-linewise-selection)
           alist)
     alist))
 
@@ -490,23 +510,25 @@ evaluate BODY, update fake CURSOR."
      (helix--restore-point-state ,cursor)
      (unwind-protect
          (progn ,@body)
-       (helix-move-fake-cursor ,cursor (point) (mark t))
-       (helix-update-fake-cursor-state ,cursor))))
+       (helix-update-fake-cursor-state ,cursor)
+       (helix-move-fake-cursor ,cursor (point) (mark t) helix-linewise-selection))))
 
 (defmacro helix-with-each-cursor (&rest body)
   "Evaluate BODY for all cursors: real and fake ones."
   (declare (indent 0) (debug t))
-  `(if helix-multiple-cursors-mode
-       ;; First collect fake cursors because BODY can create new cursors,
-       ;; and we want it to be executed only for original ones.
-       (let ((cursors (helix-all-fake-cursors)))
-         ,@body
-         (helix-save-window-scroll
-           (helix-save-excursion
-            (dolist (cursor cursors)
-              (helix-with-fake-cursor cursor
-                ,@body)))))
-     ,@body))
+  ;; First collect fake cursors because BODY can create new cursors,
+  ;; and we want it to be executed only for original ones.
+  `(let ((cursors (if helix-multiple-cursors-mode
+                      (helix-all-fake-cursors))))
+     ;; Main cursor
+     ,@body
+     ;; Fake cursors
+     (when cursors
+       (helix-save-window-scroll
+         (helix-save-excursion
+          (dolist (cursor cursors)
+            (helix-with-fake-cursor cursor
+              ,@body)))))))
 
 (defun helix-execute-command-for-all-cursors (command)
   "Call COMMAND interactively for all cursors: real and fake ones."
@@ -558,7 +580,7 @@ makes sense for fake cursor."
 Restore it after BODY evaluation if it is still alive."
   (declare (indent 0) (debug t))
   (let ((real-cursor (make-symbol "real-cursor")))
-    `(let ((,real-cursor (helix--create-fake-cursor-1 (point) (mark t) 0)))
+    `(let ((,real-cursor (helix--create-fake-cursor-1 0)))
        (prog1 (progn ,@body)
          (cond ((helix-overlay-live-p ,real-cursor)
                 (helix-restore-point-from-fake-cursor ,real-cursor))
