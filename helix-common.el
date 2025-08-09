@@ -1175,9 +1175,7 @@ right after the point."
   (if helix-main-selection-overlay
       (move-overlay helix-main-selection-overlay beg end)
     (setq helix-main-selection-overlay (-doto (make-overlay beg end)
-                                         (overlay-put 'face 'region)
-                                         ;; (overlay-put 'priority 99)
-                                         ))))
+                                         (overlay-put 'face 'region)))))
 
 (provide 'helix-common)
 ;;; helix-common.el ends here
