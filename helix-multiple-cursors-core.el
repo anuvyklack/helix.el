@@ -305,7 +305,6 @@ and bind it to CURSOR."
     (setq region (-doto (make-overlay beg end nil nil t)
                    (overlay-put 'face 'region)
                    (overlay-put 'type 'fake-region)
-                   (overlay-put 'priority 99)
                    (overlay-put 'id (overlay-get cursor 'id))))
     (overlay-put cursor 'fake-region region)))
 
