@@ -1814,10 +1814,8 @@ lines and reindent the region."
   (when (use-region-p)
     (helix-save-region
       (-let (((left . right) (helix-surround--read-char))
-             (beg (set-marker (make-marker) (region-beginning)))
-             (end (-doto (make-marker)
-                    (set-marker-insertion-type t)
-                    (set-marker (region-end))))
+             (beg (copy-marker (region-beginning)))
+             (end (copy-marker (region-end) t))
              (linewise? (eq (helix-linewise-selection-p) 'line)))
         (when linewise?
           (setq left  (s-trim left)

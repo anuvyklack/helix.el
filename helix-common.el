@@ -70,10 +70,8 @@ add/remove advice when `helix-mode' is toggled on or off.
         (dir (gensym "region-dir")))
     `(if (use-region-p)
          (let ((deactivate-mark nil)
-               (,beg (-doto (make-marker)
-                       (set-marker-insertion-type t)
-                       (set-marker (region-beginning))))
-               (,end (set-marker (make-marker) (region-end)))
+               (,beg (copy-marker (region-beginning) t))
+               (,end (copy-marker (region-end)))
                (,dir (helix-region-direction)))
            ,@body
            (helix-set-region ,beg ,end ,dir)
@@ -744,7 +742,7 @@ balanced expressions."
   (let ((old (nth mark-ring-max mark-ring))
         (history-delete-duplicates nil))
     (add-to-history 'mark-ring
-                    (set-marker (make-marker) position)
+                    (copy-marker position)
                     mark-ring-max t)
     (when old
       (set-marker old nil)))
@@ -756,7 +754,7 @@ balanced expressions."
     (let ((old (nth global-mark-ring-max global-mark-ring))
           (history-delete-duplicates nil))
       (add-to-history 'global-mark-ring
-                      (set-marker (make-marker) position)
+                      (copy-marker position)
                       global-mark-ring-max t)
       (when old
         (set-marker old nil))))
