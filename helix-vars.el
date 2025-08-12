@@ -411,10 +411,6 @@ Default value is 0 - scroll half the screen.")
 (defvar helix--fake-cursor-last-used-id 0
   "Last used fake cursor ID.")
 
-(defvar helix-multiple-cursors-map (make-sparse-keymap)
-  "Transient keymap for `helix-multiple-cursors-mode'.
-It is active while there are multiple cursors.")
-
 (defvar helix-commands-to-run-for-all-cursors nil
   "Commands to execute for all cursors.")
 
