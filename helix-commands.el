@@ -1188,7 +1188,7 @@ at START-COLUMN, ends at END-COLUMN and consists of NUMBER-OF-LINES."
     (setq helix-linewise-selection nil)
     (helix-restore-point-from-fake-cursor (or (helix-next-fake-cursor (point))
                                               (helix-first-fake-cursor)))
-    (helix-maybe-disable-multiple-cursors-mode)))
+    (helix-auto-multiple-cursors-mode)))
 
 (put 'helix-remove-main-cursor 'multiple-cursors 'false)
 
