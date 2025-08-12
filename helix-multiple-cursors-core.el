@@ -194,7 +194,7 @@ The current state is stored in the overlay for later retrieval."
       (overlay-put cursor 'id id)
       (overlay-put cursor 'type 'fake-cursor)
       (overlay-put cursor 'priority 100)
-      (helix--store-point-state cursor point mark)
+      (helix--store-cursor-state cursor point mark)
       (when (and mark-active mark
                  (/= point mark))
         (helix--set-region-overlay cursor point mark))
@@ -305,7 +305,7 @@ and bind it to CURSOR."
   (-some-> (overlay-get cursor 'fake-region)
     (delete-overlay)))
 
-(defun helix--store-point-state (overlay point mark)
+(defun helix--store-cursor-state (overlay point mark)
   "Store POINT, MARK and variables relevant to fake cursor into OVERLAY."
   (unless mark (setq mark point))
   (or (-some-> (overlay-get overlay 'point)
@@ -327,10 +327,10 @@ and bind it to CURSOR."
 
 (defun helix-restore-point-from-fake-cursor (cursor)
   "Restore point, mark and saved variables from CURSOR overlay, and delete it."
-  (helix--restore-point-state cursor)
+  (helix--restore-cursor-state cursor)
   (helix--delete-fake-cursor cursor))
 
-(defun helix--restore-point-state (overlay)
+(defun helix--restore-cursor-state (overlay)
   "Restore point, mark and cursor variables saved in OVERLAY."
   (goto-char (overlay-get overlay 'point))
   (set-marker (mark-marker) (overlay-get overlay 'mark))
@@ -478,18 +478,36 @@ MARK is nil if cursor has no region."
   "Like `save-excursion' but additionally save and restore all
 the data needed for multiple cursors functionality."
   (let ((state (make-symbol "point-state")))
-    `(let ((,state (make-overlay (point) (point) nil nil t)))
-       (overlay-put ,state 'type 'original-cursor)
-       (helix--store-point-state ,state (point) (mark t))
+    `(let ((,state (helix--main-cursor-state)))
        (save-excursion ,@body)
-       (helix--restore-point-state ,state))))
+       (helix--restore-main-cursor-state ,state))))
+
+(defun helix--main-cursor-state ()
+  (let ((state (list :point (copy-marker (point) t)
+                     :mark (copy-marker (mark-marker)))))
+    (dolist (var helix-fake-cursor-specific-vars)
+      (when (boundp var)
+        (setq state (plist-put state var (symbol-value var)))))
+    state))
+
+(defun helix--restore-main-cursor-state (state)
+  (goto-char (let ((pnt (plist-get state :point)))
+               (prog1 (marker-position pnt)
+                 (set-marker pnt nil))))
+  (set-marker (mark-marker)
+              (let ((mrk (plist-get state :mark)))
+                (prog1 (marker-position mrk)
+                  (set-marker mrk nil))))
+  (dolist (var helix-fake-cursor-specific-vars)
+    (when (boundp var)
+      (set var (plist-get state var)))))
 
 (defmacro helix-with-fake-cursor (cursor &rest body)
   "Move point to the fake CURSOR, restore the environment from it,
 evaluate BODY, update fake CURSOR."
   (declare (indent defun) (debug (symbolp &rest form)))
   `(let ((helix-executing-command-for-fake-cursor t))
-     (helix--restore-point-state ,cursor)
+     (helix--restore-cursor-state ,cursor)
      (unwind-protect
          (progn ,@body)
        (helix-move-fake-cursor ,cursor (point) (mark t) :update))))
