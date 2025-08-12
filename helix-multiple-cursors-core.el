@@ -590,9 +590,9 @@ delete last one with `helix-delete-fake-cursor'."
   :global nil
   :interactive nil
   (if helix-multiple-cursors-mode
-      (helix-mc--disable-incompatible-minor-modes)
+      (helix--disable-minor-modes-incompatible-with-multiple-cursors)
     (helix--delete-all-fake-cursors)
-    (helix-mc--enable-incompatible-minor-modes)))
+    (helix--enable-minor-modes-incompatible-with-multiple-cursors)))
 
 (defun helix-auto-multiple-cursors-mode ()
   "Enable `helix-multiple-cursors' if there are multiple cursors,
@@ -601,7 +601,7 @@ disable if only one."
              (helix-any-fake-cursors-p))
     (helix-multiple-cursors-mode 'toggle)))
 
-(defun helix-mc--disable-incompatible-minor-modes ()
+(defun helix--disable-minor-modes-incompatible-with-multiple-cursors ()
   "Disable incompatible minor modes while there are multiple cursors
 in the buffer."
   (dolist (mode helix-minor-modes-incompatible-with-multiple-cursors)
@@ -609,8 +609,9 @@ in the buffer."
       (push mode helix--temporarily-disabled-minor-modes)
       (funcall mode -1))))
 
-(defun helix-mc--enable-incompatible-minor-modes ()
-  "Enable minor modes disabled by `helix-mc--disable-incompatible-minor-modes'."
+(defun helix--enable-minor-modes-incompatible-with-multiple-cursors ()
+  "Enable minor modes disabled by
+`helix--disable-minor-modes-incompatible-with-multiple-cursors'."
   (when helix--temporarily-disabled-minor-modes
     (dolist (mode helix--temporarily-disabled-minor-modes)
       (funcall mode 1))
