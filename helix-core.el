@@ -38,17 +38,16 @@
 ;;; Helix mode
 
 (defun helix--pre-commad-hook ()
+  "Hook run before each command is executed. See `pre-command-hook'."
   (unless helix-executing-command-for-fake-cursor
     (setq helix-this-command this-command)
     (when (and (symbolp this-command)
                (get this-command 'helix-deactivate-mark))
       (deactivate-mark))
-    (when (and helix-main-selection-overlay
-               (not (get this-command 'scroll-command)))
-      (delete-overlay helix-main-selection-overlay))
     (helix--single-undo-step-beginning)))
 
 (defun helix--post-command-hook ()
+  "Hook run after each command is executed. See `post-command-hook'."
   (unless helix-executing-command-for-fake-cursor
     (when (and helix-multiple-cursors-mode
                (not (eq helix-this-command #'ignore))
@@ -67,7 +66,7 @@
       (when (helix-merge-regions-p helix-this-command)
         (helix-merge-overlapping-regions)))
     (cond (helix-linewise-selection
-           (helix-set-main-selection-overlay (region-beginning) (1+ (region-end))))
+           (helix-set-main-selection-overlay))
           (helix-main-selection-overlay
            (delete-overlay helix-main-selection-overlay)))
     (helix--single-undo-step-end)
