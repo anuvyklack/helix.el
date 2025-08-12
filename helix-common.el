@@ -63,14 +63,6 @@ when `helix-mode' is toggled on or off"
        ;; else
        ,@body)))
 
-(defmacro helix-with-deactivate-mark (&rest body)
-  "Evaluate BODY with mark temporary deactivated."
-  (declare (indent 0) (debug t))
-  `(prog2
-       (deactivate-mark)
-       (progn ,@body)
-     (activate-mark)))
-
 (defmacro helix-save-region (&rest body)
   "Evaluate BODY with preserving original region.
 The difference from `save-mark-and-excursion' is that both point and mark are
@@ -79,19 +71,24 @@ saved as markers and correctly handle case when text was inserted before region.
   (let ((pnt (gensym "point"))
         (beg (gensym "region-beg"))
         (end (gensym "region-end"))
-        (dir (gensym "region-dir")))
+        (dir (gensym "region-dir"))
+        (line-selection? (gensym "linewise")))
     `(if (use-region-p)
          (let ((deactivate-mark nil)
                (,beg (copy-marker (region-beginning) t))
                (,end (copy-marker (region-end)))
-               (,dir (helix-region-direction)))
+               (,dir (helix-region-direction))
+               (,line-selection? helix-linewise-selection))
            (unwind-protect
                (save-excursion ,@body)
              (helix-set-region ,beg ,end ,dir)
+             (setq helix-linewise-selection
+                   (and ,line-selection?
+                        (helix-logical-lines-p ,beg (1+ ,end))))
              (set-marker ,beg nil)
              (set-marker ,end nil)))
        ;; else
-       (let ((,pnt (point-marker)))
+       (let ((,pnt (copy-marker (point-marker) t)))
          (unwind-protect
              (save-excursion ,@body)
            (goto-char ,pnt)
@@ -160,16 +157,6 @@ KEY/DEFINITION pairs are as KEY and DEF in `keymap-set'.
                   collect
                   `(keymap-set ,symbol ,key ,def))
        ',symbol)))
-
-(defmacro helix-with-main-selection-overlay (&rest body)
-  (declare (indent defun)
-           (debug t))
-  `(progn
-     (when helix-linewise-selection
-       (helix-set-main-selection-overlay (region-beginning) (1+ (region-end))))
-     (prog1 (progn ,@body)
-       (when helix-main-selection-overlay
-         (delete-overlay helix-main-selection-overlay)))))
 
 ;;; Motions
 
@@ -262,9 +249,9 @@ Use visual line when `visual-line-mode' is active."
   "Move to the COUNT-th next start of a word-like THING."
   (setq helix-linewise-selection nil)
   (setq count (abs count))
+  (setq helix-linewise-selection nil)
   (when (zerop (forward-thing thing (1- count)))
-    (if helix--extend-selection
-        (or (region-active-p) (set-mark (point)))
+    (unless helix--extend-selection
       (skip-chars-forward "\r\n")
       (set-mark (point)))
     (or (helilx-whitespace? (following-char))
@@ -275,9 +262,9 @@ Use visual line when `visual-line-mode' is active."
   "Move to the COUNT-th previous start of a word-like THING."
   (setq helix-linewise-selection nil)
   (setq count (- (abs count)))
+  (setq helix-linewise-selection nil)
   (when (zerop (forward-thing thing (1+ count)))
-    (if helix--extend-selection
-        (or (region-active-p) (set-mark (point)))
+    (unless helix--extend-selection
       (skip-chars-backward "\r\n")
       (set-mark (point)))
     (forward-thing thing -1)))
@@ -285,11 +272,10 @@ Use visual line when `visual-line-mode' is active."
 (defun helix--forward-word-end (thing count)
   "Move to the COUNT-th next word-like THING end."
   (interactive "p")
-  (setq helix-linewise-selection nil)
   (setq count (abs count))
+  (setq helix-linewise-selection nil)
   (when (zerop (forward-thing thing (1- count)))
-    (if helix--extend-selection
-        (or (region-active-p) (set-mark (point)))
+    (unless helix--extend-selection
       (skip-chars-forward "\r\n")
       (set-mark (point)))
     (forward-thing thing)))
@@ -401,11 +387,13 @@ functions."
   (unless count (setq count 1))
   (when (zerop count)
     (error "Cannot mark zero %s" thing))
+  (helix-carry-linewise-selection)
   (if-let* ((bounds (bounds-of-thing-at-point thing)))
       (progn
         (set-mark (car bounds))
         (goto-char (cdr bounds))
         (cl-decf count))
+    ;; else
     (forward-thing thing)
     (forward-thing thing -1)
     (set-mark (point)))
@@ -416,6 +404,7 @@ functions."
   "Select a THING with spacing around.
 Works only with THINGs, that returns the count of steps left to move,
 such as `paragraph', `helix-function'."
+  (helix-carry-linewise-selection)
   (-when-let ((thing-beg . thing-end) (bounds-of-thing-at-point thing))
     (-let [(beg . end)
            (or (progn
@@ -429,8 +418,8 @@ such as `paragraph', `helix-function'."
                            (helix-bounds-of-complement-of-thing-at-point thing))
                      (cons space-beg thing-end)))
                (cons thing-beg thing-end))]
-      (helix-set-region beg end))
-    (helix-maybe-enable-linewise-selection)))
+      (helix-set-region beg end)))
+  (helix-maybe-enable-linewise-selection))
 
 (defun helix-bounds-of-complement-of-thing-at-point (thing)
   "Return the bounds of a complement of THING at point.
@@ -817,7 +806,6 @@ If NOMSG is nil show `Mark set' message in echo area."
   (let ((region-dir (if (use-region-p)
                         (helix-region-direction)
                       1)))
-    ;; (helix-disable-linewise-selection)
     (helix-ensure-region-direction direction)
     (when (helix-ends-with-newline (current-kill 0 :do-not-move))
       (if (natnump direction)
@@ -882,30 +870,23 @@ positive — end of line."
 
 (defun helix-exchange-point-and-mark ()
   "Exchange point and mark without activating the region."
-  (goto-char (prog1 (mark t)
-               (set-marker (mark-marker) (point) (current-buffer)))))
+  (goto-char (prog1 (marker-position (mark-marker))
+               (set-marker (mark-marker) (point)))))
 
-(defun helix-linewise-selection-p ()
-  "Return non-nil if active region exactly spans whole line(s).
-Returns symbol:
-- `line' — if logical lines are selected;
-- `visual-line' — if visual lines are selected."
-  (when (use-region-p)
-    (save-mark-and-excursion
-      (let ((beg (region-beginning))
-            (end (region-end)))
-        (goto-char beg)
-        ;; First check for logical line, because visual line can be logical line
-        ;; and then should be treated as logical line.
-        (cond ((and (bolp) (save-excursion
-                             (goto-char end)
-                             (bolp)))
-               'line)
-              ((and visual-line-mode
-                    (helix-visual-bolp) (save-excursion
-                                          (goto-char end)
-                                          (helix-visual-bolp)))
-               'visual-line))))))
+(cl-defun helix-logical-lines-p (&optional (beg (region-beginning))
+                                           (end (region-end)))
+  "Return t if region between BEG and END spawn full logical lines."
+  (save-excursion
+    (and (progn (goto-char beg) (bolp))
+         (progn (goto-char end) (bolp)))))
+
+(cl-defun helix-visual-lines-p (&optional (beg (region-beginning))
+                                          (end (region-end)))
+  "Return t if region between BEG and END spawn visual lines."
+  (save-excursion
+    (and visual-line-mode
+         (progn (goto-char beg) (helix-visual-bolp))
+         (progn (goto-char end) (helix-visual-bolp)))))
 
 (defun helilx-whitespace? (char)
   "Non-nil when CHAR belongs to whitespace syntax class."
@@ -1020,6 +1001,20 @@ negative number — at the beginning."
         (t
          (goto-char start)
          (set-mark end))))
+
+(defun helix-maybe-set-mark (&optional position)
+  "Disable linewise selection, and set mark at POSITION unless extending
+selection is active."
+  (setq helix-linewise-selection nil)
+  (unless helix--extend-selection
+    (set-mark (or position (point)))))
+
+(defun helix-maybe-deactivate-mark ()
+  "Disable linewise selection, and deactivate mark unless extending
+selection is active."
+  (setq helix-linewise-selection nil)
+  (unless helix--extend-selection
+    (deactivate-mark)))
 
 (defun helix-ensure-region-direction (direction)
   "Exchange point and mark if region direction mismatch DIRECTION.
@@ -1158,24 +1153,42 @@ right after the point."
       (buffer-live-p buffer)))
 
 (defun helix-carry-linewise-selection ()
+  "If linewise selection is active adjust active region to include
+newline character and disable linewise selection.
+
+See `helix-linewise-selection'"
   (when helix-linewise-selection
-    (setq helix-linewise-selection nil)
     (helix-set-region (region-beginning) (1+ (region-end))
                       (helix-region-direction))
+    (setq helix-linewise-selection nil)
     t))
 
 (defun helix-maybe-enable-linewise-selection ()
-  (when (eq (helix-linewise-selection-p) 'line)
-    (setq helix-linewise-selection t)
-    (helix-set-region (region-beginning) (1- (region-end))
-                      (helix-region-direction))))
+  (let ((beg (region-beginning))
+        (end (region-end)))
+    (setq helix-linewise-selection (helix-logical-lines-p beg end))
+    (when (and helix-linewise-selection
+               (/= beg end))
+      (helix-set-region beg (1- end) (helix-region-direction)))))
 
-(defun helix-set-main-selection-overlay (beg end)
-  "Set overlay for main selection between BEG to END."
-  (if helix-main-selection-overlay
-      (move-overlay helix-main-selection-overlay beg end)
-    (setq helix-main-selection-overlay (-doto (make-overlay beg end)
-                                         (overlay-put 'face 'region)))))
+(defun helix-set-main-selection-overlay ()
+  "Set overlay for main selection between BEG and END positions."
+  (let ((beg (region-beginning))
+        (end (1+ (region-end))))
+    (if helix-main-selection-overlay
+        (move-overlay helix-main-selection-overlay beg end)
+      (setq helix-main-selection-overlay (-doto (make-overlay beg end)
+                                           (overlay-put 'face 'region))))))
+
+(defun helix-disable-linewise-selection ()
+  (when helix-linewise-selection
+    (setq helix-linewise-selection nil)
+    (unless helix-executing-command-for-fake-cursor
+      (delete-overlay helix-main-selection-overlay))))
+
+(defun helix-delete-main-selection-overlay ()
+  (when helix-linewise-selection
+    (delete-overlay helix-main-selection-overlay)))
 
 (provide 'helix-common)
 ;;; helix-common.el ends here

@@ -463,9 +463,21 @@ multiple cursors.")
 
 (helix-defvar-local helix--input-cache nil)
 
-(helix-defvar-local helix-linewise-selection nil)
+(helix-defvar-local helix-linewise-selection nil
+  "Non-nil when linewise selection is active.
+This is a hack. In Emacs, selecting a full line (including the newline
+character at the end) moves the point to the next line. This contradicts
+Helix's and Vim's behavior. To simulate their behavior, we keep the point
+at the end of the line and set this flag. To take into account the linewise
+selection when needed, use `helix-carry-linewise-selection' function.")
 
-(helix-defvar-local helix-main-selection-overlay nil)
+(helix-defvar-local helix-main-selection-overlay nil
+  "An overlay with region face that visually extend selection to full line,
+while point remains at the end of the line. It covers active region plus
+one newline character after. Conterpart to `helix-linewise-selection' flag.
+
+It is automatically set in `helix--post-command-hook' in `post-command-hook'
+when `helix-linewise-selection' flag is set.")
 
 (provide 'helix-vars)
 ;;; helix-vars.el ends here
