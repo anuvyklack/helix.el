@@ -301,35 +301,34 @@ RANGES is a list of cons cells with positions (START . END)."
 
 (defun helix-select-interactively-in (ranges &optional invert)
   "Inner function for `helix-select-regex' command."
-  (unless (use-region-p)
-    (user-error "No active selection"))
   (setq helix-select--hl (helix-highlight-create :buffer (current-buffer)
                                                  :face 'region
                                                  :ranges ranges
                                                  :invert invert))
-  (helix-with-deactivate-mark
-    (when-let* ((pattern (condition-case nil
-                             (minibuffer-with-setup-hook #'helix-select--start-session
-                               (helix-read-regexp (if invert "split: " "select: ")))
-                           (quit)))
-                ((stringp pattern))
-                ((not (string-empty-p pattern)))
-                (regexp (helix-pcre-to-elisp pattern))
-                (region-ranges (-mapcat (-lambda ((beg . end))
-                                          (helix-regexp-match-ranges
-                                           regexp beg end invert))
-                                        ranges)))
-      (set-register '/ pattern)
-      (setq helix-linewise-selection nil
-            helix--extend-selection  nil)
-      (helix-create-cursors region-ranges)
-      (helix-update-cursor)
-      :success)))
+  (when-let* ((pattern (condition-case nil
+                           (minibuffer-with-setup-hook #'helix-select--start-session
+                             (helix-read-regexp (if invert "split: " "select: ")))
+                         (quit)))
+              ((stringp pattern))
+              ((not (string-empty-p pattern)))
+              (regexp (helix-pcre-to-elisp pattern))
+              (regions (-mapcat (-lambda ((beg . end))
+                                  (helix-regexp-match-ranges
+                                   regexp beg end invert))
+                                ranges)))
+    (set-register '/ pattern)
+    (setq mark-active t
+          helix-linewise-selection nil
+          helix--extend-selection nil)
+    (cl-loop for (mark . point) in regions
+             do (helix-create-fake-cursor point mark))
+    :success))
 
 (defun helix-select--start-session ()
   "Start interactive select minibuffer session."
   (with-minibuffer-selected-window
-    (helix-highlight-entire-ranges helix-select--hl))
+    (helix-highlight-entire-ranges helix-select--hl)
+    (setq mark-active nil))
   (add-hook 'after-change-functions #'helix-select--update nil t)
   (add-hook 'minibuffer-exit-hook #'helix-select--stop-session nil t))
 
@@ -399,11 +398,12 @@ If INVERT is non-nil — remove selections that match regexp."
                 ((-contains? flags t)))
           (cl-loop for cursor in cursors
                    for flag in flags
-                   do (cond (flag
-                             (helix--set-cursor-overlay cursor (overlay-get cursor 'point))
-                             (overlay-put (overlay-get cursor 'fake-region)
-                                          'face 'region))
-                            (t (helix--delete-fake-cursor cursor))))
+                   do (if flag
+                          (progn
+                            (helix--set-cursor-overlay cursor (overlay-get cursor 'point))
+                            (overlay-put (overlay-get cursor 'fake-region)
+                                         'face 'region))
+                        (helix--delete-fake-cursor cursor)))
         ;; Else restore all cursors
         (dolist (cursor cursors)
           (helix--set-cursor-overlay cursor (overlay-get cursor 'point))
