@@ -115,8 +115,7 @@ shifting subsequent content to the right."
   :set #'(lambda (symbol value)
            (set symbol (cond ((characterp value)
                               (char-to-string value))
-                             ((and (stringp value)
-                                   (length= value 1))
+                             ((and (stringp value) (length= value 1))
                               value)
                              (t
                               (char-to-string ?\u2000))))))

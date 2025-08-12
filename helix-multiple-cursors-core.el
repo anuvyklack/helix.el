@@ -293,8 +293,7 @@ and bind it to CURSOR."
 
 (defun helix--delete-fake-cursor (cursor)
   "Delete CURSOR overlay."
-  (remhash (overlay-get cursor 'id)
-           helix--cursors-table)
+  (remhash (overlay-get cursor 'id) helix--cursors-table)
   (set-marker (overlay-get cursor 'point) nil)
   (set-marker (overlay-get cursor 'mark) nil)
   (helix--delete-region-overlay cursor)
@@ -567,7 +566,7 @@ makes sense for fake cursor."
   )
 
 (defmacro helix-with-real-cursor-as-fake (&rest body)
-  "Temporarily create a fake-cursor for real one with ID 0.
+  "Temporarily convert real cursor into fake-cursor one with ID 0.
 Restore it after BODY evaluation if it is still alive."
   (declare (indent 0) (debug t))
   (let ((real-cursor (make-symbol "real-cursor")))
@@ -583,7 +582,6 @@ Restore it after BODY evaluation if it is still alive."
 
 ;;; Multiple cursors minor mode
 
-;;;###autoload
 (define-minor-mode helix-multiple-cursors-mode
   "Minor mode, which is active when there are multiple cursors in the buffer.
 No need to activate it manually: it is activated automatically when you create
@@ -613,9 +611,10 @@ in the buffer."
 
 (defun helix-mc--enable-incompatible-minor-modes ()
   "Enable minor modes disabled by `helix-mc--disable-incompatible-minor-modes'."
-  (dolist (mode helix--temporarily-disabled-minor-modes)
-    (funcall mode 1))
-  (setq helix--temporarily-disabled-minor-modes nil))
+  (when helix--temporarily-disabled-minor-modes
+    (dolist (mode helix--temporarily-disabled-minor-modes)
+      (funcall mode 1))
+    (setq helix--temporarily-disabled-minor-modes nil)))
 
 (defun helix-multiple-cursors--indicator ()
   (when helix-multiple-cursors-mode
@@ -704,9 +703,9 @@ and which for all to `helix-whitelist-file' file."
       (let ((beg (point-max))
             (end (point-min))
             id delete real-cursor?)
-        (dolist (region-data group-or-overlapping-regions)
+        (dolist (val group-or-overlapping-regions)
           ;; rid - region ID, b - region beginning, e - region end
-          (-let [(rid b e) region-data]
+          (-let [(rid b e) val]
             (when (< b beg)
               (setq beg b)
               (when (< dir 0)
@@ -793,7 +792,7 @@ a hash key, to distinguish different calls of FN-NAME within one command.
 Calls with equal PROMPT or without it would be undistinguishable."
   `(helix-define-advice ,fn-name (:around (orig-fun &rest args) helix)
      "Cache the users input to use it with multiple cursors."
-     (if (bound-and-true-p helix-multiple-cursors-mode)
+     (if helix-multiple-cursors-mode
          (let* (;; Use PROMPT argument as a hash key to distinguish different
                 ;; calls of `read-char' like functions within one command.
                 (prompt (car-safe args))
