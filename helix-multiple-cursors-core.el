@@ -138,7 +138,7 @@ returned by `helix-cursors-positions' function."
            helix--cursors-table)
   (dolist (id-point-mark-linewise cursors-positions)
     (apply #'helix-set-cursor id-point-mark-linewise))
-  (helix-maybe-disable-multiple-cursors-mode)
+  (helix-auto-multiple-cursors-mode)
   (push `(apply helix--undo-step-start ,cursors-positions)
         buffer-undo-list))
 
@@ -173,7 +173,8 @@ The current state is stored in the overlay for later retrieval."
       (helix--delete-all-fake-cursors)
       (error "Aborted: too many cursors")))
   (prog1 (helix--create-fake-cursor-1 id point mark linewise?)
-    (helix-maybe-enable-multiple-cursors-mode)))
+    (unless helix-multiple-cursors-mode
+      (helix-multiple-cursors-mode 1))))
 
 (defun helix--create-fake-cursor-1 (id &optional point mark linewise?)
   (unless id (setq id (helix--new-fake-cursor-id)))
@@ -254,7 +255,7 @@ POINT and MARK will be set."
   "Delete fake CURSOR and disable `helix-multiple-cursors-mode' if no
 more fake cursors are remaining."
   (helix--delete-fake-cursor cursor)
-  (helix-maybe-disable-multiple-cursors-mode))
+  (helix-auto-multiple-cursors-mode))
 
 (defun helix--set-cursor-overlay (cursor pos)
   "Move or create fake CURSOR overlay at position POS.
@@ -585,7 +586,7 @@ Restore it after BODY evaluation if it is still alive."
                 (helix-restore-point-from-fake-cursor ,real-cursor))
                ((helix-any-fake-cursors-p)
                 (helix-restore-point-from-fake-cursor (helix-first-fake-cursor))))
-         (helix-maybe-disable-multiple-cursors-mode)))))
+         (helix-auto-multiple-cursors-mode)))))
 
 ;;; Multiple cursors minor mode
 
@@ -602,18 +603,12 @@ delete last one with `helix-delete-fake-cursor'."
     (helix--delete-all-fake-cursors)
     (helix-mc--enable-incompatible-minor-modes)))
 
-(defun helix-maybe-enable-multiple-cursors-mode ()
-  "Enable `helix-multiple-cursors-mode' if not already enabled
-and fake cursors are present in the buffer."
-  (when (and (not helix-multiple-cursors-mode)
+(defun helix-auto-multiple-cursors-mode ()
+  "Enable `helix-multiple-cursors' if there are multiple cursors,
+disable if only one."
+  (when (xor helix-multiple-cursors-mode
              (helix-any-fake-cursors-p))
-    (helix-multiple-cursors-mode 1)))
-
-(defun helix-maybe-disable-multiple-cursors-mode ()
-  "Disable `helix-multiple-cursors-mode' if no fake cursors remain
-in current buffer."
-  (unless (helix-any-fake-cursors-p)
-    (helix-multiple-cursors-mode -1)))
+    (helix-multiple-cursors-mode 'toggle)))
 
 (defun helix-mc--disable-incompatible-minor-modes ()
   "Disable incompatible minor modes while there are multiple cursors
@@ -748,7 +743,7 @@ and which for all to `helix-whitelist-file' file."
         (dolist (id delete)
           (when-let* ((cursor (gethash id helix--cursors-table)))
             (helix--delete-fake-cursor cursor)))))
-    (helix-maybe-disable-multiple-cursors-mode)))
+    (helix-auto-multiple-cursors-mode)))
 
 (defun helix--overlapping-regions ()
   "Return the list of groups, where each group is a list of
