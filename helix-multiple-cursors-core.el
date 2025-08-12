@@ -340,29 +340,20 @@ and bind it to CURSOR."
   (helix--delete-region-overlay overlay)
   (delete-overlay overlay))
 
-(defun helix-create-cursors (ranges)
-  "Create set of active regions.
-RANGES is a list of cons cells (START . END) with bounds of regions.
-The real region will be set for the first range in RANGES, and fake one
-for others."
-  (when ranges
-    (-let [(mark . point) (car ranges)]
-      (set-mark mark)
-      (goto-char point))
-    (cl-loop for (mark . point) in (cdr ranges)
-             do (helix-create-fake-cursor point mark))))
-
-(defun helix-remove-fake-cursor-from-buffer (cursor)
-  "Disable the fake-CURSOR display in the buffer without deleting it."
+(defun helix-hide-fake-cursor (cursor)
+  "Disable the fake-CURSOR visibility in the buffer without deleting it."
   (helix--delete-region-overlay cursor)
   (delete-overlay cursor)
   cursor)
 
-(defun helix-restore-fake-cursor-in-buffer (cursor)
-  (helix-set-cursor cursor
-                    (overlay-get cursor 'point)
-                    (overlay-get cursor 'mark)
-                    (overlay-get cursor 'helix-linewise-selection)))
+(defun helix-show-fake-cursor (cursor)
+  "Restore fake-CURSOR visibility if it was previously hidden with
+`helix-hide-fake-cursor'."
+  (let ((point (overlay-get cursor 'point))
+        (mark (overlay-get cursor 'mark)))
+    (helix--set-cursor-overlay cursor point)
+    (when (overlay-get cursor 'mark-active)
+      (helix--set-region-overlay cursor point mark))))
 
 (defun helix-fake-cursor-p (overlay)
   "Return t if an OVERLAY is a fake cursor."
