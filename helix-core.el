@@ -223,14 +223,14 @@ When ARG is non-positive integer and Helix is in %s — disable it.\n\n%s"
            ,@body
            ;; Switch color and shape of all cursors.
            (setq helix--extend-selection nil)
-           (helix-update-cursor)
+           (helix-update-cursor) ;; main cursor
            (when helix-multiple-cursors-mode
              (helix-save-window-scroll
                (helix-save-excursion
                 (dolist (cursor (helix-all-fake-cursors))
                   (helix-with-fake-cursor cursor
-                    (setq helix--extend-selection nil)))))
-             (run-hooks ',enter-hook)))
+                    (setq helix--extend-selection nil))))))
+           (run-hooks ',enter-hook))
          (helix-update-active-keymaps)
          (force-mode-line-update)))))
 

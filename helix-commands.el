@@ -465,8 +465,7 @@ depending on DIRECTION."
   "Open new line below selection."
   (interactive)
   (helix-with-each-cursor
-    (when (use-region-p)
-      (helix-ensure-region-direction 1))
+    (when (use-region-p) (helix-ensure-region-direction 1))
     (move-end-of-line nil)
     (newline-and-indent)
     (set-marker (mark-marker) (point)))
@@ -479,8 +478,7 @@ depending on DIRECTION."
   "Open new line above selection."
   (interactive)
   (helix-with-each-cursor
-    (when (use-region-p)
-      (helix-ensure-region-direction -1))
+    (when (use-region-p) (helix-ensure-region-direction -1))
     (move-beginning-of-line nil)
     (newline)
     (forward-line -1)
@@ -573,6 +571,7 @@ If no selection — delete COUNT chars after point."
 (defun helix-undo ()
   "Cancel current region then undo."
   (interactive)
+  ;; Deactivate mark to trigger global undo not region undo.
   (deactivate-mark)
   (let (deactivate-mark)
     (undo-only)))
@@ -583,6 +582,7 @@ If no selection — delete COUNT chars after point."
 (defun helix-redo ()
   "Cancel current region then redo."
   (interactive)
+  ;; Deactivate mark to trigger global undo not region undo.
   (deactivate-mark)
   (let (deactivate-mark)
     (undo-redo)))
@@ -669,7 +669,7 @@ unless they all are equal. You can paste them later with `yank-rectangle'."
   (when (use-region-p)
     (when (helix-ends-with-newline (current-kill 0 :do-not-move))
       (helix-carry-linewise-selection))
-    (let (deactivate-mark)
+    (let ((deactivate-mark nil))
       (delete-region (region-beginning) (region-end))
       (helix-yank))
     (helix-maybe-enable-linewise-selection)
@@ -801,6 +801,26 @@ if region is backward — point is before mark — expand upwise."
 (put 'helix-expand-line-selection 'multiple-cursors t)
 (put 'helix-expand-line-selection 'helix-merge-regions t)
 
+(defun helix--expand-selection-to-full-lines ()
+  "Create a line-wise selection, using visual or logical lines.
+When region is active: expand selection to line boundaries to encompass full
+line(s). Otherwise, select current line. Uses visual lines if `visual-line-mode'
+is active, otherwise logical lines."
+  (let ((line (if visual-line-mode 'visual-line 'line)))
+    (cond ((use-region-p)
+           (let ((beg (region-beginning))
+                 (end (region-end)))
+             (goto-char beg)
+             (set-mark (car (bounds-of-thing-at-point line))) ; left end
+             (goto-char end)
+             (goto-char (cdr (bounds-of-thing-at-point line))) ; right end
+             t))
+          (t ;; no region
+           (-let [(beg . end) (bounds-of-thing-at-point line)]
+             (set-mark beg)
+             (goto-char end)
+             t)))))
+
 ;; X
 (defun helix-contract-line-selection (count)
   "Contract current selection linewise.
@@ -831,26 +851,6 @@ Counterpart to `helix-expand-line-selection' that does the exact opposite."
   (helix-maybe-enable-linewise-selection))
 
 (put 'helix-contract-line-selection 'multiple-cursors t)
-
-(defun helix--expand-selection-to-full-lines ()
-  "Create a line-wise selection, using visual or logical lines.
-When region is active: expand selection to line boundaries to encompass full
-line(s). Otherwise, select current line. Uses visual lines if `visual-line-mode'
-is active, otherwise logical lines."
-  (let ((line (if visual-line-mode 'visual-line 'line)))
-    (cond ((use-region-p)
-           (let ((beg (region-beginning))
-                 (end (region-end)))
-             (goto-char beg)
-             (set-mark (car (bounds-of-thing-at-point line))) ; left end
-             (goto-char end)
-             (goto-char (cdr (bounds-of-thing-at-point line))) ; right end
-             t))
-          (t ;; no region
-           (-let [(beg . end) (bounds-of-thing-at-point line)]
-             (set-mark beg)
-             (goto-char end)
-             t)))))
 
 (defun helix-reduce-selection-to-full-lines ()
   "Remove non full line parts from both ends of the selection.
@@ -1002,10 +1002,10 @@ entered regexp withing current selections."
         (dolist (cursor cursors)
           (helix-with-fake-cursor cursor
             (unless (eql (current-column) column)
-              (let ((deactivate-mark) ;; Don't deactivate mark after insertion.
+              (let ((deactivate-mark nil) ;; Don't deactivate mark after insertion.
                     (padding (s-repeat (- column (current-column)) " ")))
                 (cond ((and (use-region-p)
-                            (> (helix-region-direction) 0))
+                            (natnump (helix-region-direction)))
                        (helix-exchange-point-and-mark)
                        (insert padding)
                        (helix-exchange-point-and-mark))
@@ -1055,12 +1055,8 @@ entered regexp withing current selections."
          (beg (region-beginning))
          (end (region-end))
          (num-of-lines (count-lines beg end))
-         (beg-column (save-excursion
-                       (goto-char beg)
-                       (current-column)))
-         (end-column (save-excursion
-                       (goto-char end)
-                       (current-column))))
+         (beg-column (save-excursion (goto-char beg) (current-column)))
+         (end-column (save-excursion (goto-char end) (current-column))))
     (when-let* ((bounds (save-excursion
                           (goto-char (if (< direction 0) beg end))
                           (helix--bounds-of-following-region
@@ -1340,6 +1336,7 @@ already there."
 ;; mif
 (defun helix-mark-inner-function (count)
   (interactive "p")
+  (helix-push-point)
   (helix-mark-inner-thing 'helix-function count)
   (helix-exchange-point-and-mark))
 
@@ -1349,6 +1346,7 @@ already there."
 ;; maf
 (defun helix-mark-a-function ()
   (interactive)
+  (helix-push-point)
   (helix-mark-a-thing 'helix-function))
 
 (put 'helix-mark-a-function 'multiple-cursors t)

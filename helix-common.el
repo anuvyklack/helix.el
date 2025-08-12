@@ -816,19 +816,6 @@ If NOMSG is nil show `Mark set' message in echo area."
     (helix-ensure-region-direction region-dir)
     (helix-maybe-enable-linewise-selection)))
 
-;; (helix-define-advice yank (:around (orig-fun &rest args))
-;;   "Correctly set region after paste."
-;;   (let ((old-point (point))
-;;         (old-mark (or (mark t) (point)))
-;;         (deactivate-mark nil))
-;;     (push-mark (point))
-;;     (set-marker (mark-marker) old-mark)
-;;     (cl-letf (((symbol-function 'push-mark) #'ignore))
-;;       (apply orig-fun args))
-;;     (when (eql (marker-position (mark-marker))
-;;                old-mark)
-;;       (set-mark old-point))))
-
 ;;; Utils
 
 (defun helix-bolp ()
@@ -864,9 +851,7 @@ positive — end of line."
 
 (defun helix-region-direction ()
   "Return the direction of region: -1 if point precedes mark, 1 otherwise."
-  (let* ((point (point))
-         (mark (or (mark t) point)))
-    (if (< point mark) -1 1)))
+  (if (< (point) (mark-marker)) -1 1))
 
 (defun helix-exchange-point-and-mark ()
   "Exchange point and mark without activating the region."
@@ -991,9 +976,11 @@ that `match-beginning', `match-end' and `match-data' access."
              (eq (car cursor-type) 'bar)))))
 
 (defun helix-set-region (start end &optional direction)
-  "Make active region between START and END position.
-If DIRECTION is positive number — place point at the END,
-negative number — at the beginning."
+  "Make active region.
+If DIRECTION is nil the direction of the region will be form START to END.
+If DIRECTION is positive number — make forward region, negative number —
+backward region. If DIRECTION is supplied, START and END positions can be
+passed in any order."
   (cond ((or (null direction)
              (natnump direction))
          (set-mark start)
@@ -1001,6 +988,19 @@ negative number — at the beginning."
         (t
          (goto-char start)
          (set-mark end))))
+
+;; (cl-defun helix-set-region (start end &optional direction)
+;;   "Make active region.
+;; If DIRECTION is nil the direction of the region will be form START to END.
+;; If DIRECTION is positive number — make forward region, negative number —
+;; backward region. If DIRECTION is supplied, START and END positions can be
+;; passed in any order."
+;;   (when (and (numberp direction)
+;;              (xor (< 0 direction)
+;;                   (<= start end)))
+;;     (cl-rotatef start end))
+;;   (set-mark start)
+;;   (goto-char end))
 
 (defun helix-maybe-set-mark (&optional position)
   "Disable linewise selection, and set mark at POSITION unless extending
@@ -1149,8 +1149,8 @@ right after the point."
 
 (defun helix-overlay-live-p (overlay)
   "Return non-nil if OVERLAY is not deleted from buffer."
-  (if-let* ((buffer (overlay-buffer overlay)))
-      (buffer-live-p buffer)))
+  (-some-> (overlay-buffer overlay)
+    (buffer-live-p)))
 
 (defun helix-carry-linewise-selection ()
   "If linewise selection is active adjust active region to include

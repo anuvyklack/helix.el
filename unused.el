@@ -134,7 +134,7 @@ I.e.:
       (-each rest-cursors #'helix--delete-fake-cursor)
       ;; Swap BEG and END if backward direction.
       (when (< dir 0)
-        (pcase-setq `(,beg . ,end) (cons end beg)))
+        (cl-rotatef beg end))
       (cond ((eql id 0) ;; ID 0 denotes real cursors
              (helix-delete-fake-cursor cursor)
              (goto-char end)
@@ -244,7 +244,7 @@ If DIR is positive number move forward, else — backward."
                          (set-marker (mark-marker) (point))
                          (insert text))
     ((and 'helix-paste-after
-          (guard (not (helix-linewise-selection-p))))
+          (guard (not (helix-logical-lines-p))))
      (helix-end-of-line)
      (insert "\n")
      (set-mark (point))

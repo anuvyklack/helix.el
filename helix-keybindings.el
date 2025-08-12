@@ -255,6 +255,8 @@
   "g q"   #'fill-region
   "] SPC" #'helix-add-blank-line-below
   "[ SPC" #'helix-add-blank-line-above
+  "z n"   #'narrow-to-region
+  "z w"   #'widen
 
   ;; Xref
   "g d"     #'xref-find-definitions
@@ -288,7 +290,7 @@
   "K"   #'helix-move-window-up
   "L"   #'helix-move-window-right)
 
-;;; Common keybindings between Normal and Motion states
+;;; Keybindings common between Normal and Motion states
 
 (dolist (state '(normal motion))
   (helix-keymap-set nil state
