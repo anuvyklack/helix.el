@@ -1615,7 +1615,7 @@ keys to repeat motion forward/backward."
                                 (helixf-search--search regexp search-dir)))
         ;; Push mark on first invocation.
         (unless (or (memq last-command '(helix-search-next helix-search-previous))
-                    (helix-search--keep-highlight last-command))
+                    (helix-search--keep-highlight-p last-command))
           (helix-push-point))
         (when (and helix--extend-selection (use-region-p))
           (helix-create-fake-cursor-from-point))
