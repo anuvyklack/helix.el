@@ -44,11 +44,11 @@ DIRECTION must be either 1 or -1."
       (setq helix-search--hl hl)))
   (add-hook 'pre-command-hook  #'helix-highlight-search-pattern--cleanup-hook nil t)
   ;; Update highlighting after commands for which
-  ;; `helix-search--keep-highlight' returns t.
+  ;; `helix-search--keep-highlight-p' returns t.
   (add-hook 'post-command-hook #'helix-highlight-search-pattern--update-hook nil t))
 
 (defun helix-highlight-search-pattern--cleanup-hook ()
-  (unless (helix-search--keep-highlight this-command)
+  (unless (helix-search--keep-highlight-p this-command)
     (setq helix-search--direction nil)
     (when helix-search--timer
       (cancel-timer helix-search--timer)
@@ -59,9 +59,11 @@ DIRECTION must be either 1 or -1."
     (remove-hook 'pre-command-hook  #'helix-highlight-search-pattern--cleanup-hook t)
     (remove-hook 'post-command-hook #'helix-highlight-search-pattern--update-hook t)))
 
-(defun helix-search--keep-highlight (command)
-  (or (get command 'scroll-command)
-      (memq command helix-keep-search-highlight-commands)))
+(defun helix-search--keep-highlight-p (command)
+  "Return t if highlight overlays shouldn't be removed on COMMAND execution."
+  (if (symbolp command) ;; COMMAND is not lambda
+      (or (get command 'scroll-command)
+          (memq command helix-keep-search-highlight-commands))))
 
 (defun helix-highlight-search-pattern--update-hook (&optional _ _ _)
   (when helix-search--timer
