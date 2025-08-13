@@ -122,7 +122,7 @@
   "<escape>" #'helix-normal-state-escape
   "v"   #'helix-extend-selection
   "x"   #'helix-expand-line-selection
-  "X"   #'helix-contract-line-selection
+  "X"   #'helix-expand-line-selection-backward
   "%"   #'mark-whole-buffer
   "C"   #'helix-copy-selection
   "M-c" #'helix-copy-selection-up
