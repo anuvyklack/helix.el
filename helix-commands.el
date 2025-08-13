@@ -61,28 +61,18 @@
 
 ;; j
 (defun helix-next-line (count)
-  "Move to the next COUNT line.
-Move backward if COUNT is negative."
+  "Move to the next COUNT line. Move upward if COUNT is negative.
+If both linewise selection (`x' key) and extending selection (`v' key)
+are active — works like `helix-expand-line-selection'."
   (interactive "p")
   (if (and helix-linewise-selection helix--extend-selection)
-      (let ((region-dir (helix-region-direction))
-            (motion-dir (helix-sign count)))
-        (helix-carry-linewise-selection)
-        (forward-thing 'line count)
-        (when (= (point) (mark-marker))
-          (forward-thing 'line motion-dir))
-        (when (/= region-dir (helix-region-direction))
-          (save-excursion
-            (goto-char (mark-marker))
-            (forward-thing 'line (- motion-dir))
-            (set-mark (point))))
-        (helix-maybe-enable-linewise-selection))
+      (helix-expand-line-selection count)
     ;; else
     (helix-maybe-deactivate-mark)
     ;; Preserve the column: the behaviour is hard-coded and the column
     ;; is preserved if and only if the last command was `next-line' or
     ;; `previous-line'.
-    (setq this-command 'next-line)
+    (setq this-command (if (natnump count) 'next-line 'previous-line))
     (funcall-interactively 'next-line count)))
 
 (put 'helix-next-line 'multiple-cursors t)
@@ -90,7 +80,9 @@ Move backward if COUNT is negative."
 
 ;; k
 (defun helix-previous-line (count)
-  "Move to the previous COUNT line."
+  "Move to the previous COUNT line. Move downward if COUNT is negative.
+If both linewise selection (`x' key) and extending selection (`v' key)
+are active — works like `helix-expand-line-selection-backward'."
   (interactive "p")
   (helix-next-line (- count)))
 
@@ -795,22 +787,34 @@ If ARG positive number — enable, negative — disable."
 
 ;; x
 (defun helix-expand-line-selection (count)
-  "Expand current selection linewise.
-If region is forward — mark is before point — expand selection downwise,
-if region is backward — point is before mark — expand upwise."
+  "Expand or contract current selection linewise downward COUNT times."
   (interactive "p")
-  (setq count (abs count))
-  (or (helix-carry-linewise-selection)
-      (and (helix--expand-selection-to-full-lines)
-           (cl-decf count)))
-  (unless (zerop count)
-    (setq count (* count (helix-region-direction)))
-    (let ((line (if visual-line-mode 'visual-line 'line)))
-      (forward-thing line count)))
-  (helix-maybe-enable-linewise-selection))
+  (let ((motion-dir (helix-sign count)))
+    (or (helix-carry-linewise-selection)
+        (and (helix--expand-selection-to-full-lines)
+             (setq count (- count motion-dir))))
+    (unless (zerop count)
+      (let ((region-dir (helix-region-direction)))
+        (forward-thing 'line count)
+        (when (= (point) (mark-marker))
+          (forward-thing 'line motion-dir))
+        (when (/= region-dir (helix-region-direction))
+          (save-excursion
+            (goto-char (mark-marker))
+            (forward-thing 'line (- motion-dir))
+            (set-mark (point))))))
+    (helix-maybe-enable-linewise-selection)))
 
 (put 'helix-expand-line-selection 'multiple-cursors t)
 (put 'helix-expand-line-selection 'helix-merge-regions t)
+
+;; X
+(defun helix-expand-line-selection-backward (count)
+  "Expand or contract current selection linewise upward COUNT times."
+  (interactive "p")
+  (helix-expand-line-selection (- count)))
+
+(put 'helix-expand-line-selection-backward 'multiple-cursors t)
 
 (defun helix--expand-selection-to-full-lines ()
   "Create a line-wise selection, using visual or logical lines.
@@ -830,66 +834,6 @@ is active, otherwise logical lines."
       (-let [(beg . end) (bounds-of-thing-at-point line)]
         (helix-set-region beg end)
         t))))
-
-;; X
-(defun helix-contract-line-selection (count)
-  "Contract current selection linewise.
-Counterpart to `helix-expand-line-selection' that does the exact opposite."
-  (interactive "p")
-  (setq count (abs count))
-  (if (not (use-region-p))
-      (helix-expand-line-selection count)
-    ;; else
-    (or (helix-carry-linewise-selection)
-        (and (helix-reduce-selection-to-full-lines)
-             (cl-decf count)))
-    (unless (zerop count)
-      (let ((line (if visual-line-mode 'visual-line 'line))
-            (beg (region-beginning))
-            (end (region-end))
-            (dir (helix-region-direction)))
-        (if (natnump dir)
-            (cl-dotimes (_ count)
-              (forward-thing line -1)
-              (if (< beg (point))
-                  (setq end (point))
-                (cl-return)))
-          ;; else (< dir 0)
-          (cl-dotimes (_ count)
-            (forward-thing line 1)
-            (if (< (point) end)
-                (setq beg (point))
-              (cl-return))))
-        (helix-set-region beg end dir)))
-    (helix-maybe-enable-linewise-selection)))
-
-(put 'helix-contract-line-selection 'multiple-cursors t)
-
-(defun helix-reduce-selection-to-full-lines ()
-  "Remove non full line parts from both ends of the selection.
-Return t if does anything, otherwise return nil."
-  (when (use-region-p)
-    (let ((line (if visual-line-mode 'visual-line 'line))
-          (beg (region-beginning))
-          (end (region-end))
-          (dir (helix-region-direction))
-          result)
-      ;; new END
-      (goto-char end)
-      (unless (helix-bolp)
-        (-let [(line-beg . _) (bounds-of-thing-at-point line)]
-          (unless (< line-beg beg)
-            (setq end line-beg
-                  result t))))
-      ;; new BEG
-      (goto-char beg)
-      (unless (helix-bolp)
-        (-let [(_ . line-end) (bounds-of-thing-at-point line)]
-          (unless (<= end line-end)
-            (setq beg line-end
-                  result t))))
-      (helix-set-region beg end dir)
-      result)))
 
 ;; %
 (helix-define-advice mark-whole-buffer (:before ())
