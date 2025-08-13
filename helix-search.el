@@ -276,7 +276,7 @@ RANGES is a list of cons cells with positions (START . END)."
           (helix-echo "Search failed" 'error))
         (when (and (<= helix-search--window-start (point) helix-search--window-end)
                    (/= (window-start) helix-search--window-start))
-          (set-window-start nil helix-search--window-start))
+          (set-window-start nil helix-search--window-start :noforce))
         ;; Update the screen so that the temporary value for
         ;; `scroll-conservatively' is taken into account.
         (redisplay)))))
