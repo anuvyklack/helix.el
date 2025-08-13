@@ -61,14 +61,29 @@
 
 ;; j
 (defun helix-next-line (count)
-  "Move to the next COUNT line."
+  "Move to the next COUNT line.
+Move backward if COUNT is negative."
   (interactive "p")
-  (helix-maybe-deactivate-mark)
-  ;; Preserve the column: the behaviour is hard-coded and the column
-  ;; is preserved if and only if the last command was `next-line' or
-  ;; `previous-line'.
-  (setq this-command 'next-line)
-  (funcall-interactively 'next-line count))
+  (if (and helix-linewise-selection helix--extend-selection)
+      (let ((region-dir (helix-region-direction))
+            (motion-dir (helix-sign count)))
+        (helix-carry-linewise-selection)
+        (forward-thing 'line count)
+        (when (= (point) (mark-marker))
+          (forward-thing 'line motion-dir))
+        (when (/= region-dir (helix-region-direction))
+          (save-excursion
+            (goto-char (mark-marker))
+            (forward-thing 'line (- motion-dir))
+            (set-mark (point))))
+        (helix-maybe-enable-linewise-selection))
+    ;; else
+    (helix-maybe-deactivate-mark)
+    ;; Preserve the column: the behaviour is hard-coded and the column
+    ;; is preserved if and only if the last command was `next-line' or
+    ;; `previous-line'.
+    (setq this-command 'next-line)
+    (funcall-interactively 'next-line count)))
 
 (put 'helix-next-line 'multiple-cursors t)
 (put 'helix-next-line 'helix-merge-regions 'extend-selection)
@@ -77,12 +92,7 @@
 (defun helix-previous-line (count)
   "Move to the previous COUNT line."
   (interactive "p")
-  (helix-maybe-deactivate-mark)
-  ;; Preserve the column: the behaviour is hard-coded and the column
-  ;; is preserved if and only if the last command was `next-line' or
-  ;; `previous-line'.
-  (setq this-command 'previous-line)
-  (funcall-interactively 'previous-line count))
+  (helix-next-line (- count)))
 
 (put 'helix-previous-line 'multiple-cursors t)
 (put 'helix-previous-line 'helix-merge-regions 'extend-selection)
