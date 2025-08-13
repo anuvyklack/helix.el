@@ -817,19 +817,18 @@ When region is active: expand selection to line boundaries to encompass full
 line(s). Otherwise, select current line. Uses visual lines if `visual-line-mode'
 is active, otherwise logical lines."
   (let ((line (if visual-line-mode 'visual-line 'line)))
-    (cond ((use-region-p)
-           (let ((beg (region-beginning))
-                 (end (region-end)))
-             (goto-char beg)
-             (set-mark (car (bounds-of-thing-at-point line))) ; left end
-             (goto-char end)
-             (goto-char (cdr (bounds-of-thing-at-point line))) ; right end
-             t))
-          (t ;; no region
-           (-let [(beg . end) (bounds-of-thing-at-point line)]
-             (set-mark beg)
-             (goto-char end)
-             t)))))
+    (if (use-region-p)
+        (let ((beg (region-beginning))
+              (end (region-end)))
+          (helix-set-region (progn (goto-char beg)
+                                   (car (bounds-of-thing-at-point line)))
+                            (progn (goto-char end)
+                                   (cdr (bounds-of-thing-at-point line))))
+          t)
+      ;; else no region
+      (-let [(beg . end) (bounds-of-thing-at-point line)]
+        (helix-set-region beg end)
+        t))))
 
 ;; X
 (defun helix-contract-line-selection (count)
@@ -848,18 +847,18 @@ Counterpart to `helix-expand-line-selection' that does the exact opposite."
             (beg (region-beginning))
             (end (region-end))
             (dir (helix-region-direction)))
-        (cond ((natnump dir)
-               (cl-dotimes (_ count)
-                 (forward-thing line -1)
-                 (if (< beg (point))
-                     (setq end (point))
-                   (cl-return))))
-              (t ;; (< dir 0)
-               (cl-dotimes (_ count)
-                 (forward-thing line 1)
-                 (if (< (point) end)
-                     (setq beg (point))
-                   (cl-return)))))
+        (if (natnump dir)
+            (cl-dotimes (_ count)
+              (forward-thing line -1)
+              (if (< beg (point))
+                  (setq end (point))
+                (cl-return)))
+          ;; else (< dir 0)
+          (cl-dotimes (_ count)
+            (forward-thing line 1)
+            (if (< (point) end)
+                (setq beg (point))
+              (cl-return))))
         (helix-set-region beg end dir)))
     (helix-maybe-enable-linewise-selection)))
 
@@ -868,28 +867,28 @@ Counterpart to `helix-expand-line-selection' that does the exact opposite."
 (defun helix-reduce-selection-to-full-lines ()
   "Remove non full line parts from both ends of the selection.
 Return t if does anything, otherwise return nil."
-  (cond ((use-region-p)
-         (let ((line (if visual-line-mode 'visual-line 'line))
-               (beg (region-beginning))
-               (end (region-end))
-               (dir (helix-region-direction))
-               result)
-           ;; new END
-           (goto-char end)
-           (unless (helix-bolp)
-             (-let [(line-beg . _) (bounds-of-thing-at-point line)]
-               (unless (< line-beg beg)
-                 (setq end line-beg
-                       result t))))
-           ;; new BEG
-           (goto-char beg)
-           (unless (helix-bolp)
-             (-let [(_ . line-end) (bounds-of-thing-at-point line)]
-               (unless (<= end line-end)
-                 (setq beg line-end
-                       result t))))
-           (helix-set-region beg end dir)
-           result))))
+  (when (use-region-p)
+    (let ((line (if visual-line-mode 'visual-line 'line))
+          (beg (region-beginning))
+          (end (region-end))
+          (dir (helix-region-direction))
+          result)
+      ;; new END
+      (goto-char end)
+      (unless (helix-bolp)
+        (-let [(line-beg . _) (bounds-of-thing-at-point line)]
+          (unless (< line-beg beg)
+            (setq end line-beg
+                  result t))))
+      ;; new BEG
+      (goto-char beg)
+      (unless (helix-bolp)
+        (-let [(_ . line-end) (bounds-of-thing-at-point line)]
+          (unless (<= end line-end)
+            (setq beg line-end
+                  result t))))
+      (helix-set-region beg end dir)
+      result)))
 
 ;; %
 (helix-define-advice mark-whole-buffer (:before ())
