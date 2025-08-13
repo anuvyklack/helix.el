@@ -460,7 +460,7 @@ MARK is nil if cursor has no region."
     `(let ((,win-start (copy-marker (window-start)))
            (,win-hscroll (window-hscroll)))
        ,@body
-       (set-window-start nil ,win-start t)
+       (set-window-start nil ,win-start :noforce)
        (set-window-hscroll nil ,win-hscroll)
        (set-marker ,win-start nil))))
 
