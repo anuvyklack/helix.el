@@ -584,9 +584,9 @@ If no selection — delete COUNT chars after point."
 (defun helix-undo ()
   "Cancel current region then undo."
   (interactive)
-  ;; Deactivate mark to trigger global undo not region undo.
+  ;; Deactivate mark to trigger global undo instead of region undo.
   (deactivate-mark)
-  (let (deactivate-mark)
+  (let ((deactivate-mark nil))
     (undo-only)))
 
 (put 'helix-undo 'multiple-cursors 'false)
@@ -595,9 +595,9 @@ If no selection — delete COUNT chars after point."
 (defun helix-redo ()
   "Cancel current region then redo."
   (interactive)
-  ;; Deactivate mark to trigger global undo not region undo.
+  ;; Deactivate mark to trigger global undo instead of region undo.
   (deactivate-mark)
-  (let (deactivate-mark)
+  (let ((deactivate-mark nil))
     (undo-redo)))
 
 (put 'helix-redo 'multiple-cursors 'false)
@@ -756,7 +756,7 @@ With no selection downcase the character after point."
 With no selection upcase the character after point."
   (interactive)
   (if (use-region-p)
-      (let (deactivate-mark)
+      (let ((deactivate-mark nil))
         (upcase-region (region-beginning) (region-end)))
     (upcase-region (point) (progn (forward-char) (point)))))
 
