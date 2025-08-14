@@ -552,9 +552,6 @@ evaluate BODY, update fake CURSOR."
 (defun helix--call-interactively (command)
   "Run COMMAND, simulating the parts of the command loop that
 makes sense for fake cursor."
-  (when (and (symbolp command)
-             (get command 'helix-deactivate-mark))
-    (deactivate-mark))
   (unless (eq command 'ignore)
     (let ((this-command command))
       (call-interactively command)))
