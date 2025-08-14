@@ -15,18 +15,10 @@
 ;;;
 ;;; Code:
 
+(require 'helix-macros)
+
 (defvar helix-mode nil)
 (declare-function helix-local-mode "helix-core")
-
-(defmacro helix-defvar-local (symbol &optional initvalue docstring)
-  "The same as `defvar-local' but additionaly marks SYMBOL as permanent
-buffer local variable."
-  (declare (indent defun)
-           (doc-string 3)
-           (debug (symbolp &optional form stringp)))
-  `(prog1 (defvar ,symbol ,initvalue ,docstring)
-     (make-variable-buffer-local ',symbol)
-     (put ',symbol 'permanent-local t)))
 
 ;;; Customizable variables
 
@@ -371,9 +363,6 @@ with the first keymaps having higher priority.")
 Entries have the form (STATE . PLIST), where PLIST is a property
 list specifying various aspects of the state. To access a property,
 use `helix-state-property'.")
-
-(defvar helix--advices nil
-  "Inner variable for `helix-define-advice'.")
 
 (helix-defvar-local helix--extend-selection nil
   "Extend selection.")
