@@ -65,10 +65,14 @@
                   (error-message-string error))))
       (when (helix-merge-regions-p helix-this-command)
         (helix-merge-overlapping-regions)))
-    (cond (helix-linewise-selection
-           (helix-set-main-selection-overlay))
-          (helix-main-selection-overlay
-           (delete-overlay helix-main-selection-overlay)))
+    ;; Linewise selection
+    (progn
+      (when (and helix-linewise-selection (not mark-active))
+        (setq helix-linewise-selection nil))
+      (cond (helix-linewise-selection
+             (helix-set-main-selection-overlay))
+            (helix-main-selection-overlay
+             (delete-overlay helix-main-selection-overlay))))
     (helix--single-undo-step-end)
     (setq helix-this-command nil
           helix--input-cache nil)))
@@ -329,7 +333,6 @@ CHECKED-MODES is used internally and should not be set initially."
                    (region-active-p))
           (setq helix--region-was-active-on-insert t))
         (helix-with-each-cursor
-          (setq helix-linewise-selection nil)
           (deactivate-mark)))
     ;; else
     (when helix--region-was-active-on-insert
