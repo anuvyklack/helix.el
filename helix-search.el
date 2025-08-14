@@ -61,9 +61,9 @@ DIRECTION must be either 1 or -1."
 
 (defun helix-search--keep-highlight-p (command)
   "Return t if highlight overlays shouldn't be removed on COMMAND execution."
-  (if (symbolp command) ;; COMMAND is not lambda
-      (or (get command 'scroll-command)
-          (memq command helix-keep-search-highlight-commands))))
+  (and (symbolp command) ;; COMMAND is not lambda
+       (or (get command 'scroll-command)
+           (memq command helix-keep-search-highlight-commands))))
 
 (defun helix-highlight-search-pattern--update-hook (&optional _ _ _)
   (when helix-search--timer
