@@ -220,7 +220,6 @@ RANGES is a list of cons cells with positions (START . END)."
         helix-search--hl (helix-highlight-create :buffer (current-buffer)
                                                  :face 'helix-search-highlight))
   (save-excursion
-    (setq helix-linewise-selection nil)
     (deactivate-mark)
     (if-let* ((pattern (condition-case nil
                            (minibuffer-with-setup-hook #'helix-search--start-session
