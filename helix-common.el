@@ -1055,5 +1055,13 @@ See `helix-linewise-selection'"
   (when helix-linewise-selection
     (delete-overlay helix-main-selection-overlay)))
 
+(defun helix-reveal-point-when-on-top (&rest _)
+  "Reveal point when its only partly visible.
+Emacs become very slow when point is only partly visible.
+Intended to be use as `:after' advice."
+  (redisplay)
+  (when (zerop (cdr (posn-col-row (posn-at-point))))
+    (recenter 0)))
+
 (provide 'helix-common)
 ;;; helix-common.el ends here
