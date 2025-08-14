@@ -91,7 +91,7 @@ in the command loop, and the fake cursors can pick up on those instead."
                    comment-dwim))       ;; gc
   (eval `(helix-define-advice ,command (:around (orig-fun &rest args))
            "Don't deactivate region."
-           (let (deactivate-mark)
+           (let ((deactivate-mark nil))
              (apply orig-fun args))
            (helix-extend-selection -1))))
 
