@@ -570,6 +570,14 @@ If no selection — delete COUNT chars after point."
 
 (put 'helix-delete 'multiple-cursors t)
 
+;; C-w in insert state
+(defun helix-delete-backward-word ()
+  (interactive)
+  (delete-region (point)
+                 (progn (helix-backward-word-start 1) (point))))
+
+(put 'helix-delete-backward-word 'multiple-cursors t)
+
 ;; u
 (defun helix-undo ()
   "Cancel current region then undo."

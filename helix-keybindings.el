@@ -316,7 +316,8 @@
 ;;; Insert state
 
 (helix-keymap-set nil 'insert
-  "<escape>" #'helix-normal-state)
+  "<escape>" #'helix-normal-state
+  "C-w" #'helix-delete-backward-word)
 
 (provide 'helix-keybindings)
 ;;; helix-keybindings.el ends here
