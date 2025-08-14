@@ -227,6 +227,14 @@ in the command loop, and the fake cursors can pick up on those instead."
   (helix-cache-input consult--read)
   (put 'consult-yank-pop 'multiple-cursors t))
 
+;;; Outline
+(dolist (command '(outline-up-heading
+                   outline-next-visible-heading
+                   outline-previous-visible-heading
+                   outline-forward-same-level
+                   outline-backward-same-level))
+  (helix-advice-add command :after #'helix-reveal-point-when-on-top))
+
 ;;; Major modes
 ;;;; Lisp mode
 
