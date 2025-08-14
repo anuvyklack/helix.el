@@ -1,5 +1,7 @@
 ;;; helix.el --- Helix emulation -*- lexical-binding: t; -*-
 ;;
+;; Copyright (C) 2025 Yuriy Artemyev
+;;
 ;; Author: Yuriy Artemyev <anuvyklack@gmail.com>
 ;; Maintainer: Yuriy Artemyev <anuvyklack@gmail.com>
 ;; Created: March 27, 2025
