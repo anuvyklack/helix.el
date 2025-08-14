@@ -173,8 +173,9 @@ For these commands:
   :set #'(lambda (symbol value)
            (set-default symbol value)
            (mapc #'(lambda (cmd)
-                     (put cmd 'helix-deactivate-mark t)
-                     (put cmd 'helix-merge-regions 'extend-selection))
+                     ;; (put cmd 'multiple-cursors 'false)
+                     (put cmd 'helix-merge-regions 'extend-selection)
+                     (helix-advice-add cmd :before #'deactivate-mark))
                  value)))
 
 (defvar helix-keep-search-highlight-commands
