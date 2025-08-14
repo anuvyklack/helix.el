@@ -1178,7 +1178,8 @@ See `helix-linewise-selection'"
     (if helix-main-selection-overlay
         (move-overlay helix-main-selection-overlay beg end)
       (setq helix-main-selection-overlay (-doto (make-overlay beg end)
-                                           (overlay-put 'face 'region))))))
+                                           (overlay-put 'face 'region)
+                                           (overlay-put 'priority 1))))))
 
 (defun helix-disable-linewise-selection ()
   (when helix-linewise-selection
