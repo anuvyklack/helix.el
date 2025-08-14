@@ -510,7 +510,6 @@ evaluate BODY, update fake CURSOR."
   `(let ((cursors (if helix-multiple-cursors-mode
                       (helix-all-fake-cursors))))
      ;; Main cursor
-     (helix-delete-main-selection-overlay)
      ,@body
      ;; Fake cursors
      (when cursors

@@ -22,7 +22,7 @@
 (require 'helix-core)
 (require 'helix-multiple-cursors-core)
 (require 'helix-search)
-(provide 'pulse)
+(require 'pulse)
 (require 'avy)
 
 (defun helix-normal-state-escape ()
@@ -604,19 +604,21 @@ If no selection — delete COUNT chars after point."
 (defun helix-copy ()
   "Copy selection into `kill-ring'."
   (interactive)
-  (helix-with-each-cursor
-    (when (use-region-p)
-      (let ((beg (region-beginning))
-            (end (region-end))
-            (deactivate-mark nil))
-        (when helix-linewise-selection
-          (cl-incf end))
-        (copy-region-as-kill beg end)
-        (unless helix-executing-command-for-fake-cursor
-          (pulse-momentary-highlight-region beg end)
-          (message "Copied into kill-ring")))
-      (helix-extend-selection -1)))
-  (helix-maybe-set-killed-rectangle))
+  (let ((deactivate-mark nil)
+        any?)
+    (helix-with-each-cursor
+      (when (use-region-p)
+        (copy-region-as-kill (region-beginning) (if helix-linewise-selection
+                                                    (1+ (region-end))
+                                                  (region-end)))
+        (setq any? t))
+      (helix-extend-selection -1))
+    (when any? (message "Copied into kill-ring")))
+  (helix-maybe-set-killed-rectangle)
+  ;; pulse main selection
+  (if helix-linewise-selection
+      (pulse-momentary-highlight-overlay helix-main-selection-overlay)
+    (pulse-momentary-highlight-region (region-beginning) (region-end))))
 
 (put 'helix-copy 'multiple-cursors 'false)
 
