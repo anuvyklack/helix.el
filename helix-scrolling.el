@@ -41,15 +41,17 @@ If PAGES is non-nil scroll over pages instead of lines."
          (delta (cond ((eql count 0) (/ window-height 2))
                       (pages? (* count window-height))
                       (t (* count line-height))))
-         (posn-y-at-point (cdr (posn-x-y (posn-at-point))))
+         (point-data (posn-at-point))
+         (row-at-point (cdr (posn-col-row point-data)))
+         (y-at-point (cdr (posn-x-y point-data)))
          at-bottom?)
     ;; BUG: When jump lands at the top of the screen the point could be only
     ;; partially visible. If you try to scroll smoothly from this position the
     ;; point will jump unpredictably. Fix initial position in this case.
-    (when (eql posn-y-at-point 0) (recenter 0))
+    (when (eq row-at-point 0) (recenter 0))
     ;; `screen-space' is the height of the part of the screen toward the
     ;; scrolling direction.
-    (let ((screen-space (- window-height posn-y-at-point)))
+    (let ((screen-space (- window-height y-at-point)))
       ;; If point goes off the screen as the result of the scroll
       (when (> delta (- screen-space line-height))
         (if restricted
@@ -74,16 +76,18 @@ If PAGES is non-nil scroll over pages instead of lines."
          (delta (cond ((eql count 0) (/ window-height 2))
                       (pages? (* count window-height))
                       (t (* count line-height))))
-         (posn-y-at-point (cdr (posn-x-y (posn-at-point))))
+         (point-data (posn-at-point))
+         (row-at-point (cdr (posn-col-row point-data)))
+         (y-at-point (cdr (posn-x-y point-data)))
          at-top?)
     ;; BUG: When jump lands at the top of the screen the point could be only
     ;; partially visible. If you try to scroll smoothly from this position the
     ;; point will jump unpredictably. Fix initial position in this case.
-    (when (eql posn-y-at-point 0) (recenter 0))
-    (when (> delta (- posn-y-at-point
+    (when (eql row-at-point 0) (recenter 0))
+    (when (> delta (- y-at-point
                       line-height))
       (if restricted
-          (setq delta (- posn-y-at-point
+          (setq delta (- y-at-point
                          (/ line-height 3))
                 at-top? t)
         ;; else
@@ -239,10 +243,12 @@ If COUNT > 1 scroll smoothly."
                            (window-mode-line-height)
                            (window-tab-line-height)))
          (posn-y-target (ceiling (/ window-height 2)))
-         (posn-y-at-point (cdr (posn-x-y (posn-at-point))))
+         (point-data (posn-at-point))
+         (row-at-point (cdr (posn-col-row point-data)))
+         (y-at-point (cdr (posn-x-y point-data)))
          (delta (- posn-y-target
-                   posn-y-at-point)))
-    (when (eql posn-y-at-point 0) (recenter 0))
+                   y-at-point)))
+    (when (eql row-at-point 0) (recenter 0))
     (pixel-scroll-precision-interpolate delta nil 1)))
 
 (put 'helix-smooth-scroll-line-to-center 'scroll-command t)
@@ -256,10 +262,12 @@ If COUNT > 1 scroll smoothly."
                            (window-mode-line-height)
                            (window-tab-line-height)))
          (posn-y-target (ceiling (/ window-height 5)))
-         (posn-y-at-point (cdr (posn-x-y (posn-at-point))))
+         (point-data (posn-at-point))
+         (row-at-point (cdr (posn-col-row point-data)))
+         (y-at-point (cdr (posn-x-y point-data)))
          (delta (- posn-y-target
-                   posn-y-at-point)))
-    (when (eql posn-y-at-point 0) (recenter 0))
+                   y-at-point)))
+    (when (eql row-at-point 0) (recenter 0))
     (pixel-scroll-precision-interpolate delta nil 1)))
 
 (put 'helix-smooth-scroll-line-not-to-very-top 'scroll-command t)
@@ -273,10 +281,12 @@ If COUNT > 1 scroll smoothly."
   ;; move to the next line. So we scroll a little bit before the top, and then
   ;; finish with `recenter' getting a clear result.
   (let* ((line-height (default-line-height))
-         (posn-y-at-point (cdr (posn-x-y (posn-at-point))))
-         (delta (- posn-y-at-point
+         (point-data (posn-at-point))
+         (row-at-point (cdr (posn-col-row point-data)))
+         (y-at-point (cdr (posn-x-y point-data)))
+         (delta (- y-at-point
                    (/ line-height 4))))
-    (when (eql posn-y-at-point 0) (recenter 0))
+    (when (eql row-at-point 0) (recenter 0))
     (pixel-scroll-precision-interpolate (- delta) nil 1)
     (recenter 0)))
 
@@ -294,11 +304,13 @@ If COUNT > 1 scroll smoothly."
                            (window-mode-line-height)
                            (window-tab-line-height)))
          (line-height (default-line-height))
-         (posn-y-at-point (cdr (posn-x-y (posn-at-point))))
+         (point-data (posn-at-point))
+         (row-at-point (cdr (posn-col-row point-data)))
+         (y-at-point (cdr (posn-x-y point-data)))
          (delta (- window-height
-                   posn-y-at-point
+                   y-at-point
                    (/ line-height 4))))
-    (when (eql posn-y-at-point 0) (recenter 0))
+    (when (eql row-at-point 0) (recenter 0))
     (pixel-scroll-precision-interpolate delta nil 1)
     (recenter -1)))
 
