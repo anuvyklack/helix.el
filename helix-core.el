@@ -29,6 +29,7 @@
 
 (require 'cl-lib)
 (require 'dash)
+(require 'helix-macros)
 (require 'helix-vars)
 (require 'helix-common)
 (require 'helix-multiple-cursors-core)
