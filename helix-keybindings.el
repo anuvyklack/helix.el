@@ -125,7 +125,7 @@
   "v"   #'helix-extend-selection
   "x"   #'helix-expand-line-selection
   "X"   #'helix-expand-line-selection-backward
-  "%"   #'mark-whole-buffer
+  "%"   #'helix-mark-whole-buffer
   "C"   #'helix-copy-selection
   "M-c" #'helix-copy-selection-up
   "("   #'helix-rotate-selections-backward
