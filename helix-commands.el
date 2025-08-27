@@ -848,11 +848,20 @@ is active, otherwise logical lines."
         t))))
 
 ;; %
-(helix-define-advice mark-whole-buffer (:before ())
+(defun helix-mark-whole-buffer ()
+  (interactive)
   (helix-delete-all-fake-cursors)
-  (setq helix-linewise-selection t))
+  (helix-push-point)
+  (helix-set-region (progn (goto-char (point-max))
+                           (when (and (bolp) (not (bobp)))
+                             (backward-char)
+                             (setq helix-linewise-selection t))
+                           (point))
+                    ;; This is really `point-min' in most cases, but if we're
+                    ;; in the minibuffer, this is at the end of the prompt.
+                    (minibuffer-prompt-end)))
 
-(put 'mark-whole-buffer 'multiple-cursors 'false)
+(put 'helix-mark-whole-buffer 'multiple-cursors 'false)
 
 ;; s
 (defun helix-select-regex (&optional invert)
