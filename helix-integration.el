@@ -77,6 +77,8 @@ in the command loop, and the fake cursors can pick up on those instead."
 
 ;;; Selection (mark & region)
 
+(helix-advice-add 'exchange-point-and-mark :after #'helix-reveal-point-when-on-top)
+
 (helix-define-advice pop-to-mark-command (:around (orig-fun))
   "When region is active, skip active mark and jump to one before it."
   (if (use-region-p)
@@ -89,11 +91,7 @@ in the command loop, and the fake cursors can pick up on those instead."
                    indent-rigidly-left  ;; >
                    indent-rigidly-right ;; <
                    comment-dwim))       ;; gc
-  (eval `(helix-define-advice ,command (:around (orig-fun &rest args))
-           "Don't deactivate region."
-           (let ((deactivate-mark nil))
-             (apply orig-fun args))
-           (helix-extend-selection -1))))
+  (helix-advice-add command :around #'helix-keep-selection-a))
 
 ;;; Eldoc
 (with-eval-after-load 'eldoc
@@ -233,6 +231,8 @@ in the command loop, and the fake cursors can pick up on those instead."
                    outline-previous-visible-heading
                    outline-forward-same-level
                    outline-backward-same-level))
+  (put command 'helix-merge-regions 'extend-selection)
+  (helix-advice-add command :before #'helix-deactivate-mark-a)
   (helix-advice-add command :after #'helix-reveal-point-when-on-top))
 
 ;;; Major modes
