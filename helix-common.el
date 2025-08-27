@@ -1057,11 +1057,24 @@ See `helix-linewise-selection'"
 
 (defun helix-reveal-point-when-on-top (&rest _)
   "Reveal point when its only partly visible.
-Emacs become very slow when point is only partly visible.
+Emacs somewhy becomes very slow when point is only partly visible.
 Intended to be use as `:after' advice."
   (redisplay)
   (when (zerop (cdr (posn-col-row (posn-at-point))))
     (recenter 0)))
+
+(declare-function helix-extend-selection "helix-commands")
+
+(defun helix-keep-selection-a (orig-fun &rest args)
+  "Keep region active, disable extending selection (`v' key)."
+  (let ((deactivate-mark nil))
+    (apply orig-fun args))
+  (helix-extend-selection -1))
+
+(defun helix-deactivate-mark-a (&rest _)
+  "This function is intended to be used as advice."
+  (setq helix-linewise-selection nil)
+  (deactivate-mark))
 
 (provide 'helix-common)
 ;;; helix-common.el ends here

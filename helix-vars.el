@@ -158,12 +158,7 @@ rate allows highlights to update while scrolling."
   '(xref-find-definitions
     xref-find-references
     xref-go-back
-    xref-go-forward
-    outline-up-heading
-    outline-next-visible-heading
-    outline-previous-visible-heading
-    outline-forward-same-level
-    outline-backward-same-level)
+    xref-go-forward)
   "List of commands that move point.
 For these commands:
 - Mark will be deactivated.
@@ -175,7 +170,7 @@ For these commands:
            (mapc #'(lambda (cmd)
                      ;; (put cmd 'multiple-cursors 'false)
                      (put cmd 'helix-merge-regions 'extend-selection)
-                     (helix-advice-add cmd :before #'deactivate-mark))
+                     (helix-advice-add cmd :before #'helix-deactivate-mark-a))
                  value)))
 
 (defvar helix-keep-search-highlight-commands
