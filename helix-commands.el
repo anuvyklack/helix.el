@@ -304,7 +304,8 @@ Use visual line when `visual-line-mode' is active."
            (eq 5 (syntax-class (syntax-after (1- (point))))))
       (forward-list -1))
      (t
-      (up-list -1)))))
+      (up-list -1))))
+  (helix-reveal-point-when-on-top))
 
 (put 'helix-jump-to-match-item 'multiple-cursors t)
 
