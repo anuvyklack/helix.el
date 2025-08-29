@@ -149,7 +149,7 @@ in the command loop, and the fake cursors can pick up on those instead."
   (put 'keypad-describe-key 'multiple-cursors 'false)
 
   (dolist (state '(normal motion))
-    (helix-keymap-set nil state
+    (helix-keymap-global-set state
       "SPC"      'keypad
       "C-h k"    'keypad-describe-key
       "<f1> k"   'keypad-describe-key
