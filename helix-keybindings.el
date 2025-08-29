@@ -26,15 +26,15 @@
 ;; By default `M-u' is binded to `upcase-word'.
 (keymap-global-set "M-u" #'universal-argument)
 (keymap-set universal-argument-map "M-u" #'universal-argument-more)
-;; (helix-keymap-set nil 'normal "M-u" #'universal-argument)
-;; (helix-keymap-set nil 'motion "M-u" #'universal-argument)
+;; (helix-keymap-global-set 'normal "M-u" #'universal-argument)
+;; (helix-keymap-global-set 'motion "M-u" #'universal-argument)
 
 ;;; Normal state
 
 (keymap-global-unset "M-<down-mouse-1>")
-(helix-keymap-set nil 'normal "M-<mouse-1>" #'helix-toggle-cursor-on-click)
+(helix-keymap-global-set 'normal "M-<mouse-1>" #'helix-toggle-cursor-on-click)
 
-(helix-keymap-set nil 'normal
+(helix-keymap-global-set 'normal
   "<backspace>" #'execute-extended-command
   ":" #'execute-extended-command
 
@@ -271,7 +271,7 @@
 
 ;;;; Windows
 
-(helix-keymap-set nil 'normal
+(helix-keymap-global-set 'normal
   "C-w" 'helix-window-map)
 
 (define-prefix-command 'helix-window-map)
@@ -317,7 +317,7 @@
 
 ;;; Insert state
 
-(helix-keymap-set nil 'insert
+(helix-keymap-global-set 'insert
   "<escape>" #'helix-normal-state
   "C-w" #'helix-delete-backward-word)
 
