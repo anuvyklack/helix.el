@@ -449,6 +449,28 @@ For example:
             (keymap-set map key definition)
           (keymap-unset map key :remove))))))
 
+(defun helix-keymap-global-set (state &rest bindings)
+  "Create keybinding from KEY to DEFINITION for Helix STATE in global keymap.
+Accepts any number of KEY DEFINITION pairs.
+The defined keybindings will be active in specified Helix STATE.
+If STATE is nil this function will work like `keymap-global-set' with addition
+that multiple keybindings can be set at once.
+
+KEY, DEFINITION arguments are like those of `keymap-global-set'.
+If DEFINITION is nil, then keybinding will be unset with `keymap-global-unset'
+instead.
+
+For example:
+
+   (helix-keymap-global-set \\='normal
+      \"f\" \\='foo
+      \"b\" \\='bar
+      \"n\" nil)
+
+\(fn STATE &rest [KEY DEFINITION]...)"
+  (declare (indent defun))
+  (apply #'helix-keymap-set nil state bindings))
+
 (defun helix-set-intercept-keymap (keymap)
   "Make KEYMAP override all Helix keymaps."
   (when (keymapp keymap)
