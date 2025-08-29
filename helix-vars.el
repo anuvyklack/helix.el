@@ -338,10 +338,6 @@ list of categories."
 
 ;;; Variables
 
-(defvar helix-global-keymaps-alist nil
-  "Association list of global Helix keymaps.
-Entries have the form (STATE . KEYMAP), where STATE is a Helix state.")
-
 (helix-defvar-local helix-mode-map-alist nil
   "Association list of keymaps for current Helix state.
 This symbol lies in `emulation-mode-map-alists' and its contents are updated
