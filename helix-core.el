@@ -400,18 +400,18 @@ according to the Helix STATE."
     (define-key keymap key helix-map)
     helix-map))
 
-(defun helix-set-keymap-prompt (map prompt)
-  "Set the prompt-string of MAP to PROMPT."
-  (delq (keymap-prompt map) map)
+(defun helix-set-keymap-prompt (keymap prompt)
+  "Set the prompt-string of KEYMAP to PROMPT."
+  (delq (keymap-prompt keymap) keymap)
   (when prompt
-    (setcdr map (cons prompt (cdr map)))))
+    (setcdr keymap (cons prompt (cdr keymap)))))
 
 (defun helix-nested-keymap-p (keymap)
   "Return non-nil if KEYMAP is a Helix nested keymap."
   (if-let* ((prompt (keymap-prompt keymap)))
       (string-prefix-p "Helix keymap" prompt)))
 
-(defun helix-keymap-set (keymap state &rest rest)
+(defun helix-keymap-set (keymap state &rest bindings)
   "Create keybinding from KEY to DEFINITION for Helix STATE in KEYMAP.
 Accepts any number of KEY DEFINITION pairs.
 The defined keybindings will be active in specified Helix STATE.
@@ -434,7 +434,7 @@ For example:
   (declare (indent defun))
   (when (and state (not (helix-state-p state)))
     (user-error "Helix state `%s' is not known to be defined" state))
-  (unless (cl-evenp (length rest))
+  (unless (cl-evenp (length bindings))
     (user-error "The number of [KEY DEFINITION] pairs is not even"))
   (let ((map (cond ((and keymap state)
                     (or (helix-get-nested-helix-keymap keymap state)
@@ -442,9 +442,9 @@ For example:
                    (state (helix-state-property state :keymap))
                    (keymap)
                    (t (current-global-map)))))
-    (while rest
-      (let ((key (pop rest))
-            (definition (pop rest)))
+    (while bindings
+      (let ((key (pop bindings))
+            (definition (pop bindings)))
         (if definition
             (keymap-set map key definition)
           (keymap-unset map key :remove))))))
