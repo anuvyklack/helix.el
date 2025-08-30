@@ -259,8 +259,8 @@
   "g q"   #'fill-region
   "] SPC" #'helix-add-blank-line-below
   "[ SPC" #'helix-add-blank-line-above
-  "z n"   #'narrow-to-region
-  "z w"   #'widen
+  "z n"   #'helix-narrow-to-region-indirectly
+  "z w"   #'helix-widen-indirectly-narrowed
 
   ;; Xref
   "g d"     #'xref-find-definitions
