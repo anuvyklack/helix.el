@@ -461,5 +461,7 @@ one newline character after. Conterpart to `helix-linewise-selection' flag.
 It is automatically set in `helix--post-command-hook' in `post-command-hook'
 when `helix-linewise-selection' flag is set.")
 
+(helix-defvar-local helix--narrowed-base-buffer nil)
+
 (provide 'helix-vars)
 ;;; helix-vars.el ends here

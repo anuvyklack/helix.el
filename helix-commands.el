@@ -1481,6 +1481,55 @@ already there."
 (put 'helix-mark-a-surround 'multiple-cursors t)
 (put 'helix-mark-a-surround 'helix-merge-regions t)
 
+;; zn
+(defun helix-narrow-to-region-indirectly ()
+  "Restrict editing in this buffer to the current region, indirectly.
+This recursively creates indirect clones of the current buffer so that the
+narrowing doesn't affect other windows displaying the same buffer. Call
+`helix-widen-indirectly-narrowed' to undo it (incrementally)."
+  (interactive)
+  (when (use-region-p)
+    (helix-carry-linewise-selection)
+    (let ((orig-buffer (current-buffer))
+          (beg (region-beginning))
+          (end (region-end)))
+      (deactivate-mark)
+      (-doto (clone-indirect-buffer nil nil)
+        (switch-to-buffer)
+        (set-buffer))
+      (narrow-to-region beg end)
+      (setq helix--narrowed-base-buffer orig-buffer))))
+
+;; zw
+(defun helix-widen-indirectly-narrowed (&optional arg)
+  "Widens narrowed buffers.
+Incrementally kill indirect buffers (under the assumption they were created by
+`helix-narrow-to-region-indirectly') and switch to their base buffer.
+
+With `universal-argument' kill all indirect buffers, return the base buffer and
+widen it.
+
+If the current buffer is not an indirect buffer, works like `widen'."
+  (interactive "P")
+  (unless (buffer-narrowed-p)
+    (user-error "Buffer isn't narrowed"))
+  (let ((orig-buffer (current-buffer))
+        (base-buffer helix--narrowed-base-buffer))
+    (cond ((or (not base-buffer)
+               (not (buffer-live-p base-buffer)))
+           (widen))
+          (arg
+           (let ((buffer orig-buffer)
+                 (buffers-to-kill (list orig-buffer)))
+             (while (setq buffer (buffer-local-value 'helix--narrowed-base-buffer buffer))
+               (push buffer buffers-to-kill))
+             (switch-to-buffer (buffer-base-buffer))
+             (->> buffers-to-kill
+                  (-remove (current-buffer))
+                  (-each #'kill-buffer))))
+          ((switch-to-buffer base-buffer)
+           (kill-buffer orig-buffer)))))
+
 ;;; Search
 
 ;; f
