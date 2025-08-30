@@ -1024,6 +1024,8 @@ See `helix-linewise-selection'"
   (when helix-linewise-selection
     (helix-set-region (region-beginning) (1+ (region-end))
                       (helix-region-direction))
+    (when helix-main-selection-overlay
+      (delete-overlay helix-main-selection-overlay))
     (setq helix-linewise-selection nil)
     t))
 
