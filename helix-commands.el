@@ -384,11 +384,19 @@ Use visual line when `visual-line-mode' is active."
   "Move to a next line, choosing it with Avy."
   (interactive)
   (helix-delete-all-fake-cursors)
-  (helix-maybe-deactivate-mark)
   (helix-push-point)
+  (unless helix--extend-selection
+    (setq helix-linewise-selection nil)
+    (deactivate-mark))
   (let ((temporary-goal-column (current-column)))
     (-> (helix-collect-positions #'next-line)
-        (avy-process))))
+        (avy-process)))
+  (when helix-linewise-selection
+    (let ((dir (helix-region-direction)))
+      (helix--expand-selection-to-full-lines)
+      (helix-set-region (region-beginning)
+                        (1- (region-end))
+                        dir))))
 
 (put 'helix-avy-next-line 'multiple-cursors 'false)
 
@@ -397,11 +405,19 @@ Use visual line when `visual-line-mode' is active."
   "Move to a previous line, choosing it with Avy."
   (interactive)
   (helix-delete-all-fake-cursors)
-  (helix-maybe-deactivate-mark)
   (helix-push-point)
+  (unless helix--extend-selection
+    (setq helix-linewise-selection nil)
+    (deactivate-mark))
   (let ((temporary-goal-column (current-column)))
     (-> (helix-collect-positions #'previous-line)
-        (avy-process))))
+        (avy-process)))
+  (when helix-linewise-selection
+    (let ((dir (helix-region-direction)))
+      (helix--expand-selection-to-full-lines)
+      (helix-set-region (region-beginning)
+                        (1- (region-end))
+                        dir))))
 
 (put 'helix-avy-previous-line 'multiple-cursors 'false)
 
