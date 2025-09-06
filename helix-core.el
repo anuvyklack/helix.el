@@ -147,9 +147,10 @@ DOC is a general description and shows up in all docstrings.
 BODY is executed each time the state is enabled or disabled.
 
 Optional keyword arguments:
+- `:keymap'
 - `:cursor' - default cursor specification.
-- `:hook' - list of functions to run on each entry/exit of this state.
-- `:after-hook' - Lisp form to evaluate after state hooks have been run.
+- `:enter-hook' - list of functions to run on each entry/exit of this state.
+- `:exit-hook' - Lisp form to evaluate after state hooks have been run.
 
 \(fn STATE DOC [[KEY VAL]...] BODY...)"
   (declare (indent defun)

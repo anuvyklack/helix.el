@@ -176,7 +176,7 @@ COUNT minus number of steps moved; if backward, COUNT plus number moved.
 
 ;; `helix-word' thing
 (defun forward-helix-word (&optional count)
-  "Move point forward COUNT words (backward if COUNT is negative).
+  "Move point COUNT words forward (backward if COUNT is negative).
 Returns the count of word left to move, positive or negative depending
 on sign of COUNT.
 
@@ -194,7 +194,7 @@ Word is:
 
 ;; `helix-WORD' thing
 (defun forward-helix-WORD (&optional count)
-  "Move point forward COUNT WORDs (backward if COUNT is negative).
+  "Move point COUNT WORDs forward (backward if COUNT is negative).
 Returns the count of WORD left to move, positive or negative depending
 on sign of COUNT.
 
@@ -207,7 +207,7 @@ WORD is any space separated sequence of characters."
 
 ;; `helix-sentence' thing
 (defun forward-helix-sentence (&optional count)
-  "Move point forward COUNT sentences (backward if COUNT is negative).
+  "Move point COUNT sentences forward (backward if COUNT is negative).
 Returns then count of sentences left to move, positive of negative depending
 on sign of COUNT.
 
@@ -228,12 +228,9 @@ on sign of COUNT."
 
 ;; `helix-function' thing
 (defun forward-helix-function (&optional count)
-  "Move point forward COUNT functions (backward if COUNT is negative).
+  "Move point COUNT functions forward (backward if COUNT is negative).
 Returns then count of sentences left to move, positive of negative depending
-on sign of COUNT.
-
-What is function is defined by `beginning-of-defun' and `end-of-defun'
-functions."
+on sign of COUNT."
   (helix-motion-loop (dir (or count 1))
     (if (natnump dir) (end-of-defun) (beginning-of-defun))))
 
