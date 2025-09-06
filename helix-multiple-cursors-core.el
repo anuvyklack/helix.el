@@ -781,16 +781,16 @@ ID 0 coresponds to the real cursor."
 ;;; Integration with other Emacs functionalities
 
 (defmacro helix-cache-input (fn-name)
-  "Advice function to cache users input to use it for all cursors.
+  "Advice function to cache users input to use it with all cursors.
 
-Should be used with interactive input command to create advice around it,
-to cache users responses and use it for all cursors.
+This macro wraps functions in around advice that caches the user's
+response so it can be reused across all cursors.
 
-FN-NAME should be an interactive function taking PROMPT as first argument,
-like `read-char' or `read-from-minibuffer'. This PROMPT will be used as
-a hash key, to distinguish different calls of FN-NAME within one command.
-Calls with equal PROMPT or without it would be undistinguishable."
-  `(helix-define-advice ,fn-name (:around (orig-fun &rest args) helix)
+FN-NAME must be an interactive function that takes PROMPT as its first argument,
+like `read-char' or `read-from-minibuffer'. The PROMPT argument will be used as
+a hash key to distinguish between different calls to FN-NAME within the same
+command. Calls with equal PROMPT or without it would be indistinguishable."
+  `(helix-define-advice ,fn-name (:around (orig-fun &rest args) helix-cache-input)
      "Cache the users input to use it with multiple cursors."
      (if helix-multiple-cursors-mode
          (let* (;; Use PROMPT argument as a hash key to distinguish different
