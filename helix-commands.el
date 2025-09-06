@@ -392,11 +392,8 @@ Use visual line when `visual-line-mode' is active."
     (-> (helix-collect-positions #'next-line)
         (avy-process)))
   (when helix-linewise-selection
-    (let ((dir (helix-region-direction)))
-      (helix--expand-selection-to-full-lines)
-      (helix-set-region (region-beginning)
-                        (1- (region-end))
-                        dir))))
+    (helix--expand-selection-to-full-lines (helix-region-direction))
+    (helix-maybe-enable-linewise-selection)))
 
 (put 'helix-avy-next-line 'multiple-cursors 'false)
 
@@ -413,11 +410,8 @@ Use visual line when `visual-line-mode' is active."
     (-> (helix-collect-positions #'previous-line)
         (avy-process)))
   (when helix-linewise-selection
-    (let ((dir (helix-region-direction)))
-      (helix--expand-selection-to-full-lines)
-      (helix-set-region (region-beginning)
-                        (1- (region-end))
-                        dir))))
+    (helix--expand-selection-to-full-lines (helix-region-direction))
+    (helix-maybe-enable-linewise-selection)))
 
 (put 'helix-avy-previous-line 'multiple-cursors 'false)
 
