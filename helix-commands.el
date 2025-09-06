@@ -820,7 +820,7 @@ If ARG positive number — enable, negative — disable."
   (interactive "p")
   (let ((motion-dir (helix-sign count)))
     (or (helix-carry-linewise-selection)
-        (and (helix--expand-selection-to-full-lines)
+        (and (helix--expand-selection-to-full-lines motion-dir)
              (setq count (- count motion-dir))))
     (unless (zerop count)
       (let ((region-dir (helix-region-direction)))
@@ -845,7 +845,7 @@ If ARG positive number — enable, negative — disable."
 
 (put 'helix-expand-line-selection-backward 'multiple-cursors t)
 
-(defun helix--expand-selection-to-full-lines ()
+(defun helix--expand-selection-to-full-lines (&optional direction)
   "Create a line-wise selection, using visual or logical lines.
 When region is active: expand selection to line boundaries to encompass full
 line(s). Otherwise, select current line. Uses visual lines if `visual-line-mode'
@@ -857,11 +857,12 @@ is active, otherwise logical lines."
           (helix-set-region (progn (goto-char beg)
                                    (car (bounds-of-thing-at-point line)))
                             (progn (goto-char end)
-                                   (cdr (bounds-of-thing-at-point line))))
+                                   (cdr (bounds-of-thing-at-point line)))
+                            direction)
           t)
       ;; else no region
       (-let [(beg . end) (bounds-of-thing-at-point line)]
-        (helix-set-region beg end)
+        (helix-set-region beg end direction)
         t))))
 
 ;; %
