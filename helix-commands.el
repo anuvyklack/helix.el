@@ -229,7 +229,7 @@ Use visual line when `visual-line-mode' is active."
   (interactive "p")
   (helix-carry-linewise-selection)
   (helix-maybe-set-mark)
-  (helix-forward-beginning-of-thing 'paragraph count)
+  (helix-forward-beginning-of-thing 'helix-paragraph count)
   (helix-maybe-enable-linewise-selection))
 
 (put 'helix-forward-paragraph 'multiple-cursors t)
@@ -240,7 +240,7 @@ Use visual line when `visual-line-mode' is active."
   (interactive "p")
   (helix-carry-linewise-selection)
   (helix-maybe-set-mark)
-  (forward-thing 'paragraph (- count))
+  (forward-thing 'helix-paragraph (- count))
   (helix-maybe-enable-linewise-selection))
 
 (put 'helix-backward-paragraph 'multiple-cursors t)
@@ -1309,7 +1309,7 @@ already there."
 (defun helix-mark-inner-paragraph (count)
   (interactive "p")
   (helix-push-point)
-  (helix-mark-inner-thing 'paragraph count))
+  (helix-mark-inner-thing 'helix-paragraph count))
 
 (put 'helix-mark-inner-paragraph 'multiple-cursors t)
 (put 'helix-mark-inner-paragraph 'helix-merge-regions t)
@@ -1318,7 +1318,7 @@ already there."
 (defun helix-mark-a-paragraph ()
   (interactive)
   (helix-push-point)
-  (helix-mark-a-thing 'paragraph))
+  (helix-mark-a-thing 'helix-paragraph))
 
 (put 'helix-mark-a-paragraph 'multiple-cursors t)
 (put 'helix-mark-a-paragraph 'helix-merge-regions t)
