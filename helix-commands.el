@@ -1982,5 +1982,34 @@ Rebalance all children of the deleted window's parent window."
 
 (put 'helix-window-delete 'multiple-cursors 'false)
 
+(defun helix-clone-indirect-buffer ()
+  "Create indirect buffer and open it in the current window.
+This command was written because `clone-indirect-buffer' calls `pop-to-buffer'
+and opens a new window."
+  (interactive)
+  (-doto (clone-indirect-buffer nil nil)
+    (switch-to-buffer)
+    (set-buffer)))
+
+(put 'helix-clone-indirect-buffer 'multiple-cursors 'false)
+
+(defun helix-kill-current-buffer-and-window ()
+  "Kill the current buffer and delete the current window or tab."
+  (interactive)
+  (let ((parent-win (window-parent)))
+    (kill-buffer (current-buffer))
+    ;; If tabs are enabled and this is the only visible window, then attempt to
+    ;; close this tab.
+    (if (and (bound-and-true-p tab-bar-mode)
+             (null parent-win))
+        (tab-close)
+      ;; else
+      (delete-window)
+      ;; balance-windows raises an error if the parent does not have
+      ;; any further children (then rebalancing is not necessary anyway)
+      (ignore-errors (balance-windows parent-win)))))
+
+(put 'helix-kill-current-buffer-and-window 'multiple-cursors 'false)
+
 (provide 'helix-commands)
 ;;; helix-commands.el ends here
