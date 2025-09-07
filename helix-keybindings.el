@@ -83,6 +83,8 @@
   "[ s" #'helix-backward-sentence
   "] ." #'helix-forward-sentence
   "[ ." #'helix-backward-sentence
+  "] e" #'next-error
+  "[ e" #'previous-error
 
   ;; Easymotion / Avy
   "g w" #'helix-avy-word-forward
@@ -168,11 +170,17 @@
         "W"   #'helix-mark-inner-WORD
         "i W" #'helix-mark-inner-WORD
         "a W" #'helix-mark-a-WORD
+        ;; sentence
+        "."   #'helix-mark-inner-sentence
+        "i ." #'helix-mark-inner-sentence
+        "a ." #'helix-mark-a-sentence
         "i s" #'helix-mark-inner-sentence
         "a s" #'helix-mark-a-sentence
+        ;; function
         "f"   #'helix-mark-inner-function
         "i f" #'helix-mark-inner-function
         "a f" #'helix-mark-a-function
+        ;; paragraph
         "p"   #'helix-mark-inner-paragraph
         "i p" #'helix-mark-inner-paragraph
         "a p" #'helix-mark-a-paragraph
@@ -255,6 +263,7 @@
   "C-o"   #'pop-to-mark-command
   "g c"   #'comment-dwim
   "g f"   #'find-file-at-point
+  "g i"   #'imenu
   "g x"   #'browse-url-at-point
   "g q"   #'fill-region
   "] SPC" #'helix-add-blank-line-below
@@ -263,11 +272,10 @@
   "z w"   #'helix-widen-indirectly-narrowed
 
   ;; Xref
-  "g d"     #'xref-find-definitions
-  "C-w g d" #'xref-find-definitions-other-window
-  "g D"     #'xref-find-references
-  "[ x"     #'xref-go-back
-  "] x"     #'xref-go-forward)
+  "g d" #'xref-find-definitions
+  "g D" #'xref-find-references
+  "[ x" #'xref-go-back
+  "] x" #'xref-go-forward)
 
 ;;;; Windows
 
@@ -276,11 +284,12 @@
 
 (define-prefix-command 'helix-window-map)
 (helix-keymap-set helix-window-map nil
+  ;; windows
   "s"   #'helix-window-split
   "v"   #'helix-window-vsplit
-  "d"   #'helix-window-delete
   "c"   #'helix-window-delete
   "o"   #'delete-other-windows
+  "n"   #'other-window-prefix
   "h"   #'helix-window-left
   "j"   #'helix-window-down
   "k"   #'helix-window-up
@@ -292,7 +301,14 @@
   "H"   #'helix-move-window-left
   "J"   #'helix-move-window-down
   "K"   #'helix-move-window-up
-  "L"   #'helix-move-window-right)
+  "L"   #'helix-move-window-right
+  ;; buffers
+  "d"   #'kill-current-buffer
+  "q"   #'helix-kill-current-buffer-and-window
+  "b"   #'clone-indirect-buffer-other-window
+  "B"   #'helix-clone-indirect-buffer
+  ;; xref
+  "g d" #'xref-find-definitions-other-window)
 
 ;;; Keybindings common between Normal and Motion states
 
