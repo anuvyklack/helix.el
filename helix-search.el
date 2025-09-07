@@ -244,30 +244,26 @@ RANGES is a list of cons cells with positions (START . END)."
 (defun helix-search--do-update ()
   (let ((pattern (minibuffer-contents-no-properties)))
     (with-selected-window (minibuffer-selected-window)
-      (let ((dir helix-search--direction)
-            (hl helix-search--hl)
-            ;; Recenter point after jump if it lands out of the screen.
-            (scroll-conservatively 0))
-        (goto-char helix-search--point)
-        (if-let* (((not (string-empty-p pattern)))
-                  (regexp (helix-pcre-to-elisp pattern))
-                  (match-range (helixf-search--search regexp dir)))
-            (-let [(beg . end) match-range]
-              (goto-char (if (< dir 0) beg end))
-              (helix-search--set-target-overlay beg end)
-              (setf (helix-highlight-regexp hl) regexp)
-              (helix-highlight-update hl))
-          ;; else
-          (when helix-search--overlay
-            (delete-overlay helix-search--overlay))
-          (helix-highlight-delete hl)
-          (helix-echo "Search failed" 'error))
-        (when (and (<= helix-search--window-start (point) helix-search--window-end)
-                   (/= (window-start) helix-search--window-start))
-          (set-window-start nil helix-search--window-start :noforce))
-        ;; Update the screen so that the temporary value for
-        ;; `scroll-conservatively' is taken into account.
-        (redisplay)))))
+      (helix-with-recenter-point-on-jump
+        (let ((dir helix-search--direction)
+              (hl helix-search--hl))
+          (goto-char helix-search--point)
+          (if-let* (((not (string-empty-p pattern)))
+                    (regexp (helix-pcre-to-elisp pattern))
+                    (match-range (helixf-search--search regexp dir)))
+              (-let [(beg . end) match-range]
+                (goto-char (if (< dir 0) beg end))
+                (helix-search--set-target-overlay beg end)
+                (setf (helix-highlight-regexp hl) regexp)
+                (helix-highlight-update hl))
+            ;; else
+            (when helix-search--overlay
+              (delete-overlay helix-search--overlay))
+            (helix-highlight-delete hl)
+            (helix-echo "Search failed" 'error))
+          (when (and (<= helix-search--window-start (point) helix-search--window-end)
+                     (/= (window-start) helix-search--window-start))
+            (set-window-start nil helix-search--window-start :noforce)))))))
 
 (defun helixf-search--search (regexp dir)
   (if (helix-re-search-with-wrap regexp dir)

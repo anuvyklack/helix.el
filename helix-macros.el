@@ -82,6 +82,15 @@ when `helix-mode' is toggled on or off"
        ;; else
        ,@body)))
 
+(defmacro helix-with-recenter-point-on-jump (&rest body)
+  "Recenter point on jumps if it lands out of the screen."
+  (declare (indent 0) (debug t))
+  `(let ((scroll-conservatively 0))
+     (prog1 (progn ,@body)
+       ;; Update the screen so that the temporary value for
+       ;; `scroll-conservatively' is taken into account.
+       (redisplay))))
+
 (defmacro helix-save-region (&rest body)
   "Evaluate BODY with preserving original region.
 The difference from `save-mark-and-excursion' is that both point and mark are
