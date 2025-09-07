@@ -1134,13 +1134,12 @@ at START-COLUMN, ends at END-COLUMN and consists of NUMBER-OF-LINES."
   "Rotate main selection forward COUNT times."
   (interactive "p")
   (when helix-multiple-cursors-mode
-    (let ((scroll-conservatively 0))
+    (helix-with-recenter-point-on-jump
       (dotimes (_ count)
         (let ((cursor (or (helix-next-fake-cursor (point))
                           (helix-first-fake-cursor))))
           (helix-create-fake-cursor-from-point)
-          (helix-restore-point-from-fake-cursor cursor))))
-    (redisplay)))
+          (helix-restore-point-from-fake-cursor cursor))))))
 
 (put 'helix-rotate-selections-forward 'multiple-cursors 'false)
 
@@ -1149,13 +1148,12 @@ at START-COLUMN, ends at END-COLUMN and consists of NUMBER-OF-LINES."
   "Rotate main selection backward COUNT times."
   (interactive "p")
   (when helix-multiple-cursors-mode
-    (let ((scroll-conservatively 0))
+    (helix-with-recenter-point-on-jump
       (dotimes (_ count)
         (let ((cursor (or (helix-previous-fake-cursor (point))
                           (helix-last-fake-cursor))))
           (helix-create-fake-cursor-from-point)
-          (helix-restore-point-from-fake-cursor cursor)))
-      (redisplay))))
+          (helix-restore-point-from-fake-cursor cursor))))))
 
 (put 'helix-rotate-selections-backward 'multiple-cursors 'false)
 
@@ -1642,22 +1640,18 @@ keys to repeat motion forward/backward."
   (when (< helix-search--direction 0)
     (setq count (- count)))
   (let ((regexp (helix-search-pattern))
-        (region-dir (if (use-region-p) (helix-region-direction) 1))
-        ;; Recenter point after jump if it lands out of the screen.
-        (scroll-conservatively 0))
-    (helix-motion-loop (search-dir count)
-      (-when-let ((beg . end) (save-excursion
-                                (helixf-search--search regexp search-dir)))
-        ;; Push mark on first invocation.
-        (unless (or (memq last-command '(helix-search-next helix-search-previous))
-                    (helix-search--keep-highlight-p last-command))
-          (helix-push-point))
-        (when (and helix--extend-selection (use-region-p))
-          (helix-create-fake-cursor-from-point))
-        (helix-set-region beg end region-dir)))
-    ;; Update the screen so that the temporary value for
-    ;; `scroll-conservatively' is taken into account.
-    (redisplay)
+        (region-dir (if (use-region-p) (helix-region-direction) 1)))
+    (helix-with-recenter-point-on-jump
+      (helix-motion-loop (search-dir count)
+        (-when-let ((beg . end) (save-excursion
+                                  (helixf-search--search regexp search-dir)))
+          ;; Push mark on first invocation.
+          (unless (or (memq last-command '(helix-search-next helix-search-previous))
+                      (helix-search--keep-highlight-p last-command))
+            (helix-push-point))
+          (when (and helix--extend-selection (use-region-p))
+            (helix-create-fake-cursor-from-point))
+          (helix-set-region beg end region-dir))))
     (helix-highlight-search-pattern regexp)))
 
 (put 'helix-search-next 'multiple-cursors 'false)
