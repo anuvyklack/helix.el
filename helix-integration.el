@@ -94,6 +94,7 @@ in the command loop, and the fake cursors can pick up on those instead."
   (helix-advice-add command :around #'helix-keep-selection-a))
 
 ;;; Eldoc
+
 (with-eval-after-load 'eldoc
   ;; Add motion commands to the `eldoc-message-commands' obarray.
   (eldoc-add-command 'helix-backward-char        ;; h
@@ -140,6 +141,7 @@ in the command loop, and the fake cursors can pick up on those instead."
       "U" nil)))
 
 ;;; Keypad
+
 (with-eval-after-load 'keypad
   (helix-define-advice keypad (:after ())
     "Execute selected command for all cursors."
@@ -156,11 +158,12 @@ in the command loop, and the fake cursors can pick up on those instead."
       "<help> k" 'keypad-describe-key)))
 
 ;;; Edebug
+
 (with-eval-after-load 'edebug
   (add-hook 'edebug-mode-hook #'helix-update-active-keymaps)
-  (keymap-unset edebug-mode-map "SPC") ; edebug-step-mode
-  (keymap-unset edebug-mode-map "h") ; edebug-goto-here
   (helix-keymap-set edebug-mode-map nil
+    "SPC" nil ; unding `edebug-step-mode'
+    "h"   nil ; unding `edebug-goto-here'
     "s" #'edebug-step-mode
     "H" #'edebug-goto-here
     "C-c h" #'edebug-goto-here))
@@ -180,6 +183,8 @@ in the command loop, and the fake cursors can pick up on those instead."
   (put 'helpful-variable 'multiple-cursors 'false))
 
 ;;; Special mode
+
+;; hjkl keys are free in `special-mode-map' by default, so we can use them.
 (helix-keymap-set special-mode-map nil ;; 'motion
   "h" #'left-char
   "j" #'next-line
@@ -187,16 +192,31 @@ in the command loop, and the fake cursors can pick up on those instead."
   "l" #'right-char)
 
 ;;; Messages buffer
+
 (helix-set-initial-state 'messages-buffer-mode 'normal)
 
 ;;; Minibuffer
+
 (helix-keymap-set minibuffer-mode-map 'normal
   ;; "ESC" 'abort-minibuffers
-  "<escape>" 'abort-recursive-edit)
+  "<escape>" 'abort-recursive-edit
+  "C-j" 'next-line-or-history-element
+  "C-k" 'previous-line-or-history-element)
+
+(helix-keymap-set read-expression-map nil
+  "C-j" #'next-line-or-history-element
+  "C-k" #'previous-line-or-history-element)
+
+;; C-j is binded in `read--expression-map' to `read--expression-try-read'
+;; which is also binded to RET. Delete it, to make the binding from the parent
+;; `read-expression-map' keymap available.
+(keymap-unset read--expression-map "C-j" :remove)
 
 ;;;; Vertico
+
 (with-eval-after-load 'vertico
   (helix-keymap-set vertico-map 'normal
+    "y"   'vertico-save ;; Copy current candidate to kill ring
     "j"   'vertico-next
     "k"   'vertico-previous
     "g g" 'vertico-first
@@ -205,43 +225,111 @@ in the command loop, and the fake cursors can pick up on those instead."
     "C-b" 'vertico-scroll-down
     "C-d" 'vertico-scroll-up
     "C-u" 'vertico-scroll-down
-    "g j" 'vertico-next-group
-    "g k" 'vertico-previous-group
+    ;; Rebind forward/backward paragraphs keys
     "] p" 'vertico-next-group
     "[ p" 'vertico-previous-group
     "}"   'vertico-next-group
-    "{"   'vertico-previous-group
-    ;; "n"   'vertico-next-group
-    ;; "N"   'vertico-previous-group
-    "y"   'vertico-save))
+    "{"   'vertico-previous-group))
+
+;;; Xref
+
+(with-eval-after-load 'xref
+  (dolist (cmd '(xref-find-definitions
+                 xref-find-references
+                 xref-go-back
+                 xref-go-forward))
+    (helix-advice-add cmd :around #'helix-jump-command)
+    (put cmd 'helix-merge-regions 'extend-selection)))
+
+;;; Occur Edit mode
+
+(with-eval-after-load 'replace
+  (helix-advice-add 'occur-mode-goto-occurrence :around #'helix-jump-command))
 
 ;;; Corfu
+
 (with-eval-after-load 'corfu
   ;; Close corfu popup on Insert state exit.
-  (add-hook 'helix-insert-state-exit-hook #'corfu-quit))
+  (add-hook 'helix-insert-state-exit-hook #'corfu-quit)
+
+  (helix-keymap-set corfu-map nil
+    "C-SPC" #'corfu-insert-separator
+
+    "C-k" #'corfu-previous
+    "C-j" #'corfu-next
+
+    "C-h" #'corfu-info-documentation
+    "C-l" #'corfu-info-location
+
+    "C-f" #'corfu-scroll-up
+    "C-b" #'corfu-scroll-down
+    "C-u" #'corfu-scroll-down
+    "C-d" #'corfu-scroll-up))
 
 ;;; Consult
+
 (with-eval-after-load 'consult
   (helix-cache-input consult--read)
-  (put 'consult-yank-pop 'multiple-cursors t))
+
+  ;; Execute `consult-yank-pop' for all cursors.
+  (put 'consult-yank-pop 'multiple-cursors t)
+
+  (dolist (cmd '(consult-line
+                 consult-mark
+                 consult-global-mark
+                 consult-imenu
+                 consult-outline
+                 consult-grep
+                 consult-git-grep
+                 consult-ripgrep))
+    (helix-advice-add cmd :before #'helix-deactivate-mark)))
 
 ;;; Outline
+
 (dolist (command '(outline-up-heading
                    outline-next-visible-heading
                    outline-previous-visible-heading
                    outline-forward-same-level
                    outline-backward-same-level))
   (put command 'helix-merge-regions 'extend-selection)
-  (helix-advice-add command :before #'helix-deactivate-mark-a)
+  (helix-advice-add command :before #'helix-deactivate-mark)
   (helix-advice-add command :after #'helix-reveal-point-when-on-top))
 
 ;;; Major modes
-;;;; Lisp mode
+;;;; Emacs Lisp (elisp)
 
-(add-hook 'emacs-lisp-mode-hook #'helix-surround-emacs-lisp)
-(defun helix-surround-emacs-lisp ()
+(dolist (map '(emacs-lisp-mode-map
+               lisp-data-mode-map))
+  (helix-keymap-set map 'normal
+    "m `"   #'helix-mark-inner-legacy-quoted
+    "m '"   #'helix-mark-inner-legacy-quoted
+    "m i `" #'helix-mark-inner-legacy-quoted
+    "m i '" #'helix-mark-inner-legacy-quoted
+    "m a `" #'helix-mark-a-legacy-quoted
+    "m a '" #'helix-mark-a-legacy-quoted))
+
+(add-hook 'emacs-lisp-mode-hook #'helix-configure-for-emacs-lisp)
+(add-hook 'lisp-data-mode-hook  #'helix-configure-for-emacs-lisp)
+
+(defun helix-configure-for-emacs-lisp ()
   (helix-surround-add-pair ?` (cons "`" "'"))
   (helix-surround-add-pair ?' (cons "`" "'")))
+
+(defun helix-mark-inner-legacy-quoted ()
+  (interactive)
+  (-when-let ((_ beg end _) (helix-surround-4-bounds-at-point "`" "'"))
+    (helix-set-region beg end)))
+
+(put 'helix-mark-inner-legacy-quoted 'multiple-cursors t)
+(put 'helix-mark-inner-legacy-quoted 'helix-merge-regions t)
+
+(defun helix-mark-a-legacy-quoted ()
+  (interactive)
+  (-when-let ((beg _ _ end) (helix-surround-4-bounds-at-point "`" "'"))
+    (helix-set-region beg end)))
+
+(put 'helix-mark-a-legacy-quoted 'multiple-cursors t)
+(put 'helix-mark-a-legacy-quoted 'helix-merge-regions t)
 
 ;;;; Org mode
 

@@ -1075,16 +1075,23 @@ Intended to be use as `:after' advice."
 
 (declare-function helix-extend-selection "helix-commands")
 
-(defun helix-keep-selection-a (orig-fun &rest args)
+(defun helix-keep-selection-a (fun &rest args)
   "Keep region active, disable extending selection (`v' key)."
   (let ((deactivate-mark nil))
-    (apply orig-fun args))
+    (apply fun args))
   (helix-extend-selection -1))
 
-(defun helix-deactivate-mark-a (&rest _)
-  "This function is intended to be used as advice."
+(defun helix-deactivate-mark (&rest _)
+  "Deactivate mark and linewise selection.
+This function can be used as advice."
   (setq helix-linewise-selection nil)
   (deactivate-mark))
+
+(defun helix-jump-command (command &rest args)
+  "Aroung advice for COMMAND that moves point."
+  (helix-with-recenter-point-on-jump
+    (apply command args))
+  (helix-deactivate-mark))
 
 (provide 'helix-common)
 ;;; helix-common.el ends here
