@@ -122,56 +122,5 @@ saved as markers and correctly handle case when text was inserted before region.
            (goto-char ,pnt)
            (set-marker ,pnt nil))))))
 
-(defmacro helix-define-keymap-with-digit-argument (symbol &rest definitions)
-  "Make sparse keymap, define it as prefix command and bind it to SYMBOL.
-
-Binds digits 0-9 to a special command that sets the numeric argument
-while keeping the keymap active.
-
-SYMBOL should be an unquoted symbol.
-
-Keywords:
-`:parent'   Keymap that will be used as parent (see `set-keymap-parent').
-
-KEY/DEFINITION pairs are as KEY and DEF in `keymap-set'.
-
-\(fn SYMBOL &key PARENT &rest [KEY DEFINITION]...)"
-  (declare (indent 1) (debug t))
-  (let* ((digit-argument-fun-name (format "%s-digit-argument" symbol))
-         (digit-argument-fun-symbol (make-symbol digit-argument-fun-name))
-         (parent-map (pcase (car-safe definitions)
-                       (:parent (pop definitions)
-                                (pop definitions)))))
-    `(progn
-       (defvar ,symbol nil)
-       (define-prefix-command ',symbol)
-       ,@(when parent-map
-           `((set-keymap-parent ,symbol ,parent-map)))
-
-       ;; Digit argument command
-       (defun ,digit-argument-fun-symbol (arg)
-         ,(format "Like `digit-argument' but keep `%s' active." symbol)
-         (interactive "P")
-         (digit-argument arg)
-         (set-transient-map ,symbol))
-       (put ',digit-argument-fun-symbol 'multiple-cursors 'false)
-
-       ;; Do not show keys binded to our digit argument command
-       ;; in which-key popup.
-       (with-eval-after-load 'which-key
-         (defvar which-key-replacement-alist)
-         (cl-pushnew '((nil . ,digit-argument-fun-name) . ignore)
-                     which-key-replacement-alist
-                     :test #'equal))
-
-       ;; Set keybindings for 0-9 keys
-       ,@(cl-loop for i from 0 to 9 collect
-                  `(keymap-set ,symbol ,(format "%s" i) #',digit-argument-fun-symbol))
-       ;; Set KEY DEFINITION pairs
-       ,@(cl-loop for (key def) in (-partition 2 definitions)
-                  collect
-                  `(keymap-set ,symbol ,key ,def))
-       ',symbol)))
-
 (provide 'helix-macros)
 ;;; helix-macros.el ends here
