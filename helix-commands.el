@@ -385,9 +385,7 @@ Use visual line when `visual-line-mode' is active."
   (interactive)
   (helix-delete-all-fake-cursors)
   (helix-push-point)
-  (unless helix--extend-selection
-    (setq helix-linewise-selection nil)
-    (deactivate-mark))
+  (unless helix--extend-selection (helix-deactivate-mark))
   (let ((temporary-goal-column (current-column)))
     (-> (helix-collect-positions #'next-line)
         (avy-process)))
@@ -403,9 +401,7 @@ Use visual line when `visual-line-mode' is active."
   (interactive)
   (helix-delete-all-fake-cursors)
   (helix-push-point)
-  (unless helix--extend-selection
-    (setq helix-linewise-selection nil)
-    (deactivate-mark))
+  (unless helix--extend-selection (helix-deactivate-mark))
   (let ((temporary-goal-column (current-column)))
     (-> (helix-collect-positions #'previous-line)
         (avy-process)))
@@ -1271,7 +1267,7 @@ already there."
 (put 'helix-mark-a-WORD 'multiple-cursors t)
 (put 'helix-mark-a-WORD 'helix-merge-regions t)
 
-;; mis
+;; mi.
 (defun helix-mark-inner-sentence (count)
   (interactive "p")
   (helix-mark-inner-thing 'helix-sentence count))
@@ -1279,7 +1275,7 @@ already there."
 (put 'helix-mark-inner-sentence 'multiple-cursors t)
 (put 'helix-mark-inner-sentence 'helix-merge-regions t)
 
-;; mas
+;; ma.
 (defun helix-mark-a-sentence ()
   (interactive)
   (let ((thing 'helix-sentence))
