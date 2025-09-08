@@ -355,29 +355,32 @@ CHECKED-MODES is used internally and should not be set initially."
   "Set the value of the `helix-mode-map-alist' in the current buffer
 according to the Helix STATE."
   (setq helix-mode-map-alist
-        (when state
-          ;; Order matters
-          `(;; Edebug if active
-            ,@(if edebug-mode
-                  `((edebug-mode . ,edebug-mode-map))
-                ;; (let ((map (or (helix-get-nested-helix-keymap edebug-mode-map state)
-                ;;                edebug-mode-map)))
-                ;;   `((edebug-mode . ,map)))
-                )
-            ;; Helix buffer local overriding map
-            ,@(-if-let (map (helix-get-nested-helix-keymap
-                             helix-overriding-local-map state))
-                  `((:helix-override-map . ,map)))
-            ;; Helix keymaps nested in other keymaps
-            ,@(let (maps)
-                (dolist (keymap (current-active-maps))
-                  (when-let* ((helix-map (helix-get-nested-helix-keymap keymap state))
-                              (mode (helix-minor-mode-for-keymap keymap)))
-                    (push (cons mode helix-map) maps)))
-                (nreverse maps))
-            ;; Main state keymap
-            ,(cons (helix-state-property state :variable)
-                   (helix-state-property state :keymap))))))
+        (if state
+            ;; Order matters: the first found binding will be accepted,
+            ;; so earlier keymaps has higher priority.
+            `(
+              ;; Edebug if active
+              ,@(if edebug-mode
+                    `((edebug-mode . ,edebug-mode-map)))
+              ;; ,@(if edebug-mode
+              ;;       (let ((map (or (helix-get-nested-helix-keymap edebug-mode-map state)
+              ;;                      edebug-mode-map)))
+              ;;         `((edebug-mode . ,map))))
+              ;; Helix buffer local overriding map
+              ,@(-if-let (map (helix-get-nested-helix-keymap
+                               helix-overriding-local-map state))
+                    `((:helix-override-map . ,map)))
+              ;; Helix keymaps nested in other keymaps
+              ,@(let (helix-map maps)
+                  (dolist (keymap (current-active-maps))
+                    (setq helix-map (helix-get-nested-helix-keymap keymap state))
+                    (when helix-map
+                      (push (cons (helix-minor-mode-for-keymap keymap) helix-map)
+                            maps)))
+                  (nreverse maps))
+              ;; Main state keymap
+              ,(cons (helix-state-property state :variable)
+                     (helix-state-property state :keymap))))))
 
 (defun helix-minor-mode-for-keymap (keymap)
   "Return the minor mode associated with KEYMAP or t if it doesn't have one."
@@ -395,7 +398,7 @@ according to the Helix STATE."
           helix-map))))
 
 (defun helix-create-nested-helix-keymap (keymap state)
-  "Create in KEYMAP a nested keymap for Helix STATE."
+  "Create a nested keymap for Helix STATE inside the given KEYMAP."
   (let ((helix-map (make-sparse-keymap))
         (key (vector (intern (format "%s-state" state))))
         (prompt (format "Helix keymap for %s"
@@ -406,14 +409,14 @@ according to the Helix STATE."
     helix-map))
 
 (defun helix-set-keymap-prompt (keymap prompt)
-  "Set the prompt-string of KEYMAP to PROMPT."
+  "Set the prompt-string of the KEYMAP to PROMPT."
   (delq (keymap-prompt keymap) keymap)
   (when prompt
     (setcdr keymap (cons prompt (cdr keymap)))))
 
 (defun helix-nested-keymap-p (keymap)
   "Return non-nil if KEYMAP is a Helix nested keymap."
-  (if-let* ((prompt (keymap-prompt keymap)))
+  (-if-let (prompt (keymap-prompt keymap))
       (string-prefix-p "Helix keymap" prompt)))
 
 (defun helix-keymap-set (keymap state &rest bindings)
@@ -474,7 +477,14 @@ For example:
 
 \(fn STATE &rest [KEY DEFINITION]...)"
   (declare (indent defun))
-  (apply #'helix-keymap-set nil state bindings))
+  (apply #'helix-keymap-set (current-global-map) state bindings))
+
+(defun helix-keymap-local-set (state &rest bindings)
+  (declare (indent defun))
+  (let ((local-map (or (current-local-map)
+                       (-doto (make-sparse-keymap)
+                         (use-local-map)))))
+    (apply #'helix-keymap-set local-map state bindings)))
 
 (defun helix-keymap-overriding-set (state &rest bindings)
   "Create keybindings from KEY to DEFINITION for Helix STATE in
@@ -485,17 +495,6 @@ are buffer local and take precedence over all others.
   (unless helix-overriding-local-map
     (setq helix-overriding-local-map (make-sparse-keymap)))
   (apply #'helix-keymap-set helix-overriding-local-map state bindings))
-
-(defun helix-set-intercept-keymap (keymap)
-  "Make KEYMAP override all Helix keymaps."
-  (when (keymapp keymap)
-    (define-key keymap [helix-intercept] #'undefined)))
-
-(defun helix-intercept-keymap-p (keymap)
-  "Return non-nil if KEYMAP should override all Helix keymaps."
-  (if (and (keymapp keymap)
-           (lookup-key keymap [helix-intercept]))
-      keymap))
 
 ;;; Cursor shape and color
 
