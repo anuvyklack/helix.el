@@ -154,25 +154,6 @@ rate allows highlights to update while scrolling."
   :type 'number
   :group 'helix)
 
-(defcustom helix-jump-commands
-  '(xref-find-definitions
-    xref-find-references
-    xref-go-back
-    xref-go-forward)
-  "List of commands that move point.
-For these commands:
-- Mark will be deactivated.
-- Overlapping selections will be merged."
-  :type '(list symbol)
-  :group 'helix
-  :set #'(lambda (symbol value)
-           (set-default symbol value)
-           (mapc #'(lambda (cmd)
-                     ;; (put cmd 'multiple-cursors 'false)
-                     (put cmd 'helix-merge-regions 'extend-selection)
-                     (helix-advice-add cmd :before #'helix-deactivate-mark-a))
-                 value)))
-
 (defvar helix-keep-search-highlight-commands
   '(helix-extend-selection
     helix-rotate-selections-forward
