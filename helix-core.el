@@ -364,6 +364,10 @@ according to the Helix STATE."
                 ;;                edebug-mode-map)))
                 ;;   `((edebug-mode . ,map)))
                 )
+            ;; Helix buffer local overriding map
+            ,@(-if-let (map (helix-get-nested-helix-keymap
+                             helix-overriding-local-map state))
+                  `((:helix-override-map . ,map)))
             ;; Helix keymaps nested in other keymaps
             ,@(let (maps)
                 (dolist (keymap (current-active-maps))
@@ -384,10 +388,10 @@ according to the Helix STATE."
 
 (defun helix-get-nested-helix-keymap (keymap state)
   "Get from KEYMAP the nested keymap associated with Helix STATE."
-  (when state
-    (let* ((key (vector (intern (format "%s-state" state))))
-           (helix-map (lookup-key keymap key)))
-      (if (helix-nested-keymap-p helix-map)
+  (when (and keymap state)
+    (let ((key (vector (intern (format "%s-state" state)))))
+      (if-let* ((helix-map (lookup-key keymap key))
+                ((helix-nested-keymap-p helix-map)))
           helix-map))))
 
 (defun helix-create-nested-helix-keymap (keymap state)
@@ -471,6 +475,16 @@ For example:
 \(fn STATE &rest [KEY DEFINITION]...)"
   (declare (indent defun))
   (apply #'helix-keymap-set nil state bindings))
+
+(defun helix-keymap-overriding-set (state &rest bindings)
+  "Create keybindings from KEY to DEFINITION for Helix STATE in
+the current buffer-local overriding keymap. These keybindings
+are buffer local and take precedence over all others.
+
+\(fn STATE &rest [KEY DEFINITION]...)"
+  (unless helix-overriding-local-map
+    (setq helix-overriding-local-map (make-sparse-keymap)))
+  (apply #'helix-keymap-set helix-overriding-local-map state bindings))
 
 (defun helix-set-intercept-keymap (keymap)
   "Make KEYMAP override all Helix keymaps."
