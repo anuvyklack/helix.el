@@ -156,17 +156,33 @@
   "n"   #'helix-search-next
   "N"   #'helix-search-previous
 
+  ;; Scrolling
+  "C-b" #'helix-smooth-scroll-page-up
+  "C-f" #'helix-smooth-scroll-page-down
+  "C-d" #'helix-smooth-scroll-down
+  "C-u" #'helix-smooth-scroll-up
+  "C-e" #'helix-mix-scroll-line-down
+  "C-y" #'helix-mix-scroll-line-up
+  ;; "z z" #'helix-smooth-scroll-line-to-center
+  "z z" #'helix-smooth-scroll-line-not-to-very-top
+  "z t" #'helix-smooth-scroll-line-to-top
+  "z b" #'helix-smooth-scroll-line-to-bottom
+
   ;; Misc
   "C-o"   #'pop-to-mark-command
   "g c"   #'comment-dwim
-  "g f"   #'find-file-at-point
   "g i"   #'imenu
+  "g f"   #'find-file-at-point
   "g x"   #'browse-url-at-point
   "g q"   #'fill-region
+  "] b"   #'next-buffer
+  "[ b"   #'previous-buffer
   "] SPC" #'helix-add-blank-line-below
   "[ SPC" #'helix-add-blank-line-above
-  "z n"   #'helix-narrow-to-region-indirectly
-  "z w"   #'helix-widen-indirectly-narrowed
+
+  ;; Narrow to region
+  "z n" #'helix-narrow-to-region-indirectly
+  "z w" #'helix-widen-indirectly-narrowed
 
   ;; Xref
   "g d" #'xref-find-definitions
@@ -340,26 +356,25 @@
   ;; xref
   "g d" #'xref-find-definitions-other-window)
 
-;;; Keybindings common between Normal and Motion states
+;;; Motion state
 
-(dolist (state '(normal motion))
-  (helix-keymap-set nil state
-    "C-w" 'helix-window-map
-    "<backspace>" #'execute-extended-command
-    "] b" #'next-buffer
-    "[ b" #'previous-buffer
+(helix-keymap-global-set 'motion
+  "C-w" 'helix-window-map
+  "<backspace>" #'execute-extended-command
+  "] b" #'next-buffer
+  "[ b" #'previous-buffer
 
-    ;; Scrolling
-    "C-b" #'helix-smooth-scroll-page-up
-    "C-f" #'helix-smooth-scroll-page-down
-    "C-d" #'helix-smooth-scroll-down
-    "C-u" #'helix-smooth-scroll-up
-    "C-e" #'helix-mix-scroll-line-down
-    "C-y" #'helix-mix-scroll-line-up
-    ;; "z z" #'helix-smooth-scroll-line-to-center
-    "z z" #'helix-smooth-scroll-line-not-to-very-top
-    "z t" #'helix-smooth-scroll-line-to-top
-    "z b" #'helix-smooth-scroll-line-to-bottom))
+  ;; Scrolling
+  "C-b" #'helix-smooth-scroll-page-up
+  "C-f" #'helix-smooth-scroll-page-down
+  "C-d" #'helix-smooth-scroll-down
+  "C-u" #'helix-smooth-scroll-up
+  "C-e" #'helix-mix-scroll-line-down
+  "C-y" #'helix-mix-scroll-line-up
+  ;; "z z" #'helix-smooth-scroll-line-to-center
+  "z z" #'helix-smooth-scroll-line-not-to-very-top
+  "z t" #'helix-smooth-scroll-line-to-top
+  "z b" #'helix-smooth-scroll-line-to-bottom)
 
 ;;; Insert state
 
