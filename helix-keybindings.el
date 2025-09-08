@@ -313,7 +313,6 @@
 (helix-keymap-global-set 'normal
   "C-w" 'helix-window-map)
 
-(define-prefix-command 'helix-window-map)
 (helix-keymap-set helix-window-map nil
   ;; windows
   "s"   #'helix-window-split

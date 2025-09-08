@@ -378,8 +378,9 @@ Default value is 0 - scroll half the screen.")
   "Keymap for Helix `m' prefix key commands.")
 (fset 'helix-mark-map helix-mark-map)
 
-(defvar helix-window-map nil
+(defvar helix-window-map (make-sparse-keymap)
   "Keymap for window-related commands.")
+(fset 'helix-window-map helix-window-map)
 
 (defvar helix-regex-history nil
   "List with used regexp patterns.")
