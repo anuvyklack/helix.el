@@ -258,7 +258,7 @@ This function supports a fallback behavior, where it allows to use
 (defun keypad--add-control (key)
   (pcase key
     ("TAB" "C-<tab>")
-    ("RET" "C-<return>")
+    ("RET" "C-RET") ;; "C-<return>"
     ("ESC" "ESC")
     (_ (if (s-contains? "C-" key)
            key
@@ -268,8 +268,8 @@ This function supports a fallback behavior, where it allows to use
   (if (s-contains? "C-" key)
       (keypad--add-control-meta key)
     (pcase key
-      ("TAB" "M-<tab>")
-      ("RET" "M-<return>")
+      ("TAB" "M-TAB") ;; "M-<tab>"
+      ("RET" "M-RET") ;; "M-<return>"
       ("ESC" "ESC")
       (_ (concat "M-" key)))))
 
