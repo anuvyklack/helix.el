@@ -771,6 +771,18 @@ With no selection upcase the character after point."
 
 ;;; Selections
 
+;; M-;
+(defun helix-exchange-point-and-mark ()
+  "Exchange point and mark."
+  (interactive)
+  (when (region-active-p)
+    (helix--exchange-point-and-mark)
+    (when (and (not helix-executing-command-for-fake-cursor)
+               (called-interactively-p 'any))
+      (helix-reveal-point-when-on-top))))
+
+(put 'helix-exchange-point-and-mark 'multiple-cursors t)
+
 ;; v
 (defun helix-extend-selection (&optional arg)
   "Toggle extending selections.
@@ -959,9 +971,9 @@ entered regexp withing current selections."
     (setq helix-linewise-selection nil)
     (let ((dir (helix-region-direction)))
       (helix-skip-chars " \t\r\n" (- dir))
-      (helix-exchange-point-and-mark)
+      (helix--exchange-point-and-mark)
       (helix-skip-chars " \t\r\n" dir)
-      (helix-exchange-point-and-mark))))
+      (helix--exchange-point-and-mark))))
 
 (put 'helix-trim-whitespaces-from-selection 'multiple-cursors t)
 
@@ -992,9 +1004,9 @@ entered regexp withing current selections."
                     (padding (s-repeat (- column (current-column)) " ")))
                 (cond ((and (use-region-p)
                             (natnump (helix-region-direction)))
-                       (helix-exchange-point-and-mark)
+                       (helix--exchange-point-and-mark)
                        (insert padding)
-                       (helix-exchange-point-and-mark))
+                       (helix--exchange-point-and-mark))
                       (t
                        (insert padding)))))))))))
 
@@ -1180,7 +1192,7 @@ at START-COLUMN, ends at END-COLUMN and consists of NUMBER-OF-LINES."
       ;; mark-marker — nil.  We want beginning of a region to be advanced
       ;; on insertion at its position, and end of a region — not.
       (when (natnump dir)
-        (helix-with-each-cursor (helix-exchange-point-and-mark)))
+        (helix-with-each-cursor (helix--exchange-point-and-mark)))
       (helix-with-real-cursor-as-fake
         (let ((cursors (helix-all-fake-cursors :sort)))
           (when backward
@@ -1189,7 +1201,7 @@ at START-COLUMN, ends at END-COLUMN and consists of NUMBER-OF-LINES."
             (helix--rotate-selections-content-1 cursors))))
       ;; Restore original regions direction.
       (unless (eql dir (helix-region-direction))
-        (helix-with-each-cursor (helix-exchange-point-and-mark))))))
+        (helix-with-each-cursor (helix--exchange-point-and-mark))))))
 
 (defun helix--rotate-selections-content-1 (cursors)
   "Rotate regions content for all CURSORS."
@@ -1322,7 +1334,8 @@ already there."
   (interactive "p")
   (helix-push-point)
   (helix-mark-inner-thing 'helix-function count)
-  (helix-exchange-point-and-mark))
+  (helix--exchange-point-and-mark)
+  (helix-reveal-point-when-on-top))
 
 (put 'helix-mark-inner-function 'multiple-cursors t)
 (put 'helix-mark-inner-function 'helix-merge-regions t)
