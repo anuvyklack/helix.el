@@ -97,17 +97,19 @@ negative — preceding char."
       (following-char)
     (preceding-char)))
 
-(defun helix-beginning-of-line ()
-  "Move point to beginning of current line.
-Use visual line when `visual-line-mode' is active."
+(defun helix-beginning-of-line (&optional count)
+  "Move point to the beginning of current line.
+Move over visual line when `visual-line-mode' is active."
   (if visual-line-mode
-      (beginning-of-visual-line)
-    (move-beginning-of-line nil)))
+      (beginning-of-visual-line count)
+    (helix--beginning-of-line count)))
 
-(defun helix-end-of-line ()
+(defun helix-end-of-line (&optional count)
+  "Move point to the end of current line.
+Move over visual line when `visual-line-mode' is active."
   (if visual-line-mode
-      (end-of-visual-line)
-    (move-end-of-line 1)))
+      (end-of-visual-line count)
+    (move-end-of-line count)))
 
 (defun helix--forward-word-start (thing count)
   "Move to the COUNT-th next start of a word-like THING."
@@ -168,11 +170,56 @@ COUNT minus number of steps moved; if backward, COUNT plus number moved.
 
 ;;; Things
 
-;; `visual-line' thing
-(put 'visual-line 'forward-op #'(lambda (&optional count)
-                                  (vertical-motion (or count 1))))
-;; (put 'visual-line 'beginning-op 'beginning-of-visual-line)
-;; (put 'visual-line 'end-op       'end-of-visual-line)
+;; `helix-line' thing
+(put 'helix-line 'forward-op #'helix--forward-line)
+(put 'helix-line 'bounds-of-thing-at-point
+     #'(lambda ()
+         (cons (save-excursion (helix--beginning-of-line 1) (point))
+               (save-excursion (helix--forward-line 1) (point)))))
+
+(defun helix--forward-line (&optional count)
+  "Goto COUNT visible logical lines forward (backward if COUNT is negative).
+The difference from `forward-line' is that this function ignores invisible parts
+of the buffer (lines folded by `outline-minor-mode' for example) and always
+moves only over visible lines."
+  ;; Adopted from `move-end-of-line'.
+  (or count (setq count 1))
+  (let ((goal-column 0)
+	(line-move-visual nil)
+        (inhibit-field-text-motion (minibufferp))) ; bug#65980
+    (and (line-move count t)
+	 (not (bobp))
+	 (while (and (not (bobp))
+                     (invisible-p (1- (point))))
+	   (goto-char (previous-single-char-property-change
+                       (point) 'invisible))))))
+
+(defun helix--beginning-of-line (&optional count)
+  "Go to the beginning of the current visible logical line.
+Adopted from `move-beginning-of-line'."
+  (or count (setq count 1))
+  (let ((orig-point (point)))
+    ;; Move by lines, if COUNT is not 1 (the default).
+    (when (/= count 1)
+      (let ((line-move-visual nil))
+	(line-move (1- count) t)))
+    ;; Move to beginning-of-line, ignoring fields and invisible text.
+    (let ((inhibit-field-text-motion t))
+      (goto-char (line-beginning-position))
+      (while (and (not (bobp)) (invisible-p (1- (point))))
+        (goto-char (previous-char-property-change (point)))
+        (goto-char (line-beginning-position))))
+    ;; Now find first visible char in the line.
+    (while (and (< (point) orig-point)
+                (invisible-p (point)))
+      (goto-char (next-char-property-change (point) orig-point)))
+    ;; Obey field constraints.
+    (goto-char (constrain-to-field (point) orig-point (/= count 1) t nil))))
+
+;; `helix-visual-line' thing
+(put 'helix-visual-line 'forward-op #'vertical-motion)
+;; (put 'helix-visual-line 'beginning-op #'beginning-of-visual-line)
+;; (put 'helix-visual-line 'end-op       #'end-of-visual-line)
 
 ;; `helix-word' thing
 (defun forward-helix-word (&optional count)
