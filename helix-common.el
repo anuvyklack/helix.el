@@ -1079,8 +1079,7 @@ See `helix-linewise-selection'"
   (when helix-linewise-selection
     (helix-set-region (region-beginning) (1+ (region-end))
                       (helix-region-direction))
-    (when helix-main-selection-overlay
-      (delete-overlay helix-main-selection-overlay))
+    (helix-delete-main-selection-overlay)
     (setq helix-linewise-selection nil)
     t))
 
@@ -1106,10 +1105,10 @@ See `helix-linewise-selection'"
   (when helix-linewise-selection
     (setq helix-linewise-selection nil)
     (unless helix-executing-command-for-fake-cursor
-      (delete-overlay helix-main-selection-overlay))))
+      (helix-delete-main-selection-overlay))))
 
 (defun helix-delete-main-selection-overlay ()
-  (when helix-linewise-selection
+  (when helix-main-selection-overlay
     (delete-overlay helix-main-selection-overlay)))
 
 (defun helix-reveal-point-when-on-top (&rest _)
