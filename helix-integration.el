@@ -140,23 +140,6 @@ in the command loop, and the fake cursors can pick up on those instead."
       "u" nil
       "U" nil)))
 
-;;; Keypad
-
-(with-eval-after-load 'keypad
-  (helix-define-advice keypad (:after ())
-    "Execute selected command for all cursors."
-    (setq helix-this-command this-command))
-
-  (put 'keypad 'multiple-cursors 'false)
-  (put 'keypad-describe-key 'multiple-cursors 'false)
-
-  (dolist (state '(normal motion))
-    (helix-keymap-global-set state
-      "SPC"      'keypad
-      "C-h k"    'keypad-describe-key
-      "<f1> k"   'keypad-describe-key
-      "<help> k" 'keypad-describe-key)))
-
 ;;; Edebug
 
 (with-eval-after-load 'edebug
@@ -185,10 +168,14 @@ in the command loop, and the fake cursors can pick up on those instead."
   ;;   "q" #'quit-window)
   (put 'helpful-variable 'multiple-cursors 'false))
 
+;;; Button
+
+(helix-advice-add 'forward-button :before #'helix-deactivate-mark)
+
 ;;; Special mode
 
 ;; hjkl keys are free in `special-mode-map' by default, so we can use them.
-(helix-keymap-set special-mode-map nil ;; 'motion
+(helix-keymap-set special-mode-map nil
   "h" #'left-char
   "j" #'next-line
   "k" #'previous-line
@@ -203,12 +190,17 @@ in the command loop, and the fake cursors can pick up on those instead."
 (helix-keymap-set minibuffer-mode-map 'normal
   ;; "ESC" 'abort-minibuffers
   "<escape>" 'abort-recursive-edit
+  ;; "<down>"   'next-line-or-history-element
+  ;; "<up>"     'previous-line-or-history-element
   "C-j" 'next-line-or-history-element
   "C-k" 'previous-line-or-history-element)
 
 (helix-keymap-set read-expression-map nil
-  "C-j" #'next-line-or-history-element
-  "C-k" #'previous-line-or-history-element)
+  "C-j" 'next-line-or-history-element
+  "C-k" 'previous-line-or-history-element)
+(helix-keymap-set read-expression-map 'normal
+  "<down>" 'next-line-or-history-element
+  "<up>"   'previous-line-or-history-element)
 
 ;; C-j is binded in `read--expression-map' to `read--expression-try-read'
 ;; which is also binded to RET. Delete it, to make the binding from the parent
@@ -241,8 +233,7 @@ in the command loop, and the fake cursors can pick up on those instead."
                  xref-find-references
                  xref-go-back
                  xref-go-forward))
-    (helix-advice-add cmd :around #'helix-jump-command)
-    (put cmd 'helix-merge-regions 'extend-selection)))
+    (helix-advice-add cmd :around #'helix-jump-command)))
 
 ;;; Occur Edit mode
 
@@ -298,12 +289,45 @@ in the command loop, and the fake cursors can pick up on those instead."
   (helix-advice-add command :before #'helix-deactivate-mark)
   (helix-advice-add command :after #'helix-reveal-point-when-on-top))
 
-;;; Major modes
-;;;; Emacs Lisp (elisp)
+;;; Custom
 
-(dolist (map '(emacs-lisp-mode-map
-               lisp-data-mode-map))
-  (helix-keymap-set map 'normal
+(with-eval-after-load 'cus-edit
+  (helix-set-initial-state 'Custom-mode 'normal)
+  (helix-keymap-set custom-mode-map 'normal
+    "] ]" 'widget-forward
+    "[ [" 'widget-backward
+    "z j" 'widget-forward
+    "z k" 'widget-backward
+    "z u" 'Custom-goto-parent
+    "q"   'Custom-buffer-done))
+
+;;; Shortdoc
+
+(with-eval-after-load 'shortdoc
+  (keymap-set shortdoc-mode-map "y" #'shortdoc-copy-function-as-kill))
+
+;;; Keypad
+
+(with-eval-after-load 'keypad
+  (helix-define-advice keypad (:after ())
+    "Execute selected command for all cursors."
+    (setq helix-this-command this-command))
+
+  (put 'keypad 'multiple-cursors 'false)
+  (put 'keypad-describe-key 'multiple-cursors 'false)
+
+  (dolist (state '(normal motion))
+    (helix-keymap-global-set state
+      "SPC"      'keypad
+      "C-h k"    'keypad-describe-key
+      "<f1> k"   'keypad-describe-key
+      "<help> k" 'keypad-describe-key)))
+
+;;; Major modes
+;;;; emacs-lisp-mode (elisp)
+
+(dolist (keymap (list emacs-lisp-mode-map lisp-data-mode-map))
+  (helix-keymap-set keymap 'normal
     "m `"   #'helix-mark-inner-legacy-quoted
     "m '"   #'helix-mark-inner-legacy-quoted
     "m i `" #'helix-mark-inner-legacy-quoted
@@ -334,12 +358,56 @@ in the command loop, and the fake cursors can pick up on those instead."
 (put 'helix-mark-a-legacy-quoted 'multiple-cursors t)
 (put 'helix-mark-a-legacy-quoted 'helix-merge-regions t)
 
-;;;; Org mode
+;;;; org-mode
 
 (declare-function org-in-regexp "org")
 (defvar org-emph-re)
 (defvar org-verbatim-re)
 (defvar org-mode-map)
+
+(with-eval-after-load 'org
+  (helix-keymap-set org-mode-map 'normal
+    "[ p"   #'org-backward-paragraph
+    "] p"   #'org-forward-paragraph
+    "{"     #'org-backward-paragraph
+    "}"     #'org-forward-paragraph
+
+    "[ s"   #'org-backward-sentence
+    "] s"   #'org-forward-sentence
+    "[ ."   #'org-backward-sentence
+    "] ."   #'org-forward-sentence
+
+    "m /"   #'helix-mark-inner-org-emphasis
+    "m i /" #'helix-mark-inner-org-emphasis
+    "m a /" #'helix-mark-an-org-emphasis
+
+    "m *"   #'helix-mark-inner-org-emphasis
+    "m i *" #'helix-mark-inner-org-emphasis
+    "m a *" #'helix-mark-an-org-emphasis
+
+    "m _"   #'helix-mark-inner-org-emphasis
+    "m i _" #'helix-mark-inner-org-emphasis
+    "m a _" #'helix-mark-an-org-emphasis
+
+    "m +"   #'helix-mark-inner-org-emphasis
+    "m i +" #'helix-mark-inner-org-emphasis
+    "m a +" #'helix-mark-an-org-emphasis
+
+    "m ="   #'helix-mark-inner-org-verbatim
+    "m i =" #'helix-mark-inner-org-verbatim
+    "m a =" #'helix-mark-an-org-verbatim
+
+    "m ~"   #'helix-mark-inner-org-verbatim
+    "m i ~" #'helix-mark-inner-org-verbatim
+    "m a ~" #'helix-mark-an-org-verbatim))
+
+(add-hook 'org-mode-hook #'helix-surround-org-mode)
+(defun helix-surround-org-mode ()
+  "Configure Helix surround for Org-mode."
+  (dolist (char '(?/ ?* ?_ ?+ ?= ?~))
+    (helix-surround-add-pair char (cons (char-to-string char)
+                                        (char-to-string char))
+      :search #'helix-surround--4-bounds-of-org-verbatim)))
 
 (defun helix-mark-inner-org-emphasis ()
   (interactive)
@@ -384,40 +452,6 @@ in the command loop, and the fake cursors can pick up on those instead."
           (match-beginning 4)
           (match-end 2)
           (match-end 4))))
-
-(add-hook 'org-mode-hook #'helix-surround-org-mode)
-(defun helix-surround-org-mode ()
-  "Configure Helix surround for Org-mode."
-  (dolist (char '(?/ ?* ?_ ?+ ?= ?~))
-    (helix-surround-add-pair char (cons (char-to-string char)
-                                        (char-to-string char))
-      :search #'helix-surround--4-bounds-of-org-verbatim)))
-
-(with-eval-after-load 'org
-  (helix-keymap-set org-mode-map 'normal
-    "m /"   #'helix-mark-inner-org-emphasis
-    "m i /" #'helix-mark-inner-org-emphasis
-    "m a /" #'helix-mark-an-org-emphasis
-
-    "m *"   #'helix-mark-inner-org-emphasis
-    "m i *" #'helix-mark-inner-org-emphasis
-    "m a *" #'helix-mark-an-org-emphasis
-
-    "m _"   #'helix-mark-inner-org-emphasis
-    "m i _" #'helix-mark-inner-org-emphasis
-    "m a _" #'helix-mark-an-org-emphasis
-
-    "m +"   #'helix-mark-inner-org-emphasis
-    "m i +" #'helix-mark-inner-org-emphasis
-    "m a +" #'helix-mark-an-org-emphasis
-
-    "m ="   #'helix-mark-inner-org-verbatim
-    "m i =" #'helix-mark-inner-org-verbatim
-    "m a =" #'helix-mark-an-org-verbatim
-
-    "m ~"   #'helix-mark-inner-org-verbatim
-    "m i ~" #'helix-mark-inner-org-verbatim
-    "m a ~" #'helix-mark-an-org-verbatim))
 
 (provide 'helix-integration)
 ;;; helix-integration.el ends here
