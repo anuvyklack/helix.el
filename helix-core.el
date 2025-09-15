@@ -310,7 +310,8 @@ CHECKED-MODES is used internally and should not be set initially."
                                           (cons mode-alias checked-modes))))))
 
 (defun helix-set-initial-state (mode state)
-  "Set the Helix initial STATE for major MODE."
+  "Set the Helix initial STATE for the major MODE.
+MODE and STATE should be symbols."
   ;; Remove current settings for MODE.
   (cl-loop for (_state . plist) in helix-state-properties
            for modes = (plist-get plist :modes)
@@ -344,6 +345,36 @@ CHECKED-MODES is used internally and should not be set initially."
 (helix-define-state motion
   "Motion state."
   :cursor helix-motion-state-cursor)
+
+(defun helix-inhibit-insert-state (keymap)
+  "Unmap insertion keys from normal state.
+This is useful for read-only modes that starts in normal state."
+  (helix-keymap-set keymap 'normal
+    "q" #'quit-window)
+  (helix-keymap-set keymap nil
+    "<remap> <helix-insert>" #'ignore
+    "<remap> <helix-append>" #'ignore
+    "<remap> <helix-insert-line>" #'ignore
+    "<remap> <helix-append-line>" #'ignore
+    "<remap> <helix-open-below>" #'ignore
+    "<remap> <helix-open-above>" #'ignore
+    "<remap> <helix-change>" #'ignore
+    "<remap> <helix-cut>" #'ignore
+    "<remap> <helix-delete>" #'ignore
+    "<remap> <helix-undo>" #'ignore
+    "<remap> <helix-redo>" #'ignore
+    "<remap> <helix-paste-after>" #'ignore
+    "<remap> <helix-paste-before>" #'ignore
+    "<remap> <helix-replace-with-kill-ring>" #'ignore
+    "<remap> <helix-paste-pop>" #'ignore
+    "<remap> <helix-paste-undo-pop>" #'ignore
+    "<remap> <helix-join-line>" #'ignore
+    "<remap> <helix-downcase>" #'ignore
+    "<remap> <helix-upcase>" #'ignore
+    "<remap> <helix-invert-case>" #'ignore
+    "<remap> <indent-region>" #'ignore
+    "<remap> <indent-rigidly-left>" #'ignore
+    "<remap> <indent-rigidly-right>" #'ignore))
 
 ;;; Keymaps
 
