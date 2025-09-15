@@ -170,16 +170,19 @@ in the command loop, and the fake cursors can pick up on those instead."
 
 ;;; Help
 
-(helix-set-initial-state 'help-mode 'normal)
 (with-eval-after-load 'help-mode
-  (helix-keymap-set help-mode-map 'normal
-    ;; "RET" (keymap-lookup help-mode-map "RET")
-    "q" (keymap-lookup help-mode-map "q")))
+  (helix-set-initial-state 'help-mode 'normal)
+  (helix-inhibit-insert-state help-mode-map)
+  ;; (helix-keymap-set help-mode-map 'normal
+  ;;   ;; "RET" (keymap-lookup help-mode-map "RET")
+  ;;   "q" (keymap-lookup help-mode-map "q"))
+  )
 
-(helix-set-initial-state 'helpful-mode 'normal)
 (with-eval-after-load 'helpful
-  (helix-keymap-set helpful-mode-map 'normal
-    "q" #'quit-window)
+  (helix-set-initial-state 'helpful-mode 'normal)
+  (helix-inhibit-insert-state helpful-mode-map)
+  ;; (helix-keymap-set helpful-mode-map 'normal
+  ;;   "q" #'quit-window)
   (put 'helpful-variable 'multiple-cursors 'false))
 
 ;;; Special mode
