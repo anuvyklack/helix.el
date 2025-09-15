@@ -809,9 +809,10 @@ If ARG positive number — enable, negative — disable."
   "Expand or contract current selection linewise downward COUNT times."
   (interactive "p")
   (let ((motion-dir (helix-sign count)))
-    (or (helix-carry-linewise-selection)
-        (and (helix--expand-selection-to-full-lines motion-dir)
-             (setq count (- count motion-dir))))
+    (if helix-linewise-selection
+        (helix-carry-linewise-selection)
+      (helix--expand-selection-to-full-lines motion-dir)
+      (setq count (- count motion-dir)))
     (unless (zerop count)
       (let ((line (if visual-line-mode 'helix-visual-line 'helix-line))
             (region-dir (helix-region-direction)))
@@ -849,12 +850,10 @@ is active, otherwise logical lines."
                                    (car (bounds-of-thing-at-point line)))
                             (progn (goto-char end)
                                    (cdr (bounds-of-thing-at-point line)))
-                            direction)
-          t)
+                            direction))
       ;; else no region
       (-let [(beg . end) (bounds-of-thing-at-point line)]
-        (helix-set-region beg end direction)
-        t))))
+        (helix-set-region beg end direction)))))
 
 ;; %
 (defun helix-mark-whole-buffer ()
