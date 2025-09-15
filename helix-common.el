@@ -29,7 +29,7 @@
 `forward-thing' first moves to the  boundary of the current THING, then to the
 next THING. This function skips first step and always moves to the next THING."
   (unless count (setq count 1))
-  (if (eql count 0) 0
+  (if (zerop count) 0
     (-when-let ((beg . end) (bounds-of-thing-at-point thing))
       (goto-char (if (natnump count) end beg)))
     (forward-thing thing count)))
@@ -89,10 +89,8 @@ Return the distance traveled positive or negative depending on DIRECTION."
     ))
 
 (defun helix-next-char (&optional direction)
-  "Return the next after point char toward the direction.
-If DIRECTION is positive number get following char,
-negative — preceding char."
-  (unless direction (setq direction 1))
+  "Return the next after point char toward the DIRECTION.
+If DIRECTION is positive number — get following char, otherwise preceding char."
   (if (natnump (or direction 1))
       (following-char)
     (preceding-char)))
@@ -307,10 +305,10 @@ on sign of COUNT."
   (when (zerop count)
     (error "Cannot mark zero %s" thing))
   (helix-carry-linewise-selection)
-  (if-let* ((bounds (bounds-of-thing-at-point thing)))
+  (-if-let ((beg . end) (bounds-of-thing-at-point thing))
       (progn
-        (set-mark (car bounds))
-        (goto-char (cdr bounds))
+        (set-mark beg)
+        (goto-char end)
         (cl-decf count))
     ;; else
     (forward-thing thing)
@@ -679,11 +677,10 @@ balanced expressions."
 
 (defun helix-push-point (&optional position)
   "Push POSITION (point by default) on the `mark-ring'."
-  (unless position (setq position (point)))
   (let ((old (nth mark-ring-max mark-ring))
         (history-delete-duplicates nil))
     (add-to-history 'mark-ring
-                    (copy-marker position)
+                    (copy-marker (or position (point)))
                     mark-ring-max t)
     (when old
       (set-marker old nil)))
