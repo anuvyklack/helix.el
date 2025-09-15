@@ -27,6 +27,7 @@
 (require 'pulse)
 (require 'avy)
 
+;; ESC in normal state
 (defun helix-normal-state-escape ()
   "Command for ESC key in Helix Normal state."
   (interactive)
@@ -71,9 +72,8 @@ are active — works like `helix-expand-line-selection'."
       (helix-expand-line-selection count)
     ;; else
     (helix-maybe-deactivate-mark)
-    ;; Preserve the column: the behaviour is hard-coded and the column
-    ;; is preserved if and only if the last command was `next-line' or
-    ;; `previous-line'.
+    ;; Preserve the column: the behaviour is hard-coded and the column is
+    ;; preserved if and only if the previous was `next-line' or `previous-line'.
     (setq this-command (if (natnump count) 'next-line 'previous-line))
     (funcall-interactively 'next-line count)))
 
@@ -214,7 +214,6 @@ Use visual line when `visual-line-mode' is active."
   (helix-end-of-line)
   ;; "Stick" cursor to the end of line after moving to it. Vertical
   ;; motions right after "gl" will place point at the end of each line.
-  ;; Do this only when `visual-line-mode' is not active.
   (when (and (not visual-line-mode)
              (eolp))
     (setq temporary-goal-column most-positive-fixnum

@@ -95,7 +95,7 @@ If nil Keypad will look under \"C-c\" prefix."
 
 (defvar-keymap keypad-map
   :doc "Keypad service keys."
-  "DEL" #'keypad-undo
+  "DEL" #'keypad-undo ;; DEL in Emacs corresponds to the backspace key
   "<backspace>" #'keypad-undo
   "ESC" #'keypad-quit
   "<escape>" #'keypad-quit
@@ -130,13 +130,15 @@ Other way seek in top level.")
 
 ;;; Interactive commands
 
+;;;###autoload
 (defun keypad ()
-  "Activate Keypad and call the found command."
+  "Activate Keypad and interactively evaluate found command."
   (interactive)
   (when-let* ((cmd (keypad-start)))
     (setq this-command cmd)
     (call-interactively cmd)))
 
+;;;###autoload
 (defun keypad-describe-key (key-list &optional buffer)
   "Wrapper around `describe-key', that correctly handle key chords entered
 with Keypad. If Helpful package is loaded, `helpful-key' will be used instead
@@ -284,7 +286,7 @@ This function supports a fallback behavior, where it allows to use
                         (keypad--handle-shift))))))
 
 (defun keypad--handle-shift (str)
-  "Convert capical ASCII letters: \"K\" -> \"S-k\".
+  "Convert capical ASCII letters following way: \"K\" -> \"S-k\".
 `key-parse' for \"C-K\" and \"C-k\" returns the same event. You must
 pass \"C-S-k\" instead. This is relevant only for ASCII. For Unicode,
 for example for Cyrillic letters \"C-Ф\" and \"C-ф\" `key-parse' returns
