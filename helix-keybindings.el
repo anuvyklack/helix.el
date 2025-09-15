@@ -330,19 +330,30 @@
 
 (helix-keymap-set helix-window-map nil
   ;; windows
+  "n"   #'other-window-prefix
   "s"   #'helix-window-split
   "v"   #'helix-window-vsplit
   "c"   #'helix-window-delete
   "o"   #'delete-other-windows
-  "n"   #'other-window-prefix
+
+  "w"   #'other-window
   "h"   #'helix-window-left
   "j"   #'helix-window-down
   "k"   #'helix-window-up
   "l"   #'helix-window-right
+
+  "C-n" #'other-window-prefix
+  "C-s" #'helix-window-split
+  "C-v" #'helix-window-vsplit
+  "C-c" #'helix-window-delete
+  "C-o" #'delete-other-windows
+
+  "C-w" #'other-window
   "C-h" #'helix-window-left
   "C-j" #'helix-window-down
   "C-k" #'helix-window-up
   "C-l" #'helix-window-right
+
   "H"   #'helix-move-window-left
   "J"   #'helix-move-window-down
   "K"   #'helix-move-window-up
