@@ -384,7 +384,9 @@ Use visual line when `visual-line-mode' is active."
   (interactive)
   (helix-delete-all-fake-cursors)
   (helix-push-point)
-  (unless helix--extend-selection (helix-deactivate-mark))
+  (unless helix--extend-selection
+    (setq helix-linewise-selection nil)
+    (deactivate-mark))
   (let ((temporary-goal-column (current-column)))
     (-> (helix-collect-positions #'next-line)
         (avy-process)))
@@ -400,7 +402,9 @@ Use visual line when `visual-line-mode' is active."
   (interactive)
   (helix-delete-all-fake-cursors)
   (helix-push-point)
-  (unless helix--extend-selection (helix-deactivate-mark))
+  (unless helix--extend-selection
+    (setq helix-linewise-selection nil)
+    (deactivate-mark))
   (let ((temporary-goal-column (current-column)))
     (-> (helix-collect-positions #'previous-line)
         (avy-process)))

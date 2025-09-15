@@ -1125,16 +1125,17 @@ Intended to be use as `:after' advice."
   (helix-extend-selection -1))
 
 (defun helix-deactivate-mark (&rest _)
-  "Deactivate mark and linewise selection.
-This function can be used as advice."
-  (setq helix-linewise-selection nil)
+  "Deactivate mark. This function can be used as advice."
   (deactivate-mark))
 
 (defun helix-jump-command (command &rest args)
   "Aroung advice for COMMAND that moves point."
+  ;; (setq helix-linewise-selection nil)
+  (deactivate-mark)
   (helix-with-recenter-point-on-jump
     (apply command args))
-  (helix-deactivate-mark))
+  ;; We can land in another buffer, so deactivate mark there as well.
+  (deactivate-mark))
 
 (provide 'helix-common)
 ;;; helix-common.el ends here
