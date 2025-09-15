@@ -77,6 +77,15 @@
 ;;           :key-type (string :tag "From")
 ;;           :value-type (string :tag "To")))
 
+(defcustom keypad-send-C-x-with-control-modifier t
+  "When non-nil, pressing \"x\" in keypad initial state will send \"C-x C-\",
+i.e. \"C-x\" followed by another `Control' modifier.
+
+When nil, pressing \"x\" will send \"C-x\" without an additional `Control'
+modifier."
+  :group 'keypad
+  :type 'string)
+
 (defcustom keypad-leader-keymap nil ; mode-specific-map
   "The keymap in which Keypad will search keybindings with no modifiers.
 If nil Keypad will look under \"C-c\" prefix."
@@ -210,10 +219,14 @@ Return the found command."
          (setq keypad--pending-modifier 'control-meta))
         (keypad--keys
          (push key keypad--keys))
-        ((member key '("x" "c")) ; keypad--keys are empty
-         (push (pcase key ("x" "C-x") ("c" "C-c"))
-               keypad--keys)
+        ;; All following conditions assumes that `keypad--keys' are empty.
+        ((equal "c" key)
+         (push "C-c" keypad--keys)
          (setq keypad--pending-modifier 'control))
+        ((equal "x" key)
+         (push "C-x" keypad--keys)
+         (when keypad-send-C-x-with-control-modifier
+           (setq keypad--pending-modifier 'control)))
         (t
          (setq keypad--use-leader-map? t)
          (push key keypad--keys)))
