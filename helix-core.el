@@ -69,10 +69,9 @@
     (progn
       (when (and helix-linewise-selection (not mark-active))
         (setq helix-linewise-selection nil))
-      (cond (helix-linewise-selection
-             (helix-set-main-selection-overlay))
-            (helix-main-selection-overlay
-             (delete-overlay helix-main-selection-overlay))))
+      (if helix-linewise-selection
+          (helix-set-main-selection-overlay)
+        (helix-delete-main-selection-overlay)))
     (helix--single-undo-step-end)
     (setq helix-this-command nil
           helix--input-cache nil)))
