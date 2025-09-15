@@ -737,6 +737,11 @@ If NOMSG is nil show `Mark set' message in echo area."
 
 ;;; Utils
 
+(defun helix--exchange-point-and-mark ()
+  "Exchange point and mark."
+  (goto-char (prog1 (marker-position (mark-marker))
+               (set-marker (mark-marker) (point)))))
+
 (defun helix-bolp ()
   "Like `bolp' but consider visual lines when `visual-line-mode' is enabled."
   (if visual-line-mode
@@ -771,11 +776,6 @@ positive — end of line."
 (defun helix-region-direction ()
   "Return the direction of region: -1 if point precedes mark, 1 otherwise."
   (if (< (point) (mark-marker)) -1 1))
-
-(defun helix-exchange-point-and-mark ()
-  "Exchange point and mark without activating the region."
-  (goto-char (prog1 (marker-position (mark-marker))
-               (set-marker (mark-marker) (point)))))
 
 (cl-defun helix-logical-lines-p (&optional (beg (region-beginning))
                                            (end (region-end)))
@@ -940,7 +940,7 @@ selection is active."
 DIRECTION should be 1 or -1."
   (when (and (use-region-p)
              (/= direction (helix-region-direction)))
-    (helix-exchange-point-and-mark)))
+    (helix--exchange-point-and-mark)))
 
 (defun helix-undo-command-p (command)
   "Return non-nil if COMMAND is implementing undo/redo functionality."
