@@ -35,7 +35,6 @@
 (helix-keymap-global-set 'normal "M-<mouse-1>" #'helix-toggle-cursor-on-click)
 
 (helix-keymap-global-set 'normal
-  "<backspace>" #'execute-extended-command
   ":" #'execute-extended-command
 
   "0" #'digit-argument
@@ -360,7 +359,6 @@
 
 (helix-keymap-global-set 'motion
   "C-w" 'helix-window-map
-  "<backspace>" #'execute-extended-command
   "] b" #'next-buffer
   "[ b" #'previous-buffer
 
