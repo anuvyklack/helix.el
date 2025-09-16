@@ -690,7 +690,7 @@ and which for all to `helix-whitelist-file' file."
   (and helix-multiple-cursors-mode
        mark-active
        (cond ((symbolp command)
-              (pcase (get command 'helix-merge-regions)
+              (pcase (get command 'merge-selections)
                 ('extend-selection helix--extend-selection)
                 (val val)))
              ((functionp command) ;; `command' is a lambda
