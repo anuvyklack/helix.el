@@ -854,7 +854,6 @@ from being executed when `helix-multiple-cursors-mode' is active."
         forward-list
         backward-list
         hippie-expand
-        hippie-expand-lines
         yank
         yank-pop
         append-next-kill
@@ -866,41 +865,16 @@ from being executed when `helix-multiple-cursors-mode' is active."
         backward-delete-char-untabify
         delete-char delete-forward-char
         delete-backward-char
-        py-electric-backspace
-        c-electric-backspace
-        org-delete-backward-char
-        cperl-electric-backspace
-        python-indent-dedent-line-backspace
-        paredit-backward-delete
-        autopair-backspace
         just-one-space
         zap-to-char
         end-of-line
         set-mark-command
         exchange-point-and-mark
-        cua-set-mark
-        cua-replace-region
-        cua-delete-region
         move-end-of-line
         beginning-of-line
         move-beginning-of-line
         kill-ring-save
-        back-to-indentation
-        subword-forward
-        subword-backward
-        subword-mark
-        subword-kill
-        subword-backward-kill
-        subword-transpose
-        subword-capitalize
-        subword-upcase
-        subword-downcase
-        er/expand-region
-        er/contract-region
-        smart-forward
-        smart-backward
-        smart-up
-        smart-down))
+        back-to-indentation))
 
 ;; Execute following commands only for MAIN cursor.
 (mapc #'(lambda (command)
@@ -911,26 +885,22 @@ from being executed when `helix-multiple-cursors-mode' is active."
         tab-next
         tab-previous
         save-buffer
-        ido-exit-minibuffer
-        ivy-done
         exit-minibuffer
         minibuffer-complete-and-exit
         eval-expression
         undo
-        redo
+        undo-redo
         undo-tree-undo
         undo-tree-redo
         undo-fu-only-undo
         undo-fu-only-redo
         universal-argument
         universal-argument-more
-        universal-argument-other-key
         negative-argument
         digit-argument
         top-level
         recenter-top-bottom
         describe-mode
-        describe-key-1
         describe-function
         describe-bindings
         describe-prefix-bindings
@@ -940,14 +910,12 @@ from being executed when `helix-multiple-cursors-mode' is active."
         split-window-right
         split-window-below
         delete-other-windows
-        toggle-window-split
         mwheel-scroll
         scroll-up-command
         scroll-down-command
         mouse-set-point
         mouse-drag-region
         quit-window
-        toggle-read-only
         windmove-left
         windmove-right
         windmove-up
