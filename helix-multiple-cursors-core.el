@@ -693,7 +693,7 @@ and which for all to `helix-whitelist-file' file."
               (pcase (get command 'merge-selections)
                 ('extend-selection helix--extend-selection)
                 (val val)))
-             ((functionp command) ;; `command' is a lambda
+             ((functionp command) ;; COMMAND is a lambda
               t))))
 
 (defun helix-merge-overlapping-regions ()
@@ -814,7 +814,7 @@ from being executed when `helix-multiple-cursors-mode' is active."
                     (called-interactively-p 'any))
          (apply orig-fun args)))))
 
-;; Execute following commands only for ALL cursor.
+;; Execute following commands for ALL cursor.
 (mapc #'(lambda (command)
           (put command 'multiple-cursors t))
       '(comment-dwim         ;; gc

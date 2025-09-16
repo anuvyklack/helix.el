@@ -265,7 +265,7 @@ in the command loop, and the fake cursors can pick up on those instead."
 (with-eval-after-load 'consult
   (helix-cache-input consult--read)
 
-  ;; Execute `consult-yank-pop' for all cursors.
+  ;; Execute for all cursors.
   (put 'consult-yank-pop 'multiple-cursors t)
 
   (dolist (cmd '(consult-line
