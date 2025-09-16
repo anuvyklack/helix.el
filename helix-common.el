@@ -169,6 +169,10 @@ COUNT minus number of steps moved; if backward, COUNT plus number moved.
 ;;; Things
 
 ;; `helix-line' thing
+
+;; The need for this thing arose from the requirement to select a folded section
+;; of the buffer (in Org-mode or Outline-mode) using the `x' key command.
+
 (put 'helix-line 'forward-op #'helix--forward-line)
 (put 'helix-line 'bounds-of-thing-at-point
      #'(lambda ()
@@ -215,11 +219,13 @@ Adopted from `move-beginning-of-line'."
     (goto-char (constrain-to-field (point) orig-point (/= count 1) t nil))))
 
 ;; `helix-visual-line' thing
+
 (put 'helix-visual-line 'forward-op #'vertical-motion)
 ;; (put 'helix-visual-line 'beginning-op #'beginning-of-visual-line)
 ;; (put 'helix-visual-line 'end-op       #'end-of-visual-line)
 
 ;; `helix-word' thing
+
 (defun forward-helix-word (&optional count)
   "Move point COUNT words forward (backward if COUNT is negative).
 Returns the count of word left to move, positive or negative depending
@@ -238,6 +244,7 @@ Word is:
           (forward-word dir)))))
 
 ;; `helix-WORD' thing
+
 (defun forward-helix-WORD (&optional count)
   "Move point COUNT WORDs forward (backward if COUNT is negative).
 Returns the count of WORD left to move, positive or negative depending
@@ -251,6 +258,7 @@ WORD is any space separated sequence of characters."
       (helix-skip-chars "^\n\r\t\f " dir))))
 
 ;; `helix-sentence' thing
+
 (defun forward-helix-sentence (&optional count)
   "Move point COUNT sentences forward (backward if COUNT is negative).
 Returns then count of sentences left to move, positive of negative depending
@@ -261,6 +269,7 @@ What is sentence is defined by `forward-sentence-function'."
     (ignore-errors (forward-sentence dir))))
 
 ;; `helix-paragraph' thing
+
 (defun forward-helix-paragraph (&optional count)
   "Move point COUNT paragraphs forward (backward if COUNT is negative).
 Returns then count of sentences left to move, positive of negative depending
@@ -272,6 +281,7 @@ on sign of COUNT."
            (beginning-of-line)))))
 
 ;; `helix-function' thing
+
 (defun forward-helix-function (&optional count)
   "Move point COUNT functions forward (backward if COUNT is negative).
 Returns then count of sentences left to move, positive of negative depending
@@ -280,12 +290,14 @@ on sign of COUNT."
     (if (natnump dir) (end-of-defun) (beginning-of-defun))))
 
 ;; `helix-sexp' thing
+
 (defun forward-helix-sexp (&optional count)
   (helix-motion-loop (dir (or count 1))
     (ignore-errors
       (forward-sexp dir))))
 
 ;; `helix-comment' thing
+
 (put 'helix-comment 'bounds-of-thing-at-point #'helix-bounds-of-comment-at-point-ppss)
 
 (defun helix-bounds-of-comment-at-point-ppss ()
@@ -1131,7 +1143,7 @@ Intended to be use as `:after' advice."
 
 (defun helix-jump-command (command &rest args)
   "Aroung advice for COMMAND that moves point."
-  ;; (setq helix-linewise-selection nil)
+  (helix-delete-all-fake-cursors)
   (deactivate-mark)
   (helix-with-recenter-point-on-jump
     (apply command args))
