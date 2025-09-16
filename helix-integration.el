@@ -326,7 +326,45 @@ in the command loop, and the fake cursors can pick up on those instead."
 ;;; Major modes
 ;;;; emacs-lisp-mode (elisp)
 
-(dolist (keymap (list emacs-lisp-mode-map lisp-data-mode-map))
+;; Fontification for Helix macros.
+(font-lock-add-keywords
+ 'emacs-lisp-mode
+ (eval-when-compile
+   `((,(concat "^\\s-*("
+               (regexp-opt '("helix-define-command") t)
+               "\\s-+\\(" (rx lisp-mode-symbol) "\\)")
+      (1 'font-lock-keyword-face)
+      (2 'font-lock-function-name-face nil t))
+     (,(concat "^\\s-*("
+               (regexp-opt '("helix-defvar-local") t)
+               "\\s-+\\(" (rx lisp-mode-symbol) "\\)")
+      (1 'font-lock-keyword-face)
+      (2 'font-lock-variable-name-face nil t)))))
+
+;; `emacs-lisp-mode' is inherited from `lisp-data-mode'.
+(add-hook 'lisp-data-mode-hook  #'helix-configure-for-emacs-lisp)
+
+(defun helix-configure-for-emacs-lisp ()
+  ;; Add legacy quotes marks to Helix surround functionality.
+  (helix-surround-add-pair ?` (cons "`" "'"))
+  (helix-surround-add-pair ?' (cons "`" "'"))
+
+  ;; Teach `imenu' about Helix macros.
+  (dolist (i (eval-when-compile
+              `(("Variables"
+                 ,(concat "^\\s-*("
+                          (regexp-opt '("helix-defvar-local") t)
+                          "\\s-+\\(" (rx lisp-mode-symbol) "\\)")
+                 2)
+                (nil ;; top level
+                 ,(concat "^\\s-*("
+                          (regexp-opt '("helix-define-command") t)
+                          "\\s-+'?\\(" (rx lisp-mode-symbol) "\\)")
+                 2))))
+    (cl-pushnew i imenu-generic-expression :test #'equal)))
+
+(dolist (keymap (list emacs-lisp-mode-map
+                      lisp-data-mode-map))
   (helix-keymap-set keymap 'normal
     "m `"   #'helix-mark-inner-legacy-quoted
     "m '"   #'helix-mark-inner-legacy-quoted
@@ -334,13 +372,6 @@ in the command loop, and the fake cursors can pick up on those instead."
     "m i '" #'helix-mark-inner-legacy-quoted
     "m a `" #'helix-mark-a-legacy-quoted
     "m a '" #'helix-mark-a-legacy-quoted))
-
-(add-hook 'emacs-lisp-mode-hook #'helix-configure-for-emacs-lisp)
-(add-hook 'lisp-data-mode-hook  #'helix-configure-for-emacs-lisp)
-
-(defun helix-configure-for-emacs-lisp ()
-  (helix-surround-add-pair ?` (cons "`" "'"))
-  (helix-surround-add-pair ?' (cons "`" "'")))
 
 (helix-define-command helix-mark-inner-legacy-quoted ()
   :multiple-cursors t
