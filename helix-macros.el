@@ -122,5 +122,60 @@ saved as markers and correctly handle case when text was inserted before region.
            (goto-char ,pnt)
            (set-marker ,pnt nil))))))
 
+(defmacro helix-define-command (command args  &rest body)
+  "Define Helix COMMAND.
+Wrapper around `defun' macro, that additionally takes following keyword
+parameters:
+
+:MULTIPLE-CURSORS
+  - t   — Command will be executed for all cursors;
+  - nil — Command will be executed only for main cursor.
+
+:MERGE-SELECTIONS
+  - t — After this command overlapping selections (regions) will be merged into
+        single selection.
+  - `extend-selection' (symbol)
+        Selections will be checked on overlapping only when extending selections
+        is enabled (`helix-extend-selection').
+
+\(fn COMMAND (ARGS...) [DOC] [[KEY VALUE]...] BODY...)"
+  (declare (indent defun)
+           (doc-string 3)
+           (debug ( &define name
+                    [&optional lambda-list]
+                    [&optional stringp]
+                    [&rest keywordp sexp]
+                    [&optional ("interactive" [&rest form])]
+                    def-body)))
+  (let (doc properties key value)
+    ;; collect docstring
+    (setq doc (when (< 1 (length body))
+                (pcase (car body)
+                  (`(format . ,args)
+                   (apply #'format args))
+                  ((and (pred stringp) doc)
+                   doc))))
+    (when doc (pop body))
+    ;; collect keywords
+    (while (keywordp (car body))
+      (setq key   (pop body)
+            value (pop body))
+      (pcase key
+        (:multiple-cursors
+         (push `(put ',command 'multiple-cursors ,(if (eq value t) t ''false))
+               properties))
+        (:merge-selections
+         (push `(put ',command 'merge-selections ,value)
+               properties))))
+    ;; macro expansion
+    `(progn
+       (defun ,command (,@args)
+         ,(or doc "")
+         ;; ;; Place 'interactive' form first.
+         ;; ,(when (eq (caar body) 'interactive)
+         ;;    (pop body))
+         ,@body)
+       ,@properties)))
+
 (provide 'helix-macros)
 ;;; helix-macros.el ends here

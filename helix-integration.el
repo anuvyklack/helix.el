@@ -285,7 +285,7 @@ in the command loop, and the fake cursors can pick up on those instead."
                    outline-previous-visible-heading
                    outline-forward-same-level
                    outline-backward-same-level))
-  (put command 'helix-merge-regions 'extend-selection)
+  (put command 'merge-selections 'extend-selection)
   (helix-advice-add command :before #'helix-deactivate-mark)
   (helix-advice-add command :after #'helix-reveal-point-when-on-top))
 
@@ -342,21 +342,19 @@ in the command loop, and the fake cursors can pick up on those instead."
   (helix-surround-add-pair ?` (cons "`" "'"))
   (helix-surround-add-pair ?' (cons "`" "'")))
 
-(defun helix-mark-inner-legacy-quoted ()
+(helix-define-command helix-mark-inner-legacy-quoted ()
+  :multiple-cursors t
+  :merge-selections t
   (interactive)
   (-when-let ((_ beg end _) (helix-surround-4-bounds-at-point "`" "'"))
     (helix-set-region beg end)))
 
-(put 'helix-mark-inner-legacy-quoted 'multiple-cursors t)
-(put 'helix-mark-inner-legacy-quoted 'helix-merge-regions t)
-
-(defun helix-mark-a-legacy-quoted ()
+(helix-define-command helix-mark-a-legacy-quoted ()
+  :multiple-cursors t
+  :merge-selections t
   (interactive)
   (-when-let ((beg _ _ end) (helix-surround-4-bounds-at-point "`" "'"))
     (helix-set-region beg end)))
-
-(put 'helix-mark-a-legacy-quoted 'multiple-cursors t)
-(put 'helix-mark-a-legacy-quoted 'helix-merge-regions t)
 
 ;;;; org-mode
 
@@ -409,7 +407,9 @@ in the command loop, and the fake cursors can pick up on those instead."
                                         (char-to-string char))
       :search #'helix-surround--4-bounds-of-org-verbatim)))
 
-(defun helix-mark-inner-org-emphasis ()
+(helix-define-command helix-mark-inner-org-emphasis ()
+  :multiple-cursors t
+  :merge-selections t
   (interactive)
   (when (org-in-regexp org-emph-re 2)
     (set-mark (match-beginning 4))
@@ -421,23 +421,36 @@ in the command loop, and the fake cursors can pick up on those instead."
   ;;   (goto-char (match-end 4)))
   )
 
-(defun helix-mark-an-org-emphasis ()
+(helix-define-command helix-mark-an-org-emphasis ()
+  :multiple-cursors t
+  :merge-selections t
   (interactive)
   (when (org-in-regexp org-emph-re 2)
     (set-mark (match-beginning 2))
     (goto-char (match-end 2))))
 
-(defun helix-mark-inner-org-verbatim ()
+(helix-define-command helix-mark-inner-org-verbatim ()
+  :multiple-cursors t
+  :merge-selections t
   (interactive)
   (when (org-in-regexp org-verbatim-re 2)
     (set-mark (match-beginning 4))
     (goto-char (match-end 4))))
 
-(defun helix-mark-an-org-verbatim ()
+(helix-define-command helix-mark-an-org-verbatim ()
+  :multiple-cursors t
+  :merge-selections t
   (interactive)
   (when (org-in-regexp org-verbatim-re 2)
     (set-mark (match-beginning 2))
     (goto-char (match-end 2))))
+
+(defun helix-surround-org-mode ()
+  "Configure Helix surround functionality for Org-mode."
+  (dolist (char '(?/ ?* ?_ ?+ ?= ?~))
+    (helix-surround-add-pair char (cons (char-to-string char)
+                                        (char-to-string char))
+      :search #'helix-surround--4-bounds-of-org-verbatim)))
 
 (defun helix-surround--4-bounds-of-org-verbatim ()
   (when (org-in-regexp org-verbatim-re 2)
