@@ -1112,9 +1112,10 @@ See `helix-linewise-selection'"
   "Reveal point when its only partly visible.
 Emacs somewhy becomes very slow when point is only partly visible.
 Intended to be use as `:after' advice."
-  (redisplay)
-  (when (zerop (cdr (posn-col-row (posn-at-point))))
-    (recenter 0)))
+  (unless helix-executing-command-for-fake-cursor
+    (redisplay)
+    (when (zerop (cdr (posn-col-row (posn-at-point))))
+      (recenter 0))))
 
 (declare-function helix-extend-selection "helix-commands")
 
