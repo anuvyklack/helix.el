@@ -330,7 +330,7 @@ If no sentence at point select COUNT previous sentences."
            (eq 5 (syntax-class (syntax-after (1- (point))))))
       (forward-list -1))
      (t
-      (up-list -1))))
+      (up-list 1))))
   (helix-reveal-point-when-on-top))
 
 ;;; Avy (Easymotion)
