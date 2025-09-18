@@ -391,5 +391,16 @@
   "<escape>" #'helix-normal-state
   "C-w" #'helix-delete-backward-word)
 
+;;; Conditional keybindings
+
+(when helix-want-paragraph-motions-like-in-Helix
+  (helix-keymap-global-set 'normal
+    "] p" #'helix-mark-forward-to-beginning-of-paragraph
+    "[ p" #'helix-mark-backward-to-beginning-of-paragraph
+    "}"   #'helix-mark-forward-to-beginning-of-paragraph
+    "{"   #'helix-mark-backward-to-beginning-of-paragraph
+    "] f" #'helix-mark-forward-to-beginning-of-function
+    "[ f" #'helix-mark-backward-to-beginning-of-function))
+
 (provide 'helix-keybindings)
 ;;; helix-keybindings.el ends here
