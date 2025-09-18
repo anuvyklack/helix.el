@@ -44,6 +44,8 @@
   "Hook run before each command is executed. See `pre-command-hook'."
   (unless helix-executing-command-for-fake-cursor
     (setq helix-this-command this-command)
+    (when (and helix--extend-selection (not mark-active))
+      (set-mark (point)))
     (helix--single-undo-step-beginning)))
 
 (defun helix--post-command-hook ()
