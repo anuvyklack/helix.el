@@ -42,10 +42,10 @@ Returns the count of steps left to move.
 Works only with THING, that returns the count of steps left to move,
 such as `helix-word', `helix-sentence', `paragraph', `line'."
   (unless count (setq count 1))
-  (if (eql count 0) 0
+  (if (zerop count) 0
     (let ((rest (helix-forward-next-thing thing count)))
       (when (and (/= rest count)
-                 (natnump count))
+                 (natnump count)) ;; moving forward
         (forward-thing thing -1))
       rest)))
 
@@ -57,10 +57,10 @@ Returns the count of steps left to move.
 Works only with THING, that returns the count of steps left to move,
 such as `helix-word', `helix-sentence', `paragraph', `line'."
   (unless count (setq count 1))
-  (if (eql count 0) 0
+  (if (zerop count) 0
     (let ((rest (helix-forward-next-thing thing count)))
       (when (and (/= rest count)
-                 (< count 0))
+                 (< count 0)) ;; movind backward
         (forward-thing thing))
       rest)))
 
