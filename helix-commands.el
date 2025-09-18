@@ -733,7 +733,7 @@ With no selection upcase the character after point."
   "Exchange point and mark."
   :multiple-cursors t
   (interactive)
-  (when (region-active-p)
+  (when (use-region-p)
     (helix--exchange-point-and-mark)
     (when (and (not helix-executing-command-for-fake-cursor)
                (called-interactively-p 'any))
