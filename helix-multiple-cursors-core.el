@@ -628,7 +628,8 @@ in the buffer."
 and remember the choice.
 
 Return t if COMMMAND should be executed for all cursors."
-  (let ((for-all? (y-or-n-p (format "Do %S for all cursors?" command))))
+  (let ((for-all? (ignore-error quit ;; treat `C-g' as answer "no"
+                    (y-or-n-p (format "Do %S for all cursors?" command)))))
     (cond (for-all?
            (put command 'multiple-cursors t)
            (push command helix-commands-to-run-for-all-cursors))
