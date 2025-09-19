@@ -19,6 +19,7 @@
 (require 'dash)
 (require 'thingatpt)
 (require 'pcre2el)
+(require 'pulse)
 (require 'helix-macros)
 (require 'helix-vars)
 
@@ -301,7 +302,7 @@ on sign of COUNT."
   (unless count (setq count 1))
   (when (zerop count)
     (error "Cannot mark zero %s" thing))
-  (helix-carry-linewise-selection)
+  (helix-restore-newline-at-eol)
   (-if-let ((beg . end) (bounds-of-thing-at-point thing))
       (progn
         (set-mark beg)
@@ -312,13 +313,13 @@ on sign of COUNT."
     (forward-thing thing -1)
     (set-mark (point)))
   (forward-thing thing count)
-  (helix-maybe-enable-linewise-selection))
+  (helix-consume-newline-at-eol))
 
 (defun helix-mark-a-thing (thing)
   "Select a THING with spacing around.
 Works only with THINGs, that returns the count of steps left to move,
 such as `paragraph', `helix-function'."
-  (helix-carry-linewise-selection)
+  (helix-restore-newline-at-eol)
   (-when-let ((thing-beg . thing-end) (bounds-of-thing-at-point thing))
     (-let [(beg . end)
            (or (progn
@@ -333,7 +334,7 @@ such as `paragraph', `helix-function'."
                      (cons space-beg thing-end)))
                (cons thing-beg thing-end))]
       (helix-set-region beg end)))
-  (helix-maybe-enable-linewise-selection))
+  (helix-consume-newline-at-eol))
 
 (defun helix-bounds-of-complement-of-thing-at-point (thing)
   "Return the bounds of a complement of THING at point.
@@ -361,7 +362,7 @@ such as `helix-word', `helix-sentence', `paragraph', `line'."
   "Select from point to the end of the THING (or COUNT following THINGs).
 If no THING at point select COUNT following THINGs."
   (helix-push-point)
-  (helix-carry-linewise-selection)
+  (helix-restore-newline-at-eol)
   (unless helix--extend-selection
     (set-mark (point))
     (let ((dir (helix-sign count)))
@@ -377,13 +378,13 @@ If no THING at point select COUNT following THINGs."
           (helix-forward-end-of-thing thing dir))
         (set-mark (point)))))
   (forward-thing thing count)
-  (helix-maybe-enable-linewise-selection)
+  (helix-consume-newline-at-eol)
   (helix-reveal-point-when-on-top))
 
 (defun helix--mark-a-word (thing)
   "Inner implementation of `helix-mark-a-word' and `helix-mark-a-WORD' commands."
   (-when-let ((thing-beg . thing-end) (bounds-of-thing-at-point thing))
-    (setq helix-linewise-selection nil)
+    (setq helix--newline-at-eol nil)
     (-let [(beg . end)
            (or (progn
                  (goto-char thing-end)
@@ -750,7 +751,7 @@ If NOMSG is nil show `Mark set' message in echo area."
     (helix-yank)
     (activate-mark)
     (helix-ensure-region-direction region-dir)
-    (helix-maybe-enable-linewise-selection)))
+    (helix-consume-newline-at-eol)))
 
 ;;; Utils
 
@@ -792,22 +793,23 @@ positive — end of line."
 
 (defun helix-region-direction ()
   "Return the direction of region: -1 if point precedes mark, 1 otherwise."
-  (if (< (point) (mark-marker)) -1 1))
+  (if (< (mark-marker) (point)) 1 -1))
 
-(cl-defun helix-logical-lines-p (&optional (beg (region-beginning))
-                                           (end (region-end)))
-  "Return t if region between BEG and END spawn full logical lines."
-  (save-excursion
-    (and (progn (goto-char beg) (bolp))
-         (progn (goto-char end) (bolp)))))
+(defun helix-logical-lines-p ()
+  "Return t if active region spawns full logical lines."
+  (and helix--newline-at-eol
+       (use-region-p)
+       (save-excursion (goto-char (region-beginning)) (bolp))
+       (save-excursion (goto-char (region-end)) (eolp))))
 
-(cl-defun helix-visual-lines-p (&optional (beg (region-beginning))
-                                          (end (region-end)))
-  "Return t if region between BEG and END spawn visual lines."
-  (save-excursion
-    (and visual-line-mode
-         (progn (goto-char beg) (helix-visual-bolp))
-         (progn (goto-char end) (helix-visual-bolp)))))
+(defun helix-visual-lines-p ()
+  "Return t if active region spawns visual lines."
+  (and ;; visual-line-mode
+       (use-region-p)
+       (save-excursion (goto-char (region-beginning))
+                       (helix-visual-bolp))
+       (save-excursion (goto-char (region-end))
+                       (helix-visual-bolp))))
 
 (defun helix-whitespace? (char)
   "Non-nil when CHAR belongs to whitespace syntax class."
@@ -940,14 +942,14 @@ passed in any order."
 (defun helix-maybe-set-mark (&optional position)
   "Disable linewise selection, and set mark at POSITION unless extending
 selection is active."
-  (setq helix-linewise-selection nil)
+  (setq helix--newline-at-eol nil)
   (unless helix--extend-selection
     (set-mark (or position (point)))))
 
 (defun helix-maybe-deactivate-mark ()
   "Disable linewise selection, and deactivate mark unless extending
 selection is active."
-  (setq helix-linewise-selection nil)
+  (setq helix--newline-at-eol nil)
   (unless helix--extend-selection
     (deactivate-mark)))
 
@@ -1087,54 +1089,50 @@ right after the point."
   (-some-> (overlay-buffer overlay)
     (buffer-live-p)))
 
-(defun helix-carry-linewise-selection ()
-  "If linewise selection is active adjust active region to include
-newline character and disable linewise selection.
+(defun helix-consume-newline-at-eol ()
+  (when (use-region-p)
+    ;; `use-region-p' guarantees that (/= (region-beginning) (region-end))
+    (when (setq helix--newline-at-eol (save-excursion (goto-char (region-end))
+                                                      (bolp)))
+      (let ((beg (region-beginning))
+            (end (region-end)))
+        (helix-set-region beg (1- end) (helix-region-direction))))))
 
-See `helix-linewise-selection'"
-  (when helix-linewise-selection
+(defun helix-restore-newline-at-eol ()
+  "Extend active region to include trailing newline when `helix--newline-at-eol'
+is non-nil."
+  (when helix--newline-at-eol
     (helix-set-region (region-beginning) (1+ (region-end))
                       (helix-region-direction))
-    (helix-delete-main-selection-overlay)
-    (setq helix-linewise-selection nil)
+    (setq helix--newline-at-eol nil)
     t))
 
-(defun helix-maybe-enable-linewise-selection ()
-  (let ((beg (region-beginning))
-        (end (region-end)))
-    (setq helix-linewise-selection (helix-logical-lines-p beg end))
-    (when (and helix-linewise-selection
-               (/= beg end))
-      (helix-set-region beg (1- end) (helix-region-direction)))))
+(defun helix--set-main-region-overlay (beg end)
+  "Set an overlay with region face that covers active region plus one newline
+character after, to visually extend selection over full line while point remains
+at the end of the line."
+  (if helix-main-region-overlay
+      (move-overlay helix-main-region-overlay beg end)
+    (setq helix-main-region-overlay (-doto (make-overlay beg end)
+                                      (overlay-put 'face 'region)
+                                      (overlay-put 'priority 1)))))
 
-(defun helix-set-main-selection-overlay ()
-  "Set overlay for main selection between BEG and END positions."
-  (let ((beg (region-beginning))
-        (end (1+ (region-end))))
-    (if helix-main-selection-overlay
-        (move-overlay helix-main-selection-overlay beg end)
-      (setq helix-main-selection-overlay (-doto (make-overlay beg end)
-                                           (overlay-put 'face 'region)
-                                           (overlay-put 'priority 1))))))
+(defun helix--delete-main-region-overlay ()
+  (when helix-main-region-overlay
+    (delete-overlay helix-main-region-overlay)))
 
-(defun helix-disable-linewise-selection ()
-  (when helix-linewise-selection
-    (setq helix-linewise-selection nil)
-    (unless helix-executing-command-for-fake-cursor
-      (helix-delete-main-selection-overlay))))
-
-(defun helix-delete-main-selection-overlay ()
-  (when helix-main-selection-overlay
-    (delete-overlay helix-main-selection-overlay)))
+(defun helix-pulse-main-region (&optional face)
+  (if (helix-overlay-live-p helix-main-region-overlay)
+      (pulse-momentary-highlight-overlay helix-main-region-overlay face)
+    (pulse-momentary-highlight-region (region-beginning) (region-end) face)))
 
 (defun helix-reveal-point-when-on-top (&rest _)
-  "Reveal point when its only partly visible.
-Emacs somewhy becomes very slow when point is only partly visible.
-Intended to be use as `:after' advice."
-  (unless helix-executing-command-for-fake-cursor
-    (redisplay)
-    (when (zerop (cdr (posn-col-row (posn-at-point))))
-      (recenter 0))))
+  "Reveal point when it's only partially visible.
+For some reason, Emacs can become slow while point is partially visible, so this
+function prevents that. It is intended to be used as `:after' advice."
+  ;; Here we only set a flag; the actual job is done in
+  ;; `helix--post-command-hook'.
+  (setq helix-reveal-point-when-on-top t))
 
 (declare-function helix-extend-selection "helix-commands")
 

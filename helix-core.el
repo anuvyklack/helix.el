@@ -67,14 +67,17 @@
                   (error-message-string error))))
       (when (helix-merge-regions-p helix-this-command)
         (helix-merge-overlapping-regions)))
-    ;; Linewise selection
-    (progn
-      (when (and helix-linewise-selection (not mark-active))
-        (setq helix-linewise-selection nil))
-      (if helix-linewise-selection
-          (helix-set-main-selection-overlay)
-        (helix-delete-main-selection-overlay)))
     (helix--single-undo-step-end)
+    (if (setq helix--newline-at-eol (and helix--newline-at-eol mark-active))
+        (helix--set-main-region-overlay (region-beginning) (1+ (region-end)))
+      (helix--delete-main-region-overlay))
+    ;; Reveal point when it's only partially visible. Do it after setting all
+    ;; overlays for fake and real cursors, to avoid blinking.
+    (when helix-reveal-point-when-on-top
+      (redisplay)
+      (when (zerop (cdr (posn-col-row (posn-at-point))))
+        (recenter 0))
+      (setq helix-reveal-point-when-on-top nil))
     (setq helix-this-command nil
           helix--input-cache nil)))
 

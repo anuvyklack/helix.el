@@ -60,7 +60,7 @@ If PAGES is non-nil scroll over pages instead of lines."
             (setq delta (- screen-space (/ line-height 3))
                   at-bottom? t)
           ;; else — not restricted
-          (setq helix-linewise-selection nil)
+          (setq helix--newline-at-eol nil)
           ;; Disable selection unless we want to extend it
           (unless helix--extend-selection (deactivate-mark)))))
     (when (> delta line-height)
@@ -93,7 +93,7 @@ If PAGES is non-nil scroll over pages instead of lines."
                          (/ line-height 3))
                 at-top? t)
         ;; else
-        (setq helix-linewise-selection nil)
+        (setq helix--newline-at-eol nil)
         (unless helix--extend-selection (deactivate-mark))))
     (when (> delta line-height)
       (pixel-scroll-precision-interpolate (- delta) nil 1))
@@ -176,7 +176,7 @@ If COUNT > 1 scroll smoothly."
       (if helix-multiple-cursors-mode
           (setq count point-row)
         ;; else
-        (setq helix-linewise-selection nil)
+        (setq helix--newline-at-eol nil)
         (unless helix--extend-selection (deactivate-mark))))
     (let ((scroll-preserve-screen-position nil))
       (scroll-up count))))
@@ -219,7 +219,7 @@ If COUNT > 1 scroll smoothly."
       (if helix-multiple-cursors-mode
           (setq count (- num-of-lines point-row))
         ;; else
-        (setq helix-linewise-selection nil)
+        (setq helix--newline-at-eol nil)
         (unless helix--extend-selection (deactivate-mark))))
     (let ((scroll-preserve-screen-position nil))
       (scroll-down count))))

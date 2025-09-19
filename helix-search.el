@@ -317,8 +317,8 @@ RANGES is a list of cons cells with positions (START . END)."
                                 ranges)))
     (set-register '/ pattern)
     (setq mark-active t
-          helix-linewise-selection nil
-          helix--extend-selection nil)
+          helix--extend-selection nil
+          helix--newline-at-eol nil)
     (cl-loop for (mark . point) in regions
              do (helix-create-fake-cursor point mark))
     :success))

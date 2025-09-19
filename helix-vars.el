@@ -409,7 +409,7 @@ Default value is 0 - scroll half the screen.")
                                           kill-ring-yank-pointer
                                           yank-undo-function
                                           temporary-goal-column
-                                          helix-linewise-selection
+                                          helix--newline-at-eol
                                           dabbrev--abbrev-char-regexp
                                           dabbrev--check-other-buffers
                                           dabbrev--friend-buffer-list
@@ -447,21 +447,29 @@ multiple cursors.")
 
 (helix-defvar-local helix--input-cache nil)
 
-(helix-defvar-local helix-linewise-selection nil
-  "Non-nil when linewise selection is active.
-This is a hack. In Emacs, selecting a full line (including the newline
-character at the end) moves the point to the next line. This contradicts
-Helix's and Vim's behavior. To simulate their behavior, we keep the point
-at the end of the line and set this flag. To take into account the linewise
-selection when needed, use `helix-carry-linewise-selection' function.")
+(helix-defvar-local helix--newline-at-eol nil
+  "Non-nil when newline char at the end of the line should be considered a part
+of the region (selection).
 
-(helix-defvar-local helix-main-selection-overlay nil
-  "An overlay with region face that visually extend selection to full line,
-while point remains at the end of the line. It covers active region plus
-one newline character after. Conterpart to `helix-linewise-selection' flag.
+This is a hack. In Emacs, selecting a newline character at the end of a line
+moves point to the next line. This contradicts Helix's and Vim's behavior.
+To simulate their behavior, we keep the point at the end of the line and set
+this flag. To take it into account use `helix-restore-newline-at-eol' function.")
 
-It is automatically set in `helix--post-command-hook' in `post-command-hook'
-when `helix-linewise-selection' flag is set.")
+(helix-defvar-local helix-main-region-overlay nil
+  "An overlay with region face that covers active region plus one newline
+character after, to visually extend selection over full line while point remains
+at the end of the line. Conterpart to `helix--newline-at-eol' flag.
+
+It is automatically set in `helix--post-command-hook' when
+`helix--newline-at-eol' flag is set.")
+
+(defvar helix-reveal-point-when-on-top nil
+  "If this flag is set than Helix command loop will reveal point if it's only
+partially visible in `helix--post-command-hook' then unset the flag.
+
+For some reason, Emacs can become slow while point is partially visible, so
+this prevents that.")
 
 (helix-defvar-local helix--narrowed-base-buffer nil)
 
