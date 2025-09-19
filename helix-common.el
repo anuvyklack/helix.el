@@ -79,14 +79,7 @@ Return the distance traveled positive or negative depending on DIRECTION."
   ;; Alternative: (helix-skip-chars " \t" dir)
   (if (natnump (or direction 1))
       (skip-syntax-forward " " (line-end-position))
-    (skip-syntax-backward " " (line-beginning-position))
-    ;; (let ((steps (skip-syntax-forward " " (line-end-position))))
-    ;;   (if (/= steps 0)
-    ;;       (let ((pnt (point)))
-    ;;         (backward-prefix-chars)
-    ;;         (+ steps (- (point) pnt)))
-    ;;     steps))
-    ))
+    (skip-syntax-backward " " (line-beginning-position))))
 
 (defun helix-next-char (&optional direction)
   "Return the next after point char toward the DIRECTION.
@@ -818,11 +811,10 @@ positive — end of line."
 
 (defun helilx-whitespace? (char)
   "Non-nil when CHAR belongs to whitespace syntax class."
-  ;; FIXME: Space syntax class can be denoted with both " " and "-" chars.
-  ;; Are we shore that `char-syntax' always returns " "?
   (and (eql (char-syntax char) ?\s)
        (not (memq char '(?\r ?\n))))
-  ;; Alternative: (memq char '(?\s ?\t))
+  ;; Alternative:
+  ;; (memq char '(?\s ?\t))
   )
 
 (defun helix-sign (&optional num)
