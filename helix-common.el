@@ -372,6 +372,29 @@ such as `helix-word', `helix-sentence', `paragraph', `line'."
                     (< beg end))))
         (cons beg end))))
 
+(defun helix-mark-thing-forward (thing count)
+  "Select from point to the end of the THING (or COUNT following THINGs).
+If no THING at point select COUNT following THINGs."
+  (helix-push-point)
+  (helix-carry-linewise-selection)
+  (unless helix--extend-selection
+    (set-mark (point))
+    (let ((dir (helix-sign count)))
+      (when (-if-let ((thing-beg . thing-end) (bounds-of-thing-at-point thing))
+                ;; At the boundary of the THING toward the motion direction.
+                (= (point) (if (natnump dir)
+                               thing-end
+                             thing-beg))
+              ;; No thing at point at all.
+              t)
+        (if (natnump dir)
+            (helix-forward-beginning-of-thing thing dir)
+          (helix-forward-end-of-thing thing dir))
+        (set-mark (point)))))
+  (forward-thing thing count)
+  (helix-maybe-enable-linewise-selection)
+  (helix-reveal-point-when-on-top))
+
 (defun helix--mark-a-word (thing)
   "Inner implementation of `helix-mark-a-word' and `helix-mark-a-WORD' commands."
   (-when-let ((thing-beg . thing-end) (bounds-of-thing-at-point thing))

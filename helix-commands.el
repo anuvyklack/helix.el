@@ -206,69 +206,111 @@ Use visual line when `visual-line-mode' is active."
     (setq temporary-goal-column most-positive-fixnum
           this-command 'next-line)))
 
-;; ]p or }}
-(helix-define-command helix-forward-paragraph (count)
-  "Move to the end of the COUNT next paragraph."
+;; ]p or } (Helix editor emulation)
+(helix-define-command helix-mark-forward-to-beginning-of-paragraph (count)
+  "Select from point to the start of the COUNT-th next paragraph.
+This function behaves the same as `]p' in the Helix text editor."
   :multiple-cursors t
   :merge-selections t
   (interactive "p")
+  (helix-push-point)
   (helix-carry-linewise-selection)
   (helix-maybe-set-mark)
   (helix-forward-beginning-of-thing 'helix-paragraph count)
   (helix-maybe-enable-linewise-selection))
 
-;; [p or {{
-(helix-define-command helix-backward-paragraph (count)
-  "Move to the beginning of the COUNT previous paragraph."
+;; [p or { (Helix editor emulation)
+(helix-define-command helix-mark-backward-to-beginning-of-paragraph (count)
+  "Select from point to the start of the COUNT-th previous paragraph.
+This function behaves the same as `[p' in the Helix text editor."
   :multiple-cursors t
   :merge-selections t
   (interactive "p")
+  (helix-push-point)
   (helix-carry-linewise-selection)
   (helix-maybe-set-mark)
   (forward-thing 'helix-paragraph (- count))
   (helix-maybe-enable-linewise-selection))
 
-;; ]f
-(helix-define-command helix-forward-function (count)
-  "Move to the end of the COUNT next function."
+;; ]p or } (alternative version)
+(helix-define-command helix-mark-paragraph-forward (count)
+  "Select from point to the end of the paragraph (or COUNT-th next paragraphs).
+If no paragraph at point select COUNT next paragraphs."
   :multiple-cursors t
   :merge-selections t
   (interactive "p")
+  (helix-mark-thing-forward 'helix-paragraph count))
+
+;; [p or { (alternative version)
+(helix-define-command helix-mark-paragraph-backward (count)
+  "Select from point to the start of the paragraph (or COUNT-th next paragraphs).
+If no paragraph at point select COUNT previous paragraphs."
+  :multiple-cursors t
+  :merge-selections t
+  (interactive "p")
+  (helix-mark-thing-forward 'helix-paragraph (- count)))
+
+;; ]f (Helix editor emulation)
+(helix-define-command helix-mark-forward-to-beginning-of-function (count)
+  "Select from point to the start of the COUNT-th next function.
+This function behaves the same as `]f' in the Helix text editor."
+  :multiple-cursors t
+  :merge-selections t
+  (interactive "p")
+  (helix-push-point)
   (helix-carry-linewise-selection)
   (helix-maybe-set-mark)
   (helix-forward-beginning-of-thing 'helix-function count)
   (helix-maybe-enable-linewise-selection))
 
-;; [f
-(helix-define-command helix-backward-function (count)
-  "Move to the beginning of the COUNT previous paragraph."
+;; [f (Helix editor emulation)
+(helix-define-command helix-mark-backward-to-beginning-of-function (count)
+  "Select from point to the start of the COUNT-th previous function.
+This function behaves the same as `[f' in the Helix text editor."
   :multiple-cursors t
   :merge-selections t
   (interactive "p")
+  (helix-push-point)
   (helix-carry-linewise-selection)
   (helix-maybe-set-mark)
   (forward-thing 'helix-function (- count))
   (helix-maybe-enable-linewise-selection))
 
-;; ]s
-(helix-define-command helix-forward-sentence (count)
-  "Move to the end of the COUNT next sentence."
+;; ]f (alternative version)
+(helix-define-command helix-mark-function-forward (count)
+  "Select from point to the end of the function (or COUNT-th next functions).
+If no function at point select COUNT next functions."
   :multiple-cursors t
   :merge-selections t
   (interactive "p")
-  (helix-carry-linewise-selection)
-  (helix-maybe-set-mark)
-  (helix-forward-beginning-of-thing 'helix-sentence count))
+  (helix-mark-thing-forward 'helix-function count))
+
+;; [f (alternative version)
+(helix-define-command helix-mark-function-backward (count)
+  "Select from point to the end of the function (or COUNT-th next functions).
+If no function at point select COUNT previous functions."
+  :multiple-cursors t
+  :merge-selections t
+  (interactive "p")
+  (helix-mark-thing-forward 'helix-function (- count)))
+
+;; ]s
+(helix-define-command helix-mark-sentence-forward (count)
+  "Select from point to the end of the sentence (or COUNT-th next sentences).
+If no sentence at point select COUNT next sentences."
+  :multiple-cursors t
+  :merge-selections t
+  (interactive "p")
+  (helix-mark-thing-forward 'helix-sentence count))
 
 ;; [s
-(helix-define-command helix-backward-sentence (count)
-  "Move to the beginning of the COUNT previous sentence."
-  (interactive "p")
+(helix-define-command helix-mark-sentence-backward (count)
+  "Select from point to the start of the sentence (or COUNT-th next sentences).
+If no sentence at point select COUNT previous sentences."
   :multiple-cursors t
   :merge-selections t
-  (helix-carry-linewise-selection)
-  (helix-maybe-set-mark)
-  (forward-thing 'helix-sentence (- count)))
+  (interactive "p")
+  (helix-mark-thing-forward 'helix-sentence (- count)))
 
 ;; mm
 ;; TODO: The most bare-boned version. Need upgrade.
