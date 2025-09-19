@@ -72,16 +72,16 @@
   "g l" #'helix-end-of-line-command
   "g g" #'helix-goto-first-line
   "G"   #'helix-goto-last-line
-  "] p" #'helix-forward-paragraph
-  "[ p" #'helix-backward-paragraph
-  "}"   #'helix-forward-paragraph
-  "{"   #'helix-backward-paragraph
-  "] f" #'helix-forward-function
-  "[ f" #'helix-backward-function
-  "] s" #'helix-forward-sentence
-  "[ s" #'helix-backward-sentence
-  "] ." #'helix-forward-sentence
-  "[ ." #'helix-backward-sentence
+  "] p" #'helix-mark-paragraph-forward
+  "[ p" #'helix-mark-paragraph-backward
+  "}"   #'helix-mark-paragraph-forward
+  "{"   #'helix-mark-paragraph-backward
+  "] f" #'helix-mark-function-forward
+  "[ f" #'helix-mark-function-backward
+  "] s" #'helix-mark-sentence-forward
+  "[ s" #'helix-mark-sentence-backward
+  "] ." #'helix-mark-sentence-forward
+  "[ ." #'helix-mark-sentence-backward
   "] e" #'next-error
   "[ e" #'previous-error
 
