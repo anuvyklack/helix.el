@@ -111,38 +111,30 @@ Move over visual line when `visual-line-mode' is active."
 
 (defun helix--forward-word-start (thing count)
   "Move to the COUNT-th next start of a word-like THING."
-  (setq helix-linewise-selection nil)
-  (setq count (abs count))
-  (setq helix-linewise-selection nil)
-  (when (zerop (forward-thing thing (1- count)))
-    (unless helix--extend-selection
-      (skip-chars-forward "\r\n")
-      (set-mark (point)))
-    (or (helilx-whitespace? (following-char))
-        (forward-thing thing))
+  (cl-assert (< 0 count))
+  (skip-chars-forward "\r\n")
+  (helix-maybe-set-mark)
+  (when (helilx-whitespace? (following-char))
+    (helix-skip-whitespaces)
+    (cl-decf count))
+  (unless (zerop count)
+    (forward-thing thing count)
     (helix-skip-whitespaces)))
 
 (defun helix--backward-word-start (thing count)
   "Move to the COUNT-th previous start of a word-like THING."
-  (setq helix-linewise-selection nil)
-  (setq count (- (abs count)))
-  (setq helix-linewise-selection nil)
-  (when (zerop (forward-thing thing (1+ count)))
-    (unless helix--extend-selection
-      (skip-chars-backward "\r\n")
-      (set-mark (point)))
-    (forward-thing thing -1)))
+  (cl-assert (< 0 count))
+  (skip-chars-backward "\r\n")
+  (helix-maybe-set-mark)
+  (forward-thing thing (- count)))
 
 (defun helix--forward-word-end (thing count)
   "Move to the COUNT-th next word-like THING end."
   (interactive "p")
-  (setq count (abs count))
-  (setq helix-linewise-selection nil)
-  (when (zerop (forward-thing thing (1- count)))
-    (unless helix--extend-selection
-      (skip-chars-forward "\r\n")
-      (set-mark (point)))
-    (forward-thing thing)))
+  (cl-assert (< 0 count))
+  (skip-chars-forward "\r\n")
+  (helix-maybe-set-mark)
+  (forward-thing thing count))
 
 (defmacro helix-motion-loop (spec &rest body)
   "Loop a certain number of times.
