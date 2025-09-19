@@ -162,7 +162,6 @@
   "C-u" #'helix-smooth-scroll-up
   "C-e" #'helix-mix-scroll-line-down
   "C-y" #'helix-mix-scroll-line-up
-  ;; "z z" #'helix-smooth-scroll-line-to-center
   "z z" #'helix-smooth-scroll-line-not-to-very-top
   "z t" #'helix-smooth-scroll-line-to-top
   "z b" #'helix-smooth-scroll-line-to-bottom
@@ -380,7 +379,6 @@
   "C-u" #'helix-smooth-scroll-up
   "C-e" #'helix-mix-scroll-line-down
   "C-y" #'helix-mix-scroll-line-up
-  ;; "z z" #'helix-smooth-scroll-line-to-center
   "z z" #'helix-smooth-scroll-line-not-to-very-top
   "z t" #'helix-smooth-scroll-line-to-top
   "z b" #'helix-smooth-scroll-line-to-bottom)
@@ -392,6 +390,11 @@
   "C-w" #'helix-delete-backward-word)
 
 ;;; Conditional keybindings
+
+(when helix-want-zz-scroll-to-center
+  (dolist (state '(normal motion))
+    (helix-keymap-global-set state
+      "z z" #'helix-smooth-scroll-line-to-center)))
 
 (when helix-want-paragraph-motions-like-in-Helix
   (helix-keymap-global-set 'normal
