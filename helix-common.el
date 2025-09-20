@@ -107,7 +107,7 @@ Move over visual line when `visual-line-mode' is active."
   (cl-assert (< 0 count))
   (skip-chars-forward "\r\n")
   (helix-maybe-set-mark)
-  (when (helilx-whitespace? (following-char))
+  (when (helix-whitespace? (following-char))
     (helix-skip-whitespaces)
     (cl-decf count))
   (unless (zerop count)
@@ -809,7 +809,7 @@ positive — end of line."
          (progn (goto-char beg) (helix-visual-bolp))
          (progn (goto-char end) (helix-visual-bolp)))))
 
-(defun helilx-whitespace? (char)
+(defun helix-whitespace? (char)
   "Non-nil when CHAR belongs to whitespace syntax class."
   (and (eql (char-syntax char) ?\s)
        (not (memq char '(?\r ?\n))))
