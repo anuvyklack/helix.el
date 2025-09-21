@@ -1470,7 +1470,6 @@ This recursively creates indirect clones of the current buffer so that the
 narrowing doesn't affect other windows displaying the same buffer. Call
 `helix-widen-indirectly-narrowed' to undo it (incrementally)."
   :multiple-cursors t
-  :merge-selections t
   (interactive)
   (when (use-region-p)
     (helix-restore-newline-at-eol)
@@ -1494,8 +1493,7 @@ With `universal-argument' kill all indirect buffers, return the base buffer and
 widen it.
 
 If the current buffer is not an indirect buffer, works like `widen'."
-  :multiple-cursors t
-  :merge-selections t
+  :multiple-cursors nil
   (interactive "P")
   (unless (buffer-narrowed-p)
     (user-error "Buffer isn't narrowed"))

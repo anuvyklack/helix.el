@@ -93,6 +93,9 @@ in the command loop, and the fake cursors can pick up on those instead."
                    comment-dwim))       ;; gc
   (helix-advice-add command :around #'helix-keep-selection-a))
 
+(helix-define-advice clone-indirect-buffer (:before (&rest _))
+  (helix--delete-main-region-overlay))
+
 ;;; Eldoc
 
 (with-eval-after-load 'eldoc
