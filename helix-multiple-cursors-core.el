@@ -194,9 +194,7 @@ The current state is stored in the overlay for later retrieval."
       (overlay-put cursor 'type 'fake-cursor)
       (overlay-put cursor 'priority 100)
       (helix--store-cursor-state cursor point mark)
-      (when (and mark-active mark
-                 (/= point mark))
-        (helix--set-fake-region-overlay cursor point mark))
+      (helix--set-fake-region-overlay cursor)
       (puthash id cursor helix--cursors-table)
       cursor)))
 
@@ -227,9 +225,7 @@ Optionally UPDATE fake-cursors state."
   (set-marker (overlay-get cursor 'mark) (or mark point))
   (when update (helix-update-fake-cursor-state cursor))
   (helix--set-cursor-overlay cursor point)
-  (if (and mark mark-active)
-      (helix--set-fake-region-overlay cursor point mark)
-    (helix--delete-fake-region-overlay cursor))
+  (helix--set-fake-region-overlay cursor)
   cursor)
 
 (defun helix-delete-fake-cursor (cursor)
@@ -275,21 +271,28 @@ Return CURSOR."
              (overlay-put cursor 'after-string nil))))
     cursor))
 
-(defun helix--set-fake-region-overlay (cursor beg end)
-  "Set the overlay looking like active region between BEG and END
-and bind it to CURSOR."
-  (when (overlay-get cursor 'helix--newline-at-eol)
-    (when (< end beg) (cl-rotatef beg end))
-    (cl-incf end))
-  (if-let* ((region (overlay-get cursor 'fake-region)))
-      (move-overlay region beg end)
-    ;; else
-    (setq region (-doto (make-overlay beg end nil nil t)
-                   (overlay-put 'face 'region)
-                   (overlay-put 'type 'fake-region)
-                   (overlay-put 'id (overlay-get cursor 'id))
-                   (overlay-put 'priority 1)))
-    (overlay-put cursor 'fake-region region)))
+(defun helix--set-fake-region-overlay (cursor)
+  "For fake CURSOR setup the overlay looking like active region when appropriate."
+  (let ((beg (overlay-get cursor 'point))
+        (end (overlay-get cursor 'mark))
+        (newline-at-eol? (overlay-get cursor 'helix--newline-at-eol)))
+    (if (and (overlay-get cursor 'mark-active)
+             (or (/= beg end) newline-at-eol?))
+        (progn
+          (when newline-at-eol?
+            (when (< end beg) (cl-rotatef beg end))
+            (cl-incf end))
+          (if-let ((region (overlay-get cursor 'fake-region)))
+              (move-overlay region beg end)
+            ;; else
+            (setq region (-doto (make-overlay beg end nil nil t)
+                           (overlay-put 'face 'region)
+                           (overlay-put 'type 'fake-region)
+                           (overlay-put 'id (overlay-get cursor 'id))
+                           (overlay-put 'priority 1)))
+            (overlay-put cursor 'fake-region region)))
+      ;; else
+      (helix--delete-fake-region-overlay cursor))))
 
 (defun helix--delete-fake-cursor (cursor)
   "Delete CURSOR overlay."
@@ -351,8 +354,7 @@ and bind it to CURSOR."
   (let ((point (overlay-get cursor 'point))
         (mark (overlay-get cursor 'mark)))
     (helix--set-cursor-overlay cursor point)
-    (when (overlay-get cursor 'mark-active)
-      (helix--set-fake-region-overlay cursor point mark))))
+    (helix--set-fake-region-overlay cursor)))
 
 (defun helix-fake-cursor-p (overlay)
   "Return t if an OVERLAY is a fake cursor."
