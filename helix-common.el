@@ -1086,7 +1086,8 @@ right after the point."
 
 (defun helix-overlay-live-p (overlay)
   "Return non-nil if OVERLAY is not deleted from buffer."
-  (-some-> (overlay-buffer overlay)
+  (-some-> overlay
+    (overlay-buffer)
     (buffer-live-p)))
 
 (defun helix-consume-newline-at-eol ()
