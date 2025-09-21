@@ -537,7 +537,7 @@ are buffer local and take precedence over all others.
 ;; window-cursor-type
 
 (defun helix-update-cursor ()
-  "Update the cursor for current Helix STATE in current buffer."
+  "Update the cursor shape and color for current Helix state in current buffer."
   (when (eq (window-buffer) (current-buffer))
     (helix-set-cursor-type-and-color
      (helix-state-property helix-state :cursor))

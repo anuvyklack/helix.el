@@ -69,10 +69,10 @@ action. The step is terminated with `helix--single-undo-step-end'."
           (setq undo-list (cdr undo-list)))
         (let ((equiv (gethash (car undo-list)
                               undo-equiv-table)))
-          ;; Remove undo boundaries from `buffer-undo-list' withing current undo
-          ;; step. Also remove entries that move point during undo, because we
-          ;; handle cursors positions manually to synchronize real cursor with
-          ;; fake ones.
+          ;; Remove undo boundaries (nil elements) from `buffer-undo-list'
+          ;; withing current undo step. Also remove entries that move point
+          ;; during undo (numbers), because we handle cursors positions manually
+          ;; to synchronize real cursor with fake ones.
           (setq undo-list (helix-destructive-filter
                            #'(lambda (i) (or (numberp i) (null i)))
                            undo-list
@@ -186,6 +186,8 @@ The current state is stored in the overlay for later retrieval."
       (helix-multiple-cursors-mode 1))))
 
 (defun helix--create-fake-cursor-1 (id point mark)
+  "Create a fake cursor with ID at POINT and fake region between POINT and MARK.
+This function is the guts of the `helix-create-fake-cursor'."
   (unless id (setq id (helix--new-fake-cursor-id)))
   (save-excursion
     (goto-char point)
@@ -430,7 +432,7 @@ If SORT is non-nil sort cursors in order they are located in buffer."
   (not (hash-table-empty-p helix--cursors-table)))
 
 (defun helix-cursors-positions ()
-  "Return alist with positions of all cursors.
+  "Return alist with positions data of all cursors.
 Alist containes cons cells:
 
     (ID . (POINT MARK NEWLINE-AT-EOL?))

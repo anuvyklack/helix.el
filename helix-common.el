@@ -258,7 +258,7 @@ What is sentence is defined by `forward-sentence-function'."
 
 (defun forward-helix-paragraph (&optional count)
   "Move point COUNT paragraphs forward (backward if COUNT is negative).
-Returns then count of sentences left to move, positive of negative depending
+Returns then count of paragraphs left to move, positive of negative depending
 on sign of COUNT."
   (helix-motion-loop (dir (or count 1))
     (cond ((natnump dir) (forward-paragraph))
@@ -270,7 +270,7 @@ on sign of COUNT."
 
 (defun forward-helix-function (&optional count)
   "Move point COUNT functions forward (backward if COUNT is negative).
-Returns then count of sentences left to move, positive of negative depending
+Returns then count of functions left to move, positive of negative depending
 on sign of COUNT."
   (helix-motion-loop (dir (or count 1))
     (if (natnump dir) (end-of-defun) (beginning-of-defun))))
@@ -940,15 +940,15 @@ passed in any order."
 ;;   (goto-char end))
 
 (defun helix-maybe-set-mark (&optional position)
-  "Disable linewise selection, and set mark at POSITION unless extending
-selection is active."
+  "When extending selection is not active set mark at POSITION.
+Return non-nil when mark was set."
   (setq helix--newline-at-eol nil)
   (unless helix--extend-selection
     (set-mark (or position (point)))))
 
 (defun helix-maybe-deactivate-mark ()
-  "Disable linewise selection, and deactivate mark unless extending
-selection is active."
+  "Deactivate mark unless extending selection is active.
+Return t when mark was deactivated."
   (setq helix--newline-at-eol nil)
   (unless helix--extend-selection
     (deactivate-mark)))
