@@ -338,7 +338,6 @@ If no sentence at point select COUNT previous sentences."
   :multiple-cursors nil
   (interactive)
   (helix-delete-all-fake-cursors)
-  (setq helix--newline-at-eol nil)
   (helix-push-point)
   (let ((avy-all-windows nil))
     (when (-> (avy--regex-candidates avy-goto-word-0-regexp
@@ -353,15 +352,13 @@ If no sentence at point select COUNT previous sentences."
   :multiple-cursors nil
   (interactive)
   (helix-delete-all-fake-cursors)
-  (setq helix--newline-at-eol nil)
   (helix-push-point)
   (let ((avy-all-windows nil))
     (when (-> (avy--regex-candidates avy-goto-word-0-regexp
                                      (window-start) (point))
               (nreverse)
               (avy-process))
-      (unless helix--extend-selection
-        (set-mark (point))
+      (when (helix-maybe-set-mark)
         (forward-thing 'helix-word)))))
 
 ;; gW
@@ -370,11 +367,9 @@ If no sentence at point select COUNT previous sentences."
   :multiple-cursors nil
   (interactive)
   (helix-delete-all-fake-cursors)
-  (setq helix--newline-at-eol nil)
   (helix-push-point)
   (let ((avy-all-windows nil))
-    (when (-> (avy--regex-candidates "[^ \r\n\t]+"
-                                     (point) (window-end nil t))
+    (when (-> (avy--regex-candidates "[^ \r\n\t]+" (point) (window-end nil t))
               (avy-process))
       (helix-maybe-set-mark)
       (forward-thing 'helix-WORD))))
@@ -385,15 +380,12 @@ If no sentence at point select COUNT previous sentences."
   :multiple-cursors nil
   (interactive)
   (helix-delete-all-fake-cursors)
-  (setq helix--newline-at-eol nil)
   (helix-push-point)
   (let ((avy-all-windows nil))
-    (when (-> (avy--regex-candidates "[^ \r\n\t]+"
-                                     (window-start) (point))
+    (when (-> (avy--regex-candidates "[^ \r\n\t]+" (window-start) (point))
               (nreverse)
               (avy-process))
-      (unless helix--extend-selection
-        (set-mark (point))
+      (when (helix-maybe-set-mark)
         (forward-thing 'helix-WORD)))))
 
 ;; gj
@@ -407,11 +399,9 @@ to the chosen one."
   (interactive)
   (helix-delete-all-fake-cursors)
   (helix-push-point)
-  (let (expand-to-full-lines?)
-    (if helix--extend-selection
-        (setq expand-to-full-lines? (helix-logical-lines-p))
-      (setq helix--newline-at-eol nil)
-      (deactivate-mark))
+  (let ((expand-to-full-lines? (and helix--extend-selection
+                                    (helix-logical-lines-p))))
+    (helix-maybe-deactivate-mark)
     (let ((temporary-goal-column (current-column)))
       (-> (helix-collect-positions #'next-line)
           (avy-process)))
@@ -430,11 +420,9 @@ to the chosen one."
   (interactive)
   (helix-delete-all-fake-cursors)
   (helix-push-point)
-  (let (expand-to-full-lines?)
-    (if helix--extend-selection
-        (setq expand-to-full-lines? (helix-logical-lines-p))
-      (setq helix--newline-at-eol nil)
-      (deactivate-mark))
+  (let ((expand-to-full-lines? (and helix--extend-selection
+                                    (helix-logical-lines-p))))
+    (helix-maybe-deactivate-mark)
     (let ((temporary-goal-column (current-column)))
       (-> (helix-collect-positions #'previous-line)
           (avy-process)))
