@@ -1512,10 +1512,7 @@ keys to repeat motion forward/backward."
   :multiple-cursors t
   :merge-selections 'extend-selection
   (interactive "p")
-  (setq helix--newline-at-eol nil)
-  (if helix--extend-selection
-      (or (region-active-p) (set-mark (point)))
-    (set-mark (point)))
+  (helix-maybe-set-mark)
   (let ((char (read-char "f")))
     (helix-motion-loop (dir count)
       (helix-find-char char dir nil))))
@@ -1528,10 +1525,7 @@ keys to repeat motion forward/backward."
   :multiple-cursors t
   :merge-selections 'extend-selection
   (interactive "p")
-  (setq helix--newline-at-eol nil)
-  (if helix--extend-selection
-      (or (region-active-p) (set-mark (point)))
-    (set-mark (point)))
+  (helix-maybe-set-mark)
   (setq count (- count))
   (let ((char (read-char "F")))
     (helix-motion-loop (dir count)
@@ -1545,10 +1539,7 @@ keys to repeat motion forward/backward."
   :multiple-cursors t
   :merge-selections 'extend-selection
   (interactive "p")
-  (setq helix--newline-at-eol nil)
-  (if helix--extend-selection
-      (or (region-active-p) (set-mark (point)))
-    (set-mark (point)))
+  (helix-maybe-set-mark)
   (let ((char (read-char "t")))
     (helix-motion-loop (dir count)
       (helix-find-char char dir t))))
@@ -1561,10 +1552,7 @@ keys to repeat motion forward/backward."
   :multiple-cursors t
   :merge-selections 'extend-selection
   (interactive "p")
-  (setq helix--newline-at-eol nil)
-  (if helix--extend-selection
-      (or (region-active-p) (set-mark (point)))
-    (set-mark (point)))
+  (helix-maybe-set-mark)
   (setq count (- count))
   (let ((char (read-char "T")))
     (helix-motion-loop (dir count)
