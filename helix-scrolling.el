@@ -40,7 +40,7 @@ If PAGES is non-nil scroll over pages instead of lines."
                            (window-mode-line-height)
                            (window-tab-line-height)))
          (line-height (default-line-height))
-         (delta (cond ((eql count 0) (/ window-height 2))
+         (delta (cond ((= count 0) (/ window-height 2))
                       (pages? (* count window-height))
                       (t (* count line-height))))
          (point-data (posn-at-point))
@@ -50,7 +50,7 @@ If PAGES is non-nil scroll over pages instead of lines."
     ;; BUG: When jump lands at the top of the screen the point could be only
     ;; partially visible. If you try to scroll smoothly from this position the
     ;; point will jump unpredictably. Fix initial position in this case.
-    (when (eq row-at-point 0) (recenter 0))
+    (when (= row-at-point 0) (recenter 0))
     ;; `screen-space' is the height of the part of the screen toward the
     ;; scrolling direction.
     (let ((screen-space (- window-height y-at-point)))
@@ -60,9 +60,7 @@ If PAGES is non-nil scroll over pages instead of lines."
             (setq delta (- screen-space (/ line-height 3))
                   at-bottom? t)
           ;; else — not restricted
-          (setq helix--newline-at-eol nil)
-          ;; Disable selection unless we want to extend it
-          (unless helix--extend-selection (deactivate-mark)))))
+          (helix-maybe-deactivate-mark))))
     (when (> delta line-height)
       (pixel-scroll-precision-interpolate delta nil 1))
     (when at-bottom? (recenter -1))))
@@ -75,7 +73,7 @@ If PAGES is non-nil scroll over pages instead of lines."
                            (window-mode-line-height)
                            (window-tab-line-height)))
          (line-height (default-line-height))
-         (delta (cond ((eql count 0) (/ window-height 2))
+         (delta (cond ((= count 0) (/ window-height 2))
                       (pages? (* count window-height))
                       (t (* count line-height))))
          (point-data (posn-at-point))
@@ -85,7 +83,7 @@ If PAGES is non-nil scroll over pages instead of lines."
     ;; BUG: When jump lands at the top of the screen the point could be only
     ;; partially visible. If you try to scroll smoothly from this position the
     ;; point will jump unpredictably. Fix initial position in this case.
-    (when (eql row-at-point 0) (recenter 0))
+    (when (= row-at-point 0) (recenter 0))
     (when (> delta (- y-at-point
                       line-height))
       (if restricted
@@ -93,8 +91,7 @@ If PAGES is non-nil scroll over pages instead of lines."
                          (/ line-height 3))
                 at-top? t)
         ;; else
-        (setq helix--newline-at-eol nil)
-        (unless helix--extend-selection (deactivate-mark))))
+        (helix-maybe-deactivate-mark)))
     (when (> delta line-height)
       (pixel-scroll-precision-interpolate (- delta) nil 1))
     (when at-top? (recenter 0))))
@@ -160,7 +157,7 @@ instead."
   "Scroll the window COUNT lines downwards.
 If COUNT > 1 scroll smoothly."
   (interactive "p")
-  (if (eql count 1)
+  (if (= count 1)
       (helix-scroll-line-down count)
     (helix-smooth-scroll-line-down count)))
 
@@ -176,8 +173,7 @@ If COUNT > 1 scroll smoothly."
       (if helix-multiple-cursors-mode
           (setq count point-row)
         ;; else
-        (setq helix--newline-at-eol nil)
-        (unless helix--extend-selection (deactivate-mark))))
+        (helix-maybe-deactivate-mark)))
     (let ((scroll-preserve-screen-position nil))
       (scroll-up count))))
 
@@ -199,7 +195,7 @@ If COUNT > 1 scroll smoothly."
   "Scroll the window COUNT lines upwards.
 If COUNT > 1 scroll smoothly."
   (interactive "p")
-  (if (eql count 1)
+  (if (= count 1)
       (helix-scroll-line-up count)
     (helix-smooth-scroll-line-up count)))
 
@@ -219,8 +215,7 @@ If COUNT > 1 scroll smoothly."
       (if helix-multiple-cursors-mode
           (setq count (- num-of-lines point-row))
         ;; else
-        (setq helix--newline-at-eol nil)
-        (unless helix--extend-selection (deactivate-mark))))
+        (helix-maybe-deactivate-mark)))
     (let ((scroll-preserve-screen-position nil))
       (scroll-down count))))
 
@@ -250,7 +245,7 @@ If COUNT > 1 scroll smoothly."
          (y-at-point (cdr (posn-x-y point-data)))
          (delta (- posn-y-target
                    y-at-point)))
-    (when (eql row-at-point 0) (recenter 0))
+    (when (= row-at-point 0) (recenter 0))
     (pixel-scroll-precision-interpolate delta nil 1)))
 
 (put 'helix-smooth-scroll-line-to-center 'scroll-command t)
@@ -269,7 +264,7 @@ If COUNT > 1 scroll smoothly."
          (y-at-point (cdr (posn-x-y point-data)))
          (delta (- posn-y-target
                    y-at-point)))
-    (when (eql row-at-point 0) (recenter 0))
+    (when (= row-at-point 0) (recenter 0))
     (pixel-scroll-precision-interpolate delta nil 1)))
 
 (put 'helix-smooth-scroll-line-not-to-very-top 'scroll-command t)
@@ -288,7 +283,7 @@ If COUNT > 1 scroll smoothly."
          (y-at-point (cdr (posn-x-y point-data)))
          (delta (- y-at-point
                    (/ line-height 4))))
-    (when (eql row-at-point 0) (recenter 0))
+    (when (= row-at-point 0) (recenter 0))
     (pixel-scroll-precision-interpolate (- delta) nil 1)
     (recenter 0)))
 
@@ -312,7 +307,7 @@ If COUNT > 1 scroll smoothly."
          (delta (- window-height
                    y-at-point
                    (/ line-height 4))))
-    (when (eql row-at-point 0) (recenter 0))
+    (when (= row-at-point 0) (recenter 0))
     (pixel-scroll-precision-interpolate delta nil 1)
     (recenter -1)))
 

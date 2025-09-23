@@ -42,10 +42,10 @@
 
 (defun helix--pre-commad-hook ()
   "Hook run before each command is executed. See `pre-command-hook'."
+  (when (and helix--extend-selection (not mark-active))
+    (set-mark (point)))
   (unless helix-executing-command-for-fake-cursor
     (setq helix-this-command this-command)
-    (when (and helix--extend-selection (not mark-active))
-      (set-mark (point)))
     (helix--single-undo-step-beginning)))
 
 (defun helix--post-command-hook ()
@@ -68,16 +68,6 @@
       (when (helix-merge-regions-p helix-this-command)
         (helix-merge-overlapping-regions)))
     (helix--single-undo-step-end)
-    (if (setq helix--newline-at-eol (and helix--newline-at-eol mark-active))
-        (helix--set-main-region-overlay (region-beginning) (1+ (region-end)))
-      (helix--delete-main-region-overlay))
-    ;; Reveal point when it's only partially visible. Do it after setting all
-    ;; overlays for fake and real cursors, to avoid blinking.
-    (when helix-reveal-point-when-on-top
-      (redisplay)
-      (when (zerop (cdr (posn-col-row (posn-at-point))))
-        (recenter 0))
-      (setq helix-reveal-point-when-on-top nil))
     (setq helix-this-command nil
           helix--input-cache nil)))
 
@@ -92,11 +82,13 @@
         (helix-load-whitelists)
         (add-hook 'pre-command-hook #'helix--pre-commad-hook nil t)
         (add-hook 'post-command-hook #'helix--post-command-hook 90 t)
+        (add-hook 'deactivate-mark-hook #'helix-disable-newline-at-eol nil t)
         (add-hook 'after-revert-hook #'helix-delete-all-fake-cursors nil t)
         (helix-change-state (helix-initial-state)))
     ;; else
     (remove-hook 'post-command-hook #'helix--post-command-hook t)
     (remove-hook 'pre-command-hook #'helix--pre-commad-hook t)
+    (remove-hook 'deactivate-mark-hook #'helix-disable-newline-at-eol t)
     (remove-hook 'after-revert-hook #'helix-delete-all-fake-cursors t)
     (helix--single-undo-step-end)
     (setq helix-this-command nil

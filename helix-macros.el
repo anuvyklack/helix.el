@@ -99,18 +99,20 @@ saved as markers and correctly handle case when text was inserted before region.
   (let ((pnt (gensym "point"))
         (beg (gensym "region-beg"))
         (end (gensym "region-end"))
-        (dir (gensym "region-dir")))
+        (dir (gensym "region-dir"))
+        (newline-at-eol (gensym "newline-at-eol")))
     `(if (use-region-p)
          (let ((deactivate-mark nil)
                (,beg (copy-marker (region-beginning) t))
                (,end (copy-marker (region-end)))
-               (,dir (helix-region-direction)))
+               (,dir (helix-region-direction))
+               (,newline-at-eol helix--newline-at-eol))
            (unwind-protect
                (save-excursion ,@body)
-             (helix-set-region ,beg ,end ,dir)
-             (when helix--newline-at-eol
-               (setq helix--newline-at-eol (save-excursion (goto-char ,end)
-                                                           (eolp))))
+             (helix-set-region ,beg ,end ,dir (and ,newline-at-eol
+                                                   (save-excursion
+                                                     (goto-char ,end)
+                                                     (eolp))))
              (set-marker ,beg nil)
              (set-marker ,end nil)))
        ;; else

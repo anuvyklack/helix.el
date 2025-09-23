@@ -137,13 +137,11 @@ CURSORS-POSITIONS is an alist returned by `helix-cursors-positions' function."
                  (helix--delete-fake-cursor cursor)))
            helix--cursors-table)
   (dolist (val cursors-positions)
-    (-let [(id point mark newline-at-eol?) val]
+    (-let [(id point mark newline-at-eol) val]
       (pcase id
-        (0 (goto-char point)
-           (set-mark mark)
-           (setq helix--newline-at-eol newline-at-eol?))
+        (0 (helix-set-region mark point nil newline-at-eol))
         (_ (let ((mark-active (not (null mark)))
-                 (helix--newline-at-eol newline-at-eol?))
+                 (helix--newline-at-eol newline-at-eol))
              (if-let* ((cursor (gethash id helix--cursors-table)))
                  (helix-move-fake-cursor cursor point mark :update)
                (helix--create-fake-cursor-1 id point mark)))))))
@@ -215,7 +213,6 @@ based on point and mark.
 
 Assign the ID to the new cursor, if specified.
 The current state is stored in the overlay for later retrieval."
-  (helix--delete-main-region-overlay)
   (helix-create-fake-cursor (point) (mark t) id))
 
 (defun helix-move-fake-cursor (cursor point &optional mark update)
@@ -332,7 +329,10 @@ Return CURSOR."
 (defun helix-restore-point-from-fake-cursor (cursor)
   "Restore point, mark and saved variables from CURSOR overlay, and delete it."
   (helix--restore-cursor-state cursor)
-  (helix--delete-fake-cursor cursor))
+  (helix--delete-fake-cursor cursor)
+  (if helix--newline-at-eol
+      (helix--set-region-overlay (region-beginning) (1+ (region-end)))
+    (helix--delete-region-overlay)))
 
 (defun helix--restore-cursor-state (overlay)
   "Restore point, mark and cursor variables saved in OVERLAY."
@@ -485,6 +485,7 @@ the data needed for multiple cursors functionality."
     (dolist (var helix-fake-cursor-specific-vars)
       (when (boundp var)
         (setq state (plist-put state var (symbol-value var)))))
+    (helix--delete-region-overlay)
     state))
 
 (defun helix--restore-main-cursor-state (state)
@@ -497,7 +498,10 @@ the data needed for multiple cursors functionality."
                   (set-marker mrk nil))))
   (dolist (var helix-fake-cursor-specific-vars)
     (when (boundp var)
-      (set var (plist-get state var)))))
+      (set var (plist-get state var))))
+  (if (and helix--newline-at-eol mark-active)
+      (helix--set-region-overlay (region-beginning) (1+ (region-end)))
+    (helix--delete-region-overlay)))
 
 (defmacro helix-with-fake-cursor (cursor &rest body)
   "Move point to the fake CURSOR, restore the environment from it,
@@ -574,7 +578,7 @@ Restore it after BODY evaluation if it is still alive."
   (declare (indent 0) (debug t))
   (let ((real-cursor (make-symbol "real-cursor")))
     `(let ((,real-cursor (helix--create-fake-cursor-1 0 (point) (mark t))))
-       (helix--delete-main-region-overlay)
+       (helix--delete-region-overlay)
        (unwind-protect (progn ,@body)
          (cond ((helix-overlay-live-p ,real-cursor)
                 (helix-restore-point-from-fake-cursor ,real-cursor))
