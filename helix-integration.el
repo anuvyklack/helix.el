@@ -84,7 +84,8 @@ in the command loop, and the fake cursors can pick up on those instead."
   (if (use-region-p)
       (helix-motion-loop (_ 2)
         (funcall orig-fun))
-    (funcall orig-fun)))
+    (funcall orig-fun))
+  (helix-reveal-point-when-on-top))
 
 (dolist (command '(fill-region          ;; gq
                    indent-region        ;; =
@@ -93,8 +94,7 @@ in the command loop, and the fake cursors can pick up on those instead."
                    comment-dwim))       ;; gc
   (helix-advice-add command :around #'helix-keep-selection-a))
 
-(helix-define-advice clone-indirect-buffer (:before (&rest _))
-  (helix--delete-main-region-overlay))
+(helix-advice-add 'clone-indirect-buffer :before #'helix-deactivate-mark)
 
 ;;; Eldoc
 
@@ -190,20 +190,33 @@ in the command loop, and the fake cursors can pick up on those instead."
 
 ;;; Minibuffer
 
+;; (helix-keymap-set minibuffer-mode-map 'normal
+;;   ;; "ESC" #'abort-minibuffers
+;;   "<escape>" #'abort-recursive-edit
+;;   ;; "<down>"   #'next-line-or-history-element
+;;   ;; "<up>"     #'previous-line-or-history-element
+;;   "C-j" #'next-line-or-history-element
+;;   "C-k" #'previous-line-or-history-element)
+;;
+;; ;; (helix-keymap-set minibuffer-local-map 'insert
+;; ;;   "C-j" #'next-line-or-history-element
+;; ;;   "C-k" #'previous-line-or-history-element)
+
 (helix-keymap-set minibuffer-mode-map 'normal
-  ;; "ESC" 'abort-minibuffers
-  "<escape>" 'abort-recursive-edit
-  ;; "<down>"   'next-line-or-history-element
-  ;; "<up>"     'previous-line-or-history-element
-  "C-j" 'next-line-or-history-element
-  "C-k" 'previous-line-or-history-element)
+  ;; "ESC" #'abort-minibuffers
+  "<escape>" #'abort-recursive-edit)
+
+(helix-keymap-set minibuffer-mode-map nil
+  "C-j" #'next-line-or-history-element
+  "C-k" #'previous-line-or-history-element)
+
+(helix-keymap-set read-expression-map 'normal
+  "<down>" #'next-line-or-history-element
+  "<up>"   #'previous-line-or-history-element)
 
 (helix-keymap-set read-expression-map nil
-  "C-j" 'next-line-or-history-element
-  "C-k" 'previous-line-or-history-element)
-(helix-keymap-set read-expression-map 'normal
-  "<down>" 'next-line-or-history-element
-  "<up>"   'previous-line-or-history-element)
+  "C-j" #'next-line-or-history-element
+  "C-k" #'previous-line-or-history-element)
 
 ;; C-j is binded in `read--expression-map' to `read--expression-try-read'
 ;; which is also binded to RET. Delete it, to make the binding from the parent
@@ -214,20 +227,20 @@ in the command loop, and the fake cursors can pick up on those instead."
 
 (with-eval-after-load 'vertico
   (helix-keymap-set vertico-map 'normal
-    "y"   'vertico-save ;; Copy current candidate to kill ring
-    "j"   'vertico-next
-    "k"   'vertico-previous
-    "g g" 'vertico-first
-    "G"   'vertico-last
-    "C-f" 'vertico-scroll-up
-    "C-b" 'vertico-scroll-down
-    "C-d" 'vertico-scroll-up
-    "C-u" 'vertico-scroll-down
+    "y"   #'vertico-save ;; Copy current candidate to kill ring
+    "j"   #'vertico-next
+    "k"   #'vertico-previous
+    "g g" #'vertico-first
+    "G"   #'vertico-last
+    "C-f" #'vertico-scroll-up
+    "C-b" #'vertico-scroll-down
+    "C-d" #'vertico-scroll-up
+    "C-u" #'vertico-scroll-down
     ;; Rebind forward/backward paragraphs keys
-    "] p" 'vertico-next-group
-    "[ p" 'vertico-previous-group
-    "}"   'vertico-next-group
-    "{"   'vertico-previous-group))
+    "] p" #'vertico-next-group
+    "[ p" #'vertico-previous-group
+    "}"   #'vertico-next-group
+    "{"   #'vertico-previous-group))
 
 ;;; Xref
 
@@ -235,8 +248,23 @@ in the command loop, and the fake cursors can pick up on those instead."
   (dolist (cmd '(xref-find-definitions
                  xref-find-references
                  xref-go-back
-                 xref-go-forward))
-    (helix-advice-add cmd :around #'helix-jump-command)))
+                 xref-go-forward
+                 xref-goto-xref))
+    (helix-advice-add cmd :around #'helix-jump-command))
+
+  (helix-keymap-set xref--xref-buffer-mode-map nil
+    "o"   #'xref-show-location-at-point
+    "Q"   #'xref-quit-and-pop-marker-stack
+
+    "C-j" #'xref-next-line
+    "C-k" #'xref-prev-line
+
+    "] p" #'xref-next-group
+    "[ p" #'xref-prev-group
+    "}"   #'xref-next-group
+    "{"   #'xref-prev-group
+    "z j" #'xref-next-group
+    "z k" #'xref-prev-group))
 
 ;;; Occur Edit mode
 
@@ -283,26 +311,26 @@ in the command loop, and the fake cursors can pick up on those instead."
 
 ;;; Outline
 
-(dolist (command '(outline-up-heading
+(dolist (cmd '(outline-up-heading
                    outline-next-visible-heading
                    outline-previous-visible-heading
                    outline-forward-same-level
                    outline-backward-same-level))
-  (put command 'merge-selections 'extend-selection)
-  (helix-advice-add command :before #'helix-deactivate-mark)
-  (helix-advice-add command :after #'helix-reveal-point-when-on-top))
+  (put cmd 'merge-selections 'extend-selection)
+  (helix-advice-add cmd :before #'helix-deactivate-mark)
+  (helix-advice-add cmd :after #'helix-reveal-point-when-on-top))
 
 ;;; Custom
 
 (with-eval-after-load 'cus-edit
   (helix-set-initial-state 'Custom-mode 'normal)
   (helix-keymap-set custom-mode-map 'normal
-    "] ]" 'widget-forward
-    "[ [" 'widget-backward
-    "z j" 'widget-forward
-    "z k" 'widget-backward
-    "z u" 'Custom-goto-parent
-    "q"   'Custom-buffer-done))
+    "] ]" #'widget-forward
+    "[ [" #'widget-backward
+    "z j" #'widget-forward
+    "z k" #'widget-backward
+    "z u" #'Custom-goto-parent
+    "q"   #'Custom-buffer-done))
 
 ;;; Shortdoc
 
@@ -321,10 +349,10 @@ in the command loop, and the fake cursors can pick up on those instead."
 
   (dolist (state '(normal motion))
     (helix-keymap-global-set state
-      "SPC"      'keypad
-      "C-h k"    'keypad-describe-key
-      "<f1> k"   'keypad-describe-key
-      "<help> k" 'keypad-describe-key)))
+      "SPC"      #'keypad
+      "C-h k"    #'keypad-describe-key
+      "<f1> k"   #'keypad-describe-key
+      "<help> k" #'keypad-describe-key)))
 
 ;;; Major modes
 ;;;; emacs-lisp-mode (elisp)
@@ -398,7 +426,13 @@ in the command loop, and the fake cursors can pick up on those instead."
 (defvar org-mode-map)
 
 (with-eval-after-load 'org
+  (add-hook 'org-mode-hook #'helix-surround-org-mode)
   (helix-keymap-set org-mode-map 'normal
+    "g h"   #'helix-org-first-non-blank
+
+    "d"     #'helix-org-cut
+    "="     #'org-indent-region
+
     "[ p"   #'org-backward-paragraph
     "] p"   #'org-forward-paragraph
     "{"     #'org-backward-paragraph
@@ -408,6 +442,10 @@ in the command loop, and the fake cursors can pick up on those instead."
     "] s"   #'org-forward-sentence
     "[ ."   #'org-backward-sentence
     "] ."   #'org-forward-sentence
+
+    "m ."   #'helix-org-mark-inner-sentence
+    "m i s" #'helix-org-mark-inner-sentence
+    "m a s" #'helix-org-mark-a-sentence
 
     "m /"   #'helix-mark-inner-org-emphasis
     "m i /" #'helix-mark-inner-org-emphasis
@@ -433,26 +471,96 @@ in the command loop, and the fake cursors can pick up on those instead."
     "m i ~" #'helix-mark-inner-org-verbatim
     "m a ~" #'helix-mark-an-org-verbatim))
 
-(add-hook 'org-mode-hook #'helix-surround-org-mode)
-(defun helix-surround-org-mode ()
-  "Configure Helix surround for Org-mode."
-  (dolist (char '(?/ ?* ?_ ?+ ?= ?~))
-    (helix-surround-add-pair char (cons (char-to-string char)
-                                        (char-to-string char))
-      :search #'helix-surround--4-bounds-of-org-verbatim)))
+;;;;; Commands
+
+(dolist (cmd '(org-cycle      ;; TAB
+               org-shifttab)) ;; S-TAB
+  (helix-advice-add cmd :before #'helix-deactivate-mark))
+
+;; gh
+(helix-define-command helix-org-first-non-blank ()
+  "Move point to beginning of current visible line skipping indentation.
+
+If this is a headline, and `org-special-ctrl-a/e' is not nil or
+symbol `reversed', on the first attempt move to where the
+headline text starts, and only move to beginning of line when the
+cursor is already before the start of the text of the headline.
+
+If `org-special-ctrl-a/e' is symbol `reversed' then go to the
+start of the text on the second attempt."
+  :multiple-cursors t
+  :merge-selections t
+  (interactive)
+  (setq this-command 'org-beginning-of-line)
+  (helix-set-region (if (or (eq last-command this-command)
+                            helix--extend-selection)
+                        (mark)
+                      (point))
+                    (progn (org-beginning-of-line)
+                           (skip-syntax-forward " " (line-end-position))
+                           (backward-prefix-chars)
+                           (point))))
+
+;; org-end-of-line
+
+;; ]p or }
+(helix-define-command helix-org-mark-paragraph-forward (count)
+  :multiple-cursors t
+  :merge-selections t
+  (interactive "p")
+  ;; org-forward-paragraph
+  (helix-mark-thing-forward 'helix-paragraph count))
+
+;; d
+(helix-define-command helix-org-cut (count)
+  "Kill (cut) text in region. I.e. delete text and put it in the `kill-ring'.
+If no selection — delete COUNT chars before point."
+  :multiple-cursors t
+  (interactive "p")
+  (when (helix-logical-lines-p)
+    (helix-restore-newline-at-eol))
+  (cond ((use-region-p)
+         (kill-region nil nil t))
+        (t
+         (org-delete-char (- count))))
+  (helix-extend-selection -1))
+
+;; mis
+(helix-define-command helix-org-mark-inner-sentence (count)
+  :multiple-cursors t
+  :merge-selections t
+  (interactive "p")
+  (helix-mark-inner-thing 'helix-org-sentence count t))
+
+;; mas
+(helix-define-command helix-org-mark-a-sentence ()
+  :multiple-cursors t
+  :merge-selections t
+  (interactive)
+  (helix-mark-a-sentence 'helix-org-sentence))
+
+;;;;; Things
+
+;; `helix-org-sentence' thing
+(put 'helix-org-sentence 'forward-op (lambda (count)
+                                       (helix-motion-loop (dir count)
+                                         (ignore-errors
+                                           (if (natnump dir)
+                                               (org-forward-sentence)
+                                             (org-backward-sentence))))))
+
+;;;;; Surround
 
 (helix-define-command helix-mark-inner-org-emphasis ()
   :multiple-cursors t
   :merge-selections t
   (interactive)
   (when (org-in-regexp org-emph-re 2)
-    (set-mark (match-beginning 4))
-    (goto-char (match-end 4)))
+    (helix-set-region (match-beginning 4) (match-end 4)))
   ;; (when-let* ((bounds (bounds-of-thing-at-point 'defun))
   ;;             (nlines (count-lines (car bounds) (point)))
   ;;             ((org-in-regexp org-emph-re nlines)))
-  ;;   (set-mark (match-beginning 4))
-  ;;   (goto-char (match-end 4)))
+  ;;   (helix-set-region (match-beginning 4) (match-end 4)))
   )
 
 (helix-define-command helix-mark-an-org-emphasis ()
@@ -460,24 +568,21 @@ in the command loop, and the fake cursors can pick up on those instead."
   :merge-selections t
   (interactive)
   (when (org-in-regexp org-emph-re 2)
-    (set-mark (match-beginning 2))
-    (goto-char (match-end 2))))
+    (helix-set-region (match-beginning 2) (match-end 2))))
 
 (helix-define-command helix-mark-inner-org-verbatim ()
   :multiple-cursors t
   :merge-selections t
   (interactive)
   (when (org-in-regexp org-verbatim-re 2)
-    (set-mark (match-beginning 4))
-    (goto-char (match-end 4))))
+    (helix-set-region (match-beginning 4) (match-end 4))))
 
 (helix-define-command helix-mark-an-org-verbatim ()
   :multiple-cursors t
   :merge-selections t
   (interactive)
   (when (org-in-regexp org-verbatim-re 2)
-    (set-mark (match-beginning 2))
-    (goto-char (match-end 2))))
+    (helix-set-region (match-beginning 2) (match-end 2))))
 
 (defun helix-surround-org-mode ()
   "Configure Helix surround functionality for Org-mode."

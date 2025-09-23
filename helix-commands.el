@@ -1253,23 +1253,24 @@ already there."
   (helix-mark-inner-thing 'helix-sentence count))
 
 ;; mas
-(helix-define-command helix-mark-a-sentence ()
+(helix-define-command helix-mark-a-sentence (&optional thing)
   :multiple-cursors t
   :merge-selections t
   (interactive)
-  (-when-let ((thing-beg . thing-end) (bounds-of-thing-at-point 'helix-sentence))
+  (or thing (setq thing 'helix-sentence))
+  (-when-let ((thing-beg . thing-end) (bounds-of-thing-at-point thing))
     (-let [(beg . end)
            (or (progn
                  (goto-char thing-end)
                  (helix-with-restriction (line-beginning-position) (line-end-position)
-                   (-if-let ((_ . space-end) (helix-bounds-of-complement-of-thing-at-point
-                                              'helix-sentence))
+                   (-if-let ((_ . space-end)
+                             (helix-bounds-of-complement-of-thing-at-point thing))
                        (cons thing-beg space-end))))
                (progn
                  (goto-char thing-beg)
                  (helix-with-restriction (line-beginning-position) (line-end-position)
-                   (-if-let ((space-beg . _) (helix-bounds-of-complement-of-thing-at-point
-                                              'helix-sentence))
+                   (-if-let ((space-beg . _)
+                             (helix-bounds-of-complement-of-thing-at-point thing))
                        (cons space-beg thing-end))))
                (cons thing-beg thing-end))]
       (helix-set-region beg end))))
