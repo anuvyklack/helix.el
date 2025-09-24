@@ -194,11 +194,14 @@ RANGES is a list of cons cells with positions (START . END)."
 ;;; Search
 
 (defun helix-read-regexp (prompt)
-  (let ((history-add-new-input nil)
-        (history-delete-duplicates t))
-    (let ((regex (read-string prompt nil 'helix-regex-history)))
-      (add-to-history 'helix-regex-history regex helix-regex-history-max)
-      regex)))
+  (let ((history-add-new-input nil))
+    (read-string prompt nil 'helix-regex-history)))
+
+(defun helix-add-to-regex-history (regex)
+  (let ((history-delete-duplicates t))
+    (add-to-history 'helix-regex-history regex helix-regex-history-max))
+  (set-register '/ regex)
+  (message "Register / set: %s" regex))
 
 (defun helix-search-pattern ()
   "Return regexp from \"/\" register."
@@ -221,13 +224,14 @@ RANGES is a list of cons cells with positions (START . END)."
                                                  :face 'helix-search-highlight))
   (save-excursion
     (deactivate-mark)
-    (if-let* ((pattern (condition-case nil
-                           (minibuffer-with-setup-hook #'helix-search--start-session
-                             (helix-read-regexp (if (< 0 direction) "/" "?")))
-                         (quit
-                          (activate-mark))))
-              ((not (string-empty-p pattern))))
-        (set-register '/ pattern))))
+    (when-let* ((pattern (condition-case nil
+                             (minibuffer-with-setup-hook #'helix-search--start-session
+                               (helix-read-regexp (if (< 0 direction) "/" "?")))
+                           (quit
+                            (activate-mark))))
+                ((not (string-empty-p pattern))))
+      (helix-add-to-regex-history pattern)
+      pattern)))
 
 (defun helix-search--start-session ()
   "Start interactive search."
@@ -315,7 +319,7 @@ RANGES is a list of cons cells with positions (START . END)."
                                   (helix-regexp-match-ranges
                                    regexp beg end invert))
                                 ranges)))
-    (set-register '/ pattern)
+    (helix-add-to-regex-history pattern)
     (setq mark-active t
           helix--extend-selection nil
           helix--newline-at-eol nil)

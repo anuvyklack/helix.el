@@ -1636,8 +1636,7 @@ Auto-detect word boundaries at the beginning and end of the search pattern."
     (setq patterns (nreverse (-uniq patterns)))
     (let* ((separator (if helix-use-pcre-regex "|" "\\|"))
            (regexp (apply #'concat (-interpose separator patterns))))
-      (set-register '/ regexp)
-      (message "Register / set: %s" regexp)
+      (helix-add-to-regex-history regexp)
       (helix-highlight-search-pattern regexp))))
 
 ;; M-*
@@ -1655,8 +1654,7 @@ Do not auto-detect word boundaries in the search pattern."
     (setq patterns (nreverse patterns))
     (let* ((separator (if helix-use-pcre-regex "|" "\\|"))
            (regexp (apply #'concat (-interpose separator patterns))))
-      (set-register '/ regexp)
-      (message "Register / set: %s" regexp)
+      (helix-add-to-regex-history regexp)
       (helix-highlight-search-pattern regexp))))
 
 ;;; Surround
