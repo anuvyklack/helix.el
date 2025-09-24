@@ -190,20 +190,20 @@
 
 ;;;; `m' keybindings
 
-(defun helix-mark-digit-argument (arg)
+(helix-define-command helix-mark-digit-argument (arg)
   "Like `digit-argument' but keep `m' prefix key active."
+  :multiple-cursors 'false
   (interactive "P")
   (digit-argument arg)
   (set-transient-map (keymap-lookup nil "m")))
-
-(put 'helix-mark-digit-argument 'multiple-cursors 'false)
 
 ;; Do not show keys binded to `helix-mark-digit-argument' command
 ;; in which-key popup.
 (with-eval-after-load 'which-key
   (defvar which-key-replacement-alist)
   (cl-pushnew '((nil . "helix-mark-digit-argument") . ignore)
-              which-key-replacement-alist :test #'equal))
+              which-key-replacement-alist
+              :test #'equal))
 
 (helix-keymap-global-set 'normal
   "m" #'helix-mark-map)
