@@ -472,6 +472,7 @@ Real cursor has ID 0 and is the first element (car) of the list."
 (defmacro helix-save-excursion (&rest body)
   "Like `save-excursion' but additionally save and restore all
 the data needed for multiple cursors functionality."
+  (declare (indent 0) (debug t))
   (let ((state (make-symbol "point-state")))
     `(let ((,state (helix--main-cursor-state)))
        (save-excursion ,@body)
