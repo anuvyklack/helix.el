@@ -316,15 +316,15 @@ Return CURSOR."
       (set-marker mrk mark)
     (overlay-put overlay 'mark (copy-marker mark)))
   (dolist (var helix-fake-cursor-specific-vars)
-    (when (boundp var)
-      (overlay-put overlay var (symbol-value var))))
+    (if (boundp var)
+        (overlay-put overlay var (symbol-value var))))
   overlay)
 
 (defun helix-update-fake-cursor-state (cursor)
   "Update variables stored in fake CURSOR."
   (dolist (var helix-fake-cursor-specific-vars)
-    (when (boundp var)
-      (overlay-put cursor var (symbol-value var)))))
+    (if (boundp var)
+        (overlay-put cursor var (symbol-value var)))))
 
 (defun helix-restore-point-from-fake-cursor (cursor)
   "Restore point, mark and saved variables from CURSOR overlay, and delete it."
@@ -339,8 +339,8 @@ Return CURSOR."
   (goto-char (overlay-get overlay 'point))
   (set-marker (mark-marker) (overlay-get overlay 'mark))
   (dolist (var helix-fake-cursor-specific-vars)
-    (when (boundp var)
-      (set var (overlay-get overlay var))))
+    (if (boundp var)
+        (set var (overlay-get overlay var))))
   (helix--delete-fake-region-overlay overlay)
   (delete-overlay overlay))
 
@@ -483,8 +483,8 @@ the data needed for multiple cursors functionality."
   (let ((state (list :point (copy-marker (point) t)
                      :mark (copy-marker (mark-marker)))))
     (dolist (var helix-fake-cursor-specific-vars)
-      (when (boundp var)
-        (setq state (plist-put state var (symbol-value var)))))
+      (if (boundp var)
+          (setq state (plist-put state var (symbol-value var)))))
     (helix--delete-region-overlay)
     state))
 
@@ -497,8 +497,8 @@ the data needed for multiple cursors functionality."
                 (prog1 (marker-position mrk)
                   (set-marker mrk nil))))
   (dolist (var helix-fake-cursor-specific-vars)
-    (when (boundp var)
-      (set var (plist-get state var))))
+    (if (boundp var)
+        (set var (plist-get state var))))
   (if (and helix--newline-at-eol mark-active)
       (helix--set-region-overlay (region-beginning) (1+ (region-end)))
     (helix--delete-region-overlay)))
