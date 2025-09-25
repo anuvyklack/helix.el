@@ -505,7 +505,7 @@ the data needed for multiple cursors functionality."
 (defmacro helix-with-fake-cursor (cursor &rest body)
   "Move point to the fake CURSOR, restore the environment from it,
 evaluate BODY, update fake CURSOR."
-  (declare (indent defun) (debug (symbolp &rest form)))
+  (declare (indent 1) (debug (symbolp &rest form)))
   `(let ((helix-executing-command-for-fake-cursor t))
      (helix--restore-cursor-state ,cursor)
      (unwind-protect
