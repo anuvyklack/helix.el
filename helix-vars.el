@@ -401,14 +401,14 @@ Default value is 0 - scroll half the screen.")
 (defvar helix-commands-to-run-once nil
   "Commands to execute only once while multiple cursors are active.")
 
-(defvar helix-fake-cursor-specific-vars '(helix--extend-selection
-                                          transient-mark-mode
-                                          mark-ring
+(defvar helix-fake-cursor-specific-vars '(transient-mark-mode ;; for (region-active-p)
                                           mark-active
+                                          mark-ring
                                           kill-ring
                                           kill-ring-yank-pointer
                                           yank-undo-function
                                           temporary-goal-column
+                                          helix--extend-selection
                                           helix--newline-at-eol
                                           dabbrev--abbrev-char-regexp
                                           dabbrev--check-other-buffers
