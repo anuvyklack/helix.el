@@ -474,11 +474,11 @@ Real cursor has ID 0 and is the first element (car) of the list."
 the data needed for multiple cursors functionality."
   (declare (indent 0) (debug t))
   (let ((state (make-symbol "point-state")))
-    `(let ((,state (helix--main-cursor-state)))
+    `(let ((,state (helix--conserve-main-cursor-state)))
        (save-excursion ,@body)
        (helix--restore-main-cursor-state ,state))))
 
-(defun helix--main-cursor-state ()
+(defun helix--conserve-main-cursor-state ()
   (let ((state (list :point (copy-marker (point) t)
                      :mark (copy-marker (mark-marker)))))
     (dolist (var helix-fake-cursor-specific-vars)
