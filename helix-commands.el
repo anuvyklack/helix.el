@@ -1792,19 +1792,25 @@ lines and reindent the region."
 
 ;;; Window navigation
 
-(helix-define-command helix-window-vsplit ()
-  "Split the current window vertically.
-The new window will be created to the right. All children of the
-parent of the splitted window are rebalanced."
+(helix-define-command helix-window-split (window-to-split)
+  "Split current window horisontally.
+All children of the parent of the splitted window will be rebalanced."
   :multiple-cursors nil
-  (interactive)
-  (let* ((window-to-split (selected-window))
-         (new-window (split-window window-to-split nil 'right)))
+  (interactive `(,(selected-window)))
+  (let ((new-window (split-window-below nil window-to-split)))
     (select-window new-window)
-    ;; Always copy quit-restore parameter in interactive use.
-    (when-let* ((quit-restore (window-parameter window-to-split 'quit-restore)))
-      (set-window-parameter new-window 'quit-restore quit-restore)))
-  (balance-windows (window-parent)))
+    (balance-windows (window-parent new-window))
+    new-window))
+
+(helix-define-command helix-window-vsplit (window-to-split)
+  "Split the current window vertically.
+All children of the parent of the splitted window will be rebalanced."
+  :multiple-cursors nil
+  (interactive `(,(selected-window)))
+  (let ((new-window (split-window-right nil window-to-split)))
+    (select-window new-window)
+    (balance-windows (window-parent new-window))
+    new-window))
 
 (helix-define-command helix-window-left (count)
   "Move the cursor to new COUNT-th window left of the current one."
