@@ -1792,6 +1792,9 @@ lines and reindent the region."
 
 ;;; Window navigation
 
+(defalias 'helix-window-split #'split-window-below)
+(put 'helix-window-split 'multiple-cursors 'false)
+
 (helix-define-command helix-window-vsplit ()
   "Split the current window vertically.
 The new window will be created to the right. All children of the
