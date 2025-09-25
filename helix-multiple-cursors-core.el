@@ -168,7 +168,7 @@ the values are reset.")
 If MARK is passed a fake active region overlay between POINT
 and MARK will be created.
 The ID, if specified, will be assigned to the new cursor.
-Otherwise, the new unique ID will be assigned.
+Otherwise, the new unique ID will be created.
 The current state is stored in the overlay for later retrieval."
   (unless helix--max-cursors-original
     (setq helix--max-cursors-original helix-max-cursors-number))
@@ -208,11 +208,9 @@ not this one."
   (mapc #'helix--delete-fake-cursor (helix-all-fake-cursors)))
 
 (defun helix-create-fake-cursor-from-point (&optional id)
-  "Add a fake cursor and possibly a fake active region overlay
-based on point and mark.
-
-Assign the ID to the new cursor, if specified.
-The current state is stored in the overlay for later retrieval."
+  "Create a fake cursor with an optional fake region based on point and mark.
+Assign the ID to the new fake cursor, if specified.
+The current state is stored in it for later retrieval."
   (helix-create-fake-cursor (point) (mark t) id))
 
 (defun helix-move-fake-cursor (cursor point &optional mark update)
@@ -327,7 +325,7 @@ Return CURSOR."
         (overlay-put cursor var (symbol-value var)))))
 
 (defun helix-restore-point-from-fake-cursor (cursor)
-  "Restore point, mark and saved variables from CURSOR overlay, and delete it."
+  "Restore point, mark and variables from fake CURSOR overlay and delete it."
   (helix--restore-cursor-state cursor)
   (helix--delete-fake-cursor cursor)
   (if helix--newline-at-eol
