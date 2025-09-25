@@ -116,7 +116,7 @@ saved as markers and correctly handle case when text was inserted before region.
              (set-marker ,beg nil)
              (set-marker ,end nil)))
        ;; else
-       (let ((,pnt (copy-marker (point-marker) t)))
+       (let ((,pnt (copy-marker (point) t)))
          (unwind-protect
              (save-excursion ,@body)
            (goto-char ,pnt)
