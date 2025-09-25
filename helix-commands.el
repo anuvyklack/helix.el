@@ -542,9 +542,9 @@ depending on DIRECTION."
   :multiple-cursors t
   (interactive "p")
   (let ((deactivate-mark nil))
-    (helix-save-region
+    (helix-save-region ;; save-mark-and-excursion
       (helix-ensure-region-direction 1)
-      (move-end-of-line nil)
+      (helix--forward-line 1)
       (newline count))))
 
 ;; [ SPC
@@ -554,7 +554,7 @@ depending on DIRECTION."
   (interactive "p")
   (helix-save-region
     (helix-ensure-region-direction -1)
-    (move-beginning-of-line nil)
+    (helix--beginning-of-line)
     (newline count)))
 
 ;; c
