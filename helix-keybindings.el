@@ -359,7 +359,9 @@
   "J"   #'helix-move-window-down
   "K"   #'helix-move-window-up
   "L"   #'helix-move-window-right
+
   ;; buffers
+  "r"   #'revert-buffer
   "d"   #'kill-current-buffer
   "q"   #'helix-kill-current-buffer-and-window
   "b"   #'clone-indirect-buffer-other-window
