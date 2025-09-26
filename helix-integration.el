@@ -266,9 +266,19 @@ in the command loop, and the fake cursors can pick up on those instead."
     "z j" #'xref-next-group
     "z k" #'xref-prev-group))
 
-;;; Occur Edit mode
+;;; Occur mode
 
 (with-eval-after-load 'replace
+  (helix-keymap-set occur-mode-map nil
+    "i"   #'occur-edit-mode
+    "o"   #'occur-mode-display-occurrence           ; default `C-o'
+    "g o" #'occur-mode-goto-occurrence-other-window ; default `o'
+    "C-j" #'next-error-no-select
+    "C-k" #'previous-error-no-select
+    "n"   #'next-error-no-select
+    "N"   #'previous-error-no-select)
+  (helix-keymap-set occur-edit-mode-map nil
+    "g o" 'occur-mode-goto-occurrence-other-window)
   (helix-advice-add 'occur-mode-goto-occurrence :around #'helix-jump-command))
 
 ;;; Wdired
