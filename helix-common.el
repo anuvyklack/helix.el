@@ -1173,9 +1173,9 @@ function prevents that. It is intended to be used as `:after' advice."
   (helix-delete-all-fake-cursors)
   (deactivate-mark)
   (helix-with-recenter-point-on-jump
-    (apply command args))
-  ;; We can land in another buffer, so deactivate mark there as well.
-  (deactivate-mark))
+    (apply command args)
+    ;; We can land in another buffer, so deactivate mark there as well.
+    (deactivate-mark)))
 
 (provide 'helix-common)
 ;;; helix-common.el ends here
