@@ -1133,14 +1133,14 @@ is non-nil."
 
 (defun helix--set-region-overlay (start end)
   (unless helix-executing-command-for-fake-cursor
-    (if helix-main-region-overlay
+    (if (overlayp helix-main-region-overlay)
         (move-overlay helix-main-region-overlay start end)
       (setq helix-main-region-overlay (-doto (make-overlay start end)
                                         (overlay-put 'face 'region)
                                         (overlay-put 'priority 1))))))
 
 (defun helix--delete-region-overlay ()
-  (if helix-main-region-overlay
+  (if (overlayp helix-main-region-overlay)
       (delete-overlay helix-main-region-overlay)))
 
 (defun helix-pulse-main-region (&optional face)
