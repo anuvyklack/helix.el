@@ -271,6 +271,41 @@ in the command loop, and the fake cursors can pick up on those instead."
 (with-eval-after-load 'replace
   (helix-advice-add 'occur-mode-goto-occurrence :around #'helix-jump-command))
 
+;;; Wdired
+
+(with-eval-after-load 'wdired
+  (helix-set-initial-state 'wdired-mode 'normal)
+  (helix-advice-add 'wdired-change-to-wdired-mode :after #'helix-switch-to-initial-state)
+  (helix-advice-add 'wdired-change-to-dired-mode :after #'helix-switch-to-initial-state)
+
+  (helix-keymap-set wdired-mode-map 'normal
+    "j"        #'wdired-next-line
+    "k"        #'wdired-previous-line
+    "<up>"     #'wdired-next-line
+    "<down>"   #'wdired-previous-line
+
+    "Z Z"      #'wdired-finish-edit
+    "Z Q"      #'wdired-abort-changes
+    "<escape>" #'wdired-exit
+
+    "o"        #'undefined
+    "O"        #'undefined
+    "J"        #'undefined
+    "<remap> <save-buffer>" #'wdired-finish-edit)
+
+  (dolist (cmd '(wdired-next-line
+                 wdired-previous-line))
+    (helix-advice-add cmd :before #'helix-deactivate-mark)
+    (put cmd 'multiple-cursors t))
+
+  (helix-advice-add 'wdired-change-to-dired-mode :before #'helix-deactivate-mark)
+  (helix-advice-add 'wdired-change-to-dired-mode :before #'helix-delete-all-fake-cursors)
+
+  (dolist (cmd '(wdired-finish-edit
+                 wdired-abort-changes
+                 wdired-exit))
+    (put cmd 'multiple-cursors 'false)))
+
 ;;; Corfu
 
 (with-eval-after-load 'corfu
