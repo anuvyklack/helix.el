@@ -84,7 +84,7 @@
         (add-hook 'post-command-hook #'helix--post-command-hook 90 t)
         (add-hook 'deactivate-mark-hook #'helix-disable-newline-at-eol nil t)
         (add-hook 'after-revert-hook #'helix-delete-all-fake-cursors nil t)
-        (helix-change-state (helix-initial-state)))
+        (helix-switch-to-initial-state))
     ;; else
     (remove-hook 'post-command-hook #'helix--post-command-hook t)
     (remove-hook 'pre-command-hook #'helix--pre-commad-hook t)
@@ -119,7 +119,7 @@
   "Turn on `helix-local-mode' in current buffer if appropriate."
   (cond (helix-local-mode
          ;; Set Helix state according to new major-mode.
-         (helix-change-state (helix-initial-state)))
+         (helix-switch-to-initial-state))
         ((not (minibufferp))
          (helix-local-mode 1))))
 
@@ -239,12 +239,15 @@ When ARG is non-positive integer and Helix is in %s — disable it.\n\n%s"
   "Return non-nil if SYMBOL corresponds to Helix state."
   (assq symbol helix-state-properties))
 
-(defun helix-change-state (state)
+(defun helix-switch-state (state)
   "Switch Helix into STATE."
   (when (and state
              (not (eq state helix-state)))
     (-> (helix-state-property state :function)
         (funcall 1))))
+
+(defun helix-switch-to-initial-state ()
+  (helix-switch-state (helix-initial-state)))
 
 (defun helix-disable-current-state ()
   "Disable current Helix state."
