@@ -804,30 +804,31 @@ With no selection upcase the character after point."
       (helix-reveal-point-when-on-top))))
 
 ;; v
-(helix-define-command helix-extend-selection (&optional arg)
+(helix-define-command helix-extend-selection (arg)
   "Toggle extending selections.
 If ARG is nil — toggle extending selection.
 If ARG positive number — enable, negative — disable."
   :multiple-cursors t
-  (interactive)
-  (if helix--extend-selection
-      (when (or (null arg) (< arg 0))
-        (setq helix--extend-selection nil)
+  (interactive `(,(if helix--extend-selection -1 1)))
+  (pcase arg
+    (-1 (setq helix--extend-selection nil)
         (unless helix-executing-command-for-fake-cursor
           (helix-update-cursor)))
-    ;; else
-    (when (or (null arg) (natnump arg))
-      (setq helix--extend-selection t)
-      (unless helix-executing-command-for-fake-cursor
-        (set-cursor-color (face-attribute 'helix-extend-selection-cursor
-                                          :background))))))
+    (_ (setq helix--extend-selection t)
+       (or (region-active-p)
+           (set-mark (point)))
+       (unless helix-executing-command-for-fake-cursor
+         (set-cursor-color (face-attribute 'helix-extend-selection-cursor
+                                           :background))))))
 
 ;; ;
 (helix-define-command helix-collapse-selection ()
-  "Collapse region onto a single cursor."
+  "Deactivate selection."
   :multiple-cursors t
   (interactive)
-  (deactivate-mark))
+  (if helix--extend-selection
+      (set-mark (point))
+    (deactivate-mark)))
 
 ;; x
 (helix-define-command helix-expand-line-selection (count)
