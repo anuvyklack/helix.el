@@ -525,9 +525,9 @@ evaluate BODY, update fake CURSOR."
      (when cursors
        (helix-save-window-scroll
          (helix-save-excursion
-          (dolist (cursor cursors)
-            (helix-with-fake-cursor cursor
-              ,@body)))))))
+           (dolist (cursor cursors)
+             (helix-with-fake-cursor cursor
+               ,@body)))))))
 
 (defun helix-execute-command-for-all-cursors (command)
   "Call COMMAND interactively for all cursors: real and fake ones."
@@ -552,9 +552,9 @@ evaluate BODY, update fake CURSOR."
               ('nil (helix--prompt-for-unknown-command command))))
            (helix-save-window-scroll
              (helix-save-excursion
-              (dolist (cursor (helix-all-fake-cursors))
-                (helix-with-fake-cursor cursor
-                  (helix--call-interactively command)))))))))
+               (dolist (cursor (helix-all-fake-cursors))
+                 (helix-with-fake-cursor cursor
+                   (helix--call-interactively command)))))))))
 
 (defun helix--call-interactively (command)
   "Run COMMAND, simulating the parts of the command loop that

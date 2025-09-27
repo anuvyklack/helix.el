@@ -228,9 +228,9 @@ When ARG is non-positive integer and Helix is in %s — disable it.\n\n%s"
            (when helix-multiple-cursors-mode
              (helix-save-window-scroll
                (helix-save-excursion
-                (dolist (cursor (helix-all-fake-cursors))
-                  (helix-with-fake-cursor cursor
-                    (setq helix--extend-selection nil))))))
+                 (dolist (cursor (helix-all-fake-cursors))
+                   (helix-with-fake-cursor cursor
+                     (setq helix--extend-selection nil))))))
            (run-hooks ',enter-hook))
          (helix-update-active-keymaps)
          (force-mode-line-update)))))

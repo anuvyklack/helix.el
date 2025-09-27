@@ -176,13 +176,13 @@ moves only over visible lines."
   ;; Adopted from `move-end-of-line'.
   (or count (setq count 1))
   (let ((goal-column 0)
-	(line-move-visual nil)
+        (line-move-visual nil)
         (inhibit-field-text-motion (minibufferp))) ; bug#65980
     (and (line-move count t)
-	 (not (bobp))
-	 (while (and (not (bobp))
+         (not (bobp))
+         (while (and (not (bobp))
                      (invisible-p (1- (point))))
-	   (goto-char (previous-single-char-property-change
+           (goto-char (previous-single-char-property-change
                        (point) 'invisible))))))
 
 (defun helix--beginning-of-line (&optional count)
@@ -193,7 +193,7 @@ Adopted from `move-beginning-of-line'."
     ;; Move by lines, if COUNT is not 1 (the default).
     (when (/= count 1)
       (let ((line-move-visual nil))
-	(line-move (1- count) t)))
+        (line-move (1- count) t)))
     ;; Move to beginning-of-line, ignoring fields and invisible text.
     (let ((inhibit-field-text-motion t))
       (goto-char (line-beginning-position))

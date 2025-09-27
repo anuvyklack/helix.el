@@ -281,7 +281,7 @@ used in `helix-cjk-word-boundary-p'. See the documentation of
 `word-separating-categories'. Use `describe-categories' to see
 the list of categories."
   :type '(alist :key-type (choice character (const nil))
-          :value-type (choice character (const nil)))
+                :value-type (choice character (const nil)))
   :group 'helix-cjk)
 
 (defcustom helix-cjk-word-combining-categories
@@ -300,7 +300,7 @@ used in `helix-cjk-word-boundary-p'. See the documentation of
 `word-combining-categories'. Use `describe-categories' to see the
 list of categories."
   :type '(alist :key-type (choice character (const nil))
-          :value-type (choice character (const nil)))
+                :value-type (choice character (const nil)))
   :group 'helix-cjk)
 
 ;;; Faces

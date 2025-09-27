@@ -423,10 +423,10 @@ in the command loop, and the fake cursors can pick up on those instead."
 ;;; Outline
 
 (dolist (cmd '(outline-up-heading
-                   outline-next-visible-heading
-                   outline-previous-visible-heading
-                   outline-forward-same-level
-                   outline-backward-same-level))
+               outline-next-visible-heading
+               outline-previous-visible-heading
+               outline-forward-same-level
+               outline-backward-same-level))
   (put cmd 'merge-selections 'extend-selection)
   (helix-advice-add cmd :before #'helix-deactivate-mark)
   (helix-advice-add cmd :after #'helix-reveal-point-when-on-top))
@@ -493,16 +493,16 @@ in the command loop, and the fake cursors can pick up on those instead."
 
   ;; Teach `imenu' about Helix macros.
   (dolist (i (eval-when-compile
-              `(("Variables"
-                 ,(concat "^\\s-*("
-                          (regexp-opt '("helix-defvar-local") t)
-                          "\\s-+\\(" (rx lisp-mode-symbol) "\\)")
-                 2)
-                (nil ;; top level
-                 ,(concat "^\\s-*("
-                          (regexp-opt '("helix-define-command") t)
-                          "\\s-+'?\\(" (rx lisp-mode-symbol) "\\)")
-                 2))))
+               `(("Variables"
+                  ,(concat "^\\s-*("
+                           (regexp-opt '("helix-defvar-local") t)
+                           "\\s-+\\(" (rx lisp-mode-symbol) "\\)")
+                  2)
+                 (nil ;; top level
+                  ,(concat "^\\s-*("
+                           (regexp-opt '("helix-define-command") t)
+                           "\\s-+'?\\(" (rx lisp-mode-symbol) "\\)")
+                  2))))
     (cl-pushnew i imenu-generic-expression :test #'equal)))
 
 (dolist (keymap (list emacs-lisp-mode-map
