@@ -1802,6 +1802,12 @@ All children of the parent of the splitted window will be rebalanced."
     (balance-windows (window-parent new-window))
     new-window))
 
+(helix-define-command helix-root-window-split ()
+  "Split root window of current frame horisontally and rebalance all windows."
+  :multiple-cursors nil
+  (interactive)
+  (helix-window-split (frame-root-window)))
+
 (helix-define-command helix-window-vsplit (window-to-split)
   "Split the current window vertically.
 All children of the parent of the splitted window will be rebalanced."
@@ -1811,6 +1817,12 @@ All children of the parent of the splitted window will be rebalanced."
     (select-window new-window)
     (balance-windows (window-parent new-window))
     new-window))
+
+(helix-define-command helix-root-window-vsplit ()
+  "Split root window of current frame vertically and rebalance all windows."
+  :multiple-cursors nil
+  (interactive)
+  (helix-window-vsplit (frame-root-window)))
 
 (helix-define-command helix-window-left (count)
   "Move the cursor to new COUNT-th window left of the current one."

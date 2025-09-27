@@ -332,6 +332,8 @@
   "n"   #'other-window-prefix
   "s"   #'helix-window-split
   "v"   #'helix-window-vsplit
+  "S"   #'helix-root-window-split
+  "V"   #'helix-root-window-vsplit
   "c"   #'helix-window-delete
   "o"   #'delete-other-windows
 
