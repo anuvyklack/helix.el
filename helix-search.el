@@ -251,7 +251,7 @@ RANGES is a list of cons cells with positions (START . END)."
 (defun helix-search--do-update ()
   (let ((pattern (minibuffer-contents-no-properties)))
     (with-selected-window (minibuffer-selected-window)
-      (helix-with-recenter-point-on-jump
+      (helix-recenter-point-on-jump
         (let ((dir helix-search--direction)
               (hl helix-search--hl))
           (goto-char helix-search--point)

@@ -1172,7 +1172,7 @@ function prevents that. It is intended to be used as `:after' advice."
   "Aroung advice for COMMAND that moves point."
   (helix-delete-all-fake-cursors)
   (deactivate-mark)
-  (helix-with-recenter-point-on-jump
+  (helix-recenter-point-on-jump
     (apply command args)
     ;; We can land in another buffer, so deactivate mark there as well.
     (deactivate-mark)))

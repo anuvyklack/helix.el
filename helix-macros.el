@@ -82,8 +82,10 @@ when `helix-mode' is toggled on or off"
        ;; else
        ,@body)))
 
-(defmacro helix-with-recenter-point-on-jump (&rest body)
-  "Recenter point on jumps if it lands out of the screen."
+(defmacro helix-recenter-point-on-jump (&rest body)
+  "Recenter point on jumps during BODY evaluating if it lands out of the screen.
+This macro calls `redisplay' internally and should be used with care to avoid
+flickering."
   (declare (indent 0) (debug t))
   `(let ((scroll-conservatively 0))
      (prog1 (progn ,@body)

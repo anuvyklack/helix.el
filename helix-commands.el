@@ -1118,7 +1118,7 @@ at START-COLUMN, ends at END-COLUMN and consists of NUMBER-OF-LINES."
   :multiple-cursors nil
   (interactive "p")
   (when helix-multiple-cursors-mode
-    (helix-with-recenter-point-on-jump
+    (helix-recenter-point-on-jump
       (dotimes (_ count)
         (let ((cursor (or (helix-next-fake-cursor (point))
                           (helix-first-fake-cursor))))
@@ -1131,7 +1131,7 @@ at START-COLUMN, ends at END-COLUMN and consists of NUMBER-OF-LINES."
   :multiple-cursors nil
   (interactive "p")
   (when helix-multiple-cursors-mode
-    (helix-with-recenter-point-on-jump
+    (helix-recenter-point-on-jump
       (dotimes (_ count)
         (let ((cursor (or (helix-previous-fake-cursor (point))
                           (helix-last-fake-cursor))))
@@ -1580,7 +1580,7 @@ keys to repeat motion forward/backward."
     (setq count (- count)))
   (let ((regexp (helix-search-pattern))
         (region-dir (if (use-region-p) (helix-region-direction) 1)))
-    (helix-with-recenter-point-on-jump
+    (helix-recenter-point-on-jump
       (helix-motion-loop (search-dir count)
         (-when-let ((beg . end) (save-excursion
                                   (helixf-search--search regexp search-dir)))
