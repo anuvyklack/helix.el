@@ -1444,57 +1444,6 @@ already there."
     (-let [(beg _ _ end) bounds]
       (helix-set-region beg end))))
 
-;; zn
-(helix-define-command helix-narrow-to-region-indirectly ()
-  "Restrict editing in this buffer to the current region, indirectly.
-This recursively creates indirect clones of the current buffer so that the
-narrowing doesn't affect other windows displaying the same buffer. Call
-`helix-widen-indirectly-narrowed' to undo it (incrementally)."
-  :multiple-cursors t
-  (interactive)
-  (when (use-region-p)
-    (helix-restore-newline-at-eol)
-    (let ((orig-buffer (current-buffer))
-          (beg (region-beginning))
-          (end (region-end)))
-      (deactivate-mark)
-      (-doto (clone-indirect-buffer nil nil)
-        (switch-to-buffer)
-        (set-buffer))
-      (narrow-to-region beg end)
-      (setq helix--narrowed-base-buffer orig-buffer))))
-
-;; zw
-(helix-define-command helix-widen-indirectly-narrowed (&optional arg)
-  "Widens narrowed buffers.
-Incrementally kill indirect buffers (under the assumption they were created by
-`helix-narrow-to-region-indirectly') and switch to their base buffer.
-
-With `universal-argument' kill all indirect buffers, return the base buffer and
-widen it.
-
-If the current buffer is not an indirect buffer, works like `widen'."
-  :multiple-cursors nil
-  (interactive "P")
-  (unless (buffer-narrowed-p)
-    (user-error "Buffer isn't narrowed"))
-  (let ((orig-buffer (current-buffer))
-        (base-buffer helix--narrowed-base-buffer))
-    (cond ((or (not base-buffer)
-               (not (buffer-live-p base-buffer)))
-           (widen))
-          (arg
-           (let ((buffer orig-buffer)
-                 (buffers-to-kill (list orig-buffer)))
-             (while (setq buffer (buffer-local-value 'helix--narrowed-base-buffer buffer))
-               (push buffer buffers-to-kill))
-             (switch-to-buffer (buffer-base-buffer))
-             (->> buffers-to-kill
-                  (-remove (current-buffer))
-                  (-each #'kill-buffer))))
-          ((switch-to-buffer base-buffer)
-           (kill-buffer orig-buffer)))))
-
 ;;; Search
 
 ;; f
@@ -1944,6 +1893,55 @@ and opens a new window."
       ;; balance-windows raises an error if the parent does not have
       ;; any further children (then rebalancing is not necessary anyway)
       (ignore-errors (balance-windows parent-win)))))
+
+;; zn
+(helix-define-command helix-narrow-to-region-indirectly ()
+  "Restrict editing in this buffer to the current region, indirectly.
+This recursively creates indirect clones of the current buffer so that the
+narrowing doesn't affect other windows displaying the same buffer. Call
+`helix-widen-indirectly-narrowed' to undo it (incrementally)."
+  :multiple-cursors t
+  (interactive)
+  (when (use-region-p)
+    (helix-restore-newline-at-eol)
+    (let ((orig-buffer (current-buffer))
+          (beg (region-beginning))
+          (end (region-end)))
+      (deactivate-mark)
+      (helix-clone-indirect-buffer)
+      (narrow-to-region beg end)
+      (setq helix--narrowed-base-buffer orig-buffer))))
+
+;; zw
+(helix-define-command helix-widen-indirectly-narrowed (&optional arg)
+  "Widens narrowed buffers.
+Incrementally kill indirect buffers (under the assumption they were created by
+`helix-narrow-to-region-indirectly') and switch to their base buffer.
+
+With `universal-argument' kill all indirect buffers, return the base buffer and
+widen it.
+
+If the current buffer is not an indirect buffer, works like `widen'."
+  :multiple-cursors nil
+  (interactive "P")
+  (unless (buffer-narrowed-p)
+    (user-error "Buffer isn't narrowed"))
+  (let ((orig-buffer (current-buffer))
+        (base-buffer helix--narrowed-base-buffer))
+    (cond ((or (not base-buffer)
+               (not (buffer-live-p base-buffer)))
+           (widen))
+          (arg
+           (let ((buffer orig-buffer)
+                 (buffers-to-kill (list orig-buffer)))
+             (while (setq buffer (buffer-local-value 'helix--narrowed-base-buffer buffer))
+               (push buffer buffers-to-kill))
+             (switch-to-buffer (buffer-base-buffer))
+             (->> buffers-to-kill
+                  (-remove (current-buffer))
+                  (-each #'kill-buffer))))
+          ((switch-to-buffer base-buffer)
+           (kill-buffer orig-buffer)))))
 
 (provide 'helix-commands)
 ;;; helix-commands.el ends here
