@@ -287,6 +287,66 @@ in the command loop, and the fake cursors can pick up on those instead."
     "g o" 'occur-mode-goto-occurrence-other-window)
   (helix-advice-add 'occur-mode-goto-occurrence :around #'helix-jump-command))
 
+;;; Deadgrep
+
+(with-eval-after-load 'deadgrep
+  (add-hook 'deadgrep-mode-hook
+            (defun helix--deadgrep-mode-hook ()
+              ;; TODO: upstream this
+              (setq-local revert-buffer-function
+                          (lambda (_ignore-auto _noconfirm)
+                            (deadgrep-restart)))))
+  (helix-keymap-set deadgrep-mode-map 'motion
+    "RET" #'deadgrep-visit-result-other-window
+    "o"   #'helix-deadgrep-show-result-other-window
+    "C-o" #'helix-deadgrep-show-result-other-window
+    "M-n" #'helix-deadgrep-forward-match-show-other-window
+    "M-p" #'helix-deadgrep-backward-match-show-other-window
+    "n"   #'deadgrep-forward-match
+    "N"   #'deadgrep-backward-match
+    "C-j" #'helix-deadgrep-forward-match-show-other-window
+    "C-k" #'helix-deadgrep-backward-match-show-other-window
+    "z j" #'deadgrep-forward-filename
+    "z k" #'deadgrep-backward-filename
+    "z u" #'deadgrep-parent-directory
+    "a"   #'deadgrep-incremental ;; `a' for amend
+    "i"   #'deadgrep-edit-mode
+    "g r" #'deadgrep-restart)
+  (helix-keymap-set deadgrep-edit-mode-map 'normal
+    "<escape>" #'deadgrep-mode
+    "Z Z" #'deadgrep-mode
+    "o"   #'undefined
+    "O"   #'undefined
+    "J"   #'undefined)
+
+  (helix-advice-add 'deadgrep-mode :before #'deactivate-mark)
+  (helix-advice-add 'deadgrep-mode :before #'helix-delete-all-fake-cursors)
+
+  (dolist (cmd '(deadgrep-visit-result
+                 deadgrep-visit-result-other-window))
+    (helix-advice-add cmd :around #'helix-jump-command)))
+
+(defun helix-deadgrep-show-result-other-window ()
+  "Show search result at point in another window."
+  (interactive)
+  (unless next-error-follow-minor-mode
+    (helix-recenter-point-on-jump
+      (save-selected-window
+        (deadgrep-visit-result-other-window)
+        (deactivate-mark)))))
+
+(defun helix-deadgrep-forward-match-show-other-window ()
+  "Move point to next search result and show it in another window."
+  (interactive)
+  (deadgrep-forward-match)
+  (helix-deadgrep-show-result-other-window))
+
+(defun helix-deadgrep-backward-match-show-other-window ()
+  "Move point to previous search result and show it in another window."
+  (interactive)
+  (deadgrep-backward-match)
+  (helix-deadgrep-show-result-other-window))
+
 ;;; Wdired
 
 (with-eval-after-load 'wdired
