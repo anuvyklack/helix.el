@@ -856,7 +856,9 @@ If ARG positive number — enable, negative — disable."
   :multiple-cursors t
   (interactive)
   (if helix--extend-selection
-      (set-mark (point))
+      (progn
+        (helix-disable-newline-at-eol)
+        (set-mark (point)))
     (deactivate-mark)))
 
 ;; x
