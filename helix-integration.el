@@ -20,6 +20,26 @@
 (require 'helix-commands)
 (require 'keypad)
 
+;;; Distinguish `TAB' from `C-i' and `RET' from `C-m'
+
+(defun helix-make-C-i-and-C-m-available ()
+  "Make Emacs distinguish `TAB' from `C-i' and `RET' from `C-m'."
+  (when (display-graphic-p) ;; do translation only in gui
+    (keymap-set input-decode-map "C-i" [C-i])
+    (keymap-set input-decode-map "C-m" [C-m])))
+
+(helix-make-C-i-and-C-m-available)
+
+;; For daemon mode
+(add-hook 'after-make-frame-functions
+          (defun helix--after-make-frame-hook (frame)
+            (with-selected-frame frame
+              (helix-make-C-i-and-C-m-available))))
+
+;; (single-key-description 'C-i)
+;; (key-valid-p "<C-i>")
+;; (key-valid-p "C-<i>")
+
 ;;; Integration multiple cursors with Emacs functionality
 
 ;; M-x
