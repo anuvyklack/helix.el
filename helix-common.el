@@ -164,9 +164,9 @@ COUNT minus number of steps moved; if backward, COUNT plus number moved.
 
 (put 'helix-line 'forward-op #'helix--forward-line)
 (put 'helix-line 'bounds-of-thing-at-point
-     #'(lambda ()
-         (cons (save-excursion (helix--beginning-of-line 1) (point))
-               (save-excursion (helix--forward-line 1) (point)))))
+     (lambda ()
+       (cons (save-excursion (helix--beginning-of-line 1) (point))
+             (save-excursion (helix--forward-line 1) (point)))))
 
 (defun helix--forward-line (&optional count)
   "Goto COUNT visible logical lines forward (backward if COUNT is negative).

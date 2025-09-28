@@ -31,11 +31,11 @@
   "Whether to enable Helix in minibuffer(s)."
   :type 'boolean
   :group 'helix
-  :set #'(lambda (sym value)
-           (set-default sym value)
-           (if (and helix-mode value)
-               (add-hook 'minibuffer-setup-hook #'helix-local-mode)
-             (remove-hook 'minibuffer-setup-hook #'helix-local-mode))))
+  :set (lambda (sym value)
+         (set-default sym value)
+         (if (and helix-mode value)
+             (add-hook 'minibuffer-setup-hook #'helix-local-mode)
+           (remove-hook 'minibuffer-setup-hook #'helix-local-mode))))
 
 (defcustom helix-use-pcre-regex t
   "If non-nil use PCRE regexp syntax instead of Emacs one."
@@ -120,13 +120,13 @@ cell. The bar fake cursor character is virtually inserted between cells,
 shifting subsequent content to the right."
   :type '(set character string)
   :group 'helix
-  :set #'(lambda (symbol value)
-           (set symbol (cond ((characterp value)
-                              (char-to-string value))
-                             ((and (stringp value) (length= value 1))
-                              value)
-                             (t
-                              (char-to-string ?\u2000))))))
+  :set (lambda (symbol value)
+         (set symbol (cond ((characterp value)
+                            (char-to-string value))
+                           ((and (stringp value) (length= value 1))
+                            value)
+                           (t
+                            (char-to-string ?\u2000))))))
 
 (defcustom helix-multiple-cursors-mode-line-indicator
   #("  Cursors: %s " 1 14 (face helix-mode-line-cursors-indicator))
@@ -306,20 +306,20 @@ list of categories."
 ;;; Faces
 
 (defface helix-normal-state-fake-cursor
-  `((t (:height ,(window-default-font-height)
-        :background "red")))
+  `((t ( :height ,(window-default-font-height)
+         :background "red")))
   "The face used for fake cursors when Helix is in Normal state."
   :group 'helix)
 
 (defface helix-insert-state-fake-cursor
-  '((t (:foreground "white"
-        :background "SkyBlue3")))
+  '((t ( :foreground "white"
+         :background "SkyBlue3")))
   "The face used for fake cursors when Helix is in Insert state."
   :group 'helix)
 
 (defface helix-extend-selection-cursor
-  `((t (:height ,(window-default-font-height)
-        :background "orange")))
+  `((t ( :height ,(window-default-font-height)
+         :background "orange")))
   "The face used for cursors when extending selection is active."
   :group 'helix)
 

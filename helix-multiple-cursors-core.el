@@ -74,7 +74,7 @@ action. The step is terminated with `helix--single-undo-step-end'."
           ;; during undo (numbers), because we handle cursors positions manually
           ;; to synchronize real cursor with fake ones.
           (setq undo-list (helix-destructive-filter
-                           #'(lambda (i) (or (numberp i) (null i)))
+                           (lambda (i) (or (numberp i) (null i)))
                            undo-list
                            helix--undo-list-pointer))
           ;; Restore "undo" status of the tip of `buffer-undo-list'.
@@ -132,9 +132,9 @@ at beginning and end of a single undo step and restores real and fake
 cursors points and regions after undo/redo step.
 
 CURSORS-POSITIONS is an alist returned by `helix-cursors-positions' function."
-  (maphash #'(lambda (id cursor)
-               (unless (assoc id cursors-positions #'eql)
-                 (helix--delete-fake-cursor cursor)))
+  (maphash (lambda (id cursor)
+             (unless (assoc id cursors-positions #'eql)
+               (helix--delete-fake-cursor cursor)))
            helix--cursors-table)
   (dolist (val cursors-positions)
     (-let [(id point mark newline-at-eol) val]
@@ -371,9 +371,9 @@ Return CURSOR."
 If SORT is non-nil sort cursors in order they are located in buffer."
   (let ((cursors (hash-table-values helix--cursors-table)))
     (if sort
-        (sort cursors #'(lambda (c1 c2)
-                          (< (overlay-get c1 'point)
-                             (overlay-get c2 'point))))
+        (sort cursors (lambda (c1 c2)
+                        (< (overlay-get c1 'point)
+                           (overlay-get c2 'point))))
       cursors)))
 
 (defun helix-fake-cursors-in (start end)
@@ -409,16 +409,16 @@ If SORT is non-nil sort cursors in order they are located in buffer."
 
 (defun helix-first-fake-cursor ()
   "Return the first fake cursor in the buffer."
-  (-min-by #'(lambda (a b)
-               (> (overlay-get a 'point)
-                  (overlay-get b 'point)))
+  (-min-by (lambda (a b)
+             (> (overlay-get a 'point)
+                (overlay-get b 'point)))
            (helix-all-fake-cursors)))
 
 (defun helix-last-fake-cursor ()
   "Return the last fake cursor in the buffer."
-  (-max-by #'(lambda (a b)
-               (> (overlay-get a 'point)
-                  (overlay-get b 'point)))
+  (-max-by (lambda (a b)
+             (> (overlay-get a 'point)
+                (overlay-get b 'point)))
            (helix-all-fake-cursors)))
 
 (defun helix-number-of-cursors ()
@@ -652,11 +652,11 @@ Return t if COMMMAND should be executed for all cursors."
   (unless helix--whitelist-file-loaded
     (load helix-whitelist-file 'noerror 'nomessage)
     (setq helix--whitelist-file-loaded t)
-    (mapc #'(lambda (command)
-              (put command 'multiple-cursors t))
+    (mapc (lambda (command)
+            (put command 'multiple-cursors t))
           helix-commands-to-run-for-all-cursors)
-    (mapc #'(lambda (command)
-              (put command 'multiple-cursors 'false))
+    (mapc (lambda (command)
+            (put command 'multiple-cursors 'false))
           helix-commands-to-run-once)))
 
 (defun helix--dump-whitelist (list-symbol)
@@ -666,12 +666,12 @@ Return t if COMMMAND should be executed for all cursors."
             "      '(")
     (newline-and-indent)
     (set list-symbol
-         (sort value #'(lambda (x y)
-                         (string-lessp (symbol-name x)
-                                       (symbol-name y)))))
-    (mapc #'(lambda (cmd)
-              (insert (format "%S" cmd))
-              (newline-and-indent))
+         (sort value (lambda (x y)
+                       (string-lessp (symbol-name x)
+                                     (symbol-name y)))))
+    (mapc (lambda (cmd)
+            (insert (format "%S" cmd))
+            (newline-and-indent))
           value)
     (insert "))")
     (newline)))
@@ -776,16 +776,16 @@ ID 0 coresponds to the real cursor."
   (let* ((alist (cons
                  ;; Append real cursor with ID 0
                  `(0 ,(region-beginning) ,(region-end))
-                 (mapcar #'(lambda (cursor)
-                             (let* ((id  (overlay-get cursor 'id))
-                                    (pnt (overlay-get cursor 'point))
-                                    (mrk (overlay-get cursor 'mark))
-                                    (start (min pnt mrk))
-                                    (end   (max pnt mrk)))
-                               `(,id ,start ,end)))
+                 (mapcar (lambda (cursor)
+                           (let* ((id  (overlay-get cursor 'id))
+                                  (pnt (overlay-get cursor 'point))
+                                  (mrk (overlay-get cursor 'mark))
+                                  (start (min pnt mrk))
+                                  (end   (max pnt mrk)))
+                             `(,id ,start ,end)))
                          (helix-all-fake-cursors)))))
-    (sort alist #'(lambda (a b)
-                    (< (-second-item a) (-second-item b))))))
+    (sort alist (lambda (a b)
+                  (< (-second-item a) (-second-item b))))))
 
 ;;; Integration with other Emacs functionalities
 
@@ -824,8 +824,8 @@ from being executed when `helix-multiple-cursors-mode' is active."
          (apply orig-fun args)))))
 
 ;; Execute following commands for ALL cursor.
-(mapc #'(lambda (command)
-          (put command 'multiple-cursors t))
+(mapc (lambda (command)
+        (put command 'multiple-cursors t))
       '(comment-dwim         ;; gc
         fill-region          ;; gq
         indent-region        ;; =
@@ -886,8 +886,8 @@ from being executed when `helix-multiple-cursors-mode' is active."
         back-to-indentation))
 
 ;; Execute following commands only for MAIN cursor.
-(mapc #'(lambda (command)
-          (put command 'multiple-cursors 'false))
+(mapc (lambda (command)
+        (put command 'multiple-cursors 'false))
       '(helix-normal-state  ;; ESC
         find-file-at-point  ;; gf
         browse-url-at-point ;; gx

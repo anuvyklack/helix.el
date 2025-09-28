@@ -379,8 +379,8 @@ that were entered in the Keypad."
   "Get a keymap for Which-key preview."
   (let ((keys (keypad--collected-keys)))
     (cond (keypad--pending-modifier
-           (let ((control-p    #'(lambda (key) (s-contains? "C-" key)))
-                 (no-control-p #'(lambda (key) (not (s-contains? "C-" key)))))
+           (let ((control-p    (lambda (key) (s-contains? "C-" key)))
+                 (no-control-p (lambda (key) (not (s-contains? "C-" key)))))
              (pcase keypad--pending-modifier
                ('literal (let ((keymap (if keys
                                            (keypad--lookup-key keys)
@@ -409,9 +409,9 @@ that were entered in the Keypad."
                                  keypad-meta-prefix
                                  keypad-ctrl-meta-prefix))
                   (keymap (keypad--filter-keymap (keypad--leader-keymap)
-                                                 #'(lambda (key)
-                                                     (not (or (s-contains? "C-" key)
-                                                              (member key ignored)))))))
+                                                 (lambda (key)
+                                                   (not (or (s-contains? "C-" key)
+                                                            (member key ignored)))))))
              (keymap-set keymap "x" "C-x")
              (keymap-set keymap "c" "C-c")
              (when keypad-meta-prefix
@@ -426,14 +426,14 @@ that were entered in the Keypad."
                                      (list keypad-meta-prefix
                                            keypad-ctrl-meta-prefix))))
          (k1 (keypad--filter-keymap keymap
-                                    #'(lambda (key)
-                                        (and (s-contains? "C-" key)
-                                             (not (member key ignored-keys))))))
+                                    (lambda (key)
+                                      (and (s-contains? "C-" key)
+                                           (not (member key ignored-keys))))))
          (k2 (keypad--filter-keymap keymap
-                                    #'(lambda (key)
-                                        (not (or (s-contains? "C-" key)
-                                                 (keymap-lookup k1 (concat "C-" key))
-                                                 (member key ignored-keys)))))))
+                                    (lambda (key)
+                                      (not (or (s-contains? "C-" key)
+                                               (keymap-lookup k1 (concat "C-" key))
+                                               (member key ignored-keys)))))))
     (make-composed-keymap k1 k2)))
 
 (defun keypad--filter-keymap (keymap predicate)
@@ -441,14 +441,14 @@ that were entered in the Keypad."
 for which PREDICATE is non-nil."
   (if (keymapp keymap)
       (let ((result (define-keymap)))
-        (map-keymap #'(lambda (event command)
-                        (unless (eq command 'digit-argument)
-                          (when-let* ((key (single-key-description event))
-                                      ((key-valid-p key))
-                                      ((not (keypad--occupied-key-p key)))
-                                      ((not (keymap-lookup result key)))
-                                      ((funcall predicate key)))
-                            (keymap-set result key command))))
+        (map-keymap (lambda (event command)
+                      (unless (eq command 'digit-argument)
+                        (when-let* ((key (single-key-description event))
+                                    ((key-valid-p key))
+                                    ((not (keypad--occupied-key-p key)))
+                                    ((not (keymap-lookup result key)))
+                                    ((funcall predicate key)))
+                          (keymap-set result key command))))
                     keymap)
         result)))
 

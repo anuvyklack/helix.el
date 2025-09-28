@@ -665,8 +665,8 @@ If no selection — delete COUNT chars after point."
 unless they all are equal. You can paste them later with `yank-rectangle'."
   (when helix-multiple-cursors-mode
     (let ((entries (helix-with-real-cursor-as-fake
-                     (-map #'(lambda (cursor)
-                               (car-safe (overlay-get cursor 'kill-ring)))
+                     (-map (lambda (cursor)
+                             (car-safe (overlay-get cursor 'kill-ring)))
                            (helix-all-fake-cursors :sort)))))
       (unless (helix-all-elements-are-equal-p entries)
         (setq killed-rectangle entries)))))
@@ -884,15 +884,15 @@ entered regexp withing current selections."
   (when (region-active-p)
     (helix-with-real-cursor-as-fake
       (let* ((cursors (helix-all-fake-cursors))
-             (ranges (-map #'(lambda (cursor)
-                               (if (overlay-get cursor 'mark-active)
-                                   (let ((point (marker-position
-                                                 (overlay-get cursor 'point)))
-                                         (mark (marker-position
-                                                (overlay-get cursor 'mark))))
-                                     (if (< point mark)
-                                         (cons point mark)
-                                       (cons mark point)))))
+             (ranges (-map (lambda (cursor)
+                             (if (overlay-get cursor 'mark-active)
+                                 (let ((point (marker-position
+                                               (overlay-get cursor 'point)))
+                                       (mark (marker-position
+                                              (overlay-get cursor 'mark))))
+                                   (if (< point mark)
+                                       (cons point mark)
+                                     (cons mark point)))))
                            cursors)))
         (-each cursors #'helix-hide-fake-cursor)
         (if (helix-select-interactively-in ranges invert)
@@ -970,15 +970,15 @@ entered regexp withing current selections."
     (let* (;; Filter cursors to remain only the first one on each line.
            ;; Line numbers start from 1, so 0 as initial value is out of scope.
            (cursors (let ((current-line 0))
-                      (-remove #'(lambda (cursor)
-                                   (let ((line (line-number-at-pos
-                                                (overlay-get cursor 'point))))
-                                     (or (= line current-line)
-                                         (ignore (setq current-line line)))))
+                      (-remove (lambda (cursor)
+                                 (let ((line (line-number-at-pos
+                                              (overlay-get cursor 'point))))
+                                   (or (= line current-line)
+                                       (ignore (setq current-line line)))))
                                (helix-all-fake-cursors :sort))))
-           (column (-reduce-from #'(lambda (column cursor)
-                                     (goto-char (overlay-get cursor 'point))
-                                     (max column (current-column)))
+           (column (-reduce-from (lambda (column cursor)
+                                   (goto-char (overlay-get cursor 'point))
+                                   (max column (current-column)))
                                  0 cursors)))
       ;; Align
       (helix-save-window-scroll
