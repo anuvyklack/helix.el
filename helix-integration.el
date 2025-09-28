@@ -184,6 +184,12 @@ in the command loop, and the fake cursors can pick up on those instead."
   "k" #'previous-line
   "l" #'right-char)
 
+(helix-keymap-set special-mode-map nil
+  "g"   nil ;; revert-buffer
+  "g r" 'revert-buffer
+  "g g" 'beginning-of-buffer ; also "<"
+  "G"   'end-of-buffer)      ; also ">"
+
 ;;; Messages buffer
 
 (helix-set-initial-state 'messages-buffer-mode 'normal)
