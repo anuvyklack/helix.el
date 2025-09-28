@@ -720,30 +720,56 @@ balanced expressions."
                       ((< (point) (cdr bounds))))
                 bounds)))))))
 
-;;; Copy/paste
+;;; Mark ring
 
 (defun helix-push-point (&optional position)
   "Push POSITION (point by default) on the `mark-ring'."
-  (let ((old (nth mark-ring-max mark-ring))
-        (history-delete-duplicates nil))
-    (add-to-history 'mark-ring
-                    (copy-marker (or position (point)))
-                    mark-ring-max t)
-    (when old
-      (set-marker old nil)))
-  ;; Don't push the mark on the global mark ring if the last global
-  ;; mark pushed was in this same buffer.
+  (or position (setq position (point)))
+  ;; Don't store POSITION into mark ring if it equals to the last stored one.
+  (unless (and mark-ring
+               (= (point) (car mark-ring)))
+    (let ((old (nth mark-ring-max mark-ring))
+          (history-delete-duplicates nil))
+      (add-to-history 'mark-ring (copy-marker position)
+                      mark-ring-max t)
+      (when old
+        (set-marker old nil))))
+  ;; Don't store POSITION into global mark ring if the last position there
+  ;; is in this same buffer.
   (unless (and global-mark-ring
                (eq (marker-buffer (car global-mark-ring))
                    (current-buffer)))
     (let ((old (nth global-mark-ring-max global-mark-ring))
           (history-delete-duplicates nil))
-      (add-to-history 'global-mark-ring
-                      (copy-marker position)
+      (add-to-history 'global-mark-ring (copy-marker position)
                       global-mark-ring-max t)
       (when old
         (set-marker old nil))))
   nil)
+
+(defun helix--jump-over-mark-ring (&optional backward?)
+  "Jump to the top position on `mark-ring'.
+If point is already there, rotate `mark-ring' forward (or BACKWARD)
+and jump to the new top position."
+  (when mark-ring
+    (deactivate-mark)
+    (when (= (point) (car mark-ring))
+      (setq mark-ring (helix-rotate-ring mark-ring backward?)))
+    (helix-recenter-point-on-jump
+      (goto-char (car mark-ring)))))
+
+(defun helix-rotate-ring (ring &optional backward-p)
+  "Rotate the RING elements.
+
+This function destructively modify RING and should be used the following way:
+`(setq RING (helix-rotate-ring RING))'
+
+RING should be a list like `mark-ring' and not the ring structure from `ring.el'."
+  (if backward-p
+      (nconc (last ring) (nbutlast ring))
+    (nconc (cdr ring) (list (car ring)))))
+
+;;; Copy/paste
 
 (defun helix-push-mark (&optional position nomsg activate)
   "Set mark to the POSITION and push it on the `mark-ring'.

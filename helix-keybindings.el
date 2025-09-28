@@ -167,7 +167,8 @@
   "z b" #'helix-smooth-scroll-line-to-bottom
 
   ;; Misc
-  "C-o"   #'pop-to-mark-command
+  "C-o"   #'helix-backward-mark-ring
+  "C-<i>" #'helix-forward-mark-ring
   "g c"   #'comment-dwim
   "g i"   #'imenu
   "g f"   #'find-file-at-point

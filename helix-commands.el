@@ -338,6 +338,35 @@ If no sentence at point select COUNT previous sentences."
       (up-list 1))))
   (helix-reveal-point-when-on-top))
 
+;; C-o
+(helix-define-command helix-backward-mark-ring ()
+  "Jump to the top position on `mark-ring'.
+If point is already there, rotate `mark-ring' forward (like revolver cylinder)
+and jump to new top position.
+
+In Emacs, mark has two purposes: when active, it acts as a boundary for region;
+when inactive, it can be used to store the previous significant position. The
+Helix approach is based on selections, and mark is never used to store previous
+position. So unlike the `pop-to-mark-command' which puts the value from `mark'
+into `point' and value from `mark-ring' into `mark', this command puts the value
+from `mark-ring' directly into `point' skipping `mark'.
+
+\(Does not affect global mark ring)."
+  :multiple-cursors t
+  (interactive)
+  (helix--jump-over-mark-ring))
+
+;; C-i
+(helix-define-command helix-forward-mark-ring ()
+  "Jump to the top position on `mark-ring'.
+If point is already there, rotate `mark-ring' backward and jump to new top
+position. See `helix-backward-mark-ring'.
+
+\(Does not affect global mark ring)."
+  :multiple-cursors t
+  (interactive)
+  (helix--jump-over-mark-ring t))
+
 ;;; Avy (Easymotion)
 
 ;; gw

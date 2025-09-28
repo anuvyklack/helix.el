@@ -99,14 +99,6 @@ in the command loop, and the fake cursors can pick up on those instead."
 
 (helix-advice-add 'exchange-point-and-mark :after #'helix-reveal-point-when-on-top)
 
-(helix-define-advice pop-to-mark-command (:around (orig-fun))
-  "When region is active, skip active mark and jump to one before it."
-  (if (use-region-p)
-      (helix-motion-loop (_ 2)
-        (funcall orig-fun))
-    (funcall orig-fun))
-  (helix-reveal-point-when-on-top))
-
 (dolist (command '(fill-region          ;; gq
                    indent-region        ;; =
                    indent-rigidly-left  ;; >
