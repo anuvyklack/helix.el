@@ -18,7 +18,7 @@
 (require 'helix-core)
 (require 'helix-multiple-cursors-core)
 (require 'helix-commands)
-(require 'keypad)
+(require 'helix-leader)
 
 ;;; Distinguish `TAB' from `C-i' and `RET' from `C-m'
 
@@ -460,23 +460,6 @@ in the command loop, and the fake cursors can pick up on those instead."
 
 (with-eval-after-load 'shortdoc
   (keymap-set shortdoc-mode-map "y" #'shortdoc-copy-function-as-kill))
-
-;;; Keypad
-
-(with-eval-after-load 'keypad
-  (helix-define-advice keypad (:after ())
-    "Execute selected command for all cursors."
-    (setq helix-this-command this-command))
-
-  (put 'keypad 'multiple-cursors 'false)
-  (put 'keypad-describe-key 'multiple-cursors 'false)
-
-  (dolist (state '(normal motion))
-    (helix-keymap-global-set state
-      "SPC"      #'keypad
-      "C-h k"    #'keypad-describe-key
-      "<f1> k"   #'keypad-describe-key
-      "<help> k" #'keypad-describe-key)))
 
 ;;; Major modes
 ;;;; emacs-lisp-mode (elisp)

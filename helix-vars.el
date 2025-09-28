@@ -47,6 +47,12 @@
   :type 'integer
   :group 'helix)
 
+(defcustom helix-want-helix-leader t
+  "If non-nil helix-leader keys will be binded.
+This variable must be set before Helix is loaded!"
+  :type 'boolean
+  :group 'helix)
+
 (defcustom helix-want-zz-scroll-to-center nil
   "If non-nil `zz` keybinding will scroll current line to center of the screen.
 This variable must be set before Helix is loaded!"

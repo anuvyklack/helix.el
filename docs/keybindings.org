@@ -237,7 +237,7 @@ In Motion state by default only following keys are binded:
 
 - =C-w= prefix for windows layout manipulation.
 
-- =SPC= for ~keypad~.
+- =SPC= for ~helix-leader~.
 
 - Scrolling commands.
 

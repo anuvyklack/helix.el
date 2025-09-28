@@ -18,7 +18,6 @@
 (require 'helix-commands)
 (require 'helix-scrolling)
 (require 'helix-core)
-(require 'keypad)
 
 ;;; Universal argument
 
@@ -403,6 +402,16 @@
   "C-w" #'helix-delete-backward-word)
 
 ;;; Conditional keybindings
+
+(when helix-want-helix-leader
+  (require 'helix-leader)
+  (dolist (state '(normal motion))
+    (helix-keymap-global-set state
+      "SPC"      #'helix-leader
+      "C-w SPC"  #'helix-leader-other-window
+      "C-h k"    #'helix-leader-describe-key
+      "<f1> k"   #'helix-leader-describe-key
+      "<help> k" #'helix-leader-describe-key)))
 
 (when helix-want-zz-scroll-to-center
   (dolist (state '(normal motion))
