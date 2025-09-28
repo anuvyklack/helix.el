@@ -170,18 +170,19 @@ in the command loop, and the fake cursors can pick up on those instead."
 
 (with-eval-after-load 'help-mode
   (helix-set-initial-state 'help-mode 'normal)
-  (helix-inhibit-insert-state help-mode-map)
-  ;; (helix-keymap-set help-mode-map 'normal
-  ;;   ;; "RET" (keymap-lookup help-mode-map "RET")
-  ;;   "q" (keymap-lookup help-mode-map "q"))
-  )
+  (helix-inhibit-insert-state help-mode-map))
 
 (with-eval-after-load 'helpful
   (helix-set-initial-state 'helpful-mode 'normal)
   (helix-inhibit-insert-state helpful-mode-map)
-  ;; (helix-keymap-set helpful-mode-map 'normal
-  ;;   "q" #'quit-window)
-  (put 'helpful-variable 'multiple-cursors 'false))
+  (put 'helpful-at-point 'multiple-cursors 'false)
+
+  ;; Open links to functions, variables and symbols in helpful buffer
+  ;; in the same window.
+  (add-to-list 'display-buffer-alist
+               '((derived-mode . helpful-mode)    ; condition
+                 display-buffer-reuse-mode-window ; action
+                 (mode . helpful-mode))))         ; args
 
 ;;; Button
 
