@@ -344,18 +344,6 @@
   "k"   #'helix-window-up
   "l"   #'helix-window-right
 
-  "C-n" #'other-window-prefix
-  "C-s" #'helix-window-split
-  "C-v" #'helix-window-vsplit
-  "C-c" #'helix-window-delete
-  "C-o" #'delete-other-windows
-
-  "C-w" #'other-window
-  "C-h" #'helix-window-left
-  "C-j" #'helix-window-down
-  "C-k" #'helix-window-up
-  "C-l" #'helix-window-right
-
   "H"   #'helix-move-window-left
   "J"   #'helix-move-window-down
   "K"   #'helix-move-window-up
@@ -368,7 +356,27 @@
   "b"   #'clone-indirect-buffer-other-window
   "B"   #'helix-clone-indirect-buffer
   ;; xref
-  "g d" #'xref-find-definitions-other-window)
+  "g d" #'xref-find-definitions-other-window
+
+  ;; Duplicate all keys with ctrl prefix.
+  "C-n" #'other-window-prefix
+  "C-s" #'helix-window-split
+  "C-v" #'helix-window-vsplit
+  "C-S" #'helix-root-window-split
+  "C-V" #'helix-root-window-vsplit
+  "C-c" #'helix-window-delete
+  "C-o" #'delete-other-windows
+  ;; Jump over windows
+  "C-w" #'other-window
+  "C-h" #'helix-window-left
+  "C-j" #'helix-window-down
+  "C-k" #'helix-window-up
+  "C-l" #'helix-window-right
+  ;; buffers
+  "C-r" #'revert-buffer
+  "C-d" #'kill-current-buffer
+  "C-q" #'helix-kill-current-buffer-and-window
+  "C-b" #'clone-indirect-buffer-other-window)
 
 ;;; Motion state
 
