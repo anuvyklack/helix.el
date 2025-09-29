@@ -261,6 +261,12 @@ in the command loop, and the fake cursors can pick up on those instead."
     "}"   #'vertico-next-group
     "{"   #'vertico-previous-group))
 
+;;; Compilation
+
+(dolist (cmd '(next-error
+               previous-error))
+  (helix-advice-add cmd :around #'helix-jump-command))
+
 ;;; Xref
 
 (with-eval-after-load 'xref
