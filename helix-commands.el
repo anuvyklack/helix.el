@@ -367,6 +367,24 @@ position. See `helix-backward-mark-ring'.
   (interactive)
   (helix--jump-over-mark-ring t))
 
+;; C-S-o
+(helix-define-command helix-backward-global-mark-ring ()
+  "Jump to the top location on `global-mark-ring'.
+If current buffer is the same as the target one, rotate `global-mark-ring'
+forward (like revolver cylinder) and jump to new top location."
+  :multiple-cursors t
+  (interactive)
+  (helix--jump-over-global-mark-ring))
+
+;; C-S-i
+(helix-define-command helix-forward-global-mark-ring ()
+  "Jump to the top location on `global-mark-ring'.
+If current buffer is the same as the target one, rotate `global-mark-ring'
+backward and jump to new top location."
+  :multiple-cursors t
+  (interactive)
+  (helix--jump-over-global-mark-ring t))
+
 ;;; Avy (Easymotion)
 
 ;; gw

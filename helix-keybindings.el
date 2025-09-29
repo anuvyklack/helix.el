@@ -168,6 +168,8 @@
   ;; Misc
   "C-o"   #'helix-backward-mark-ring
   "C-<i>" #'helix-forward-mark-ring
+  "C-S-o" #'helix-backward-global-mark-ring
+  "C-S-i" #'helix-forward-global-mark-ring
   "g c"   #'comment-dwim
   "g i"   #'imenu
   "g f"   #'find-file-at-point

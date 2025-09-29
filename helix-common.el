@@ -758,6 +758,29 @@ and jump to the new top position."
     (helix-recenter-point-on-jump
       (goto-char (car mark-ring)))))
 
+(defun helix--jump-over-global-mark-ring (&optional backward?)
+  "Jump to the top location on the `global-mark-ring'.
+If current buffer is the same as the target one, rotate `global-mark-ring'
+forward (or BACKWARD) and jump to new top location."
+  ;; Delete entries that refer to non-existent buffers.
+  (when (setq global-mark-ring (-filter #'marker-buffer global-mark-ring))
+    (when (eq (marker-buffer (car global-mark-ring))
+              (current-buffer))
+      (setq global-mark-ring (helix-rotate-ring global-mark-ring backward?)))
+    (helix-recenter-point-on-jump
+      (let* ((marker (car global-mark-ring))
+	     (buffer (marker-buffer marker))
+	     (position (marker-position marker)))
+        (set-buffer buffer)
+        (or (<= (point-min) position (point-max))
+	    (if widen-automatically
+	        (widen)
+	      (error "Global mark position is outside accessible part of buffer %s"
+                     (buffer-name buffer))))
+        (goto-char position)
+        (switch-to-buffer buffer)
+        (deactivate-mark)))))
+
 (defun helix-rotate-ring (ring &optional backward-p)
   "Rotate the RING elements.
 
