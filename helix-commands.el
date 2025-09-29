@@ -1348,7 +1348,7 @@ already there."
   (interactive "p")
   (helix-push-point)
   (helix-mark-inner-thing 'helix-function count t)
-  (helix--exchange-point-and-mark)
+  (helix-ensure-region-direction -1)
   (helix-reveal-point-when-on-top))
 
 ;; maf

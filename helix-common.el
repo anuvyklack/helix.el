@@ -328,17 +328,20 @@ line(s). With no region, select current line. Uses visual lines if
 (defun helix-mark-inner-thing (thing &optional count adjust-end)
   (unless count (setq count 1))
   (cl-assert (/= count 0))
-  (when adjust-end (helix-restore-newline-at-eol))
-  (let ((beg (-if-let ((thing-beg . thing-end) (bounds-of-thing-at-point thing))
-                 (prog1 thing-beg
-                   (goto-char thing-end)
-                   (cl-decf count))
-               ;; else
-               (forward-thing thing)
-               (forward-thing thing -1)
-               (point)))
-        (end (progn (forward-thing thing count)
-                    (point))))
+  (if adjust-end (helix-restore-newline-at-eol))
+  (let* ((dir (helix-sign count))
+         (beg (-if-let ((thing-beg . thing-end) (bounds-of-thing-at-point thing))
+                  (progn
+                    (if (< dir 0) (cl-rotatef thing-beg thing-end))
+                    (prog1 thing-beg
+                      (goto-char thing-end)
+                      (setq count (- count dir))))
+                ;; else
+                (forward-thing thing dir)
+                (forward-thing thing (- dir))
+                (point)))
+         (end (progn (forward-thing thing count)
+                     (point))))
     (helix-set-region beg end nil (if adjust-end :adjust))))
 
 (defun helix-mark-a-thing (thing &optional adjust-end)
