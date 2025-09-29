@@ -362,7 +362,7 @@
   "d"   #'kill-current-buffer
   "q"   #'helix-kill-current-buffer-and-window
   "b"   #'clone-indirect-buffer-other-window
-  "B"   #'helix-clone-indirect-buffer
+  "B"   #'helix-clone-indirect-buffer-same-window
   ;; xref
   "g d" #'xref-find-definitions-other-window
 

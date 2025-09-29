@@ -1919,15 +1919,14 @@ Rebalance all children of the deleted window's parent window."
       ;; any further children (then rebalancing is not necessary anyway)
       (ignore-errors (balance-windows parent)))))
 
-(helix-define-command helix-clone-indirect-buffer ()
+(helix-define-command helix-clone-indirect-buffer-same-window ()
   "Create indirect buffer and open it in the current window.
 This command was written because `clone-indirect-buffer' calls `pop-to-buffer'
 and opens a new window."
   :multiple-cursors nil
   (interactive)
   (-doto (clone-indirect-buffer nil nil)
-    (switch-to-buffer)
-    (set-buffer)))
+    (switch-to-buffer)))
 
 (helix-define-command helix-kill-current-buffer-and-window ()
   "Kill the current buffer and delete the current window or tab."
@@ -1960,7 +1959,7 @@ narrowing doesn't affect other windows displaying the same buffer. Call
           (beg (region-beginning))
           (end (region-end)))
       (deactivate-mark)
-      (helix-clone-indirect-buffer)
+      (helix-clone-indirect-buffer-same-window)
       (narrow-to-region beg end)
       (setq helix--narrowed-base-buffer orig-buffer))))
 
