@@ -1331,7 +1331,8 @@ already there."
   :merge-selections t
   (interactive "p")
   (helix-push-point)
-  (helix-mark-inner-thing 'helix-paragraph count t))
+  (helix-mark-inner-thing 'helix-paragraph count t)
+  (helix-reveal-point-when-on-top))
 
 ;; map
 (helix-define-command helix-mark-a-paragraph (count)
@@ -1339,7 +1340,8 @@ already there."
   :merge-selections t
   (interactive "p")
   (helix-push-point)
-  (helix-mark-a-thing 'helix-paragraph count t))
+  (helix-mark-a-thing 'helix-paragraph count t)
+  (helix-reveal-point-when-on-top))
 
 ;; mif
 (helix-define-command helix-mark-inner-function (count)
@@ -1357,7 +1359,8 @@ already there."
   :merge-selections t
   (interactive "p")
   (helix-push-point)
-  (helix-mark-a-thing 'helix-function count t))
+  (helix-mark-a-thing 'helix-function count t)
+  (helix-reveal-point-when-on-top))
 
 ;; mi"
 (helix-define-command helix-mark-inner-double-quoted ()
