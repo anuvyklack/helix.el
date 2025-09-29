@@ -132,7 +132,7 @@ are active — works like `helix-expand-line-selection-backward'."
   (helix--forward-word-end 'helix-WORD count))
 
 ;; gg
-(helix-define-command helix-goto-first-line (num)
+(helix-define-command helix-beginning-of-buffer (num)
   "Move point to the beginning of the buffer.
 With numeric arg NUM, put point NUM/10 of the way from the beginning.
 If the buffer is narrowed, this command uses the beginning of the
@@ -155,7 +155,7 @@ Push mark at previous position, unless extending selection."
     (recenter 0)))
 
 ;; G
-(helix-define-command helix-goto-last-line ()
+(helix-define-command helix-end-of-buffer ()
   "Move point the end of the buffer."
   :multiple-cursors nil
   (interactive)

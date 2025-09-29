@@ -69,8 +69,8 @@
   "g s" #'helix-beginning-of-line-command
   "g h" #'helix-first-non-blank
   "g l" #'helix-end-of-line-command
-  "g g" #'helix-goto-first-line
-  "G"   #'helix-goto-last-line
+  "g g" #'helix-beginning-of-buffer
+  "G"   #'helix-end-of-buffer
   "] p" #'helix-mark-paragraph-forward
   "[ p" #'helix-mark-paragraph-backward
   "}"   #'helix-mark-paragraph-forward
