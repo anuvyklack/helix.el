@@ -141,6 +141,7 @@
   "M-," #'helix-remove-main-cursor
   "M--" #'helix-merge-selections
   ";"   #'helix-collapse-selection
+  "C-;" #'helix-exchange-point-and-mark
   "M-;" #'helix-exchange-point-and-mark
   "g ;" #'helix-exchange-point-and-mark
   "_"   #'helix-trim-whitespaces-from-selection
@@ -166,6 +167,7 @@
   "z b" #'helix-smooth-scroll-line-to-bottom
 
   ;; Misc
+  "."     #'repeat
   "C-o"   #'helix-backward-mark-ring
   "C-<i>" #'helix-forward-mark-ring
   "C-S-o" #'helix-backward-global-mark-ring
@@ -338,6 +340,7 @@
 
 (helix-keymap-set helix-window-map nil
   ;; windows
+  "RET" #'same-window-prefix
   "n"   #'other-window-prefix
   "s"   #'helix-window-split
   "v"   #'helix-window-vsplit
@@ -363,6 +366,8 @@
   "q"   #'helix-kill-current-buffer-and-window
   "b"   #'clone-indirect-buffer-other-window
   "B"   #'helix-clone-indirect-buffer-same-window
+  "z"   #'bury-buffer
+  "x"   #'scratch-buffer
   ;; xref
   "g d" #'xref-find-definitions-other-window
 
@@ -384,7 +389,9 @@
   "C-r" #'revert-buffer
   "C-d" #'kill-current-buffer
   "C-q" #'helix-kill-current-buffer-and-window
-  "C-b" #'clone-indirect-buffer-other-window)
+  "C-b" #'clone-indirect-buffer-other-window
+  "C-x" #'scratch-buffer
+  "C-z" #'bury-buffer)
 
 ;;; Motion state
 
