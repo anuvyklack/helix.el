@@ -135,25 +135,25 @@ in the command loop, and the fake cursors can pick up on those instead."
 
 ;;; winner-mode & tab-bar-history-mode
 
-(add-hook 'winner-mode-hook #'helix-setup-winner-mode-keys)
-(defun helix-setup-winner-mode-keys ()
-  (if winner-mode
-      (helix-keymap-set helix-window-map nil
-        "u" #'winner-undo
-        "U" #'winner-redo)
-    (helix-keymap-set helix-window-map nil
-      "u" nil
-      "U" nil)))
+(add-hook 'winner-mode-hook
+          (defun helix-setup-winner-mode-keys ()
+            (if winner-mode
+                (helix-keymap-set helix-window-map nil
+                  "u" #'winner-undo
+                  "U" #'winner-redo)
+              (helix-keymap-set helix-window-map nil
+                "u" nil
+                "U" nil))))
 
-(add-hook 'tab-bar-history-mode-hook #'helix-setup-tab-bar-history-mode-keys)
-(defun helix-setup-tab-bar-history-mode-keys ()
-  (if tab-bar-history-mode
-      (helix-keymap-set helix-window-map nil
-        "u" #'tab-bar-history-back
-        "U" #'tab-bar-history-forward)
-    (helix-keymap-set helix-window-map nil
-      "u" nil
-      "U" nil)))
+(add-hook 'tab-bar-history-mode-hook
+          (defun helix-setup-tab-bar-history-mode-keys ()
+            (if tab-bar-history-mode
+                (helix-keymap-set helix-window-map nil
+                  "u" #'tab-bar-history-back
+                  "U" #'tab-bar-history-forward)
+              (helix-keymap-set helix-window-map nil
+                "u" nil
+                "U" nil))))
 
 ;;; Edebug
 
