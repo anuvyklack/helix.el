@@ -194,23 +194,30 @@
 
 (helix-define-command helix-mark-digit-argument (arg)
   "Like `digit-argument' but keep `m' prefix key active."
-  :multiple-cursors 'false
+  :multiple-cursors nil
   (interactive "P")
   (digit-argument arg)
   (set-transient-map (keymap-lookup nil "m")))
 
-;; Do not show keys binded to `helix-mark-digit-argument' command
-;; in which-key popup.
+(helix-define-command helix-mark-negative-argument (arg)
+  :multiple-cursors nil
+  (interactive "P")
+  (negative-argument arg)
+  (set-transient-map (keymap-lookup nil "m")))
+
+;; Do not show keys binded to `helix-mark-digit-argument' and
+;; `helix-mark-negative-argument' commands in which-key popup.
 (with-eval-after-load 'which-key
   (defvar which-key-replacement-alist)
-  (cl-pushnew '((nil . "helix-mark-digit-argument") . ignore)
-              which-key-replacement-alist
-              :test #'equal))
+  (dolist (elt '(((nil . "helix-mark-digit-argument") . ignore)
+                 ((nil . "helix-mark-negative-argument") . ignore)))
+    (cl-pushnew elt which-key-replacement-alist :test #'equal)))
 
 (helix-keymap-global-set 'normal
   "m" #'helix-mark-map)
 
 (helix-keymap-set helix-mark-map nil
+  "-" #'helix-mark-negative-argument
   "0" #'helix-mark-digit-argument
   "1" #'helix-mark-digit-argument
   "2" #'helix-mark-digit-argument
