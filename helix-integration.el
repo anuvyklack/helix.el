@@ -242,7 +242,7 @@ in the command loop, and the fake cursors can pick up on those instead."
 ;; `read-expression-map' keymap available.
 (keymap-unset read--expression-map "C-j" :remove)
 
-;;;; Vertico
+;;; Vertico
 
 (with-eval-after-load 'vertico
   (helix-keymap-set vertico-map 'normal
@@ -250,16 +250,19 @@ in the command loop, and the fake cursors can pick up on those instead."
     "j"   #'vertico-next
     "k"   #'vertico-previous
     "g g" #'vertico-first
-    "G"   #'vertico-last
-    "C-f" #'vertico-scroll-up
-    "C-b" #'vertico-scroll-down
-    "C-d" #'vertico-scroll-up
-    "C-u" #'vertico-scroll-down
+    "G"   #'vertico-last)
+  (helix-keymap-set vertico-map nil
+    "M-j" #'next-history-element
+    "M-k" #'previous-history-element
     ;; Rebind forward/backward paragraphs keys
-    "] p" #'vertico-next-group
-    "[ p" #'vertico-previous-group
-    "}"   #'vertico-next-group
-    "{"   #'vertico-previous-group))
+    "<remap> <helix-mark-paragraph-forward>"  #'vertico-next-group
+    "<remap> <helix-mark-paragraph-backward>" #'vertico-previous-group
+    ;; Rebind scrolling keys
+    "<remap> <helix-smooth-scroll-down>"      #'vertico-scroll-up
+    "<remap> <helix-smooth-scroll-up>"        #'vertico-scroll-down
+    "<remap> <helix-smooth-scroll-page-down>" #'vertico-scroll-up
+    "<remap> <helix-smooth-scroll-page-up>"   #'vertico-scroll-down))
+
 
 ;;; Compilation
 
