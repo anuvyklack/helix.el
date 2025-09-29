@@ -311,10 +311,11 @@ CHECKED-MODES is used internally and should not be set initially."
 (defun helix-set-initial-state (mode state)
   "Set the Helix initial STATE for the major MODE.
 MODE and STATE should be symbols."
-  ;; Remove current settings for MODE.
+  ;; Remove current settings.
   (cl-loop for (_state . plist) in helix-state-properties
            for modes = (plist-get plist :modes)
            do (set modes (delq mode (symbol-value modes))))
+  ;; Add new settings.
   (add-to-list (helix-state-property state :modes)
                mode))
 

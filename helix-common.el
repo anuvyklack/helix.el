@@ -40,8 +40,8 @@ next THING. This function skips first step and always moves to the next THING."
 Move backward if COUNT is negative.
 Returns the count of steps left to move.
 
-Works only with THING, that returns the count of steps left to move,
-such as `helix-word', `helix-sentence', `paragraph', `line'."
+Works only with THINGs, that returns the count of steps left to move,
+such as `helix-word', `helix-sentence', `helix-line', `paragraph'."
   (unless count (setq count 1))
   (if (zerop count) 0
     (let ((rest (helix-forward-next-thing thing count)))
@@ -55,8 +55,8 @@ such as `helix-word', `helix-sentence', `paragraph', `line'."
 Move backward if COUNT is negative.
 Returns the count of steps left to move.
 
-Works only with THING, that returns the count of steps left to move,
-such as `helix-word', `helix-sentence', `paragraph', `line'."
+Works only with THINGs, that returns the count of steps left to move,
+such as `helix-word', `helix-sentence', `helix-line', `paragraph'."
   (unless count (setq count 1))
   (if (zerop count) 0
     (let ((rest (helix-forward-next-thing thing count)))
@@ -374,12 +374,11 @@ Count things forward if COUNT is positive, or backward if negative."
       (cons beg end))))
 
 (defun helix-bounds-of-complement-of-thing-at-point (thing)
-  "Return the bounds of a complement of THING at point.
-I.e., if there is a THING at point — returns nil, otherwise
-the gap between two THINGs is returned.
+  "Return the bounds of the gap between two THINGs at point.
+If there is a THING at point — return nil.
 
 Works only with THINGs, that returns the count of steps left to move,
-such as `helix-word', `helix-sentence', `paragraph', `line'."
+such as `helix-word', `helix-sentence', `helix-line', `paragraph'."
   (let ((orig-point (point)))
     (if-let* ((beg (save-excursion
                      (and (zerop (forward-thing thing -1))
@@ -795,7 +794,6 @@ forward (or BACKWARD) and jump to new top location."
 
 (defun helix-rotate-ring (ring &optional backward-p)
   "Rotate the RING elements.
-
 This function destructively modify RING and should be used the following way:
 `(setq RING (helix-rotate-ring RING))'
 
@@ -993,24 +991,24 @@ that `match-beginning', `match-end' and `match-data' access."
              (eq (car cursor-type) 'bar)))))
 
 (defun helix-set-region (start end &optional direction newline-at-eol)
-  "Set the active region from START to END.
+  "Set the active region between START and END positions.
 
-DIRECTION controls the ordering of START and END:
-nil  region direction is from START to END
- 1   force forward region (START < END)
--1   force backward region (START > END)
+DIRECTION of region:
+  nil      Region direction is from START to END.
+   1       Force forward region (mark < point).
+  -1       Force backward region (point < mark).
 When DIRECTION is specified, START and END can be provided in any order.
 
 NEWLINE-AT-EOL handles trailing newline behavior:
   In Emacs, selecting a newline character at the end of a line moves point
-to the next line. This contradicts Helix's and Vim's text editors behavior.
-We emulate their behavior, by keeping the point at the end of the line and
-setting `helix--newline-at-eol' flag.
+to the beginning of the next line. This contradicts Helix's and Vim's editors
+behavior. We emulate their behavior, by keeping the point at the end of the
+line and setting `helix--newline-at-eol' flag.
   Possible values:
-t        Set `helix--newline-at-eol' to t.
-nil      Set `helix--newline-at-eol' to nil.
-`:adjust'  Check if region includes trailing newline, exclude it if found,
-         and set `helix--newline-at-eol' flag."
+  nil      Set `helix--newline-at-eol' to nil.
+  t        Set `helix--newline-at-eol' to t.
+  `:adjust'  Check if region includes trailing newline, exclude it if found,
+           and set `helix--newline-at-eol' flag."
   (pcase newline-at-eol
     (:adjust (and (setq helix--newline-at-eol (and (/= start end)
                                                    (save-excursion
