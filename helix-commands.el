@@ -1334,12 +1334,12 @@ already there."
   (helix-mark-inner-thing 'helix-paragraph count t))
 
 ;; map
-(helix-define-command helix-mark-a-paragraph ()
+(helix-define-command helix-mark-a-paragraph (count)
   :multiple-cursors t
   :merge-selections t
-  (interactive)
+  (interactive "p")
   (helix-push-point)
-  (helix-mark-a-thing 'helix-paragraph t))
+  (helix-mark-a-thing 'helix-paragraph count t))
 
 ;; mif
 (helix-define-command helix-mark-inner-function (count)
@@ -1352,12 +1352,12 @@ already there."
   (helix-reveal-point-when-on-top))
 
 ;; maf
-(helix-define-command helix-mark-a-function ()
+(helix-define-command helix-mark-a-function (count)
   :multiple-cursors t
   :merge-selections t
-  (interactive)
+  (interactive "p")
   (helix-push-point)
-  (helix-mark-a-thing 'helix-function t))
+  (helix-mark-a-thing 'helix-function count t))
 
 ;; mi"
 (helix-define-command helix-mark-inner-double-quoted ()

@@ -329,28 +329,16 @@ line(s). With no region, select current line. Uses visual lines if
   (unless count (setq count 1))
   (cl-assert (/= count 0))
   (if adjust-end (helix-restore-newline-at-eol))
-  (let* ((dir (helix-sign count))
-         (beg (-if-let ((thing-beg . thing-end) (bounds-of-thing-at-point thing))
-                  (progn
-                    (if (< dir 0) (cl-rotatef thing-beg thing-end))
-                    (prog1 thing-beg
-                      (goto-char thing-end)
-                      (setq count (- count dir))))
-                ;; else
-                (forward-thing thing dir)
-                (forward-thing thing (- dir))
-                (point)))
-         (end (progn (forward-thing thing count)
-                     (point))))
-    (helix-set-region beg end nil (if adjust-end :adjust))))
+  (-let (((beg . end) (helix-bounds-of-count-things-at-point thing count)))
+    (helix-set-region beg end (helix-sign count) (if adjust-end :adjust))))
 
-(defun helix-mark-a-thing (thing &optional adjust-end)
-  "Select a THING with spacing around.
+(defun helix-mark-a-thing (thing count &optional adjust-end)
+  "Select COUNT THINGs with spacing around.
 Works only with THINGs, that returns the count of steps left to move,
 such as `paragraph', `helix-function'."
-  (when adjust-end (helix-restore-newline-at-eol))
-  (-when-let ((thing-beg . thing-end) (bounds-of-thing-at-point thing))
-    (-let [(beg . end)
+  (if adjust-end (helix-restore-newline-at-eol))
+  (-let* (((thing-beg . thing-end) (helix-bounds-of-count-things-at-point thing count))
+          ((beg . end)
            (or (progn
                  (goto-char thing-end)
                  (-if-let ((_ . space-end)
@@ -361,8 +349,29 @@ such as `paragraph', `helix-function'."
                  (-if-let ((space-beg . _)
                            (helix-bounds-of-complement-of-thing-at-point thing))
                      (cons space-beg thing-end)))
-               (cons thing-beg thing-end))]
-      (helix-set-region beg end nil (if adjust-end :adjust)))))
+               (cons thing-beg thing-end))))
+    (helix-set-region beg end (helix-sign count) (if adjust-end :adjust))))
+
+(defun helix-bounds-of-count-things-at-point (thing count)
+  "Return the bounds of COUNT things at point.
+Count things forward if COUNT is positive, or backward if negative."
+  (cl-assert (/= count 0))
+  (save-excursion
+    (let* ((dir (helix-sign count))
+           (beg (-if-let ((thing-beg . thing-end) (bounds-of-thing-at-point thing))
+                    (progn
+                      (if (< dir 0) (cl-rotatef thing-beg thing-end))
+                      (prog1 thing-beg
+                        (goto-char thing-end)
+                        (setq count (- count dir))))
+                  ;; else
+                  (forward-thing thing dir)
+                  (forward-thing thing (- dir))
+                  (point)))
+           (end (progn (forward-thing thing count)
+                       (point))))
+      (if (< end beg) (cl-rotatef beg end))
+      (cons beg end))))
 
 (defun helix-bounds-of-complement-of-thing-at-point (thing)
   "Return the bounds of a complement of THING at point.
