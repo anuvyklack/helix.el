@@ -126,13 +126,12 @@
 (helix-define-advice select-window (:after (&rest _))
   (helix-update-cursor))
 
-;; (helix-define-advice use-global-map (:after (&rest _))
-;;   "Refresh Helix keymaps."
-;;   (helix-update-active-keymaps))
-;;
-;; (helix-define-advice use-local-map (:after (&rest _))
-;;   "Refresh Helix keymaps."
-;;   (helix-update-active-keymaps))
+(helix-advice-add 'use-global-map :after #'helix--do-update-active-keymaps-a)
+(helix-advice-add 'use-local-map  :after #'helix--do-update-active-keymaps-a)
+
+(defun helix--do-update-active-keymaps-a (&rest _)
+  "Refresh Helix keymaps."
+  (helix-activate-state-keymaps helix-state))
 
 ;;; Helix states
 
