@@ -188,6 +188,12 @@ in the command loop, and the fake cursors can pick up on those instead."
 
 (helix-advice-add 'forward-button :before #'helix-deactivate-mark)
 
+;;; repeat-mode
+
+(with-eval-after-load 'repeat
+  (setopt repeat-exit-key "<escape>")
+  (put 'undo 'repeat-map nil))
+
 ;;; Special mode
 
 ;; hjkl keys are free in `special-mode-map' by default, so we can use them.
@@ -493,14 +499,73 @@ the first target at point."
 
 ;;; Outline
 
-(dolist (cmd '(outline-up-heading
-               outline-next-visible-heading
-               outline-previous-visible-heading
-               outline-forward-same-level
-               outline-backward-same-level))
-  (put cmd 'merge-selections 'extend-selection)
-  (helix-advice-add cmd :before #'helix-deactivate-mark)
-  (helix-advice-add cmd :after #'helix-reveal-point-when-on-top))
+(with-eval-after-load 'outline
+  (helix-advice-add 'outline-minor-mode :after #'helix--do-update-active-keymaps-a)
+  (dolist (cmd '(outline-up-heading
+                 outline-next-visible-heading
+                 outline-previous-visible-heading
+                 outline-forward-same-level
+                 outline-backward-same-level))
+    (helix-advice-add cmd :before #'helix-deactivate-mark))
+
+  (dolist (keymap (list outline-mode-map outline-minor-mode-map))
+    (dolist (state '(normal motion))
+      (helix-keymap-set keymap state
+        "z <tab>"     #'outline-cycle
+        "z <backtab>" #'outline-cycle-buffer
+        "z <return>"  #'outline-insert-heading
+        "m h"   #'outline-mark-subtree  ; `h' is for heading
+        "m i h" #'outline-mark-subtree
+        "z j"   #'outline-next-visible-heading
+        "z k"   #'outline-previous-visible-heading
+        "z C-j" #'outline-forward-same-level
+        "z C-k" #'outline-backward-same-level
+        "z u"   #'outline-up-heading
+        "z o"   #'helix-outline-open
+        "z c"   #'outline-hide-subtree
+        "z r"   #'outline-show-all
+        "z m"   #'outline-hide-sublevels
+        "z 2"   #'helix-show-2-sublevels
+        "z p"   #'helix-outline-hide-other
+        "z O"   #'outline-show-branches
+        "z <"   #'outline-promote
+        "z >"   #'outline-demote
+        "z M-h" #'outline-promote
+        "z M-l" #'outline-demote
+        "z M-j" #'outline-move-subtree-down
+        "z M-k" #'outline-move-subtree-up)))
+
+  (setq outline-navigation-repeat-map
+        (define-keymap
+          "u"   #'outline-up-heading
+          "j"   #'outline-next-visible-heading
+          "k"   #'outline-previous-visible-heading
+          "C-j" #'outline-forward-same-level
+          "C-k" #'outline-backward-same-level))
+
+  (setq outline-editing-repeat-map
+        (define-keymap
+          "<"   #'outline-promote
+          ">"   #'outline-demote
+          "M-h" #'outline-promote
+          "M-l" #'outline-demote
+          "M-j" #'outline-move-subtree-down
+          "M-k" #'outline-move-subtree-up)))
+
+(defun helix-outline-open ()
+  (interactive)
+  (outline-show-entry)
+  (outline-show-children))
+
+(defun helix-outline-hide-other ()
+  (interactive)
+  (outline-hide-other)
+  (outline-show-branches))
+
+(defun helix-show-2-sublevels ()
+  "Remain 2 top levels of headings visible."
+  (interactive)
+  (outline-hide-sublevels 2))
 
 ;;; Custom
 
