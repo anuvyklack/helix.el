@@ -389,6 +389,35 @@ the first target at point."
   (deadgrep-backward-match)
   (helix-deadgrep-show-result-other-window))
 
+;;; grep-mode
+
+(with-eval-after-load 'grep
+  (helix-keymap-set grep-mode-map 'motion
+    "i"   #'wgrep-change-to-wgrep-mode
+    "o"   #'compilation-display-error
+    "g r" #'recompile
+    "g f" #'next-error-follow-minor-mode
+    "g g" #'beginning-of-buffer
+    "G"   #'end-of-buffer
+    ;; "C-j" #'next-error-no-select
+    ;; "C-k" #'previous-error-no-select
+    ))
+
+;;; Wgrep
+
+(with-eval-after-load 'wgrep
+  (helix-advice-add 'wgrep-change-to-wgrep-mode :after #'helix-switch-to-initial-state)
+
+  (helix-advice-add 'wgrep-to-original-mode :before #'helix-deactivate-mark)
+  (helix-advice-add 'wgrep-to-original-mode :before #'helix-delete-all-fake-cursors)
+  (helix-advice-add 'wgrep-to-original-mode :after  #'helix-switch-to-initial-state)
+
+  (helix-keymap-set wgrep-mode-map 'normal
+    "<remap> <save-buffer>" #'wgrep-finish-edit
+    "<escape>" #'wgrep-exit
+    "Z Z"      #'wgrep-finish-edit
+    "Z Q"      #'wgrep-abort-changes))
+
 ;;; Wdired
 
 (with-eval-after-load 'wdired
