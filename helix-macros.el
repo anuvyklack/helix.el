@@ -91,7 +91,8 @@ flickering."
      (prog1 (progn ,@body)
        ;; Update the screen so that the temporary value for
        ;; `scroll-conservatively' is taken into account.
-       (redisplay))))
+       (unless helix-executing-command-for-fake-cursor
+         (redisplay)))))
 
 (defmacro helix-save-region (&rest body)
   "Evaluate BODY with preserving original region.

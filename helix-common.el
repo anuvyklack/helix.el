@@ -1211,9 +1211,10 @@ is non-nil."
   "Reveal point when it's only partially visible.
 For some reason, Emacs can become slow while point is partially visible, so this
 function prevents that. It is intended to be used as `:after' advice."
-  (redisplay)
-  (when (zerop (cdr (posn-col-row (posn-at-point))))
-    (recenter 0)))
+  (unless helix-executing-command-for-fake-cursor
+    (redisplay)
+    (when (zerop (cdr (posn-col-row (posn-at-point))))
+      (recenter 0))))
 
 (declare-function helix-extend-selection "helix-commands")
 
