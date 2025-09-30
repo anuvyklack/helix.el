@@ -263,6 +263,26 @@ in the command loop, and the fake cursors can pick up on those instead."
     "<remap> <helix-smooth-scroll-page-down>" #'vertico-scroll-up
     "<remap> <helix-smooth-scroll-page-up>"   #'vertico-scroll-down))
 
+;;; Embark
+
+(with-eval-after-load 'embark
+  (helix-keymap-set embark-collect-mode-map nil
+    "m" #'helix-embark-select
+    "u" #'helix-embark-select
+    "y" #'embark-copy-as-kill))
+
+(with-eval-after-load 'embark-consult
+  (helix-keymap-set embark-consult-rerun-map 'motion
+    "g r" #'embark-rerun-collect-or-export))
+
+(defun helix-embark-select ()
+  "Add or remove the target from the current buffer's selection.
+You can act on all selected targets at once with `embark-act-all'.
+When called from outside `embark-act' this command will select
+the first target at point."
+  (interactive)
+  (embark-select)
+  (next-line))
 
 ;;; Compilation
 
