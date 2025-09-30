@@ -741,20 +741,19 @@ unless they all are equal. You can paste them later with `yank-rectangle'."
   (interactive "p")
   (helix-disable-newline-at-eol)
   (let ((yank-pop (or (command-remapping 'yank-pop)
-                      #'yank-pop))
-        (deactivate-mark nil))
-    (funcall-interactively yank-pop count)))
+                      #'yank-pop)))
+    (funcall-interactively yank-pop count))
+  (if (and (mark t)
+           (/= (point) (mark t)))
+      (activate-mark)
+    (deactivate-mark)))
 
 ;; C-n
 (helix-define-command helix-paste-undo-pop (count)
   "Replace just-pasted text with previous COUNT element from `kill-ring'."
   :multiple-cursors t
   (interactive "p")
-  (helix-disable-newline-at-eol)
-  (let ((yank-pop (or (command-remapping 'yank-pop)
-                      #'yank-pop))
-        (deactivate-mark nil))
-    (funcall-interactively yank-pop (- count))))
+  (helix-paste-pop (- count)))
 
 ;; R
 (helix-define-command helix-replace-with-kill-ring ()
