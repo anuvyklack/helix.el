@@ -723,16 +723,14 @@ unless they all are equal. You can paste them later with `yank-rectangle'."
   "Paste after selection."
   :multiple-cursors t
   (interactive)
-  (helix-paste 1)
-  (helix-extend-selection -1))
+  (helix-paste #'yank 1))
 
 ;; P
 (helix-define-command helix-paste-before ()
   "Paste before selection."
   :multiple-cursors t
   (interactive)
-  (helix-paste -1)
-  (helix-extend-selection -1))
+  (helix-paste #'yank -1))
 
 ;; C-p
 (helix-define-command helix-paste-pop (count)
@@ -740,13 +738,14 @@ unless they all are equal. You can paste them later with `yank-rectangle'."
   :multiple-cursors t
   (interactive "p")
   (helix-disable-newline-at-eol)
-  (let ((yank-pop (or (command-remapping 'yank-pop)
-                      #'yank-pop)))
-    (funcall-interactively yank-pop count))
-  (if (and (mark t)
-           (/= (point) (mark t)))
-      (activate-mark)
-    (deactivate-mark)))
+  (let ((deactivate-mark nil))
+    (let ((yank-pop (or (command-remapping 'yank-pop)
+                        #'yank-pop)))
+      (funcall-interactively yank-pop count))
+    (if (and (mark t)
+             (/= (point) (mark t)))
+        (activate-mark)
+      (deactivate-mark))))
 
 ;; C-n
 (helix-define-command helix-paste-undo-pop (count)
@@ -766,9 +765,10 @@ unless they all are equal. You can paste them later with `yank-rectangle'."
     (let ((deactivate-mark nil)
           (dir (helix-region-direction)))
       (delete-region (region-beginning) (region-end))
-      (helix-yank)
-      (helix-set-region (mark t) (point) dir :adjust))
-    (helix-extend-selection -1)))
+      (cl-letf (((symbol-function 'push-mark) #'helix-push-mark))
+        (yank))
+      (helix-set-region (mark t) (point) dir :adjust)
+      (helix-extend-selection -1))))
 
 ;; J
 (helix-define-command helix-join-line ()

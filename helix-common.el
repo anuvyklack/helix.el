@@ -807,30 +807,27 @@ RING should be a list like `mark-ring' and not the ring structure from `ring.el'
 (defun helix-push-mark (&optional position nomsg activate)
   "Set mark to the POSITION and push it on the `mark-ring'.
 If NOMSG is nil show `Mark set' message in echo area."
+  (or position (setq position (point)))
   (helix-push-point position)
-  (set-marker (mark-marker) (or position (point)) (current-buffer))
+  (set-marker (mark-marker) position (current-buffer))
   (or nomsg executing-kbd-macro (> (minibuffer-depth) 0)
       (message "Mark set"))
   (when activate
     (set-mark (mark t)))
   nil)
 
-(defun helix-yank (&optional arg)
-  "Helix `yank' (paste) wrapper."
-  (interactive)
-  (cl-letf (((symbol-function 'push-mark) #'helix-push-mark)
-            (deactivate-mark nil))
-    ;; `yank' sets `this-command' to `yank' internally, so we don't have to
-    (yank arg)))
-
-(defun helix-paste (direction)
-  "Paste before/after selection depending on DIRECTION."
-  (let ((region-dir (if (use-region-p) (helix-region-direction) 1)))
+(defun helix-paste (yank-function direction)
+  "Paste before/after selection depending on DIRECTION.
+YANK-FUNCTION should be a `yank' like function."
+  (let ((region-dir (if (use-region-p) (helix-region-direction) 1))
+        (deactivate-mark nil))
     (helix-ensure-region-direction direction)
     (when (helix-string-ends-with-newline (current-kill 0 :do-not-move))
       (forward-line (if (natnump direction) 1 0)))
-    (helix-yank)
-    (helix-set-region (point) (mark t) region-dir :adjust)))
+    (cl-letf (((symbol-function 'push-mark) #'helix-push-mark))
+      (funcall yank-function))
+    (helix-set-region (mark t) (point) region-dir :adjust)
+    (helix-extend-selection -1)))
 
 ;;; Utils
 
