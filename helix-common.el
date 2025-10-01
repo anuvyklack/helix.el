@@ -397,27 +397,39 @@ such as `helix-word', `helix-sentence', `helix-line', `paragraph'."
 (defun helix-mark-thing-forward (thing count)
   "Select from point to the end of the THING (or COUNT following THINGs).
 If no THING at point select COUNT following THINGs."
-  (helix-push-point)
-  (helix-restore-newline-at-eol)
-  (let ((start (if helix--extend-selection (mark)
-                 (let ((dir (helix-sign count)))
-                   (when (-if-let ((thing-beg . thing-end)
-                                   (bounds-of-thing-at-point thing))
-                             ;; Check if we are at the boundary of the THING
-                             ;; toward the motion direction.
-                             (= (point) (if (natnump dir)
-                                            thing-end
-                                          thing-beg))
-                           ;; No thing at point at all.
-                           t)
-                     (if (natnump dir)
-                         (helix-forward-beginning-of-thing thing dir)
-                       (helix-forward-end-of-thing thing dir)))
-                   (point))))
-        (end (progn (forward-thing thing count)
-                    (point))))
-    (helix-set-region start end nil :adjust))
-  (helix-reveal-point-when-on-top))
+  (let ((initial-pos (point))
+        (region (if (region-active-p)
+                    (list (mark t) (point) nil helix--newline-at-eol)))
+        (dir (helix-sign count)))
+    (helix-restore-newline-at-eol)
+    (if (helix-end-of-buffer-p dir)
+        ;; Restore region if we are at the beginning or end of buffer.
+        (if region
+            (apply #'helix-set-region region)
+          (goto-char initial-pos))
+      ;; else
+      (helix-push-point initial-pos)
+      (let ((start (if helix--extend-selection
+                       (mark)
+                     (when (-if-let ((thing-beg . thing-end)
+                                     (bounds-of-thing-at-point thing))
+                               ;; We are at the boundary of the THING toward
+                               ;; the motion direction.
+                               (= (point) (if (natnump dir)
+                                              thing-end
+                                            thing-beg))
+                             ;; No thing at point at all.
+                             t)
+                       (if (natnump dir)
+                           (helix-forward-beginning-of-thing thing dir)
+                         (helix-forward-end-of-thing thing dir)))
+                     (point)))
+            (end (progn (forward-thing thing count)
+                        (point))))
+        (helix-set-region start end nil :adjust)
+        (when (= (region-beginning) (region-end))
+          (helix-mark-thing-forward thing dir))
+        (helix-reveal-point-when-on-top)))))
 
 (defun helix--mark-a-word (thing)
   "Inner implementation of `helix-mark-a-word' and `helix-mark-a-WORD' commands."
@@ -835,6 +847,9 @@ YANK-FUNCTION should be a `yank' like function."
   "Exchange point and mark."
   (goto-char (prog1 (marker-position (mark-marker))
                (set-marker (mark-marker) (point)))))
+
+(defun helix-end-of-buffer-p (direction)
+  (if (natnump direction) (eobp) (bobp)))
 
 (defun helix-bolp ()
   "Like `bolp' but consider visual lines when `visual-line-mode' is enabled."
