@@ -1015,33 +1015,33 @@ entered regexp withing current selections."
   :multiple-cursors nil
   (interactive)
   (helix-with-real-cursor-as-fake
-    (let* (;; Filter cursors to remain only the first one on each line.
-           ;; Line numbers start from 1, so 0 as initial value is out of scope.
-           (cursors (let ((current-line 0))
-                      (-remove (lambda (cursor)
-                                 (let ((line (line-number-at-pos
-                                              (overlay-get cursor 'point))))
-                                   (or (= line current-line)
-                                       (ignore (setq current-line line)))))
-                               (helix-all-fake-cursors :sort))))
-           (column (-reduce-from (lambda (column cursor)
-                                   (goto-char (overlay-get cursor 'point))
-                                   (max column (current-column)))
-                                 0 cursors)))
-      ;; Align
-      (helix-save-window-scroll
-        (dolist (cursor cursors)
-          (helix-with-fake-cursor cursor
-            (unless (= (current-column) column)
-              (let ((deactivate-mark nil) ;; Don't deactivate mark after insertion.
-                    (padding (s-repeat (- column (current-column)) " ")))
-                (cond ((and (use-region-p)
-                            (natnump (helix-region-direction)))
-                       (helix--exchange-point-and-mark)
-                       (insert padding)
-                       (helix--exchange-point-and-mark))
-                      (t
-                       (insert padding)))))))))))
+    (let ((rest (-partition-by (lambda (cursor)
+                                 (line-number-at-pos (overlay-get cursor 'point)))
+                               (helix-all-fake-cursors :sort)))
+          cursors)
+      (while (progn (setq cursors (mapcar #'car rest))
+                    (length> cursors 1))
+        (setq rest (->> rest
+                        (mapcar #'cdr)
+                        (delq nil)))
+        (let ((column (-reduce-from (lambda (column cursor)
+                                      (goto-char (overlay-get cursor 'point))
+                                      (max column (current-column)))
+                                    0 cursors)))
+          ;; Align
+          (helix-save-window-scroll
+            (dolist (cursor cursors)
+              (helix-with-fake-cursor cursor
+                (unless (= (current-column) column)
+                  (let ((deactivate-mark nil)
+                        (padding (s-repeat (- column (current-column)) " ")))
+                    (cond ((and (use-region-p)
+                                (natnump (helix-region-direction)))
+                           (helix--exchange-point-and-mark)
+                           (insert padding)
+                           (helix--exchange-point-and-mark))
+                          (t
+                           (insert padding)))))))))))))
 
 ;; C
 (helix-define-command helix-copy-selection (count)
