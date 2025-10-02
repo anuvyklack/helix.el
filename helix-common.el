@@ -1068,6 +1068,12 @@ Return the position of the mark."
       (helix-disable-newline-at-eol)
     (deactivate-mark)))
 
+(defun helix--maybe-deactivate-mark-a (&rest _)
+  "Deactivate mark unless extending selection is active. Can be used as advice."
+  (if helix--extend-selection
+      (helix-disable-newline-at-eol)
+    (deactivate-mark)))
+
 (defun helix-ensure-region-direction (direction)
   "Exchange point and mark if region direction mismatch DIRECTION.
 DIRECTION should be 1 or -1."
