@@ -802,6 +802,20 @@ unless they all are equal. You can paste them later with `yank-rectangle'."
         (delete-char -1)
         (fixup-whitespace)))))
 
+;; <
+(helix-define-command helix-indent-left (count)
+  :multiple-cursors t
+  (interactive "p")
+  (cl-assert (/= count 0))
+  (helix-indent #'indent-rigidly-left count))
+
+;; >
+(helix-define-command helix-indent-right (count)
+  :multiple-cursors t
+  (interactive "p")
+  (cl-assert (/= count 0))
+  (helix-indent #'indent-rigidly-right count))
+
 ;; ~
 (helix-define-command helix-invert-case ()
   "Invert case of characters."
