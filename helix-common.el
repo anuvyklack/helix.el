@@ -1108,10 +1108,11 @@ the returned list to the original symbol like this:
                    tail (cdr tail)))))
     list))
 
-(defun helix-echo (string &optional face)
+(defun helix-echo (str &optional face)
   "Show message in echo area."
-  (put-text-property 0 (length string) 'face face string)
-  (message "%s" string))
+  (when face
+    (put-text-property 0 (length str) 'face face str))
+  (message "%s" str))
 
 (defun helix-pcre-to-elisp (regexp)
   "Convert PCRE REGEXP into Elisp one if Helix configured to use PCRE syntax."
