@@ -659,12 +659,19 @@ the first target at point."
     "g h"   #'helix-org-first-non-blank
 
     "d"     #'helix-org-cut
+    "p"     #'helix-org-paste-after
+    "P"     #'helix-org-paste-before
     "="     #'org-indent-region
+    "<"     #'helix-org-<
+    ">"     #'helix-org->
 
-    "[ p"   #'org-backward-paragraph
-    "] p"   #'org-forward-paragraph
-    "{"     #'org-backward-paragraph
-    "}"     #'org-forward-paragraph
+    "C-o"   #'org-mark-ring-goto
+            ;; #'org-mark-ring-push
+
+    "[ p"   #'helix-org-mark-paragraph-backward
+    "] p"   #'helix-org-mark-paragraph-forward
+    "{"     #'helix-org-mark-paragraph-backward
+    "}"     #'helix-org-mark-paragraph-forward
 
     "[ s"   #'org-backward-sentence
     "] s"   #'org-forward-sentence
@@ -674,6 +681,13 @@ the first target at point."
     "m ."   #'helix-org-mark-inner-sentence
     "m i s" #'helix-org-mark-inner-sentence
     "m a s" #'helix-org-mark-a-sentence
+
+    "m p"   #'helix-org-mark-inner-paragraph
+    "m i p" #'helix-org-mark-inner-paragraph
+    "m a p" #'helix-org-mark-a-paragraph
+
+    "m h"   #'org-mark-subtree
+    "m i h" #'org-mark-subtree
 
     "m /"   #'helix-mark-inner-org-emphasis
     "m i /" #'helix-mark-inner-org-emphasis
@@ -736,8 +750,34 @@ start of the text on the second attempt."
   :multiple-cursors t
   :merge-selections t
   (interactive "p")
-  ;; org-forward-paragraph
-  (helix-mark-thing-forward 'helix-paragraph count))
+  (let ((paragraph-start    (default-value 'paragraph-start))
+        (paragraph-separate (default-value 'paragraph-separate)))
+    (helix-mark-thing-forward 'helix-paragraph count)))
+
+;; [p or {
+(helix-define-command helix-org-mark-paragraph-backward (count)
+  "Select from point to the start of the paragraph (or COUNT-th next paragraphs).
+If no paragraph at point select COUNT previous paragraphs."
+  :multiple-cursors t
+  :merge-selections t
+  (interactive "p")
+  (let ((paragraph-start    (default-value 'paragraph-start))
+        (paragraph-separate (default-value 'paragraph-separate)))
+    (helix-mark-thing-forward 'helix-paragraph (- count))))
+
+;; p
+(helix-define-command helix-org-paste-after ()
+  "Paste after selection."
+  :multiple-cursors t
+  (interactive)
+  (helix-paste #'org-yank 1))
+
+;; P
+(helix-define-command helix-org-paste-before ()
+  "Paste before selection."
+  :multiple-cursors t
+  (interactive)
+  (helix-paste #'org-yank -1))
 
 ;; d
 (helix-define-command helix-org-cut (count)
@@ -753,6 +793,83 @@ If no selection — delete COUNT chars before point."
          (org-delete-char (- count))))
   (helix-extend-selection -1))
 
+;; <
+(helix-define-command helix-org-< (count)
+  "Promote, dedent, move column left.
+In items or headings, promote heading/item.
+In code blocks, indent lines
+In tables, move column to the left."
+  (interactive "p")
+  (cl-assert (/= count 0))
+  (helix-indent #'helix-org-indent-left count))
+
+(defun helix-org-indent-left (beg end)
+  (cond
+   ;; heading
+   ((org-with-limited-levels
+     (save-excursion (goto-char beg) (org-at-heading-p)))
+    (org-map-region #'org-do-promote beg end))
+   ;; table
+   ((and (org-at-table-p) (helix-save-region
+                            (helix-restore-newline-at-eol)
+                            (org-at-table-p)))
+    (org-table-move-column -1))
+   ;; list
+   ((and (save-excursion (goto-char beg) (org-at-item-p))
+         (<= end (save-excursion (org-end-of-item-list))))
+    (let* ((struct (org-list-struct))
+           ;; If nil --- we are at the first item of the list with no
+           ;; active selection --- indent full list.
+           (no-subtree (or (not struct)
+                           (not org-list-automatic-rules)
+                           (region-active-p)
+                           (/= (point-at-bol)
+                               (org-list-get-top-point struct)))))
+      (org-list-indent-item-generic -1 no-subtree struct)))
+   (t
+    (indent-rigidly-left beg end))))
+
+;; >
+(helix-define-command helix-org-> (count)
+  "Demote, indent, move column right.
+In items or headings, demote heading/item.
+In code blocks, indent lines.
+In tables, move column to the right."
+  :multiple-cursors t
+  (interactive "p")
+  (cl-assert (/= count 0))
+  (helix-indent #'helix-org-indent-right count))
+
+(defun helix-org-indent-right (beg end)
+  (cond
+   ;; heading
+   ((org-with-limited-levels
+     (save-excursion (goto-char beg) (org-at-heading-p)))
+    (org-map-region #'org-do-demote beg end))
+   ;; table
+   ((and (org-at-table-p) (helix-save-region
+                            (helix-restore-newline-at-eol)
+                            (org-at-table-p)))
+    (org-table-move-column))
+   ;; list
+   ((and (save-excursion (goto-char beg) (org-at-item-p))
+         (<= end (save-excursion (org-end-of-item-list))))
+    (let* (;; (struct (save-excursion
+           ;;           (goto-char beg)
+           ;;           (org-list-struct)))
+           (struct (org-list-struct))
+           ;; If nil --- we are at the first item of the list with no
+           ;; active selection --- indent full list.
+           (no-subtree (or (not struct)
+                           (not org-list-automatic-rules)
+                           (region-active-p)
+                           (/= (point-at-bol)
+                               (org-list-get-top-point struct)))))
+      (org-list-indent-item-generic 1 no-subtree struct)))
+   (t
+    (indent-rigidly-right beg end))))
+
+
 ;; mis
 (helix-define-command helix-org-mark-inner-sentence (count)
   :multiple-cursors t
@@ -766,6 +883,28 @@ If no selection — delete COUNT chars before point."
   :merge-selections t
   (interactive)
   (helix-mark-a-sentence 'helix-org-sentence))
+
+;; mip
+(helix-define-command helix-org-mark-inner-paragraph (count)
+  :multiple-cursors t
+  :merge-selections t
+  (interactive "p")
+  (helix-push-point)
+  (let ((paragraph-start    (default-value 'paragraph-start))
+        (paragraph-separate (default-value 'paragraph-separate)))
+    (helix-mark-inner-thing 'helix-paragraph count t))
+  (helix-reveal-point-when-on-top))
+
+;; map
+(helix-define-command helix-org-mark-a-paragraph (count)
+  :multiple-cursors t
+  :merge-selections t
+  (interactive "p")
+  (helix-push-point)
+  (let ((paragraph-start    (default-value 'paragraph-start))
+        (paragraph-separate (default-value 'paragraph-separate)))
+    (helix-mark-a-thing 'helix-paragraph count t))
+  (helix-reveal-point-when-on-top))
 
 ;;;;; Things
 
