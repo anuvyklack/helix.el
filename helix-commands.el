@@ -694,18 +694,21 @@ If no selection — delete COUNT chars after point."
   "Copy selection into `kill-ring'."
   :multiple-cursors nil
   (interactive)
-  (let ((deactivate-mark nil)
-        any?)
-    (helix-with-each-cursor
-      (when (use-region-p)
-        (copy-region-as-kill (region-beginning) (if helix--newline-at-eol
-                                                    (1+ (region-end))
-                                                  (region-end)))
-        (setq any? t))
-      (helix-extend-selection -1))
-    (when any? (message "Copied into kill-ring")))
-  (helix-maybe-set-killed-rectangle)
-  (helix-pulse-main-region))
+  ;; (unless (use-region-p)
+  ;;   (user-error "No active selection"))
+  (when (use-region-p)
+    (let ((deactivate-mark nil)
+          any?)
+      (helix-with-each-cursor
+        (when (use-region-p)
+          (copy-region-as-kill (region-beginning) (if helix--newline-at-eol
+                                                      (1+ (region-end))
+                                                    (region-end)))
+          (setq any? t))
+        (helix-extend-selection -1))
+      (when any? (message "Copied into kill-ring")))
+    (helix-maybe-set-killed-rectangle)
+    (helix-pulse-main-region)))
 
 (defun helix-maybe-set-killed-rectangle ()
   "Add the latest `kill-ring' entry for each cursor to `killed-rectangle',
