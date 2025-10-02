@@ -588,11 +588,10 @@ depending on DIRECTION."
   "Add COUNT blank lines below selection."
   :multiple-cursors t
   (interactive "p")
-  (let ((deactivate-mark nil))
-    (helix-save-region ;; save-mark-and-excursion
-      (helix-ensure-region-direction 1)
-      (helix--forward-line 1)
-      (newline count))))
+  (helix-save-linewise-selection
+    (helix-ensure-region-direction 1)
+    (helix--forward-line 1)
+    (newline count)))
 
 ;; [ SPC
 (helix-define-command helix-add-blank-line-above (count)
