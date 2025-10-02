@@ -99,11 +99,9 @@ in the command loop, and the fake cursors can pick up on those instead."
 
 (helix-advice-add 'exchange-point-and-mark :after #'helix-reveal-point-when-on-top)
 
-(dolist (command '(fill-region          ;; gq
-                   indent-region        ;; =
-                   indent-rigidly-left  ;; >
-                   indent-rigidly-right ;; <
-                   comment-dwim))       ;; gc
+(dolist (command '(fill-region    ;; gq
+                   indent-region  ;; =
+                   comment-dwim)) ;; gc
   (helix-advice-add command :around #'helix-keep-selection-a))
 
 (helix-advice-add 'clone-indirect-buffer :before #'helix-deactivate-mark)

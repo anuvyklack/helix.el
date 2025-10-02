@@ -841,6 +841,22 @@ YANK-FUNCTION should be a `yank' like function."
     (helix-set-region (mark t) (point) region-dir :adjust)
     (helix-extend-selection -1)))
 
+;;; Changes
+
+(defun helix-indent (indent-function count)
+  "Indent active region COUNT times. With no selection indent current line.
+INDENT-FUNCTION should be a `indent-rigidly-left' like function that takes
+BEG, END position and done the indentation."
+  (if (use-region-p)
+      (helix-save-linewise-selection
+        (dotimes (_ count)
+          (funcall indent-function (mark) (point)))
+        (helix-extend-selection -1))
+    ;; else
+    (-let [(beg . end) (bounds-of-thing-at-point 'helix-line)]
+      (dotimes (_ count)
+        (funcall indent-function beg end)))))
+
 ;;; Utils
 
 (defun helix--exchange-point-and-mark ()

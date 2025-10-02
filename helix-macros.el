@@ -113,6 +113,7 @@ saved as markers and correctly handle case when text was inserted before region.
            (unwind-protect
                (save-excursion ,@body)
              (helix-set-region ,beg ,end ,dir (and ,newline-at-eol
+                                                   (/= ,beg ,end)
                                                    (save-excursion
                                                      (goto-char ,end)
                                                      (eolp))))
@@ -122,8 +123,31 @@ saved as markers and correctly handle case when text was inserted before region.
        (let ((,pnt (copy-marker (point) t)))
          (unwind-protect
              (save-excursion ,@body)
+           (if mark-active (deactivate-mark))
            (goto-char ,pnt)
            (set-marker ,pnt nil))))))
+
+(defmacro helix-save-linewise-selection (&rest body)
+  "Evaluate BODY keeping linewise selection.
+If selection is no linewise work like `helix-save-region'."
+  (declare (indent 0) (debug t))
+  (let ((beg (gensym "region-beg"))
+        (end (gensym "region-end"))
+        (dir (gensym "region-dir")))
+    `(if (helix-logical-lines-p)
+         (let ((deactivate-mark nil)
+               (,beg (copy-marker (region-beginning)))
+               (,end (copy-marker (region-end) t))
+               (,dir (helix-region-direction)))
+           (unwind-protect
+               (save-excursion
+                 ,@body)
+             (helix-set-region ,beg ,end ,dir)
+             (helix-expand-selection-to-full-lines ,dir)
+             (set-marker ,beg nil)
+             (set-marker ,end nil)))
+       (helix-save-region
+         ,@body))))
 
 (defmacro helix-define-command (command args  &rest body)
   "Define Helix COMMAND.

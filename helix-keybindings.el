@@ -117,8 +117,8 @@
   "g u" #'helix-downcase
   "g U" #'helix-upcase
   "="   #'indent-region
-  "<"   #'indent-rigidly-left
-  ">"   #'indent-rigidly-right
+  "<"   #'helix-indent-left
+  ">"   #'helix-indent-right
 
   ;; Selections
   "<escape>" #'helix-normal-state-escape
