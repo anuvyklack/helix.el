@@ -437,14 +437,14 @@ If no THING at point select COUNT following THINGs."
     (-let [(beg . end)
            (or (progn
                  (goto-char thing-end)
-                 (helix-with-restriction
+                 (with-restriction
                      (line-beginning-position) (line-end-position)
                    (-if-let ((_ . space-end)
                              (helix-bounds-of-complement-of-thing-at-point thing))
                        (cons thing-beg space-end))))
                (progn
                  (goto-char thing-beg)
-                 (helix-with-restriction
+                 (with-restriction
                      (save-excursion (back-to-indentation) (point))
                      (line-end-position)
                    (-if-let ((space-beg . _)
