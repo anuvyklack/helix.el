@@ -820,13 +820,11 @@ unless they all are equal. You can paste them later with `yank-rectangle'."
   "Invert case of characters."
   :multiple-cursors t
   (interactive)
-  (if (use-region-p)
-      (let ((dir (helix-region-direction))
-            (beg (region-beginning))
-            (end (region-end))
-            (deactivate-mark nil))
+  (if-let ((region (helix-region)))
+      (-let (((beg end) region)
+             (deactivate-mark nil))
         (helix-invert-case-in-region beg end)
-        (helix-set-region beg end dir))
+        (apply #'helix-set-region region))
     ;; else
     (helix-invert-case-in-region (point) (1+ (point)))))
 
@@ -1094,12 +1092,10 @@ entered regexp withing current selections."
 
 (defun helix--copy-region (direction)
   "Copy region toward the DIRECTION."
-  (let* ((region-dir (helix-region-direction))
-         (beg (region-beginning))
-         (end (region-end))
-         (num-of-lines (count-lines beg end))
-         (beg-column (save-excursion (goto-char beg) (current-column)))
-         (end-column (save-excursion (goto-char end) (current-column))))
+  (-let* (((beg end region-dir) (helix-region))
+          (num-of-lines (count-lines beg end))
+          (beg-column (save-excursion (goto-char beg) (current-column)))
+          (end-column (save-excursion (goto-char end) (current-column))))
     (when-let* ((bounds (save-excursion
                           (goto-char (if (< direction 0) beg end))
                           (helix--bounds-of-following-region
