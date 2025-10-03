@@ -398,8 +398,7 @@ such as `helix-word', `helix-sentence', `helix-line', `paragraph'."
   "Select from point to the end of the THING (or COUNT following THINGs).
 If no THING at point select COUNT following THINGs."
   (let ((initial-pos (point))
-        (region (if (region-active-p)
-                    (list (mark t) (point) nil helix--newline-at-eol)))
+        (region (helix-region))
         (dir (helix-sign count)))
     (helix-restore-newline-at-eol)
     (if (helix-end-of-buffer-p dir)
@@ -1054,6 +1053,24 @@ line and setting `helix--newline-at-eol' flag.
     (if helix--newline-at-eol
         (helix--set-region-overlay (region-beginning) (1+ (region-end)))
       (helix--delete-region-overlay))))
+
+(defun helix-region ()
+  "Region list with parameters of the active region. If no region return nil.
+
+The result is a list with following elements:
+
+  (BEG END DIRECTION NEWLINE-AT-EOL)
+
+It is suitable to restore region with `helix-set-region':
+
+  (let ((region (helix-region)))
+    ...
+    (apply #'helix-set-region region))"
+  (if (or helix--newline-at-eol
+          (use-region-p))
+      (list (region-beginning) (region-end)
+            (helix-region-direction)
+            helix--newline-at-eol)))
 
 (defun helix-maybe-set-mark ()
   "Set mark at point unless extending selection is active.

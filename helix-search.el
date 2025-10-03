@@ -223,8 +223,7 @@ RANGES is a list of cons cells with positions (START . END)."
         helix-search--hl (helix-highlight-create :buffer (current-buffer)
                                                  :face 'helix-search-highlight))
   (save-excursion
-    (let ((region (if (region-active-p)
-                      (list (mark) (point) nil helix--newline-at-eol))))
+    (let ((region (helix-region)))
       (deactivate-mark)
       (when-let* ((pattern (condition-case nil
                                (minibuffer-with-setup-hook #'helix-search--start-session
