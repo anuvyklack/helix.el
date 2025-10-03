@@ -69,19 +69,6 @@ when `helix-mode' is toggled on or off"
      (when helix-mode
        (advice-add ,symbol ,how ,function))))
 
-(defmacro helix-with-restriction (start end &rest body)
-  "Evaluate BODY with the buffer narrowed to START and END."
-  (declare (indent 2) (debug t))
-  (let ((beg1 (gensym "beg"))
-        (end1 (gensym "end")))
-    `(if-let* ((,beg1 ,start)
-               (,end1 ,end))
-         (save-restriction
-           (narrow-to-region ,beg1 ,end1)
-           ,@body)
-       ;; else
-       ,@body)))
-
 (defmacro helix-recenter-point-on-jump (&rest body)
   "Recenter point on jumps during BODY evaluating if it lands out of the screen.
 This macro calls `redisplay' internally and should be used with care to avoid
