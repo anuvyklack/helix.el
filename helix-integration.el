@@ -654,8 +654,19 @@ the first target at point."
 (defvar org-mode-map)
 
 (with-eval-after-load 'org
-  (add-hook 'org-mode-hook #'helix-surround-org-mode)
+  (add-hook 'org-mode-hook #'helix-surround-settings-for-org-mode)
+
+  (helix-advice-add 'org-mark-subtree :after #'helix-reveal-point-when-on-top)
+
+  (dolist (cmd '(helix-org-up-heading
+                 org-next-visible-heading
+                 org-previous-visible-heading))
+    (helix-advice-add cmd :after #'helix--maybe-deactivate-mark-a)))
+
+(with-eval-after-load 'org
   (helix-keymap-set org-mode-map 'normal
+    "z u"   #'helix-org-up-heading
+
     "g h"   #'helix-org-first-non-blank
 
     "d"     #'helix-org-cut
@@ -665,8 +676,8 @@ the first target at point."
     "<"     #'helix-org-<
     ">"     #'helix-org->
 
-    "C-o"   #'org-mark-ring-goto
-            ;; #'org-mark-ring-push
+    ;; "C-o"   #'org-mark-ring-goto
+    ;;         #'org-mark-ring-push
 
     "[ p"   #'helix-org-mark-paragraph-backward
     "] p"   #'helix-org-mark-paragraph-forward
@@ -677,6 +688,11 @@ the first target at point."
     "] s"   #'org-forward-sentence
     "[ ."   #'org-backward-sentence
     "] ."   #'org-forward-sentence
+
+    "M-o"   #'helix-org-up-element
+    "M-i"   #'helix-org-down-element
+    "M-n"   #'helix-org-next-element
+    "M-p"   #'helix-org-previous-element
 
     "m ."   #'helix-org-mark-inner-sentence
     "m i s" #'helix-org-mark-inner-sentence
@@ -713,11 +729,38 @@ the first target at point."
     "m i ~" #'helix-mark-inner-org-verbatim
     "m a ~" #'helix-mark-an-org-verbatim))
 
+(with-eval-after-load 'org-capture
+  (helix-keymap-set org-capture-mode-map 'normal
+    "Z R" 'org-capture-refile
+    "Z Z" 'org-capture-finalize
+    "Z Q" 'org-capture-kill))
+
 ;;;;; Commands
 
-(dolist (cmd '(org-cycle      ;; TAB
-               org-shifttab)) ;; S-TAB
-  (helix-advice-add cmd :before #'helix-deactivate-mark))
+;; (dolist (cmd '(;; org-cycle      ;; TAB
+;;                org-shifttab)) ;; S-TAB
+;;   (helix-advice-add cmd :before #'helix-deactivate-mark))
+
+;; (helix-advice-add 'org-cycle :around #'helix-keep-selection-a)
+
+;; (helix-define-advice org-cycle (:aroung (command arg))
+;;   (let ((deactivate-mark nil))
+;;     (funcall command arg)))
+
+;; zu
+(helix-define-command helix-org-up-heading ()
+  "Move up in the outline hierarchy to the parent heading."
+  :multiple-cursors nil
+  (interactive)
+  (helix-delete-all-fake-cursors)
+  (deactivate-mark)
+  (helix-push-point)
+  ;; (if (org-at-heading-p)
+  ;;     (outline-up-heading 1)
+  ;;   (org-previous-visible-heading 1))
+  (if (org-at-heading-p)
+      (outline-up-heading 1)
+    (org-with-limited-levels (org-back-to-heading))))
 
 ;; gh
 (helix-define-command helix-org-first-non-blank ()
@@ -906,7 +949,268 @@ In tables, move column to the right."
     (helix-mark-a-thing 'helix-paragraph count t))
   (helix-reveal-point-when-on-top))
 
-;;;;; Things
+;;;;; AST climbing
+
+(defun helix-org-element-in-section (&optional granularity)
+  "Return the smallest element that completely encloses the active region.
+With no active region point position is used.
+
+The search is constrained within the encloses `section' element.
+If the active region extends beyond the `section' boundaries, return nil.
+Result element has fully parsed structure with AST virtual root at the
+parent `section' element.
+
+GRANULARITY specifies the parsing level (see `org-element-parse-buffer')."
+  (-let [(beg . end) (if (use-region-p)
+                         (car (region-bounds))
+                       (cons (point) (point)))]
+    (let* ((element (save-excursion
+                      (goto-char beg)
+                      (org-element-at-point)))
+           ;; Climb up the AST until `section' node.
+           (section (org-element-lineage element 'section)))
+      ;; If region exceed section — truncate it to `section' boundaries.
+      (setq beg (max beg (org-element-begin section))
+            end (min end (org-element-end section)))
+      ;; Find smallest enclosing element within `section' element AST.
+      (cl-loop with element = (helix-org--parse-element section granularity)
+               with nested-element
+               do (setq nested-element
+                        (-find (lambda (el)
+                                 (<= (org-element-begin el)
+                                     beg end
+                                     (org-element-end el)))
+                               (org-element-contents element)))
+               while nested-element
+               do (setq element nested-element)
+               finally return element))))
+
+(cl-defun helix-org-parse-element (element
+                                   &optional
+                                   (root (unless (org-element-type-p element 'section)
+                                           (org-element-lineage element 'section)))
+                                   (granularity 'element))
+  "Return the fully parsed structure of the ELEMENT.
+
+ROOT will be the virtual-root of the result AST and should be one of
+parents of the element. By default it will be the parent `section' element.
+
+GRANULARITY specifies the parsing level (see `org-element-parse-buffer')."
+  (cond ((and (not root)
+              (org-element-type-p element 'section))
+         (helix-org--parse-element element granularity))
+        (root
+         (let ((beg (org-element-begin element))
+               (end (org-element-end element))
+               (type (org-element-type element))
+               (element (helix-org--parse-element root granularity)))
+           (while (and (setq element (-find (lambda (el)
+                                             (<= (org-element-begin el)
+                                                 beg end
+                                                 (org-element-end el)))
+                                           (org-element-contents element)))
+                       (not (and (eq type (org-element-type element))
+                                 (= beg (org-element-begin element))
+                                 (= end (org-element-end element))))))
+           element))))
+
+(defun helix-org--parse-element (element &optional granularity)
+  "Return the fully parsed structure of the ELEMENT.
+GRANULARITY specifies the parsing level (see `org-element-parse-buffer')."
+  (or granularity (setq granularity 'element))
+  (save-excursion
+    (with-restriction (org-element-begin element) (org-element-end element)
+      (-> (org-element-parse-buffer granularity) ; -> org-data
+          org-element-contents                   ; -> AST
+          car))))                                ; -> ELEMENT node
+
+(defun helix-org-at-heading-p ()
+  (if (use-region-p)
+      (save-excursion
+        (goto-char (region-beginning))
+        (org-at-heading-p))
+    (org-at-heading-p)))
+
+(helix-defvar-local helix-org--current-element nil
+  "The cache for current element value.")
+
+(cl-defun helix-org--current-element (&optional (new-element nil new-element?))
+  "Return cached value when appropriate, or calculate new one."
+  (cond (new-element?
+         (setq helix-org--current-element
+               (unless (org-element-type-p new-element 'headline)
+                 new-element)))
+        ((and (memq last-command '(helix-org-down-element
+                                   helix-org-next-element
+                                   helix-org-previous-element
+                                   org-cycle                                ; TAB
+                                   helix-smooth-scroll-line-not-to-very-top ; zz
+                                   helix-smooth-scroll-line-to-center       ; zz
+                                   helix-smooth-scroll-line-to-top          ; zt
+                                   helix-smooth-scroll-line-to-bottom))     ; zb
+              helix-org--current-element)
+         helix-org--current-element)
+        (t
+         (setq helix-org--current-element (helix-org-element-in-section)))))
+
+;; M-o
+(helix-define-command helix-org-up-element (&optional arg)
+  "Expand region to the parent element.
+ARG is used to determine whether invocation was interactive and should not
+be set manually."
+  :multiple-cursors t
+  :merge-selections t
+  (interactive "p")
+  (helix-restore-newline-at-eol)
+  (-let* (((beg . end) (if (use-region-p)
+                           (car (region-bounds))
+                         (cons (point) (point))))
+          (element (save-excursion
+                     (goto-char beg)
+                     (org-element-at-point))))
+    ;; Climb up the tree until element fully contains region.
+    (while (and element
+                (or (org-element-type-p element 'section) ; skip section
+                    (let ((element-beg (org-element-begin element))
+                          (element-end (- (org-element-end element)
+                                          (org-element-post-blank element))))
+                      (< beg element-beg)
+                      (< element-end end)
+                      (and (= beg element-beg)
+                           (= element-end end)))))
+      (setq element (org-element-parent element)))
+    (if (or (not element)
+            (org-element-type-p element 'org-data))
+        (user-error "No enclosing element")
+      ;; else
+      (helix-org--current-element nil)
+      (helix-set-region (org-element-begin element)
+                        (- (org-element-end element)
+                           (org-element-post-blank element))
+                        -1 :adjust)
+      (if arg (helix-reveal-point-when-on-top)))))
+
+;; M-i
+(helix-define-command helix-org-down-element ()
+  "Contract region to the first child element."
+  :multiple-cursors t
+  :merge-selections t
+  (interactive)
+  (if (use-region-p)
+      (-if-let (child (if (helix-org-at-heading-p)
+                          (save-excursion
+                            (goto-char (region-beginning))
+                            (when-let* ((pos (-> (org-element-at-point)
+                                                 (org-element-contents-begin))))
+                              (goto-char pos)
+                              (let ((child (org-element-at-point)))
+                                (if (org-element-type-p child 'headline)
+                                    child
+                                  (helix-org-parse-element child)))))
+                        ;; else
+                        (-> (helix-org--current-element)
+                            (org-element-contents)
+                            (car-safe))))
+          (progn
+            (save-excursion
+              (goto-char (region-beginning))
+              (when (org-invisible-p (line-end-position))
+                (org-cycle)))
+            (helix-org--current-element child)
+            (helix-set-region (org-element-begin child)
+                              (- (org-element-end child)
+                                 (org-element-post-blank child))
+                              -1 :adjust)
+            (helix-reveal-point-when-on-top))
+        ;; (user-error "No content for this element")
+        (user-error "No nested element"))
+    ;; else
+    (helix-org-up-element)
+    (when (helix-org-at-heading-p)
+      (helix-org-down-element))))
+
+;; M-n
+(helix-define-command helix-org-next-element ()
+  :multiple-cursors t
+  :merge-selections t
+  (interactive)
+  (unless (use-region-p)
+    (helix-org-up-element))
+  (when-let ((next (helix-org--next-element)))
+    (helix-org--current-element next)
+    (helix-set-region (org-element-begin next)
+                      (- (org-element-end next)
+                         (org-element-post-blank next))
+                      (helix-region-direction) :adjust)
+    (helix-reveal-point-when-on-top)))
+
+(defun helix-org--next-element ()
+  (if (helix-org-at-heading-p)
+      (save-excursion
+        (goto-char (region-beginning))
+        (org-forward-heading-same-level 1)
+        (org-element-at-point))
+    ;; else
+    (let* ((current (helix-org--current-element))
+           (parent (org-element-parent current)))
+      (or
+       ;; Try to find the node in PARENT next to ELEMENT.
+       (let ((siblings (org-element-contents parent)))
+         (nth (1+ (-find-index (lambda (elem) (eq elem current))
+                               siblings))
+              siblings))
+       ;; No following element in current `section'.
+       ;; Check `headline' directly after `section'.
+       (if-let* (((org-element-type-p parent 'section))
+                 (parent (org-element-lineage (org-element-at-point)
+                                              '(headline org-data)))
+                 (element (save-excursion
+                            (goto-char (org-element-end current))
+                            (org-element-at-point)))
+                 ((eq parent (org-element-parent element))))
+           element)))))
+
+;; M-p
+(helix-define-command helix-org-previous-element ()
+  :multiple-cursors t
+  :merge-selections t
+  (interactive)
+  (unless (use-region-p)
+    (helix-org-up-element))
+  (when-let ((previous (helix-org--previous-element)))
+    (helix-org--current-element previous)
+    (helix-set-region (org-element-begin previous)
+                      (- (org-element-end previous)
+                         (org-element-post-blank previous))
+                      (helix-region-direction) :adjust)
+    (helix-reveal-point-when-on-top)))
+
+(defun helix-org--previous-element ()
+  (if (helix-org-at-heading-p)
+      (save-excursion
+        (goto-char (region-beginning))
+        (let ((current (org-element-at-point)))
+          (goto-char (org-element-begin current))
+          (let ((pnt (point)))
+            (org-backward-heading-same-level 1)
+            (if (/= (point) pnt)
+                (org-element-at-point)
+              ;; else
+              (skip-chars-backward " \r\t\n")
+              (unless (bobp)
+                (-> (org-element-lineage (org-element-at-point) 'section)
+                    (helix-org-parse-element)
+                    (org-element-contents)
+                    (org-last)))))))
+    ;; else
+    (let* ((current (helix-org--current-element))
+           (siblings (org-element-contents (org-element-parent current))))
+      ;; Try to find the node in PARENT previous to ELEMENT.
+      (nth (1- (-find-index (lambda (elem) (eq elem current))
+                            siblings))
+           siblings))))
+
+;;;;; Thing
 
 ;; `helix-org-sentence' thing
 (put 'helix-org-sentence 'forward-op (lambda (count)
@@ -951,7 +1255,7 @@ In tables, move column to the right."
   (when (org-in-regexp org-verbatim-re 2)
     (helix-set-region (match-beginning 2) (match-end 2))))
 
-(defun helix-surround-org-mode ()
+(defun helix-surround-settings-for-org-mode ()
   "Configure Helix surround functionality for Org-mode."
   (dolist (char '(?/ ?* ?_ ?+ ?= ?~))
     (helix-surround-add-pair char (cons (char-to-string char)
