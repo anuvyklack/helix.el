@@ -929,10 +929,10 @@ In tables, move column to the right."
                        (goto-char (region-beginning)))
                      (org-element-at-point))))
       (pcase (org-element-type element)
-        ;; If point is at `headline' — parse it and return.
-        ('headline
-         (setq helix-org--section-node nil
-               helix-org--current-node (helix-org-parse-element element)))
+        ;; If point is at `headline' — just return it.
+        ('headline (setq helix-org--section-node nil
+                         helix-org--current-node nil)
+                   element)
         ;; else
         (_
          ;; Climb up the AST until `section' node, parse it and store
@@ -952,12 +952,34 @@ In tables, move column to the right."
                    (setq result node))
                  result)))))))
 
-(defun helix-org-parse-element (element)
+(defun helix-org--update-current-element (element)
+  (pcase (org-element-type element)
+    ('headline
+     (setq helix-org--section-node nil
+           helix-org--current-node nil))
+    (_
+     (setq helix-org--current-node element))))
+
+(defun helix-org-child-element ()
+  (let ((element (helix-org-current-element)))
+    (pcase (org-element-type element)
+      ('headline
+       (if-let* ((pos (org-element-contents-begin element))
+                 (child (progn (goto-char pos)
+                               (org-element-at-point))))
+           (pcase (org-element-type child)
+             ('section (car (org-element-contents child)))
+             (_ child))))
+      (_
+       (car-safe (org-element-contents element))))))
+
+(defun helix-org-parse-element (element &optional granularity)
   "Return the fully parsed structure of the ELEMENT."
+  (or granularity (setq granularity 'element))
   (with-restriction (org-element-begin element) (org-element-end element)
-    (-> (org-element-parse-buffer 'element) ; -> org-data
-        (org-element-contents)              ; -> AST
-        (car))))                            ; -> ELEMENT node
+    (-> (org-element-parse-buffer granularity) ; -> org-data
+        (org-element-contents)                 ; -> AST
+        (car))))                               ; -> ELEMENT node
 
 (defun helix-org-section-element-at-point ()
   "Return fully parsed `section' AST node at point.
@@ -973,7 +995,19 @@ the section that encloses point."
       (_ (-> (org-element-lineage element 'section)
              (helix-org-parse-element))))))
 
-;; (org-element-lineage (org-element-at-point) 'section)
+;; (defun helix-org-section-element-at-point ()
+;;   "Return fully parsed `section' AST node at point.
+;; If point is at a headline — return this headline section, else return
+;; the section that encloses point."
+;;   (let ((element (org-element-at-point)))
+;;     ;; If point is at `headline' — return its `section' node.
+;;     (if (org-element-type-p element 'headline)
+;;         (-> (helix-org-parse-element element)
+;;             (org-element-contents) ; -> headline children
+;;             (car))                 ; -> section node
+;;       ;; Else climb up the AST until `section' node.
+;;       (-> (org-element-lineage element 'section)
+;;           (helix-org-parse-element)))))
 
 ;; (let ((element (org-element-at-point)))
 ;;   (with-restriction (org-element-begin element) (org-element-end element)
@@ -993,14 +1027,15 @@ the section that encloses point."
                              (list (point) (point) -1)))
           (element (save-excursion
                      (goto-char beg)
-                     ;; (org-element-at-point)
                      (org-element-context))))
-    ;; Climb up the tree until element doesn't fully contain region.
+    ;; Climb up the tree until element fully contains region.
     (while (and element
-                (<= beg (org-element-begin element))
-                (<= (org-element-end element) end))
+                (or (org-element-type-p element 'section) ; skip section
+                    (and (<= beg (org-element-begin element))
+                         (<= (org-element-end element) end))))
       (setq element (org-element-parent element)))
-    (if element
+    (if (and element
+             (not (org-element-type-p element 'section)))
         (helix-set-region (org-element-begin element)
                           (org-element-end element)
                           dir :adjust)
@@ -1013,11 +1048,10 @@ the section that encloses point."
   :merge-selections t
   (interactive)
   (when (use-region-p)
-    (-if-let (child (-> (helix-org-current-element)
-                        (org-element-contents)
-                        (car-safe)))
+    (-if-let (child (helix-org-child-element))
         (progn
-          (setq helix-org--current-node child)
+          (when (org-invisible-p (line-end-position)) (org-cycle))
+          (helix-org--update-current-element child)
           (helix-set-region (org-element-begin child)
                             (org-element-end child)
                             ;; (progn
@@ -1025,7 +1059,9 @@ the section that encloses point."
                             ;;   (backward-char (org-element-post-blank child))
                             ;;   (point))
                             (helix-region-direction) :adjust))
-      (user-error "No nested element"))))
+      (user-error "No content for this element")
+      ;; (user-error "No nested element")
+      )))
 
 ;; M-n
 (helix-define-command helix-org-next-element ()
@@ -1033,21 +1069,33 @@ the section that encloses point."
   :merge-selections t
   (interactive)
   (if (use-region-p)
-      (let ((next (cond ((save-excursion (goto-char (region-beginning))
-                                         (org-at-heading-p))
-                         (org-forward-heading-same-level 1)
-                         (org-element-at-point))
-                        (t
-                         (let* ((current (helix-org-current-element))
-                                (parent (org-element-parent current))
-                                (siblings (org-element-contents parent)))
-                           ;; Try to find the node in PARENT next to ELEMENT.
-                           (nth (1+ (-find-index (lambda (element)
-                                                   (eq element current))
-                                                 siblings))
-                                siblings))))))
+      (let ((next (cond
+                   ((save-excursion (goto-char (region-beginning))
+                                    (org-at-heading-p))
+                    (org-forward-heading-same-level 1)
+                    (org-element-at-point))
+                   (t
+                    (let* ((current (helix-org-current-element))
+                           (parent (org-element-parent current)))
+                      (or
+                       ;; Try to find the node in PARENT next to ELEMENT.
+                       (let ((siblings (org-element-contents parent)))
+                         (nth (1+ (-find-index (lambda (element)
+                                                 (eq element current))
+                                               siblings))
+                              siblings))
+                       ;; No following element in current `section'.
+                       ;; Check `headline' directly after `section'.
+                       (if-let* (((org-element-type-p parent 'section))
+                                 (parent (org-element-lineage (org-element-at-point)
+                                                              'headline))
+                                 (element (save-excursion
+                                            (goto-char (org-element-end current))
+                                            (org-element-at-point)))
+                                 ((eq parent (org-element-parent element))))
+                           element)))))))
         (when next
-          (setq helix-org--current-node next)
+          (helix-org--update-current-element next)
           (helix-set-region (org-element-begin next)
                             (org-element-end next)
                             ;; (progn
