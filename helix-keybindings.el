@@ -25,15 +25,16 @@
 ;; By default `M-u' is binded to `upcase-word'.
 (keymap-global-set "M-u" #'universal-argument)
 (keymap-set universal-argument-map "M-u" #'universal-argument-more)
-;; (helix-keymap-global-set 'normal "M-u" #'universal-argument)
-;; (helix-keymap-global-set 'motion "M-u" #'universal-argument)
+;; (helix-keymap-global-set :state 'normal "M-u" #'universal-argument)
+;; (helix-keymap-global-set :state 'motion "M-u" #'universal-argument)
 
 ;;; Normal state
 
 (keymap-global-unset "M-<down-mouse-1>")
-(helix-keymap-global-set 'normal "M-<mouse-1>" #'helix-toggle-cursor-on-click)
+(helix-keymap-global-set :state 'normal
+  "M-<mouse-1>" #'helix-toggle-cursor-on-click)
 
-(helix-keymap-global-set 'normal
+(helix-keymap-global-set :state 'normal
   ":" #'execute-extended-command
 
   "0" #'digit-argument
@@ -215,10 +216,10 @@
                  ((nil . "helix-mark-negative-argument") . ignore)))
     (cl-pushnew elt which-key-replacement-alist :test #'equal)))
 
-(helix-keymap-global-set 'normal
+(helix-keymap-global-set :state 'normal
   "m" #'helix-mark-map)
 
-(helix-keymap-set helix-mark-map nil
+(helix-keymap-set helix-mark-map
   "-" #'helix-mark-negative-argument
   "0" #'helix-mark-digit-argument
   "1" #'helix-mark-digit-argument
@@ -335,10 +336,10 @@
 
 ;;;; Windows
 
-(helix-keymap-global-set 'normal
+(helix-keymap-global-set :state 'normal
   "C-w" 'helix-window-map)
 
-(helix-keymap-set helix-window-map nil
+(helix-keymap-set helix-window-map
   ;; windows
   "RET" #'same-window-prefix
   "n"   #'other-window-prefix
@@ -395,7 +396,7 @@
 
 ;;; Motion state
 
-(helix-keymap-global-set 'motion
+(helix-keymap-global-set :state 'motion
   "C-w" 'helix-window-map
   "] b" #'next-buffer
   "[ b" #'previous-buffer
@@ -413,7 +414,7 @@
 
 ;;; Insert state
 
-(helix-keymap-global-set 'insert
+(helix-keymap-global-set :state 'insert
   "<escape>" #'helix-normal-state
   "C-w" #'helix-delete-backward-word)
 
@@ -422,7 +423,7 @@
 (when helix-want-helix-leader
   (require 'helix-leader)
   (dolist (state '(normal motion))
-    (helix-keymap-global-set state
+    (helix-keymap-global-set :state state
       "SPC"      #'helix-leader
       "C-w SPC"  #'helix-leader-other-window
       "C-h k"    #'helix-leader-describe-key
@@ -431,11 +432,11 @@
 
 (when helix-want-zz-scroll-to-center
   (dolist (state '(normal motion))
-    (helix-keymap-global-set state
+    (helix-keymap-global-set :state state
       "z z" #'helix-smooth-scroll-line-to-center)))
 
 (when helix-want-paragraph-motions-like-in-Helix
-  (helix-keymap-global-set 'normal
+  (helix-keymap-global-set :state 'normal
     "] p" #'helix-mark-forward-to-beginning-of-paragraph
     "[ p" #'helix-mark-backward-to-beginning-of-paragraph
     "}"   #'helix-mark-forward-to-beginning-of-paragraph
