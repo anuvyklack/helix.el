@@ -401,7 +401,8 @@ backward and jump to new top location."
       (helix-push-point orig-point)
       (helix-set-region (if helix--extend-selection (mark) (point))
                         (progn (forward-thing 'helix-word)
-                               (point))))))
+                               (point))
+                        -1))))
 
 ;; gb
 (helix-define-command helix-avy-word-backward ()
@@ -418,9 +419,11 @@ backward and jump to new top location."
       (helix-push-point orig-point)
       (if helix--extend-selection
           (helix-set-region (mark) (point))
-        (helix-set-region (point) (progn
-                                    (forward-thing 'helix-word)
-                                    (point)))))))
+        (helix-set-region (point)
+                          (progn
+                            (forward-thing 'helix-word)
+                            (point))
+                          -1)))))
 
 ;; gW
 (helix-define-command helix-avy-WORD-forward ()
@@ -435,7 +438,8 @@ backward and jump to new top location."
       (helix-push-point orig-point)
       (helix-set-region (if helix--extend-selection (mark) (point))
                         (progn (forward-thing 'helix-WORD)
-                               (point))))))
+                               (point))
+                        -1))))
 
 ;; gB
 (helix-define-command helix-avy-WORD-backward ()
@@ -451,9 +455,11 @@ backward and jump to new top location."
       (helix-push-point orig-point)
       (if helix--extend-selection
           (helix-set-region (mark) (point))
-        (helix-set-region (point) (progn
-                                    (forward-thing 'helix-WORD)
-                                    (point)))))))
+        (helix-set-region (point)
+                          (progn
+                            (forward-thing 'helix-WORD)
+                            (point))
+                          -1)))))
 
 ;; gj
 (helix-define-command helix-avy-next-line ()
@@ -670,7 +676,7 @@ If no selection — delete COUNT chars after point."
 
 ;; u
 (helix-define-command helix-undo ()
-  "Cancel current region then undo."
+  "Undo."
   :multiple-cursors nil
   (interactive)
   ;; Deactivate mark to trigger global undo instead of region undo.
@@ -680,7 +686,7 @@ If no selection — delete COUNT chars after point."
 
 ;; U
 (helix-define-command helix-redo ()
-  "Cancel current region then redo."
+  "Redo."
   :multiple-cursors nil
   (interactive)
   ;; Deactivate mark to trigger global undo instead of region undo.
@@ -1083,7 +1089,7 @@ entered regexp withing current selections."
   (when-let* ((pos (save-excursion
                      (cl-loop with column = (current-column)
                               while (zerop (forward-line direction))
-                              when (eql (move-to-column column) column)
+                              when (= (move-to-column column) column)
                               return (point))))
               ((not (helix-fake-cursor-at pos))))
     (unless (helix-fake-cursor-at (point))

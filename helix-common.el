@@ -849,7 +849,7 @@ BEG, END position and done the indentation."
   (if (use-region-p)
       (helix-save-linewise-selection
         (dotimes (_ count)
-          (funcall indent-function (mark) (point)))
+          (funcall indent-function (region-beginning) (region-end)))
         (helix-extend-selection -1))
     ;; else
     (-let [(beg . end) (bounds-of-thing-at-point 'helix-line)]
@@ -863,7 +863,7 @@ BEG, END position and done the indentation."
   (goto-char (prog1 (marker-position (mark-marker))
                (set-marker (mark-marker) (point)))))
 
-(defun helix-end-of-buffer-p (direction)
+(defsubst helix-end-of-buffer-p (direction)
   (if (natnump direction) (eobp) (bobp)))
 
 (defun helix-bolp ()
@@ -924,12 +924,12 @@ positive — end of line."
   ;; (memq char '(?\s ?\t))
   )
 
-(defun helix-sign (&optional num)
+(defsubst helix-sign (&optional num)
   (cond ((< num 0) -1)
         ((zerop num) 0)
         (t 1)))
 
-(defun helix-distance (x y) (abs (- y x)))
+(defsubst helix-distance (x y) (abs (- y x)))
 
 (defun helix-search (string &optional direction limit regexp? visible?)
   "Search for STRING toward the DIRECTION.
@@ -1020,22 +1020,24 @@ that `match-beginning', `match-end' and `match-data' access."
 (defun helix-set-region (start end &optional direction newline-at-eol)
   "Set the active region between START and END positions.
 
-DIRECTION of region:
+DIRECTION of the region:
   nil      Region direction is from START to END.
    1       Force forward region (mark < point).
   -1       Force backward region (point < mark).
+
 When DIRECTION is specified, START and END can be provided in any order.
 
-NEWLINE-AT-EOL handles trailing newline behavior:
-  In Emacs, selecting a newline character at the end of a line moves point
-to the beginning of the next line. This contradicts Helix's and Vim's editors
-behavior. We emulate their behavior, by keeping the point at the end of the
-line and setting `helix--newline-at-eol' flag.
-  Possible values:
+NEWLINE-AT-EOL handles trailing newline behavior. In Emacs, selecting a newline
+character at the end of a line moves point to the beginning of the next line.
+This contradicts Helix's and Vim's editors behavior. We emulate their behavior,
+by keeping the point at the end of the line and setting `helix--newline-at-eol'
+flag.
+
+NEWLINE-AT-EOL possible values:
   nil      Set `helix--newline-at-eol' to nil.
   t        Set `helix--newline-at-eol' to t.
   `:adjust'  Check if region includes trailing newline, exclude it if found,
-           and set `helix--newline-at-eol' flag."
+             and set `helix--newline-at-eol' flag."
   (pcase newline-at-eol
     (:adjust (and (setq helix--newline-at-eol (and (/= start end)
                                                    (save-excursion
@@ -1085,7 +1087,7 @@ Return the position of the mark."
       (helix-disable-newline-at-eol)
     (deactivate-mark)))
 
-(defun helix--maybe-deactivate-mark-a (&rest _)
+(defun helix-maybe-deactivate-mark-a (&rest _)
   "Deactivate mark unless extending selection is active. Can be used as advice."
   (if helix--extend-selection
       (helix-disable-newline-at-eol)
@@ -1153,8 +1155,8 @@ of the full regexp match."
   "Consecutively call FUN and collect point positions after each invocation.
 Finish as soon as point moves outside of START END buffer positions.
 FUN on each invocation should move point."
-  (unless start (setq start (window-start)))
-  (unless end (setq end (window-end)))
+  (or start (setq start (window-start)))
+  (or end (setq end (window-end)))
   (save-excursion
     (cl-loop with win = (get-buffer-window)
              for old-point = (point)
@@ -1165,7 +1167,7 @@ FUN on each invocation should move point."
                   (let ((last-command fun)
                         (this-command fun))
                     (call-interactively fun)))
-             while (and (not (eql (point) old-point))
+             while (and (/= (point) old-point)
                         (<= start (point) end))
              collect (cons (point) win))))
 

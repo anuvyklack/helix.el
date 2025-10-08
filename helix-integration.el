@@ -17,8 +17,8 @@
 
 (require 'helix-core)
 (require 'helix-multiple-cursors-core)
+(require 'helix-common)
 (require 'helix-commands)
-(require 'helix-leader)
 
 ;;; Distinguish `TAB' from `C-i' and `RET' from `C-m'
 
@@ -97,11 +97,9 @@ in the command loop, and the fake cursors can pick up on those instead."
 
 ;;; Selection (mark & region)
 
-(helix-advice-add 'exchange-point-and-mark :after #'helix-reveal-point-when-on-top)
-
-(dolist (command '(fill-region    ;; gq
-                   indent-region  ;; =
-                   comment-dwim)) ;; gc
+(dolist (command '(fill-region    ; gq
+                   indent-region  ; =
+                   comment-dwim)) ; gc
   (helix-advice-add command :around #'helix-keep-selection-a))
 
 (helix-advice-add 'clone-indirect-buffer :before #'helix-deactivate-mark)
@@ -110,26 +108,26 @@ in the command loop, and the fake cursors can pick up on those instead."
 
 (with-eval-after-load 'eldoc
   ;; Add motion commands to the `eldoc-message-commands' obarray.
-  (eldoc-add-command 'helix-backward-char        ;; h
-                     'helix-forward-char         ;; l
-                     'helix-next-line            ;; j
-                     'helix-previous-line        ;; k
-                     'helix-forward-word-start   ;; w
-                     'helix-forward-WORD-start   ;; W
-                     'helix-backward-word-start  ;; b
-                     'helix-backward-WORD-start  ;; B
-                     'helix-forward-word-end     ;; e
-                     'helix-forward-WORD-end     ;; E
-                     'helix-first-non-blank      ;; gh
-                     'helix-end-of-line-command  ;; gl
-                     'helix-search-forward       ;; /
-                     'helix-search-backward      ;; ?
-                     'helix-search-next          ;; n
-                     'helix-search-previous      ;; N
-                     'helix-find-char-forward    ;; f
-                     'helix-find-char-backward   ;; F
-                     'helix-till-char-forward    ;; t
-                     'helix-till-char-backward)) ;; T
+  (eldoc-add-command 'helix-backward-char        ; h
+                     'helix-forward-char         ; l
+                     'helix-next-line            ; j
+                     'helix-previous-line        ; k
+                     'helix-forward-word-start   ; w
+                     'helix-forward-WORD-start   ; W
+                     'helix-backward-word-start  ; b
+                     'helix-backward-WORD-start  ; B
+                     'helix-forward-word-end     ; e
+                     'helix-forward-WORD-end     ; E
+                     'helix-first-non-blank      ; gh
+                     'helix-end-of-line-command  ; gl
+                     'helix-search-forward       ; /
+                     'helix-search-backward      ; ?
+                     'helix-search-next          ; n
+                     'helix-search-previous      ; N
+                     'helix-find-char-forward    ; f
+                     'helix-find-char-backward   ; F
+                     'helix-till-char-forward    ; t
+                     'helix-till-char-backward)) ; T
 
 ;;; winner-mode & tab-bar-history-mode
 
@@ -178,9 +176,10 @@ in the command loop, and the fake cursors can pick up on those instead."
   ;; Open links to functions, variables and symbols in helpful buffer
   ;; in the same window.
   (add-to-list 'display-buffer-alist
-               '((derived-mode . helpful-mode)    ; condition
-                 display-buffer-reuse-mode-window ; action
-                 (mode . helpful-mode))))         ; args
+               '((derived-mode . helpful-mode)
+                 (display-buffer-reuse-mode-window display-buffer-pop-up-window)
+                 (mode . helpful-mode)
+                 (body-function . select-window))))
 
 ;;; Button
 
@@ -288,12 +287,6 @@ the first target at point."
   (embark-select)
   (next-line))
 
-;;; Compilation
-
-(dolist (cmd '(next-error
-               previous-error))
-  (helix-advice-add cmd :around #'helix-jump-command))
-
 ;;; Xref
 
 (with-eval-after-load 'xref
@@ -318,6 +311,55 @@ the first target at point."
     "z j" #'xref-next-group
     "z k" #'xref-prev-group))
 
+;;; Compilation
+
+(helix-advice-add 'next-error     :around #'helix-jump-command)
+(helix-advice-add 'previous-error :around #'helix-jump-command)
+
+(with-eval-after-load 'compile
+  (helix-keymap-set compilation-minor-mode-map
+    "g"   nil ; unbind `recompile'
+    "g r" #'recompile
+
+    "C-j" #'compilation-next-error
+    "C-k" #'compilation-previous-error
+    "] ]" #'compilation-next-error
+    "[ [" #'compilation-previous-error
+
+    "[ p" #'compilation-previous-file
+    "] p" #'compilation-next-file
+    "{"   #'compilation-previous-file
+    "}"   #'compilation-next-file))
+
+;;; grep-mode
+
+(with-eval-after-load 'grep
+  ;; `grep-mode-map' is inherited from `compilation-minor-mode-map'
+  (helix-keymap-set grep-mode-map :state 'motion
+    "i"   #'wgrep-change-to-wgrep-mode
+    "o"   #'compilation-display-error
+    "g f" #'next-error-follow-minor-mode
+    "g g" #'beginning-of-buffer
+    "G"   #'end-of-buffer
+    "C-j" #'next-error-no-select
+    "C-k" #'previous-error-no-select
+    ))
+
+;;; Wgrep
+
+(with-eval-after-load 'wgrep
+  (helix-advice-add 'wgrep-change-to-wgrep-mode :after #'helix-switch-to-initial-state)
+
+  (helix-advice-add 'wgrep-to-original-mode :before #'helix-deactivate-mark)
+  (helix-advice-add 'wgrep-to-original-mode :before #'helix-delete-all-fake-cursors)
+  (helix-advice-add 'wgrep-to-original-mode :after  #'helix-switch-to-initial-state)
+
+  (helix-keymap-set wgrep-mode-map :state 'normal
+    "<remap> <save-buffer>" #'wgrep-finish-edit
+    "<escape>" #'wgrep-exit
+    "Z Z"      #'wgrep-finish-edit
+    "Z Q"      #'wgrep-abort-changes))
+
 ;;; Occur mode
 
 (with-eval-after-load 'replace
@@ -331,7 +373,10 @@ the first target at point."
     "N"   #'previous-error-no-select)
   (helix-keymap-set occur-edit-mode-map
     "g o" 'occur-mode-goto-occurrence-other-window)
-  (helix-advice-add 'occur-mode-goto-occurrence :around #'helix-jump-command))
+
+  (dolist (cmd '(occur-mode-goto-occurrence
+                 occur-mode-display-occurrence))
+    (helix-advice-add cmd :around #'helix-jump-command)))
 
 ;;; Deadgrep
 
@@ -393,35 +438,6 @@ the first target at point."
   (deadgrep-backward-match)
   (helix-deadgrep-show-result-other-window))
 
-;;; grep-mode
-
-(with-eval-after-load 'grep
-  (helix-keymap-set grep-mode-map :state 'motion
-    "i"   #'wgrep-change-to-wgrep-mode
-    "o"   #'compilation-display-error
-    "g r" #'recompile
-    "g f" #'next-error-follow-minor-mode
-    "g g" #'beginning-of-buffer
-    "G"   #'end-of-buffer
-    ;; "C-j" #'next-error-no-select
-    ;; "C-k" #'previous-error-no-select
-    ))
-
-;;; Wgrep
-
-(with-eval-after-load 'wgrep
-  (helix-advice-add 'wgrep-change-to-wgrep-mode :after #'helix-switch-to-initial-state)
-
-  (helix-advice-add 'wgrep-to-original-mode :before #'helix-deactivate-mark)
-  (helix-advice-add 'wgrep-to-original-mode :before #'helix-delete-all-fake-cursors)
-  (helix-advice-add 'wgrep-to-original-mode :after  #'helix-switch-to-initial-state)
-
-  (helix-keymap-set wgrep-mode-map :state 'normal
-    "<remap> <save-buffer>" #'wgrep-finish-edit
-    "<escape>" #'wgrep-exit
-    "Z Z"      #'wgrep-finish-edit
-    "Z Q"      #'wgrep-abort-changes))
-
 ;;; Wdired
 
 (with-eval-after-load 'wdired
@@ -482,8 +498,7 @@ the first target at point."
 (with-eval-after-load 'consult
   (helix-cache-input consult--read)
 
-  ;; Execute for all cursors.
-  (put 'consult-yank-pop 'multiple-cursors t)
+  (put 'consult-yank-pop 'multiple-cursors t) ; Execute for all cursors.
 
   (dolist (cmd '(consult-line
                  consult-mark
@@ -504,7 +519,12 @@ the first target at point."
                  outline-previous-visible-heading
                  outline-forward-same-level
                  outline-backward-same-level))
-    (helix-advice-add cmd :before #'helix-deactivate-mark))
+    (helix-advice-add cmd :before #'helix-maybe-deactivate-mark-a))
+
+  (helix-advice-add 'outline-promote :around #'helix-keep-selection-a)
+  (helix-advice-add 'outline-demote  :around #'helix-keep-selection-a)
+
+  (helix-advice-add 'outline-mark-subtree :after #'helix-reveal-point-when-on-top)
 
   (dolist (keymap (list outline-mode-map outline-minor-mode-map))
     (dolist (state '(normal motion))
@@ -646,635 +666,16 @@ the first target at point."
   (-when-let ((beg _ _ end) (helix-surround-4-bounds-at-point "`" "'"))
     (helix-set-region beg end)))
 
-;;;; org-mode
-
-(declare-function org-in-regexp "org")
-(defvar org-emph-re)
-(defvar org-verbatim-re)
-(defvar org-mode-map)
-
-(with-eval-after-load 'org
-  (add-hook 'org-mode-hook #'helix-surround-settings-for-org-mode)
-
-  (helix-advice-add 'org-mark-subtree :after #'helix-reveal-point-when-on-top)
-
-  (dolist (cmd '(helix-org-up-heading
-                 org-next-visible-heading
-                 org-previous-visible-heading))
-    (helix-advice-add cmd :after #'helix--maybe-deactivate-mark-a)))
-
-(with-eval-after-load 'org
-  (helix-keymap-set org-mode-map :state 'normal
-    "z u"   #'helix-org-up-heading
-
-    "g h"   #'helix-org-first-non-blank
-
-    "d"     #'helix-org-cut
-    "p"     #'helix-org-paste-after
-    "P"     #'helix-org-paste-before
-    "="     #'org-indent-region
-    "<"     #'helix-org-<
-    ">"     #'helix-org->
-
-    ;; "C-o"   #'org-mark-ring-goto
-    ;;         #'org-mark-ring-push
-
-    "[ p"   #'helix-org-mark-paragraph-backward
-    "] p"   #'helix-org-mark-paragraph-forward
-    "{"     #'helix-org-mark-paragraph-backward
-    "}"     #'helix-org-mark-paragraph-forward
-
-    "[ s"   #'org-backward-sentence
-    "] s"   #'org-forward-sentence
-    "[ ."   #'org-backward-sentence
-    "] ."   #'org-forward-sentence
-
-    "M-o"   #'helix-org-up-element
-    "M-i"   #'helix-org-down-element
-    "M-n"   #'helix-org-next-element
-    "M-p"   #'helix-org-previous-element
-
-    "m ."   #'helix-org-mark-inner-sentence
-    "m i s" #'helix-org-mark-inner-sentence
-    "m a s" #'helix-org-mark-a-sentence
-
-    "m p"   #'helix-org-mark-inner-paragraph
-    "m i p" #'helix-org-mark-inner-paragraph
-    "m a p" #'helix-org-mark-a-paragraph
-
-    "m h"   #'org-mark-subtree
-    "m i h" #'org-mark-subtree
-
-    "m /"   #'helix-mark-inner-org-emphasis
-    "m i /" #'helix-mark-inner-org-emphasis
-    "m a /" #'helix-mark-an-org-emphasis
-
-    "m *"   #'helix-mark-inner-org-emphasis
-    "m i *" #'helix-mark-inner-org-emphasis
-    "m a *" #'helix-mark-an-org-emphasis
-
-    "m _"   #'helix-mark-inner-org-emphasis
-    "m i _" #'helix-mark-inner-org-emphasis
-    "m a _" #'helix-mark-an-org-emphasis
-
-    "m +"   #'helix-mark-inner-org-emphasis
-    "m i +" #'helix-mark-inner-org-emphasis
-    "m a +" #'helix-mark-an-org-emphasis
-
-    "m ="   #'helix-mark-inner-org-verbatim
-    "m i =" #'helix-mark-inner-org-verbatim
-    "m a =" #'helix-mark-an-org-verbatim
-
-    "m ~"   #'helix-mark-inner-org-verbatim
-    "m i ~" #'helix-mark-inner-org-verbatim
-    "m a ~" #'helix-mark-an-org-verbatim))
-
-(with-eval-after-load 'org-capture
-  (helix-keymap-set org-capture-mode-map :state 'normal
-    "Z R" 'org-capture-refile
-    "Z Z" 'org-capture-finalize
-    "Z Q" 'org-capture-kill))
-
-;;;;; Commands
-
-;; (dolist (cmd '(;; org-cycle      ;; TAB
-;;                org-shifttab)) ;; S-TAB
-;;   (helix-advice-add cmd :before #'helix-deactivate-mark))
-
-;; (helix-advice-add 'org-cycle :around #'helix-keep-selection-a)
-
-;; (helix-define-advice org-cycle (:aroung (command arg))
-;;   (let ((deactivate-mark nil))
-;;     (funcall command arg)))
-
-;; zu
-(helix-define-command helix-org-up-heading ()
-  "Move up in the outline hierarchy to the parent heading."
-  :multiple-cursors nil
-  (interactive)
-  (helix-delete-all-fake-cursors)
-  (deactivate-mark)
-  (helix-push-point)
-  ;; (if (org-at-heading-p)
-  ;;     (outline-up-heading 1)
-  ;;   (org-previous-visible-heading 1))
-  (if (org-at-heading-p)
-      (outline-up-heading 1)
-    (org-with-limited-levels (org-back-to-heading))))
-
-;; gh
-(helix-define-command helix-org-first-non-blank ()
-  "Move point to beginning of current visible line skipping indentation.
-
-If this is a headline, and `org-special-ctrl-a/e' is not nil or
-symbol `reversed', on the first attempt move to where the
-headline text starts, and only move to beginning of line when the
-cursor is already before the start of the text of the headline.
-
-If `org-special-ctrl-a/e' is symbol `reversed' then go to the
-start of the text on the second attempt."
-  :multiple-cursors t
-  :merge-selections t
-  (interactive)
-  (setq this-command 'org-beginning-of-line)
-  (helix-set-region (if (or (eq last-command this-command)
-                            helix--extend-selection)
-                        (mark)
-                      (point))
-                    (progn (org-beginning-of-line)
-                           (skip-syntax-forward " " (line-end-position))
-                           (backward-prefix-chars)
-                           (point))))
-
-;; org-end-of-line
-
-;; ]p or }
-(helix-define-command helix-org-mark-paragraph-forward (count)
-  :multiple-cursors t
-  :merge-selections t
-  (interactive "p")
-  (let ((paragraph-start    (default-value 'paragraph-start))
-        (paragraph-separate (default-value 'paragraph-separate)))
-    (helix-mark-thing-forward 'helix-paragraph count)))
-
-;; [p or {
-(helix-define-command helix-org-mark-paragraph-backward (count)
-  "Select from point to the start of the paragraph (or COUNT-th next paragraphs).
-If no paragraph at point select COUNT previous paragraphs."
-  :multiple-cursors t
-  :merge-selections t
-  (interactive "p")
-  (let ((paragraph-start    (default-value 'paragraph-start))
-        (paragraph-separate (default-value 'paragraph-separate)))
-    (helix-mark-thing-forward 'helix-paragraph (- count))))
-
-;; p
-(helix-define-command helix-org-paste-after ()
-  "Paste after selection."
-  :multiple-cursors t
-  (interactive)
-  (helix-paste #'org-yank 1))
-
-;; P
-(helix-define-command helix-org-paste-before ()
-  "Paste before selection."
-  :multiple-cursors t
-  (interactive)
-  (helix-paste #'org-yank -1))
-
-;; d
-(helix-define-command helix-org-cut (count)
-  "Kill (cut) text in region. I.e. delete text and put it in the `kill-ring'.
-If no selection — delete COUNT chars before point."
-  :multiple-cursors t
-  (interactive "p")
-  (when (helix-logical-lines-p)
-    (helix-restore-newline-at-eol))
-  (cond ((use-region-p)
-         (kill-region nil nil t))
-        (t
-         (org-delete-char (- count))))
-  (helix-extend-selection -1))
-
-;; <
-(helix-define-command helix-org-< (count)
-  "Promote, dedent, move column left.
-In items or headings, promote heading/item.
-In code blocks, indent lines
-In tables, move column to the left."
-  (interactive "p")
-  (cl-assert (/= count 0))
-  (helix-indent #'helix-org-indent-left count))
-
-(defun helix-org-indent-left (beg end)
-  (cond
-   ;; heading
-   ((org-with-limited-levels
-     (save-excursion (goto-char beg) (org-at-heading-p)))
-    (org-map-region #'org-do-promote beg end))
-   ;; table
-   ((and (org-at-table-p) (helix-save-region
-                            (helix-restore-newline-at-eol)
-                            (org-at-table-p)))
-    (org-table-move-column -1))
-   ;; list
-   ((and (save-excursion (goto-char beg) (org-at-item-p))
-         (<= end (save-excursion (org-end-of-item-list))))
-    (let* ((struct (org-list-struct))
-           ;; If nil --- we are at the first item of the list with no
-           ;; active selection --- indent full list.
-           (no-subtree (or (not struct)
-                           (not org-list-automatic-rules)
-                           (region-active-p)
-                           (/= (point-at-bol)
-                               (org-list-get-top-point struct)))))
-      (org-list-indent-item-generic -1 no-subtree struct)))
-   (t
-    (indent-rigidly-left beg end))))
-
-;; >
-(helix-define-command helix-org-> (count)
-  "Demote, indent, move column right.
-In items or headings, demote heading/item.
-In code blocks, indent lines.
-In tables, move column to the right."
-  :multiple-cursors t
-  (interactive "p")
-  (cl-assert (/= count 0))
-  (helix-indent #'helix-org-indent-right count))
-
-(defun helix-org-indent-right (beg end)
-  (cond
-   ;; heading
-   ((org-with-limited-levels
-     (save-excursion (goto-char beg) (org-at-heading-p)))
-    (org-map-region #'org-do-demote beg end))
-   ;; table
-   ((and (org-at-table-p) (helix-save-region
-                            (helix-restore-newline-at-eol)
-                            (org-at-table-p)))
-    (org-table-move-column))
-   ;; list
-   ((and (save-excursion (goto-char beg) (org-at-item-p))
-         (<= end (save-excursion (org-end-of-item-list))))
-    (let* (;; (struct (save-excursion
-           ;;           (goto-char beg)
-           ;;           (org-list-struct)))
-           (struct (org-list-struct))
-           ;; If nil --- we are at the first item of the list with no
-           ;; active selection --- indent full list.
-           (no-subtree (or (not struct)
-                           (not org-list-automatic-rules)
-                           (region-active-p)
-                           (/= (point-at-bol)
-                               (org-list-get-top-point struct)))))
-      (org-list-indent-item-generic 1 no-subtree struct)))
-   (t
-    (indent-rigidly-right beg end))))
-
-
-;; mis
-(helix-define-command helix-org-mark-inner-sentence (count)
-  :multiple-cursors t
-  :merge-selections t
-  (interactive "p")
-  (helix-mark-inner-thing 'helix-org-sentence count t))
-
-;; mas
-(helix-define-command helix-org-mark-a-sentence ()
-  :multiple-cursors t
-  :merge-selections t
-  (interactive)
-  (helix-mark-a-sentence 'helix-org-sentence))
-
-;; mip
-(helix-define-command helix-org-mark-inner-paragraph (count)
-  :multiple-cursors t
-  :merge-selections t
-  (interactive "p")
-  (helix-push-point)
-  (let ((paragraph-start    (default-value 'paragraph-start))
-        (paragraph-separate (default-value 'paragraph-separate)))
-    (helix-mark-inner-thing 'helix-paragraph count t))
-  (helix-reveal-point-when-on-top))
-
-;; map
-(helix-define-command helix-org-mark-a-paragraph (count)
-  :multiple-cursors t
-  :merge-selections t
-  (interactive "p")
-  (helix-push-point)
-  (let ((paragraph-start    (default-value 'paragraph-start))
-        (paragraph-separate (default-value 'paragraph-separate)))
-    (helix-mark-a-thing 'helix-paragraph count t))
-  (helix-reveal-point-when-on-top))
-
-;;;;; AST climbing
-
-(defun helix-org-element-in-section (&optional granularity)
-  "Return the smallest element that completely encloses the active region.
-With no active region point position is used.
-
-The search is constrained within the encloses `section' element.
-If the active region extends beyond the `section' boundaries, return nil.
-Result element has fully parsed structure with AST virtual root at the
-parent `section' element.
-
-GRANULARITY specifies the parsing level (see `org-element-parse-buffer')."
-  (-let [(beg . end) (if (use-region-p)
-                         (car (region-bounds))
-                       (cons (point) (point)))]
-    (let* ((element (save-excursion
-                      (goto-char beg)
-                      (org-element-at-point)))
-           ;; Climb up the AST until `section' node.
-           (section (org-element-lineage element 'section)))
-      ;; If region exceed section — truncate it to `section' boundaries.
-      (setq beg (max beg (org-element-begin section))
-            end (min end (org-element-end section)))
-      ;; Find smallest enclosing element within `section' element AST.
-      (cl-loop with element = (helix-org--parse-element section granularity)
-               with nested-element
-               do (setq nested-element
-                        (-find (lambda (el)
-                                 (<= (org-element-begin el)
-                                     beg end
-                                     (org-element-end el)))
-                               (org-element-contents element)))
-               while nested-element
-               do (setq element nested-element)
-               finally return element))))
-
-(cl-defun helix-org-parse-element (element
-                                   &optional
-                                   (root (unless (org-element-type-p element 'section)
-                                           (org-element-lineage element 'section)))
-                                   (granularity 'element))
-  "Return the fully parsed structure of the ELEMENT.
-
-ROOT will be the virtual-root of the result AST and should be one of
-parents of the element. By default it will be the parent `section' element.
-
-GRANULARITY specifies the parsing level (see `org-element-parse-buffer')."
-  (cond ((and (not root)
-              (org-element-type-p element 'section))
-         (helix-org--parse-element element granularity))
-        (root
-         (let ((beg (org-element-begin element))
-               (end (org-element-end element))
-               (type (org-element-type element))
-               (element (helix-org--parse-element root granularity)))
-           (while (and (setq element (-find (lambda (el)
-                                             (<= (org-element-begin el)
-                                                 beg end
-                                                 (org-element-end el)))
-                                           (org-element-contents element)))
-                       (not (and (eq type (org-element-type element))
-                                 (= beg (org-element-begin element))
-                                 (= end (org-element-end element))))))
-           element))))
-
-(defun helix-org--parse-element (element &optional granularity)
-  "Return the fully parsed structure of the ELEMENT.
-GRANULARITY specifies the parsing level (see `org-element-parse-buffer')."
-  (or granularity (setq granularity 'element))
-  (save-excursion
-    (with-restriction (org-element-begin element) (org-element-end element)
-      (-> (org-element-parse-buffer granularity) ; -> org-data
-          org-element-contents                   ; -> AST
-          car))))                                ; -> ELEMENT node
-
-(defun helix-org-at-heading-p ()
-  (if (use-region-p)
-      (save-excursion
-        (goto-char (region-beginning))
-        (org-at-heading-p))
-    (org-at-heading-p)))
-
-(helix-defvar-local helix-org--current-element nil
-  "The cache for current element value.")
-
-(cl-defun helix-org--current-element (&optional (new-element nil new-element?))
-  "Return cached value when appropriate, or calculate new one."
-  (cond (new-element?
-         (setq helix-org--current-element
-               (unless (org-element-type-p new-element 'headline)
-                 new-element)))
-        ((and (memq last-command '(helix-org-down-element
-                                   helix-org-next-element
-                                   helix-org-previous-element
-                                   org-cycle                                ; TAB
-                                   helix-smooth-scroll-line-not-to-very-top ; zz
-                                   helix-smooth-scroll-line-to-center       ; zz
-                                   helix-smooth-scroll-line-to-top          ; zt
-                                   helix-smooth-scroll-line-to-bottom))     ; zb
-              helix-org--current-element)
-         helix-org--current-element)
-        (t
-         (setq helix-org--current-element (helix-org-element-in-section)))))
-
-;; M-o
-(helix-define-command helix-org-up-element (&optional arg)
-  "Expand region to the parent element.
-ARG is used to determine whether invocation was interactive and should not
-be set manually."
-  :multiple-cursors t
-  :merge-selections t
-  (interactive "p")
-  (helix-restore-newline-at-eol)
-  (-let* (((beg . end) (if (use-region-p)
-                           (car (region-bounds))
-                         (cons (point) (point))))
-          (element (save-excursion
-                     (goto-char beg)
-                     (org-element-at-point))))
-    ;; Climb up the tree until element fully contains region.
-    (while (and element
-                (or (org-element-type-p element 'section) ; skip section
-                    (let ((element-beg (org-element-begin element))
-                          (element-end (- (org-element-end element)
-                                          (org-element-post-blank element))))
-                      (< beg element-beg)
-                      (< element-end end)
-                      (and (= beg element-beg)
-                           (= element-end end)))))
-      (setq element (org-element-parent element)))
-    (if (or (not element)
-            (org-element-type-p element 'org-data))
-        (user-error "No enclosing element")
-      ;; else
-      (helix-org--current-element nil)
-      (helix-set-region (org-element-begin element)
-                        (- (org-element-end element)
-                           (org-element-post-blank element))
-                        -1 :adjust)
-      (if arg (helix-reveal-point-when-on-top)))))
-
-;; M-i
-(helix-define-command helix-org-down-element ()
-  "Contract region to the first child element."
-  :multiple-cursors t
-  :merge-selections t
-  (interactive)
-  (if (use-region-p)
-      (-if-let (child (if (helix-org-at-heading-p)
-                          (save-excursion
-                            (goto-char (region-beginning))
-                            (when-let* ((pos (-> (org-element-at-point)
-                                                 (org-element-contents-begin))))
-                              (goto-char pos)
-                              (let ((child (org-element-at-point)))
-                                (if (org-element-type-p child 'headline)
-                                    child
-                                  (helix-org-parse-element child)))))
-                        ;; else
-                        (-> (helix-org--current-element)
-                            (org-element-contents)
-                            (car-safe))))
-          (progn
-            (save-excursion
-              (goto-char (region-beginning))
-              (when (org-invisible-p (line-end-position))
-                (org-cycle)))
-            (helix-org--current-element child)
-            (helix-set-region (org-element-begin child)
-                              (- (org-element-end child)
-                                 (org-element-post-blank child))
-                              -1 :adjust)
-            (helix-reveal-point-when-on-top))
-        ;; (user-error "No content for this element")
-        (user-error "No nested element"))
-    ;; else
-    (helix-org-up-element)
-    (when (helix-org-at-heading-p)
-      (helix-org-down-element))))
-
-;; M-n
-(helix-define-command helix-org-next-element ()
-  :multiple-cursors t
-  :merge-selections t
-  (interactive)
-  (unless (use-region-p)
-    (helix-org-up-element))
-  (when-let ((next (helix-org--next-element)))
-    (helix-org--current-element next)
-    (helix-set-region (org-element-begin next)
-                      (- (org-element-end next)
-                         (org-element-post-blank next))
-                      (helix-region-direction) :adjust)
-    (helix-reveal-point-when-on-top)))
-
-(defun helix-org--next-element ()
-  (if (helix-org-at-heading-p)
-      (save-excursion
-        (goto-char (region-beginning))
-        (org-forward-heading-same-level 1)
-        (org-element-at-point))
-    ;; else
-    (let* ((current (helix-org--current-element))
-           (parent (org-element-parent current)))
-      (or
-       ;; Try to find the node in PARENT next to ELEMENT.
-       (let ((siblings (org-element-contents parent)))
-         (nth (1+ (-find-index (lambda (elem) (eq elem current))
-                               siblings))
-              siblings))
-       ;; No following element in current `section'.
-       ;; Check `headline' directly after `section'.
-       (if-let* (((org-element-type-p parent 'section))
-                 (parent (org-element-lineage (org-element-at-point)
-                                              '(headline org-data)))
-                 (element (save-excursion
-                            (goto-char (org-element-end current))
-                            (org-element-at-point)))
-                 ((eq parent (org-element-parent element))))
-           element)))))
-
-;; M-p
-(helix-define-command helix-org-previous-element ()
-  :multiple-cursors t
-  :merge-selections t
-  (interactive)
-  (unless (use-region-p)
-    (helix-org-up-element))
-  (when-let ((previous (helix-org--previous-element)))
-    (helix-org--current-element previous)
-    (helix-set-region (org-element-begin previous)
-                      (- (org-element-end previous)
-                         (org-element-post-blank previous))
-                      (helix-region-direction) :adjust)
-    (helix-reveal-point-when-on-top)))
-
-(defun helix-org--previous-element ()
-  (if (helix-org-at-heading-p)
-      (save-excursion
-        (goto-char (region-beginning))
-        (let ((current (org-element-at-point)))
-          (goto-char (org-element-begin current))
-          (let ((pnt (point)))
-            (org-backward-heading-same-level 1)
-            (if (/= (point) pnt)
-                (org-element-at-point)
-              ;; else
-              (skip-chars-backward " \r\t\n")
-              (unless (bobp)
-                (-> (org-element-lineage (org-element-at-point) 'section)
-                    (helix-org-parse-element)
-                    (org-element-contents)
-                    (org-last)))))))
-    ;; else
-    (let* ((current (helix-org--current-element))
-           (siblings (org-element-contents (org-element-parent current))))
-      ;; Try to find the node in PARENT previous to ELEMENT.
-      (nth (1- (-find-index (lambda (elem) (eq elem current))
-                            siblings))
-           siblings))))
-
-;;;;; Thing
-
-;; `helix-org-sentence' thing
-(put 'helix-org-sentence 'forward-op (lambda (count)
-                                       (helix-motion-loop (dir count)
-                                         (ignore-errors
-                                           (if (natnump dir)
-                                               (org-forward-sentence)
-                                             (org-backward-sentence))))))
-
-;;;;; Surround
-
-(helix-define-command helix-mark-inner-org-emphasis ()
-  :multiple-cursors t
-  :merge-selections t
-  (interactive)
-  (when (org-in-regexp org-emph-re 2)
-    (helix-set-region (match-beginning 4) (match-end 4)))
-  ;; (when-let* ((bounds (bounds-of-thing-at-point 'defun))
-  ;;             (nlines (count-lines (car bounds) (point)))
-  ;;             ((org-in-regexp org-emph-re nlines)))
-  ;;   (helix-set-region (match-beginning 4) (match-end 4)))
-  )
-
-(helix-define-command helix-mark-an-org-emphasis ()
-  :multiple-cursors t
-  :merge-selections t
-  (interactive)
-  (when (org-in-regexp org-emph-re 2)
-    (helix-set-region (match-beginning 2) (match-end 2))))
-
-(helix-define-command helix-mark-inner-org-verbatim ()
-  :multiple-cursors t
-  :merge-selections t
-  (interactive)
-  (when (org-in-regexp org-verbatim-re 2)
-    (helix-set-region (match-beginning 4) (match-end 4))))
-
-(helix-define-command helix-mark-an-org-verbatim ()
-  :multiple-cursors t
-  :merge-selections t
-  (interactive)
-  (when (org-in-regexp org-verbatim-re 2)
-    (helix-set-region (match-beginning 2) (match-end 2))))
-
-(defun helix-surround-settings-for-org-mode ()
-  "Configure Helix surround functionality for Org-mode."
-  (dolist (char '(?/ ?* ?_ ?+ ?= ?~))
-    (helix-surround-add-pair char (cons (char-to-string char)
-                                        (char-to-string char))
-      :search #'helix-surround--4-bounds-of-org-verbatim)))
-
-(defun helix-surround--4-bounds-of-org-verbatim ()
-  (when (org-in-regexp org-verbatim-re 2)
-    (list (match-beginning 2)
-          (match-beginning 4)
-          (match-end 2)
-          (match-end 4))))
-
-(defun helix-surround--4-bounds-of-org-emphasis ()
-  (when (org-in-regexp org-emph-re 2)
-    (list (match-beginning 2)
-          (match-beginning 4)
-          (match-end 2)
-          (match-end 4))))
+;;; VC
+
+(with-eval-after-load 'bug-reference
+  (helix-keymap-set reference-map :state 'normal
+    "RET" #'bug-reference-push-button))
+
+(with-eval-after-load 'log-view
+  (helix-keymap-set log-view-mode-map
+    "j" #'log-view-msg-next
+    "k" #'log-view-msg-prev))
 
 (provide 'helix-integration)
 ;;; helix-integration.el ends here

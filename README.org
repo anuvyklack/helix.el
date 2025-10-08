@@ -20,7 +20,7 @@ in Emacs.
 
 - Smooth scrolling out of the box.
 
-- Built-in God-mode or Meow Keypad like functionality.
+- Built-in God-mode/Meow Keypad like functionality.
 
 - PCRE regexps by default (thanks to [[https://github.com/joddie/pcre2el][pcre2el]]).
 

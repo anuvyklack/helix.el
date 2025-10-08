@@ -67,6 +67,22 @@ This variable must be set before Helix is loaded!"
   :type 'boolean
   :group 'helix)
 
+(defcustom helix-want-C-hjkl-keys nil
+  "If non-nil commands binded to `M-i', `M-n', `M-p', `M-o' will also be
+binded to `C-h', `C-j', `C-k', `C-l' keys. (You can use `F1' instead of `C-h')
+
+This variable must be set before Helix is loaded!"
+  :type 'boolean
+  :group 'helix)
+
+(defcustom helix-want-M-hjkl-keys nil
+  "If non-nil commands binded to `M-i', `M-n', `M-p', `M-o' will also be
+binded to `M-h', `M-j', `M-k', `M-l' keys.
+
+This variable must be set before Helix is loaded!"
+  :type 'boolean
+  :group 'helix)
+
 (defcustom helix-match-fake-cursor-style t
   "If non-nil, attempt to match the `cursor-type' that the user has selected.
 We only can match `bar' and `box' types.

@@ -203,6 +203,7 @@
   (set-transient-map (keymap-lookup nil "m")))
 
 (helix-define-command helix-mark-negative-argument (arg)
+  "Like `negative-argument' but keep `m' prefix key active."
   :multiple-cursors nil
   (interactive "P")
   (negative-argument arg)
@@ -349,6 +350,7 @@
   "V"   #'helix-root-window-vsplit
   "c"   #'helix-window-delete
   "o"   #'delete-other-windows
+  "f"   #'fit-window-to-buffer
 
   "w"   #'other-window
   "h"   #'helix-window-left
@@ -360,6 +362,8 @@
   "J"   #'helix-move-window-down
   "K"   #'helix-move-window-up
   "L"   #'helix-move-window-right
+  "("   #'helix-rotate-windows-left
+  ")"   #'helix-rotate-windows-right
 
   ;; buffers
   "r"   #'revert-buffer

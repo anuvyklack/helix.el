@@ -102,6 +102,8 @@
   :group 'helix
   (if helix-mode
       (progn
+        ;; (cl-loop for (fun how advice) in helix--advices
+        ;;          do (advice-add fun how advice))
         (dolist (fun-how-advice helix--advices)
           (apply #'advice-add fun-how-advice))
         (when helix-want-minibuffer
@@ -150,10 +152,10 @@ Optional keyword arguments:
 \(fn STATE DOC [[KEY VAL]...] BODY...)"
   (declare (indent defun)
            (doc-string 2)
-           (debug (&define name
-                           [&optional stringp]
-                           [&rest [keywordp sexp]]
-                           def-body)))
+           (debug ( &define name
+                    [&optional stringp]
+                    [&rest [keywordp sexp]]
+                    def-body)))
   (let* ((state-name (concat (capitalize (symbol-name state))
                              " state"))
          (symbol (intern (format "helix-%s-state" state)))
@@ -389,7 +391,7 @@ according to the Helix STATE."
             `(
               ;; Edebug if active
               ,@(if edebug-mode
-                    `((edebug-mode . ,edebug-mode-map)))
+                    (list `(edebug-mode . ,edebug-mode-map)))
               ;; ,@(if edebug-mode
               ;;       (let ((map (or (helix-get-nested-helix-keymap edebug-mode-map state)
               ;;                      edebug-mode-map)))
@@ -397,7 +399,7 @@ according to the Helix STATE."
               ;; Helix buffer local overriding map
               ,@(-if-let (map (helix-get-nested-helix-keymap
                                helix-overriding-local-map state))
-                    `((:helix-override-map . ,map)))
+                    (list `(:helix-override-map . ,map)))
               ;; Helix keymaps nested in other keymaps
               ,@(let (helix-map maps)
                   (dolist (keymap (current-active-maps))
