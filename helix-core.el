@@ -348,9 +348,7 @@ MODE and STATE should be symbols."
 (defun helix-inhibit-insert-state (keymap)
   "Unmap insertion keys from normal state.
 This is useful for read-only modes that starts in normal state."
-  (helix-keymap-set keymap 'normal
-    "q" #'quit-window)
-  (helix-keymap-set keymap nil
+  (helix-keymap-set keymap
     "<remap> <helix-insert>" #'ignore
     "<remap> <helix-append>" #'ignore
     "<remap> <helix-insert-line>" #'ignore
@@ -449,82 +447,102 @@ according to the Helix STATE."
   (-if-let (prompt (keymap-prompt keymap))
       (string-prefix-p "Helix keymap" prompt)))
 
-(defun helix-keymap-set (keymap state &rest bindings)
-  "Create keybinding from KEY to DEFINITION for Helix STATE in KEYMAP.
-Accepts any number of KEY DEFINITION pairs.
-The defined keybindings will be active in specified Helix STATE.
-KEYMAP can be nil, then keybindings will be set in main STATE keymap.
-If STATE is nil this function will work like `keymap-set' with addition
-that multiple keybindings can be set at once.
+(defun helix-keymap-set (keymap &rest args)
+  "Create keybinding from KEY to DEFINITION in KEYMAP.
 
-KEY, DEFINITION arguments are like those of `keymap-set'.
-If DEFINITION is nil, then keybinding will be unset with `keymap-unset'
-instead.
+`:STATE' is an optional keyword argument that specifies the Helix state
+in which the keybindings will be active. It must appear before any
+KEY/DEFINITION pairs.
 
-For example:
+KEY and DEFINITION arguments are like those in `keymap-set'.
+If DEFINITION is nil, the corresponding key binding will be removed from KEYMAP.
+Any number of KEY/DEFINITION pairs can be provided.
 
-   (helix-keymap-set text-mode-map \\='normal
+Example:
+
+   (helix-keymap-set org-mode-map :state \\='normal
       \"f\" \\='foo
-      \"b\" \\='bar
-      \"n\" nil)
+      \"b\" nil)
 
-\(fn KEYMAP STATE &rest [KEY DEFINITION]...)"
+\(fn KEYMAP [:STATE STATE] &rest [KEY DEFINITION]...)"
   (declare (indent defun))
-  (when (and state (not (helix-state-p state)))
-    (user-error "Helix state `%s' is not known to be defined" state))
-  (unless (cl-evenp (length bindings))
-    (user-error "The number of [KEY DEFINITION] pairs is not even"))
-  (let ((map (cond ((and keymap state)
-                    (or (helix-get-nested-helix-keymap keymap state)
-                        (helix-create-nested-helix-keymap keymap state)))
-                   (state (helix-state-property state :keymap))
-                   (keymap)
-                   (t (current-global-map)))))
-    (while bindings
-      (let ((key (pop bindings))
-            (definition (pop bindings)))
-        (if definition
-            (keymap-set map key definition)
-          (keymap-unset map key :remove))))))
+  (let ((state (pcase (car-safe args)
+                 (:state (pop args)
+                         (pop args)))))
+    (when (and state (not (helix-state-p state)))
+      (user-error "Helix state `%s' is not known to be defined" state))
+    (cl-assert (cl-evenp (length args)) nil
+               "The number of [KEY DEFINITION] pairs is not even")
+    (let ((map (if state
+                   (or (helix-get-nested-helix-keymap keymap state)
+                       (helix-create-nested-helix-keymap keymap state))
+                 keymap)))
+      (cl-loop for (key definition) on args by #'cddr
+               do (if definition
+                      (keymap-set map key definition)
+                    (keymap-unset map key :remove))))))
 
-(defun helix-keymap-global-set (state &rest bindings)
-  "Create keybinding from KEY to DEFINITION for Helix STATE in global keymap.
-Accepts any number of KEY DEFINITION pairs.
-The defined keybindings will be active in specified Helix STATE.
-If STATE is nil this function will work like `keymap-global-set' with addition
-that multiple keybindings can be set at once.
+(defun helix-keymap-global-set (&rest args)
+  "Create keybinding from KEY to DEFINITION in `global-map'.
+
+`:STATE' is an optional keyword argument. If provided, keybindings are set in
+the main keymap for that Helix state. Without `:STATE', this function works
+like `keymap-global-set' except that multiple keybindings can be set at once.
+It must appear before any KEY/DEFINITION pairs.
 
 KEY, DEFINITION arguments are like those of `keymap-global-set'.
-If DEFINITION is nil, then keybinding will be unset with `keymap-global-unset'
-instead.
+If DEFINITION is nil, then keybinding will be remove from keymap.
+Any number of KEY DEFINITION pairs are accepted.
 
-For example:
-
-   (helix-keymap-global-set \\='normal
-      \"f\" \\='foo
-      \"b\" \\='bar
-      \"n\" nil)
-
-\(fn STATE &rest [KEY DEFINITION]...)"
+\(fn [:STATE STATE] &rest [KEY DEFINITION]...)"
   (declare (indent defun))
-  (apply #'helix-keymap-set (current-global-map) state bindings))
+  (let ((state (pcase (car-safe args)
+                 (:state (pop args)
+                         (pop args)))))
+    (when (and state (not (helix-state-p state)))
+      (user-error "Helix state `%s' is not known to be defined" state))
+    (unless (cl-evenp (length args))
+      (user-error "The number of [KEY DEFINITION] pairs is not even"))
+    (let ((map (if state
+                   (helix-state-property state :keymap)
+                 (current-global-map))))
+      (cl-loop for (key definition) on args by #'cddr
+               do (if definition
+                      (keymap-set map key definition)
+                    (keymap-unset map key :remove))))))
 
-(defun helix-keymap-local-set (state &rest bindings)
+(defun helix-keymap-local-set (&rest args)
+  "Create keybinding from KEY to DEFINITION in current local keymap.
+
+`:STATE' is an optional keyword argument that specifies the Helix state
+in which the keybindings will be active. It must appear before any
+KEY/DEFINITION pairs.
+
+KEY, DEFINITION arguments are like those of `keymap-global-set'.
+If DEFINITION is nil, then keybinding will be remove from keymap.
+Any number of KEY DEFINITION pairs are accepted.
+
+\(fn [:STATE STATE] &rest [KEY DEFINITION]...)"
   (declare (indent defun))
   (let ((local-map (or (current-local-map)
                        (-doto (make-sparse-keymap)
                          (use-local-map)))))
-    (apply #'helix-keymap-set local-map state bindings)))
+    (apply #'helix-keymap-set local-map args)))
 
-(defun helix-keymap-overriding-set (state &rest bindings)
+(defun helix-keymap-overriding-set (&rest args)
   "Create keybindings from KEY to DEFINITION for Helix STATE in
 the current buffer-local overriding keymap. These keybindings
 are buffer local and take precedence over all others.
 
-\(fn STATE &rest [KEY DEFINITION]...)"
+`:STATE' is an optional keyword argument that specifies the Helix state
+in which the keybindings will be active. It must appear before any
+KEY/DEFINITION pairs.
+
+\(fn [:STATE STATE] &rest [KEY DEFINITION]...)"
+  (declare (indent defun))
   (unless helix-overriding-local-map
     (setq helix-overriding-local-map (make-sparse-keymap)))
-  (apply #'helix-keymap-set helix-overriding-local-map state bindings))
+  (apply #'helix-keymap-set helix-overriding-local-map args))
 
 ;;; Cursor shape and color
 

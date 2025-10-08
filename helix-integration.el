@@ -136,20 +136,20 @@ in the command loop, and the fake cursors can pick up on those instead."
 (add-hook 'winner-mode-hook
           (defun helix-setup-winner-mode-keys ()
             (if winner-mode
-                (helix-keymap-set helix-window-map nil
+                (helix-keymap-set helix-window-map
                   "u" #'winner-undo
                   "U" #'winner-redo)
-              (helix-keymap-set helix-window-map nil
+              (helix-keymap-set helix-window-map
                 "u" nil
                 "U" nil))))
 
 (add-hook 'tab-bar-history-mode-hook
           (defun helix-setup-tab-bar-history-mode-keys ()
             (if tab-bar-history-mode
-                (helix-keymap-set helix-window-map nil
+                (helix-keymap-set helix-window-map
                   "u" #'tab-bar-history-back
                   "U" #'tab-bar-history-forward)
-              (helix-keymap-set helix-window-map nil
+              (helix-keymap-set helix-window-map
                 "u" nil
                 "U" nil))))
 
@@ -157,7 +157,7 @@ in the command loop, and the fake cursors can pick up on those instead."
 
 (with-eval-after-load 'edebug
   (add-hook 'edebug-mode-hook #'helix-update-active-keymaps)
-  (helix-keymap-set edebug-mode-map nil
+  (helix-keymap-set edebug-mode-map
     "SPC" nil ; unding `edebug-step-mode'
     "h"   nil ; unding `edebug-goto-here'
     "s" #'edebug-step-mode
@@ -195,13 +195,13 @@ in the command loop, and the fake cursors can pick up on those instead."
 ;;; Special mode
 
 ;; hjkl keys are free in `special-mode-map' by default, so we can use them.
-(helix-keymap-set special-mode-map nil
+(helix-keymap-set special-mode-map
   "h" #'left-char
   "j" #'next-line
   "k" #'previous-line
   "l" #'right-char)
 
-(helix-keymap-set special-mode-map nil
+(helix-keymap-set special-mode-map
   "g"   nil ;; revert-buffer
   "g r" 'revert-buffer
   "g g" 'beginning-of-buffer ; also "<"
@@ -213,7 +213,7 @@ in the command loop, and the fake cursors can pick up on those instead."
 
 ;;; Minibuffer
 
-;; (helix-keymap-set minibuffer-mode-map 'normal
+;; (helix-keymap-set minibuffer-mode-map :state 'normal
 ;;   ;; "ESC" #'abort-minibuffers
 ;;   "<escape>" #'abort-recursive-edit
 ;;   ;; "<down>"   #'next-line-or-history-element
@@ -221,23 +221,23 @@ in the command loop, and the fake cursors can pick up on those instead."
 ;;   "C-j" #'next-line-or-history-element
 ;;   "C-k" #'previous-line-or-history-element)
 ;;
-;; ;; (helix-keymap-set minibuffer-local-map 'insert
+;; ;; (helix-keymap-set minibuffer-local-map :state 'insert
 ;; ;;   "C-j" #'next-line-or-history-element
 ;; ;;   "C-k" #'previous-line-or-history-element)
 
-(helix-keymap-set minibuffer-mode-map 'normal
+(helix-keymap-set minibuffer-mode-map :state 'normal
   ;; "ESC" #'abort-minibuffers
   "<escape>" #'abort-recursive-edit)
 
-(helix-keymap-set minibuffer-mode-map nil
+(helix-keymap-set minibuffer-mode-map
   "C-j" #'next-line-or-history-element
   "C-k" #'previous-line-or-history-element)
 
-(helix-keymap-set read-expression-map 'normal
+(helix-keymap-set read-expression-map :state 'normal
   "<down>" #'next-line-or-history-element
   "<up>"   #'previous-line-or-history-element)
 
-(helix-keymap-set read-expression-map nil
+(helix-keymap-set read-expression-map
   "C-j" #'next-line-or-history-element
   "C-k" #'previous-line-or-history-element)
 
@@ -249,13 +249,13 @@ in the command loop, and the fake cursors can pick up on those instead."
 ;;; Vertico
 
 (with-eval-after-load 'vertico
-  (helix-keymap-set vertico-map 'normal
+  (helix-keymap-set vertico-map :state 'normal
     "y"   #'vertico-save ;; Copy current candidate to kill ring
     "j"   #'vertico-next
     "k"   #'vertico-previous
     "g g" #'vertico-first
     "G"   #'vertico-last)
-  (helix-keymap-set vertico-map nil
+  (helix-keymap-set vertico-map
     "M-j" #'next-history-element
     "M-k" #'previous-history-element
     ;; Rebind forward/backward paragraphs keys
@@ -270,13 +270,13 @@ in the command loop, and the fake cursors can pick up on those instead."
 ;;; Embark
 
 (with-eval-after-load 'embark
-  (helix-keymap-set embark-collect-mode-map nil
+  (helix-keymap-set embark-collect-mode-map
     "m" #'helix-embark-select
     "u" #'helix-embark-select
     "y" #'embark-copy-as-kill))
 
 (with-eval-after-load 'embark-consult
-  (helix-keymap-set embark-consult-rerun-map 'motion
+  (helix-keymap-set embark-consult-rerun-map :state 'motion
     "g r" #'embark-rerun-collect-or-export))
 
 (defun helix-embark-select ()
@@ -304,7 +304,7 @@ the first target at point."
                  xref-goto-xref))
     (helix-advice-add cmd :around #'helix-jump-command))
 
-  (helix-keymap-set xref--xref-buffer-mode-map nil
+  (helix-keymap-set xref--xref-buffer-mode-map
     "o"   #'xref-show-location-at-point
     "Q"   #'xref-quit-and-pop-marker-stack
 
@@ -321,7 +321,7 @@ the first target at point."
 ;;; Occur mode
 
 (with-eval-after-load 'replace
-  (helix-keymap-set occur-mode-map nil
+  (helix-keymap-set occur-mode-map
     "i"   #'occur-edit-mode
     "o"   #'occur-mode-display-occurrence           ; default `C-o'
     "g o" #'occur-mode-goto-occurrence-other-window ; default `o'
@@ -329,7 +329,7 @@ the first target at point."
     "C-k" #'previous-error-no-select
     "n"   #'next-error-no-select
     "N"   #'previous-error-no-select)
-  (helix-keymap-set occur-edit-mode-map nil
+  (helix-keymap-set occur-edit-mode-map
     "g o" 'occur-mode-goto-occurrence-other-window)
   (helix-advice-add 'occur-mode-goto-occurrence :around #'helix-jump-command))
 
@@ -342,7 +342,7 @@ the first target at point."
               (setq-local revert-buffer-function
                           (lambda (_ignore-auto _noconfirm)
                             (deadgrep-restart)))))
-  (helix-keymap-set deadgrep-mode-map 'motion
+  (helix-keymap-set deadgrep-mode-map :state 'motion
     "RET" #'deadgrep-visit-result-other-window
     "o"   #'helix-deadgrep-show-result-other-window
     "C-o" #'helix-deadgrep-show-result-other-window
@@ -358,7 +358,7 @@ the first target at point."
     "a"   #'deadgrep-incremental ;; `a' for amend
     "i"   #'deadgrep-edit-mode
     "g r" #'deadgrep-restart)
-  (helix-keymap-set deadgrep-edit-mode-map 'normal
+  (helix-keymap-set deadgrep-edit-mode-map :state 'normal
     "<escape>" #'deadgrep-mode
     "Z Z" #'deadgrep-mode
     "o"   #'undefined
@@ -396,7 +396,7 @@ the first target at point."
 ;;; grep-mode
 
 (with-eval-after-load 'grep
-  (helix-keymap-set grep-mode-map 'motion
+  (helix-keymap-set grep-mode-map :state 'motion
     "i"   #'wgrep-change-to-wgrep-mode
     "o"   #'compilation-display-error
     "g r" #'recompile
@@ -416,7 +416,7 @@ the first target at point."
   (helix-advice-add 'wgrep-to-original-mode :before #'helix-delete-all-fake-cursors)
   (helix-advice-add 'wgrep-to-original-mode :after  #'helix-switch-to-initial-state)
 
-  (helix-keymap-set wgrep-mode-map 'normal
+  (helix-keymap-set wgrep-mode-map :state 'normal
     "<remap> <save-buffer>" #'wgrep-finish-edit
     "<escape>" #'wgrep-exit
     "Z Z"      #'wgrep-finish-edit
@@ -429,7 +429,7 @@ the first target at point."
   (helix-advice-add 'wdired-change-to-wdired-mode :after #'helix-switch-to-initial-state)
   (helix-advice-add 'wdired-change-to-dired-mode :after #'helix-switch-to-initial-state)
 
-  (helix-keymap-set wdired-mode-map 'normal
+  (helix-keymap-set wdired-mode-map :state 'normal
     "j"        #'wdired-next-line
     "k"        #'wdired-previous-line
     "<up>"     #'wdired-next-line
@@ -463,7 +463,7 @@ the first target at point."
   ;; Close corfu popup on Insert state exit.
   (add-hook 'helix-insert-state-exit-hook #'corfu-quit)
 
-  (helix-keymap-set corfu-map nil
+  (helix-keymap-set corfu-map
     "C-SPC" #'corfu-insert-separator
 
     "C-k" #'corfu-previous
@@ -508,7 +508,7 @@ the first target at point."
 
   (dolist (keymap (list outline-mode-map outline-minor-mode-map))
     (dolist (state '(normal motion))
-      (helix-keymap-set keymap state
+      (helix-keymap-set keymap :state state
         "z <tab>"     #'outline-cycle
         "z <backtab>" #'outline-cycle-buffer
         "z <return>"  #'outline-insert-heading
@@ -569,7 +569,7 @@ the first target at point."
 
 (with-eval-after-load 'cus-edit
   (helix-set-initial-state 'Custom-mode 'normal)
-  (helix-keymap-set custom-mode-map 'normal
+  (helix-keymap-set custom-mode-map :state 'normal
     "] ]" #'widget-forward
     "[ [" #'widget-backward
     "z j" #'widget-forward
@@ -624,7 +624,7 @@ the first target at point."
 
 (dolist (keymap (list emacs-lisp-mode-map
                       lisp-data-mode-map))
-  (helix-keymap-set keymap 'normal
+  (helix-keymap-set keymap :state 'normal
     "m `"   #'helix-mark-inner-legacy-quoted
     "m '"   #'helix-mark-inner-legacy-quoted
     "m i `" #'helix-mark-inner-legacy-quoted
@@ -664,7 +664,7 @@ the first target at point."
     (helix-advice-add cmd :after #'helix--maybe-deactivate-mark-a)))
 
 (with-eval-after-load 'org
-  (helix-keymap-set org-mode-map 'normal
+  (helix-keymap-set org-mode-map :state 'normal
     "z u"   #'helix-org-up-heading
 
     "g h"   #'helix-org-first-non-blank
@@ -730,7 +730,7 @@ the first target at point."
     "m a ~" #'helix-mark-an-org-verbatim))
 
 (with-eval-after-load 'org-capture
-  (helix-keymap-set org-capture-mode-map 'normal
+  (helix-keymap-set org-capture-mode-map :state 'normal
     "Z R" 'org-capture-refile
     "Z Z" 'org-capture-finalize
     "Z Q" 'org-capture-kill))
