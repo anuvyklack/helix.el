@@ -1839,6 +1839,7 @@ All children of the parent of the splitted window will be rebalanced."
 
 (helix-define-command helix-window-left (count)
   "Move the cursor to new COUNT-th window left of the current one."
+  :multiple-cursors nil
   (interactive "p")
   (dotimes (_ count)
     (windmove-left)))

@@ -826,7 +826,8 @@ from being executed when `helix-multiple-cursors-mode' is active."
 ;; Execute following commands for ALL cursor.
 (mapc (lambda (command)
         (put command 'multiple-cursors t))
-      '(comment-dwim         ;; gc
+      '(keyboard-quit
+        comment-dwim         ;; gc
         fill-region          ;; gq
         indent-region        ;; =
         indent-rigidly-left  ;; >
@@ -872,7 +873,8 @@ from being executed when `helix-multiple-cursors-mode' is active."
         kill-region
         backward-kill-word
         backward-delete-char-untabify
-        delete-char delete-forward-char
+        delete-char
+        delete-forward-char
         delete-backward-char
         just-one-space
         zap-to-char
@@ -930,7 +932,8 @@ from being executed when `helix-multiple-cursors-mode' is active."
         windmove-up
         windmove-down
         repeat-complex-command
-        edebug-next-mode))
+        edebug-next-mode
+        undefined))
 
 (provide 'helix-multiple-cursors-core)
 ;;; helix-multiple-cursors-core.el ends here
