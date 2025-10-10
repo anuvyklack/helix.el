@@ -205,52 +205,70 @@ Use visual line when `visual-line-mode' is active."
     (setq temporary-goal-column most-positive-fixnum
           this-command 'next-line)))
 
-;; ]p or } (Helix editor emulation)
-(helix-define-command helix-mark-forward-to-beginning-of-paragraph (count)
-  "Select from point to the start of the COUNT-th next paragraph.
-This function behaves the same as `]p' in the Helix text editor."
-  :multiple-cursors t
-  :merge-selections t
-  (interactive "p")
-  (helix-push-point)
-  (helix-restore-newline-at-eol)
-  (helix-set-region (if helix--extend-selection (mark) (point))
-                    (progn
-                      (helix-forward-beginning-of-thing 'helix-paragraph count)
-                      (point))
-                    nil :adjust))
-
-;; [p or { (Helix editor emulation)
-(helix-define-command helix-mark-backward-to-beginning-of-paragraph (count)
-  "Select from point to the start of the COUNT-th previous paragraph.
-This function behaves the same as `[p' in the Helix text editor."
-  :multiple-cursors t
-  :merge-selections t
-  (interactive "p")
-  (helix-push-point)
-  (helix-restore-newline-at-eol)
-  (helix-set-region (if helix--extend-selection (mark) (point))
-                    (progn (forward-thing 'helix-paragraph (- count))
-                           (point))
-                    nil :adjust))
-
-;; ]p or } (alternative version)
+;; ]p or }
 (helix-define-command helix-mark-paragraph-forward (count)
-  "Select from point to the end of the paragraph (or COUNT-th next paragraphs).
-If no paragraph at point select COUNT next paragraphs."
+  "Select paragraph forward.
+If point is inside a paragraph, select to the end of current paragraph.
+Otherwise, select to the beginning of the COUNT-th next paragraph."
   :multiple-cursors t
   :merge-selections t
   (interactive "p")
-  (helix-mark-thing-forward 'helix-paragraph count))
+  (let ((thing 'helix-paragraph)
+        (initial-pos (point))
+        (initial-region (helix-region)))
+    (if (eolp) (forward-char))
+    ;; If we are at the end of buffer — signal and restore region.
+    (when (eobp)
+      (if initial-region
+          (apply #'helix-set-region initial-region)
+        (goto-char initial-pos))
+      (user-error "End of buffer"))
+    (helix-push-point initial-pos)
+    (-let (((thing-beg . thing-end) (bounds-of-thing-at-point thing))
+           start end)
+      (cond ((and (/= (point) thing-beg)
+                  (/= (point) thing-end)
+                  (= count 1))
+             (setq start (if helix--extend-selection (mark) (point))
+                   end   thing-end))
+            ((and (= (point) thing-end)
+                  (use-region-p))
+             (setq start (mark)
+                   end   (progn (helix-forward-beginning-of-thing thing count)
+                                (point))))
+            ((= (point) thing-end)
+             (setq start (progn (helix-forward-beginning-of-thing thing 1)
+                                (point))
+                   end   (progn (helix-forward-beginning-of-thing thing count)
+                                (point))))
+            (t
+             (setq start (if helix--extend-selection (mark) (point))
+                   end   (progn (helix-forward-beginning-of-thing thing count)
+                                (point)))))
+      (helix-set-region start end nil :adjust)
+      (helix-reveal-point-when-on-top))))
 
-;; [p or { (alternative version)
+;; [p or {
 (helix-define-command helix-mark-paragraph-backward (count)
-  "Select from point to the start of the paragraph (or COUNT-th next paragraphs).
-If no paragraph at point select COUNT previous paragraphs."
+  "Select to the beginning of the COUNT-th previous paragraph."
   :multiple-cursors t
   :merge-selections t
   (interactive "p")
-  (helix-mark-thing-forward 'helix-paragraph (- count)))
+  (let ((thing 'helix-paragraph)
+        (initial-pos (point))
+        (initial-region (helix-region)))
+    (helix-restore-newline-at-eol)
+    ;; If we are at the beginning of buffer — signal and restore region.
+    (when (bobp)
+      (if initial-region
+          (apply #'helix-set-region initial-region)
+        (goto-char initial-pos))
+      (user-error "Beginning of buffer"))
+    (let ((start (if helix--extend-selection (mark) (point)))
+          (end (progn (forward-thing thing (- count))
+                      (point))))
+      (helix-set-region start end nil :adjust)
+      (helix-reveal-point-when-on-top))))
 
 ;; ]f (Helix editor emulation)
 (helix-define-command helix-mark-forward-to-beginning-of-function (count)
