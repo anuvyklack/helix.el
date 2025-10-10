@@ -359,21 +359,7 @@ in the command loop, and the fake cursors can pick up on those instead."
 
 (with-eval-after-load 'corfu
   ;; Close corfu popup on Insert state exit.
-  (add-hook 'helix-insert-state-exit-hook #'corfu-quit)
-
-  (helix-keymap-set corfu-map
-    "C-SPC" #'corfu-insert-separator
-
-    "C-k" #'corfu-previous
-    "C-j" #'corfu-next
-
-    "C-h" #'corfu-info-documentation
-    "C-l" #'corfu-info-location
-
-    "C-f" #'corfu-scroll-up
-    "C-b" #'corfu-scroll-down
-    "C-u" #'corfu-scroll-down
-    "C-d" #'corfu-scroll-up))
+  (add-hook 'helix-insert-state-exit-hook #'corfu-quit))
 
 ;;; Consult
 
