@@ -447,8 +447,5 @@ in the command loop, and the fake cursors can pick up on those instead."
   (-when-let ((beg _ _ end) (helix-surround-4-bounds-at-point "`" "'"))
     (helix-set-region beg end)))
 
-
-
-
 (provide 'helix-integration)
 ;;; helix-integration.el ends here
