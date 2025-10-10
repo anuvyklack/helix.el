@@ -126,12 +126,8 @@
 (helix-define-advice select-window (:after (&rest _))
   (helix-update-cursor))
 
-(helix-advice-add 'use-global-map :after #'helix--do-update-active-keymaps-a)
-(helix-advice-add 'use-local-map  :after #'helix--do-update-active-keymaps-a)
-
-(defun helix--do-update-active-keymaps-a (&rest _)
-  "Refresh Helix keymaps."
-  (helix-activate-state-keymaps helix-state))
+(helix-advice-add 'use-global-map :after #'helix-update-active-keymaps-a)
+(helix-advice-add 'use-local-map  :after #'helix-update-active-keymaps-a)
 
 ;;; Helix states
 
@@ -377,6 +373,10 @@ This is useful for read-only modes that starts in normal state."
 
 (defun helix-update-active-keymaps ()
   "Reset keymaps for current Helix state."
+  (helix-activate-state-keymaps helix-state))
+
+(defun helix-update-active-keymaps-a (&rest _)
+  "Refresh Helix keymaps."
   (helix-activate-state-keymaps helix-state))
 
 (defun helix-activate-state-keymaps (state)

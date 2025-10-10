@@ -1085,13 +1085,7 @@ Return the position of the mark."
       (helix-disable-newline-at-eol)
     (deactivate-mark)))
 
-(defun helix--maybe-deactivate-mark-a (&rest _)
-  "Deactivate mark unless extending selection is active. Can be used as advice."
-  (if helix--extend-selection
-      (helix-disable-newline-at-eol)
-    (deactivate-mark)))
-
-(defun helix-ensure-region-direction (direction)
+(defun helixensure-region-direction (direction)
   "Exchange point and mark if region direction mismatch DIRECTION.
 DIRECTION should be 1 or -1."
   (when (and (use-region-p)
@@ -1268,7 +1262,10 @@ function prevents that. It is intended to be used as `:after' advice."
     (when (zerop (cdr (posn-col-row (posn-at-point))))
       (recenter 0))))
 
+;;; Advices
+
 (declare-function helix-extend-selection "helix-commands")
+(declare-function helix-insert-state "helix-core")
 
 (defun helix-keep-selection-a (fun &rest args)
   "Keep region active, disable extending selection (`v' key)."
@@ -1276,11 +1273,17 @@ function prevents that. It is intended to be used as `:after' advice."
     (apply fun args))
   (helix-extend-selection -1))
 
-(defun helix-deactivate-mark (&rest _)
+(defun helix-deactivate-mark-a (&rest _)
   "Deactivate mark. This function can be used as advice."
   (deactivate-mark))
 
-(defun helix-jump-command (command &rest args)
+(defun helix-maybe-deactivate-mark-a (&rest _)
+  "Deactivate mark unless extending selection is active. Can be used as advice."
+  (if helix--extend-selection
+      (helix-disable-newline-at-eol)
+    (deactivate-mark)))
+
+(defun helix-jump-command-a (command &rest args)
   "Aroung advice for COMMAND that moves point."
   (helix-delete-all-fake-cursors)
   (deactivate-mark)
@@ -1288,6 +1291,11 @@ function prevents that. It is intended to be used as `:after' advice."
     (apply command args)
     ;; We can land in another buffer, so deactivate mark there as well.
     (deactivate-mark)))
+
+(defun helix-switch-to-insert-state-a (&rest _)
+  "Switch Helix into Insert state.
+Can be used as advice."
+  (helix-insert-state 1))
 
 (provide 'helix-common)
 ;;; helix-common.el ends here

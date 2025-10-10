@@ -104,7 +104,7 @@ in the command loop, and the fake cursors can pick up on those instead."
                    comment-dwim)) ;; gc
   (helix-advice-add command :around #'helix-keep-selection-a))
 
-(helix-advice-add 'clone-indirect-buffer :before #'helix-deactivate-mark)
+(helix-advice-add 'clone-indirect-buffer :before #'helix-deactivate-mark-a)
 
 ;;; Eldoc
 
@@ -184,7 +184,7 @@ in the command loop, and the fake cursors can pick up on those instead."
 
 ;;; Button
 
-(helix-advice-add 'forward-button :before #'helix-deactivate-mark)
+(helix-advice-add 'forward-button :before #'helix-deactivate-mark-a)
 
 ;;; repeat-mode
 
@@ -292,7 +292,7 @@ the first target at point."
 
 (dolist (cmd '(next-error
                previous-error))
-  (helix-advice-add cmd :around #'helix-jump-command))
+  (helix-advice-add cmd :around #'helix-jump-command-a))
 
 ;;; Xref
 
@@ -302,7 +302,7 @@ the first target at point."
                  xref-go-back
                  xref-go-forward
                  xref-goto-xref))
-    (helix-advice-add cmd :around #'helix-jump-command))
+    (helix-advice-add cmd :around #'helix-jump-command-a))
 
   (helix-keymap-set xref--xref-buffer-mode-map
     "o"   #'xref-show-location-at-point
@@ -331,7 +331,7 @@ the first target at point."
     "N"   #'previous-error-no-select)
   (helix-keymap-set occur-edit-mode-map
     "g o" 'occur-mode-goto-occurrence-other-window)
-  (helix-advice-add 'occur-mode-goto-occurrence :around #'helix-jump-command))
+  (helix-advice-add 'occur-mode-goto-occurrence :around #'helix-jump-command-a))
 
 ;;; Deadgrep
 
@@ -365,12 +365,12 @@ the first target at point."
     "O"   #'undefined
     "J"   #'undefined)
 
-  (helix-advice-add 'deadgrep-mode :before #'deactivate-mark)
+  (helix-advice-add 'deadgrep-mode :before #'helix-deactivate-mark-a)
   (helix-advice-add 'deadgrep-mode :before #'helix-delete-all-fake-cursors)
 
   (dolist (cmd '(deadgrep-visit-result
                  deadgrep-visit-result-other-window))
-    (helix-advice-add cmd :around #'helix-jump-command)))
+    (helix-advice-add cmd :around #'helix-jump-command-a)))
 
 (defun helix-deadgrep-show-result-other-window ()
   "Show search result at point in another window."
@@ -412,7 +412,7 @@ the first target at point."
 (with-eval-after-load 'wgrep
   (helix-advice-add 'wgrep-change-to-wgrep-mode :after #'helix-switch-to-initial-state)
 
-  (helix-advice-add 'wgrep-to-original-mode :before #'helix-deactivate-mark)
+  (helix-advice-add 'wgrep-to-original-mode :before #'helix-deactivate-mark-a)
   (helix-advice-add 'wgrep-to-original-mode :before #'helix-delete-all-fake-cursors)
   (helix-advice-add 'wgrep-to-original-mode :after  #'helix-switch-to-initial-state)
 
@@ -427,7 +427,7 @@ the first target at point."
 (with-eval-after-load 'wdired
   (helix-set-initial-state 'wdired-mode 'normal)
   (helix-advice-add 'wdired-change-to-wdired-mode :after #'helix-switch-to-initial-state)
-  (helix-advice-add 'wdired-change-to-dired-mode :after #'helix-switch-to-initial-state)
+  (helix-advice-add 'wdired-change-to-dired-mode  :after #'helix-switch-to-initial-state)
 
   (helix-keymap-set wdired-mode-map :state 'normal
     "j"        #'wdired-next-line
@@ -446,10 +446,10 @@ the first target at point."
 
   (dolist (cmd '(wdired-next-line
                  wdired-previous-line))
-    (helix-advice-add cmd :before #'helix-deactivate-mark)
+    (helix-advice-add cmd :before #'helix-deactivate-mark-a)
     (put cmd 'multiple-cursors t))
 
-  (helix-advice-add 'wdired-change-to-dired-mode :before #'helix-deactivate-mark)
+  (helix-advice-add 'wdired-change-to-dired-mode :before #'helix-deactivate-mark-a)
   (helix-advice-add 'wdired-change-to-dired-mode :before #'helix-delete-all-fake-cursors)
 
   (dolist (cmd '(wdired-finish-edit
@@ -493,18 +493,18 @@ the first target at point."
                  consult-grep
                  consult-git-grep
                  consult-ripgrep))
-    (helix-advice-add cmd :before #'helix-deactivate-mark)))
+    (helix-advice-add cmd :before #'helix-deactivate-mark-a)))
 
 ;;; Outline
 
 (with-eval-after-load 'outline
-  (helix-advice-add 'outline-minor-mode :after #'helix--do-update-active-keymaps-a)
+  (helix-advice-add 'outline-minor-mode :after #'helix-update-active-keymaps-a)
   (dolist (cmd '(outline-up-heading
                  outline-next-visible-heading
                  outline-previous-visible-heading
                  outline-forward-same-level
                  outline-backward-same-level))
-    (helix-advice-add cmd :before #'helix-deactivate-mark))
+    (helix-advice-add cmd :before #'helix-deactivate-mark-a))
 
   (dolist (keymap (list outline-mode-map outline-minor-mode-map))
     (dolist (state '(normal motion))
@@ -661,7 +661,7 @@ the first target at point."
   (dolist (cmd '(helix-org-up-heading
                  org-next-visible-heading
                  org-previous-visible-heading))
-    (helix-advice-add cmd :after #'helix--maybe-deactivate-mark-a)))
+    (helix-advice-add cmd :after #'helix-maybe-deactivate-mark-a)))
 
 (with-eval-after-load 'org
   (helix-keymap-set org-mode-map :state 'normal
@@ -739,7 +739,7 @@ the first target at point."
 
 ;; (dolist (cmd '(;; org-cycle      ;; TAB
 ;;                org-shifttab)) ;; S-TAB
-;;   (helix-advice-add cmd :before #'helix-deactivate-mark))
+;;   (helix-advice-add cmd :before #'helix-deactivate-mark-a))
 
 ;; (helix-advice-add 'org-cycle :around #'helix-keep-selection-a)
 
