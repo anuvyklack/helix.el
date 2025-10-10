@@ -263,11 +263,13 @@ What is sentence is defined by `forward-sentence-function'."
   "Move point COUNT paragraphs forward (backward if COUNT is negative).
 Returns then count of paragraphs left to move, positive of negative depending
 on sign of COUNT."
-  (helix-motion-loop (dir (or count 1))
-    (cond ((natnump dir) (forward-paragraph))
-          ((not (bobp))
-           (start-of-paragraph-text)
-           (beginning-of-line)))))
+  (let ((paragraph-start    (default-value 'paragraph-start))
+        (paragraph-separate (default-value 'paragraph-separate)))
+    (helix-motion-loop (dir (or count 1))
+      (cond ((natnump dir) (forward-paragraph))
+            ((not (bobp))
+             (start-of-paragraph-text)
+             (beginning-of-line))))))
 
 ;; `helix-function' thing
 
