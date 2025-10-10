@@ -1379,7 +1379,18 @@ already there."
   :merge-selections t
   (interactive "p")
   (helix-push-point)
-  (helix-mark-a-thing 'helix-function count t)
+  (helix-mark-a-thing 'helix-function count)
+  (helix-set-region (save-excursion
+                      ;; Take comments that belongs to the current function.
+                      (goto-char (region-beginning))
+                      (car (bounds-of-thing-at-point 'helix-paragraph)))
+                    (save-excursion
+                      ;; Exclude comments that belongs to the following function.
+                      (goto-char (region-end))
+                      (or (car-safe (bounds-of-thing-at-point 'helix-paragraph))
+                          (point)))
+                    (helix-region-direction)
+                    :adjust)
   (helix-reveal-point-when-on-top))
 
 ;; mi"
