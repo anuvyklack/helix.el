@@ -313,7 +313,6 @@ line(s). With no region, select current line. Uses visual lines if
     (let ((line (if visual-line-mode 'helix-visual-line 'helix-line)))
       (if (use-region-p)
           (progn
-            (helix-restore-newline-at-eol)
             (let ((beg (region-beginning))
                   (end (region-end))
                   (dir (or direction (helix-region-direction))))
