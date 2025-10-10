@@ -436,14 +436,5 @@
     (helix-keymap-global-set :state state
       "z z" #'helix-smooth-scroll-line-to-center)))
 
-(when helix-want-paragraph-motions-like-in-Helix
-  (helix-keymap-global-set :state 'normal
-    "] p" #'helix-mark-forward-to-beginning-of-paragraph
-    "[ p" #'helix-mark-backward-to-beginning-of-paragraph
-    "}"   #'helix-mark-forward-to-beginning-of-paragraph
-    "{"   #'helix-mark-backward-to-beginning-of-paragraph
-    "] f" #'helix-mark-forward-to-beginning-of-function
-    "[ f" #'helix-mark-backward-to-beginning-of-function))
-
 (provide 'helix-keybindings)
 ;;; helix-keybindings.el ends here
