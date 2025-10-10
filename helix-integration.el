@@ -286,12 +286,6 @@ the first target at point."
   (embark-select)
   (next-line))
 
-;;; Compilation
-
-(dolist (cmd '(next-error
-               previous-error))
-  (helix-advice-add cmd :around #'helix-jump-command-a))
-
 ;;; Xref
 
 (with-eval-after-load 'xref
@@ -315,6 +309,55 @@ the first target at point."
     "{"   #'xref-prev-group
     "z j" #'xref-next-group
     "z k" #'xref-prev-group))
+
+;;; Compilation
+
+(helix-advice-add 'next-error     :around #'helix-jump-command-a)
+(helix-advice-add 'previous-error :around #'helix-jump-command-a)
+
+(with-eval-after-load 'compile
+  (helix-keymap-set compilation-minor-mode-map
+    "g"   nil ; unbind `recompile'
+    "g r" #'recompile
+
+    "C-j" #'compilation-next-error
+    "C-k" #'compilation-previous-error
+    "] ]" #'compilation-next-error
+    "[ [" #'compilation-previous-error
+
+    "[ p" #'compilation-previous-file
+    "] p" #'compilation-next-file
+    "{"   #'compilation-previous-file
+    "}"   #'compilation-next-file))
+
+;;; grep-mode
+
+(with-eval-after-load 'grep
+  ;; `grep-mode-map' is inherited from `compilation-minor-mode-map'
+  (helix-keymap-set grep-mode-map :state 'motion
+    "i"   #'wgrep-change-to-wgrep-mode
+    "o"   #'compilation-display-error
+    "g f" #'next-error-follow-minor-mode
+    "g g" #'beginning-of-buffer
+    "G"   #'end-of-buffer
+    "C-j" #'next-error-no-select
+    "C-k" #'previous-error-no-select
+    ))
+
+;;; Wgrep
+
+(with-eval-after-load 'wgrep
+  (helix-advice-add 'wgrep-change-to-wgrep-mode :after #'helix-switch-to-initial-state)
+
+  (helix-advice-add 'wgrep-to-original-mode :before #'helix-deactivate-mark-a)
+  (helix-advice-add 'wgrep-to-original-mode :before #'helix-delete-all-fake-cursors)
+  (helix-advice-add 'wgrep-to-original-mode :after  #'helix-switch-to-initial-state)
+
+  (helix-keymap-set wgrep-mode-map :state 'normal
+    "<remap> <save-buffer>" #'wgrep-finish-edit
+    "<escape>" #'wgrep-exit
+    "Z Z"      #'wgrep-finish-edit
+    "Z Q"      #'wgrep-abort-changes))
 
 ;;; Occur mode
 
@@ -390,35 +433,6 @@ the first target at point."
   (interactive)
   (deadgrep-backward-match)
   (helix-deadgrep-show-result-other-window))
-
-;;; grep-mode
-
-(with-eval-after-load 'grep
-  (helix-keymap-set grep-mode-map :state 'motion
-    "i"   #'wgrep-change-to-wgrep-mode
-    "o"   #'compilation-display-error
-    "g r" #'recompile
-    "g f" #'next-error-follow-minor-mode
-    "g g" #'beginning-of-buffer
-    "G"   #'end-of-buffer
-    ;; "C-j" #'next-error-no-select
-    ;; "C-k" #'previous-error-no-select
-    ))
-
-;;; Wgrep
-
-(with-eval-after-load 'wgrep
-  (helix-advice-add 'wgrep-change-to-wgrep-mode :after #'helix-switch-to-initial-state)
-
-  (helix-advice-add 'wgrep-to-original-mode :before #'helix-deactivate-mark-a)
-  (helix-advice-add 'wgrep-to-original-mode :before #'helix-delete-all-fake-cursors)
-  (helix-advice-add 'wgrep-to-original-mode :after  #'helix-switch-to-initial-state)
-
-  (helix-keymap-set wgrep-mode-map :state 'normal
-    "<remap> <save-buffer>" #'wgrep-finish-edit
-    "<escape>" #'wgrep-exit
-    "Z Z"      #'wgrep-finish-edit
-    "Z Q"      #'wgrep-abort-changes))
 
 ;;; Wdired
 
