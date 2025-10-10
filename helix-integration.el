@@ -392,18 +392,6 @@ in the command loop, and the fake cursors can pick up on those instead."
                  consult-ripgrep))
     (helix-advice-add cmd :before #'helix-deactivate-mark-a)))
 
-;;; Custom
-
-(with-eval-after-load 'cus-edit
-  (helix-set-initial-state 'Custom-mode 'normal)
-  (helix-keymap-set custom-mode-map :state 'normal
-    "] ]" #'widget-forward
-    "[ [" #'widget-backward
-    "z j" #'widget-forward
-    "z k" #'widget-backward
-    "z u" #'Custom-goto-parent
-    "q"   #'Custom-buffer-done))
-
 ;;; Shortdoc
 
 (with-eval-after-load 'shortdoc
