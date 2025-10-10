@@ -37,11 +37,6 @@
   ;; "C-o"   #'org-mark-ring-goto
   ;;         #'org-mark-ring-push
 
-  "[ p"   #'helix-org-mark-paragraph-backward
-  "] p"   #'helix-org-mark-paragraph-forward
-  "{"     #'helix-org-mark-paragraph-backward
-  "}"     #'helix-org-mark-paragraph-forward
-
   "[ s"   #'org-backward-sentence
   "] s"   #'org-forward-sentence
   "[ ."   #'org-backward-sentence
@@ -55,10 +50,6 @@
   "m ."   #'helix-org-mark-inner-sentence
   "m i s" #'helix-org-mark-inner-sentence
   "m a s" #'helix-org-mark-a-sentence
-
-  "m p"   #'helix-org-mark-inner-paragraph
-  "m i p" #'helix-org-mark-inner-paragraph
-  "m a p" #'helix-org-mark-a-paragraph
 
   "m h"   #'org-mark-subtree
   "m i h" #'org-mark-subtree
@@ -170,26 +161,6 @@ text on the second attempt."
                     (progn (org-beginning-of-line) (point))))
 
 ;; org-end-of-line
-
-;; ]p or }
-(helix-define-command helix-org-mark-paragraph-forward (count)
-  :multiple-cursors t
-  :merge-selections t
-  (interactive "p")
-  (let ((paragraph-start    (default-value 'paragraph-start))
-        (paragraph-separate (default-value 'paragraph-separate)))
-    (helix-mark-thing-forward 'helix-paragraph count)))
-
-;; [p or {
-(helix-define-command helix-org-mark-paragraph-backward (count)
-  "Select from point to the start of the paragraph (or COUNT-th next paragraphs).
-If no paragraph at point select COUNT previous paragraphs."
-  :multiple-cursors t
-  :merge-selections t
-  (interactive "p")
-  (let ((paragraph-start    (default-value 'paragraph-start))
-        (paragraph-separate (default-value 'paragraph-separate)))
-    (helix-mark-thing-forward 'helix-paragraph (- count))))
 
 ;; p
 (helix-define-command helix-org-paste-after ()
@@ -307,28 +278,6 @@ In tables, move column to the right."
   :merge-selections t
   (interactive)
   (helix-mark-a-sentence 'helix-org-sentence))
-
-;; mip
-(helix-define-command helix-org-mark-inner-paragraph (count)
-  :multiple-cursors t
-  :merge-selections t
-  (interactive "p")
-  (helix-push-point)
-  (let ((paragraph-start    (default-value 'paragraph-start))
-        (paragraph-separate (default-value 'paragraph-separate)))
-    (helix-mark-inner-thing 'helix-paragraph count t))
-  (helix-reveal-point-when-on-top))
-
-;; map
-(helix-define-command helix-org-mark-a-paragraph (count)
-  :multiple-cursors t
-  :merge-selections t
-  (interactive "p")
-  (helix-push-point)
-  (let ((paragraph-start    (default-value 'paragraph-start))
-        (paragraph-separate (default-value 'paragraph-separate)))
-    (helix-mark-a-thing 'helix-paragraph count t))
-  (helix-reveal-point-when-on-top))
 
 ;;; AST climbing
 
