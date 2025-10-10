@@ -456,16 +456,18 @@ backward and jump to new top location."
                                  (point)))))))
 
 ;; gj
-(helix-define-command helix-avy-next-line ()
+(helix-define-command helix-avy-next-line (direction)
   "Move to a following line, selected using Avy.
 When both linewise selection is active (via `x') and selection expansion
 is enabled (via `v'), the selection will expand linewise to include all lines
 to the chosen one."
   :multiple-cursors nil
-  (interactive)
+  (interactive "p")
+  (setq direction (helix-sign direction))
   (when-let* ((pos (save-excursion
-                     (let ((temporary-goal-column (current-column)))
-                       (-> (helix-collect-positions #'next-line)
+                     (let ((goal-column (window-hscroll)))
+                       (-> (lambda () (interactive) (line-move direction))
+                           (helix-collect-positions)
                            (avy-process)))))
               ((natnump pos)))
     (helix-delete-all-fake-cursors)
@@ -473,33 +475,22 @@ to the chosen one."
     (if helix--extend-selection
         (let ((lines? (helix-logical-lines-p)))
           (helix-set-region (mark) pos)
-          (when lines? (helix-expand-selection-to-full-lines)))
+          (if lines? (helix-expand-selection-to-full-lines)))
       ;; else
       (deactivate-mark)
-      (goto-char pos))))
+      (let ((column (current-column)))
+        (goto-char pos)
+        (move-to-column column)))))
 
 ;; gk
-(helix-define-command helix-avy-previous-line ()
+(helix-define-command helix-avy-previous-line (direction)
   "Move to a preceding line, selected using Avy.
 When both linewise selection is active (via `x') and selection expansion
 is enabled (via `v'), the selection will expand linewise to include all lines
 to the chosen one."
   :multiple-cursors nil
-  (interactive)
-  (when-let* ((pos (save-excursion
-                     (let ((temporary-goal-column (current-column)))
-                       (-> (helix-collect-positions #'previous-line)
-                           (avy-process)))))
-              ((natnump pos)))
-    (helix-delete-all-fake-cursors)
-    (helix-push-point)
-    (if helix--extend-selection
-        (let ((lines? (helix-logical-lines-p)))
-          (helix-set-region (mark) pos)
-          (when lines? (helix-expand-selection-to-full-lines)))
-      ;; else
-      (deactivate-mark)
-      (goto-char pos))))
+  (interactive "p")
+  (helix-avy-next-line (- direction)))
 
 ;;; Changes
 
