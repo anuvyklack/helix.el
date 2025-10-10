@@ -59,14 +59,6 @@ This variable must be set before Helix is loaded!"
   :type 'boolean
   :group 'helix)
 
-(defcustom helix-want-paragraph-motions-like-in-Helix nil
-  "If non-nil `]p', `[p', `]f' and `[f' motions will behave exectly like in
-Helix text editor.
-
-This variable must be set before Helix is loaded!"
-  :type 'boolean
-  :group 'helix)
-
 (defcustom helix-match-fake-cursor-style t
   "If non-nil, attempt to match the `cursor-type' that the user has selected.
 We only can match `bar' and `box' types.
