@@ -832,14 +832,12 @@ from being executed when `helix-multiple-cursors-mode' is active."
         indent-region        ;; =
         indent-rigidly-left  ;; >
         indent-rigidly-right ;; <
-        tab-bar-mouse-down-1
         self-insert-command
         quoted-insert
-        previous-line
         next-line
+        previous-line
         newline
         newline-and-indent
-        open-line
         delete-blank-lines
         transpose-chars
         transpose-lines
@@ -893,8 +891,6 @@ from being executed when `helix-multiple-cursors-mode' is active."
       '(helix-normal-state  ;; ESC
         find-file-at-point  ;; gf
         browse-url-at-point ;; gx
-        tab-next
-        tab-previous
         save-buffer
         exit-minibuffer
         minibuffer-complete-and-exit
@@ -909,8 +905,10 @@ from being executed when `helix-multiple-cursors-mode' is active."
         universal-argument-more
         negative-argument
         digit-argument
+        tab-next
+        tab-previous
+        tab-bar-mouse-down-1
         top-level
-        recenter-top-bottom
         describe-mode
         describe-function
         describe-bindings
