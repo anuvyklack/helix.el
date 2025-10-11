@@ -185,9 +185,6 @@ parameters:
     `(progn
        (defun ,command (,@args)
          ,(or doc "")
-         ;; ;; Place 'interactive' form first.
-         ;; ,(when (eq (caar body) 'interactive)
-         ;;    (pop body))
          ,@body)
        ,@properties)))
 

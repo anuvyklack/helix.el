@@ -203,6 +203,7 @@
   (set-transient-map (keymap-lookup nil "m")))
 
 (helix-define-command helix-mark-negative-argument (arg)
+  "Like `negative-argument' but keep `m' prefix key active."
   :multiple-cursors nil
   (interactive "P")
   (negative-argument arg)
