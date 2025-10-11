@@ -168,18 +168,6 @@ in the command loop, and the fake cursors can pick up on those instead."
   (helix-set-initial-state 'help-mode 'normal)
   (helix-inhibit-insert-state help-mode-map))
 
-(with-eval-after-load 'helpful
-  (helix-set-initial-state 'helpful-mode 'normal)
-  (helix-inhibit-insert-state helpful-mode-map)
-  (put 'helpful-at-point 'multiple-cursors 'false)
-
-  ;; Open links to functions, variables and symbols in helpful buffer
-  ;; in the same window.
-  (add-to-list 'display-buffer-alist
-               '((derived-mode . helpful-mode)    ; condition
-                 display-buffer-reuse-mode-window ; action
-                 (mode . helpful-mode))))         ; args
-
 ;;; Button
 
 (helix-advice-add 'forward-button :before #'helix-deactivate-mark-a)
