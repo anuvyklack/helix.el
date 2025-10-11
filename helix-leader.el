@@ -390,25 +390,29 @@ that were entered in the helix-leader."
            (let ((control-p    (lambda (key) (s-contains? "C-" key)))
                  (no-control-p (lambda (key) (not (s-contains? "C-" key)))))
              (pcase helix-leader--pending-modifier
-               ('literal (let ((keymap (if keys
-                                           (helix-leader--lookup-key keys)
-                                         (helix-leader--leader-keymap))))
-                           (helix-leader--filter-keymap keymap no-control-p)))
-               ('control (if (helix-leader--C-x-or-C-c?)
-                             (helix-leader--C-x-or-C-c-preview-keymap)
-                           ;; else
-                           (let ((keymap (if keys
-                                             (helix-leader--lookup-key keys)
-                                           (helix-leader--leader-keymap))))
-                             (helix-leader--filter-keymap keymap control-p))))
-               ('meta (if-let* ((keys (concat keys (if keys " ") "ESC"))
-                                (keymap (helix-leader--lookup-key keys))
-                                (keymap (helix-leader--filter-keymap keymap no-control-p)))
-                          (define-keymap "ESC" keymap)))
-               ('control-meta (if-let* ((keys (concat keys (if keys " ") "ESC"))
-                                        (keymap (helix-leader--lookup-key keys))
-                                        (keymap (helix-leader--filter-keymap keymap control-p)))
-                                  (define-keymap "ESC" keymap))))))
+               ('literal
+                (let ((keymap (if keys
+                                  (helix-leader--lookup-key keys)
+                                (helix-leader--leader-keymap))))
+                  (helix-leader--filter-keymap keymap no-control-p)))
+               ('control
+                (if (helix-leader--C-x-or-C-c?)
+                    (helix-leader--C-x-or-C-c-preview-keymap)
+                  ;; else
+                  (let ((keymap (if keys
+                                    (helix-leader--lookup-key keys)
+                                  (helix-leader--leader-keymap))))
+                    (helix-leader--filter-keymap keymap control-p))))
+               ('meta
+                (if-let* ((keys (concat keys (if keys " ") "ESC"))
+                          (keymap (helix-leader--lookup-key keys))
+                          (keymap (helix-leader--filter-keymap keymap no-control-p)))
+                    (define-keymap "ESC" keymap)))
+               ('control-meta
+                (if-let* ((keys (concat keys (if keys " ") "ESC"))
+                          (keymap (helix-leader--lookup-key keys))
+                          (keymap (helix-leader--filter-keymap keymap control-p)))
+                    (define-keymap "ESC" keymap))))))
           (keys (if-let* ((keymap (helix-leader--lookup-key keys))
                           ((keymapp keymap)))
                     keymap))

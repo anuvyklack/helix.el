@@ -168,18 +168,6 @@ in the command loop, and the fake cursors can pick up on those instead."
   (helix-set-initial-state 'help-mode 'normal)
   (helix-inhibit-insert-state help-mode-map))
 
-(with-eval-after-load 'helpful
-  (helix-set-initial-state 'helpful-mode 'normal)
-  (helix-inhibit-insert-state helpful-mode-map)
-  (put 'helpful-at-point 'multiple-cursors 'false)
-
-  ;; Open links to functions, variables and symbols in helpful buffer
-  ;; in the same window.
-  (add-to-list 'display-buffer-alist
-               '((derived-mode . helpful-mode)    ; condition
-                 display-buffer-reuse-mode-window ; action
-                 (mode . helpful-mode))))         ; args
-
 ;;; Button
 
 (helix-advice-add 'forward-button :before #'helix-deactivate-mark-a)
@@ -243,48 +231,6 @@ in the command loop, and the fake cursors can pick up on those instead."
 ;; which is also binded to RET. Delete it, to make the binding from the parent
 ;; `read-expression-map' keymap available.
 (keymap-unset read--expression-map "C-j" :remove)
-
-;;; Vertico
-
-(with-eval-after-load 'vertico
-  (helix-keymap-set vertico-map :state 'normal
-    "y"   #'vertico-save ;; Copy current candidate to kill ring
-    "j"   #'vertico-next
-    "k"   #'vertico-previous
-    "g g" #'vertico-first
-    "G"   #'vertico-last)
-  (helix-keymap-set vertico-map
-    "M-j" #'next-history-element
-    "M-k" #'previous-history-element
-    ;; Rebind forward/backward paragraphs keys
-    "<remap> <helix-mark-paragraph-forward>"  #'vertico-next-group
-    "<remap> <helix-mark-paragraph-backward>" #'vertico-previous-group
-    ;; Rebind scrolling keys
-    "<remap> <helix-smooth-scroll-down>"      #'vertico-scroll-up
-    "<remap> <helix-smooth-scroll-up>"        #'vertico-scroll-down
-    "<remap> <helix-smooth-scroll-page-down>" #'vertico-scroll-up
-    "<remap> <helix-smooth-scroll-page-up>"   #'vertico-scroll-down))
-
-;;; Embark
-
-(with-eval-after-load 'embark
-  (helix-keymap-set embark-collect-mode-map
-    "m" #'helix-embark-select
-    "u" #'helix-embark-select
-    "y" #'embark-copy-as-kill))
-
-(with-eval-after-load 'embark-consult
-  (helix-keymap-set embark-consult-rerun-map :state 'motion
-    "g r" #'embark-rerun-collect-or-export))
-
-(defun helix-embark-select ()
-  "Add or remove the target from the current buffer's selection.
-You can act on all selected targets at once with `embark-act-all'.
-When called from outside `embark-act' this command will select
-the first target at point."
-  (interactive)
-  (embark-select)
-  (next-line))
 
 ;;; Xref
 
@@ -374,66 +320,6 @@ the first target at point."
     "g o" 'occur-mode-goto-occurrence-other-window)
   (helix-advice-add 'occur-mode-goto-occurrence :around #'helix-jump-command-a))
 
-;;; Deadgrep
-
-(with-eval-after-load 'deadgrep
-  (add-hook 'deadgrep-mode-hook
-            (defun helix--deadgrep-mode-hook ()
-              ;; TODO: upstream this
-              (setq-local revert-buffer-function
-                          (lambda (_ignore-auto _noconfirm)
-                            (deadgrep-restart)))))
-  (helix-keymap-set deadgrep-mode-map :state 'motion
-    "RET" #'deadgrep-visit-result-other-window
-    "o"   #'helix-deadgrep-show-result-other-window
-    "C-o" #'helix-deadgrep-show-result-other-window
-    "M-n" #'helix-deadgrep-forward-match-show-other-window
-    "M-p" #'helix-deadgrep-backward-match-show-other-window
-    "n"   #'deadgrep-forward-match
-    "N"   #'deadgrep-backward-match
-    "C-j" #'helix-deadgrep-forward-match-show-other-window
-    "C-k" #'helix-deadgrep-backward-match-show-other-window
-    "z j" #'deadgrep-forward-filename
-    "z k" #'deadgrep-backward-filename
-    "z u" #'deadgrep-parent-directory
-    "a"   #'deadgrep-incremental ;; `a' for amend
-    "i"   #'deadgrep-edit-mode
-    "g r" #'deadgrep-restart)
-  (helix-keymap-set deadgrep-edit-mode-map :state 'normal
-    "<escape>" #'deadgrep-mode
-    "Z Z" #'deadgrep-mode
-    "o"   #'undefined
-    "O"   #'undefined
-    "J"   #'undefined)
-
-  (helix-advice-add 'deadgrep-mode :before #'helix-deactivate-mark-a)
-  (helix-advice-add 'deadgrep-mode :before #'helix-delete-all-fake-cursors)
-
-  (dolist (cmd '(deadgrep-visit-result
-                 deadgrep-visit-result-other-window))
-    (helix-advice-add cmd :around #'helix-jump-command-a)))
-
-(defun helix-deadgrep-show-result-other-window ()
-  "Show search result at point in another window."
-  (interactive)
-  (unless next-error-follow-minor-mode
-    (helix-recenter-point-on-jump
-      (save-selected-window
-        (deadgrep-visit-result-other-window)
-        (deactivate-mark)))))
-
-(defun helix-deadgrep-forward-match-show-other-window ()
-  "Move point to next search result and show it in another window."
-  (interactive)
-  (deadgrep-forward-match)
-  (helix-deadgrep-show-result-other-window))
-
-(defun helix-deadgrep-backward-match-show-other-window ()
-  "Move point to previous search result and show it in another window."
-  (interactive)
-  (deadgrep-backward-match)
-  (helix-deadgrep-show-result-other-window))
-
 ;;; Wdired
 
 (with-eval-after-load 'wdired
@@ -468,125 +354,6 @@ the first target at point."
                  wdired-abort-changes
                  wdired-exit))
     (put cmd 'multiple-cursors 'false)))
-
-;;; Corfu
-
-(with-eval-after-load 'corfu
-  ;; Close corfu popup on Insert state exit.
-  (add-hook 'helix-insert-state-exit-hook #'corfu-quit)
-
-  (helix-keymap-set corfu-map
-    "C-SPC" #'corfu-insert-separator
-
-    "C-k" #'corfu-previous
-    "C-j" #'corfu-next
-
-    "C-h" #'corfu-info-documentation
-    "C-l" #'corfu-info-location
-
-    "C-f" #'corfu-scroll-up
-    "C-b" #'corfu-scroll-down
-    "C-u" #'corfu-scroll-down
-    "C-d" #'corfu-scroll-up))
-
-;;; Consult
-
-(with-eval-after-load 'consult
-  (helix-cache-input consult--read)
-
-  (put 'consult-yank-pop 'multiple-cursors t) ; Execute for all cursors.
-
-  (dolist (cmd '(consult-line
-                 consult-mark
-                 consult-global-mark
-                 consult-imenu
-                 consult-outline
-                 consult-grep
-                 consult-git-grep
-                 consult-ripgrep))
-    (helix-advice-add cmd :before #'helix-deactivate-mark-a)))
-
-;;; Outline
-
-(with-eval-after-load 'outline
-  (helix-advice-add 'outline-minor-mode :after #'helix-update-active-keymaps-a)
-  (dolist (cmd '(outline-up-heading
-                 outline-next-visible-heading
-                 outline-previous-visible-heading
-                 outline-forward-same-level
-                 outline-backward-same-level))
-    (helix-advice-add cmd :before #'helix-deactivate-mark-a))
-
-  (dolist (keymap (list outline-mode-map outline-minor-mode-map))
-    (dolist (state '(normal motion))
-      (helix-keymap-set keymap :state state
-        "z <tab>"     #'outline-cycle
-        "z <backtab>" #'outline-cycle-buffer
-        "z <return>"  #'outline-insert-heading
-        "m h"   #'outline-mark-subtree  ; `h' is for heading
-        "m i h" #'outline-mark-subtree
-        "z j"   #'outline-next-visible-heading
-        "z k"   #'outline-previous-visible-heading
-        "z C-j" #'outline-forward-same-level
-        "z C-k" #'outline-backward-same-level
-        "z u"   #'outline-up-heading
-        "z o"   #'helix-outline-open
-        "z c"   #'outline-hide-subtree
-        "z r"   #'outline-show-all
-        "z m"   #'outline-hide-sublevels
-        "z 2"   #'helix-show-2-sublevels
-        "z p"   #'helix-outline-hide-other
-        "z O"   #'outline-show-branches
-        "z <"   #'outline-promote
-        "z >"   #'outline-demote
-        "z M-h" #'outline-promote
-        "z M-l" #'outline-demote
-        "z M-j" #'outline-move-subtree-down
-        "z M-k" #'outline-move-subtree-up)))
-
-  (setq outline-navigation-repeat-map
-        (define-keymap
-          "u"   #'outline-up-heading
-          "j"   #'outline-next-visible-heading
-          "k"   #'outline-previous-visible-heading
-          "C-j" #'outline-forward-same-level
-          "C-k" #'outline-backward-same-level))
-
-  (setq outline-editing-repeat-map
-        (define-keymap
-          "<"   #'outline-promote
-          ">"   #'outline-demote
-          "M-h" #'outline-promote
-          "M-l" #'outline-demote
-          "M-j" #'outline-move-subtree-down
-          "M-k" #'outline-move-subtree-up)))
-
-(defun helix-outline-open ()
-  (interactive)
-  (outline-show-entry)
-  (outline-show-children))
-
-(defun helix-outline-hide-other ()
-  (interactive)
-  (outline-hide-other)
-  (outline-show-branches))
-
-(defun helix-show-2-sublevels ()
-  "Remain 2 top levels of headings visible."
-  (interactive)
-  (outline-hide-sublevels 2))
-
-;;; Custom
-
-(with-eval-after-load 'cus-edit
-  (helix-set-initial-state 'Custom-mode 'normal)
-  (helix-keymap-set custom-mode-map :state 'normal
-    "] ]" #'widget-forward
-    "[ [" #'widget-backward
-    "z j" #'widget-forward
-    "z k" #'widget-backward
-    "z u" #'Custom-goto-parent
-    "q"   #'Custom-buffer-done))
 
 ;;; Shortdoc
 
@@ -656,9 +423,6 @@ the first target at point."
   (interactive)
   (-when-let ((beg _ _ end) (helix-surround-4-bounds-at-point "`" "'"))
     (helix-set-region beg end)))
-
-
-
 
 (provide 'helix-integration)
 ;;; helix-integration.el ends here
