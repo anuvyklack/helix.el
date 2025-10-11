@@ -232,27 +232,6 @@ in the command loop, and the fake cursors can pick up on those instead."
 ;; `read-expression-map' keymap available.
 (keymap-unset read--expression-map "C-j" :remove)
 
-;;; Embark
-
-(with-eval-after-load 'embark
-  (helix-keymap-set embark-collect-mode-map
-    "m" #'helix-embark-select
-    "u" #'helix-embark-select
-    "y" #'embark-copy-as-kill))
-
-(with-eval-after-load 'embark-consult
-  (helix-keymap-set embark-consult-rerun-map :state 'motion
-    "g r" #'embark-rerun-collect-or-export))
-
-(defun helix-embark-select ()
-  "Add or remove the target from the current buffer's selection.
-You can act on all selected targets at once with `embark-act-all'.
-When called from outside `embark-act' this command will select
-the first target at point."
-  (interactive)
-  (embark-select)
-  (next-line))
-
 ;;; Xref
 
 (with-eval-after-load 'xref
