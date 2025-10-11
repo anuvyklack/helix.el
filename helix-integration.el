@@ -17,8 +17,8 @@
 
 (require 'helix-core)
 (require 'helix-multiple-cursors-core)
+(require 'helix-common)
 (require 'helix-commands)
-(require 'helix-leader)
 
 ;;; Distinguish `TAB' from `C-i' and `RET' from `C-m'
 
@@ -97,11 +97,9 @@ in the command loop, and the fake cursors can pick up on those instead."
 
 ;;; Selection (mark & region)
 
-(helix-advice-add 'exchange-point-and-mark :after #'helix-reveal-point-when-on-top)
-
-(dolist (command '(fill-region    ;; gq
-                   indent-region  ;; =
-                   comment-dwim)) ;; gc
+(dolist (command '(fill-region    ; gq
+                   indent-region  ; =
+                   comment-dwim)) ; gc
   (helix-advice-add command :around #'helix-keep-selection-a))
 
 (helix-advice-add 'clone-indirect-buffer :before #'helix-deactivate-mark-a)
@@ -110,26 +108,26 @@ in the command loop, and the fake cursors can pick up on those instead."
 
 (with-eval-after-load 'eldoc
   ;; Add motion commands to the `eldoc-message-commands' obarray.
-  (eldoc-add-command 'helix-backward-char        ;; h
-                     'helix-forward-char         ;; l
-                     'helix-next-line            ;; j
-                     'helix-previous-line        ;; k
-                     'helix-forward-word-start   ;; w
-                     'helix-forward-WORD-start   ;; W
-                     'helix-backward-word-start  ;; b
-                     'helix-backward-WORD-start  ;; B
-                     'helix-forward-word-end     ;; e
-                     'helix-forward-WORD-end     ;; E
-                     'helix-first-non-blank      ;; gh
-                     'helix-end-of-line-command  ;; gl
-                     'helix-search-forward       ;; /
-                     'helix-search-backward      ;; ?
-                     'helix-search-next          ;; n
-                     'helix-search-previous      ;; N
-                     'helix-find-char-forward    ;; f
-                     'helix-find-char-backward   ;; F
-                     'helix-till-char-forward    ;; t
-                     'helix-till-char-backward)) ;; T
+  (eldoc-add-command 'helix-backward-char        ; h
+                     'helix-forward-char         ; l
+                     'helix-next-line            ; j
+                     'helix-previous-line        ; k
+                     'helix-forward-word-start   ; w
+                     'helix-forward-WORD-start   ; W
+                     'helix-backward-word-start  ; b
+                     'helix-backward-WORD-start  ; B
+                     'helix-forward-word-end     ; e
+                     'helix-forward-WORD-end     ; E
+                     'helix-first-non-blank      ; gh
+                     'helix-end-of-line-command  ; gl
+                     'helix-search-forward       ; /
+                     'helix-search-backward      ; ?
+                     'helix-search-next          ; n
+                     'helix-search-previous      ; N
+                     'helix-find-char-forward    ; f
+                     'helix-find-char-backward   ; F
+                     'helix-till-char-forward    ; t
+                     'helix-till-char-backward)) ; T
 
 ;;; winner-mode & tab-bar-history-mode
 
@@ -482,8 +480,7 @@ the first target at point."
 (with-eval-after-load 'consult
   (helix-cache-input consult--read)
 
-  ;; Execute for all cursors.
-  (put 'consult-yank-pop 'multiple-cursors t)
+  (put 'consult-yank-pop 'multiple-cursors t) ; Execute for all cursors.
 
   (dolist (cmd '(consult-line
                  consult-mark
