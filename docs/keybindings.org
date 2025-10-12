@@ -233,7 +233,7 @@ for =m= prefix. Also, this is in line with Emacs tradition which has commands li
 - =gx= :: ~browse-url-at-point~ (like in Vim)
 
 * Motion
-In Motion state by default only following keys are binded:
+In Motion state by default only following keys are bound:
 
 - =C-w= prefix for windows layout manipulation.
 
