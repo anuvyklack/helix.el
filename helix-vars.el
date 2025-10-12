@@ -49,7 +49,9 @@
     helix-embark
     helix-vertico
     helix-corfu
-    helix-deadgrep)
+    helix-deadgrep
+    ;; helix-edit-indirect ; alternative `zn' version
+    )
   "List of modules Helix will be loaded with.
 This variable must be set before Helix is loaded!"
   :type '(list symbol)
