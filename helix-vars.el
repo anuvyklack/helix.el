@@ -37,16 +37,21 @@
              (add-hook 'minibuffer-setup-hook #'helix-local-mode)
            (remove-hook 'minibuffer-setup-hook #'helix-local-mode))))
 
-(defcustom helix-modules '(helix-corfu
-                           helix-custom
-                           helix-deadgrep
-                           helix-embark
-                           helix-helpful
-                           helix-info
-                           helix-org-mode
-                           helix-outline
-                           helix-vertico)
-  "This variable must be set before Helix is loaded!"
+(defcustom helix-modules
+  '(helix-leader
+    helix-custom
+    helix-info
+    helix-outline
+    helix-org-mode
+
+    ;; Following modules require external dependencies.
+    helix-helpful
+    helix-embark
+    helix-vertico
+    helix-corfu
+    helix-deadgrep)
+  "List of modules Helix will be loaded with.
+This variable must be set before Helix is loaded!"
   :type '(list symbol)
   :group 'helix)
 
@@ -58,12 +63,6 @@
 (defcustom helix-regex-history-max 16
   "Maximum length of regexp search ring before oldest elements are thrown away."
   :type 'integer
-  :group 'helix)
-
-(defcustom helix-want-helix-leader t
-  "If non-nil helix-leader keys will be binded.
-This variable must be set before Helix is loaded!"
-  :type 'boolean
   :group 'helix)
 
 (defcustom helix-want-zz-scroll-to-center nil
