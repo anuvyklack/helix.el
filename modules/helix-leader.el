@@ -10,10 +10,6 @@
 ;;
 ;;; Commentary:
 ;;
-;;  Description
-;;
-;;; Code:
-;;
 ;; │ Key  -> │ `read-key'   ->  │ `single-key-description' │
 ;; ├─────────┼──────────────────┼──────────────────────────┤
 ;; │ TAB     │ 9                │ "TAB"                    │
@@ -36,16 +32,22 @@
 ;; │ C-M-RET │ 'C-M-return      │ "C-M-<return>"           │
 ;; │ M-S-RET │ 'M-S-return      │ "M-S-<return>"           │
 ;;
+;;; Code:
 
-(require 'dash)
 (require 's)
+(require 'dash)
 (require 'helix-macros)
+(require 'helix-core)
 
-(declare-function which-key--create-buffer-and-show "which-key"
-                  (&optional prefix-keys from-keymap filter prefix-title))
-(declare-function which-key--hide-popup "which-key" ())
-(defvar which-key-show-prefix)
-(defvar which-key-idle-delay)
+;;; Keybindings
+
+(dolist (state '(normal motion))
+  (helix-keymap-global-set :state state
+    "SPC"      'helix-leader
+    "C-w SPC"  'helix-leader-other-window
+    "C-h k"    'helix-leader-describe-key
+    "<f1> k"   'helix-leader-describe-key
+    "<help> k" 'helix-leader-describe-key))
 
 ;;; Custom variables
 
@@ -355,6 +357,12 @@ different events."
       (keymap-lookup nil "C-c")))
 
 ;;; Which-key integration
+
+(declare-function which-key--create-buffer-and-show "which-key"
+                  (&optional prefix-keys from-keymap filter prefix-title))
+(declare-function which-key--hide-popup "which-key" ())
+(defvar which-key-show-prefix)
+(defvar which-key-idle-delay)
 
 (defun helix-leader--show-preview ()
   "Show preview with possible continuations for the keys
