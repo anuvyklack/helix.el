@@ -22,7 +22,7 @@
 ;;; Universal argument
 
 ;; Bind `universal-argument' to `M-u' since `C-u' is used for scrolling.
-;; By default `M-u' is binded to `upcase-word'.
+;; By default `M-u' is bound to `upcase-word'.
 (keymap-global-set "M-u" #'universal-argument)
 (keymap-set universal-argument-map "M-u" #'universal-argument-more)
 ;; (helix-keymap-global-set :state 'normal "M-u" #'universal-argument)
@@ -209,7 +209,7 @@
   (negative-argument arg)
   (set-transient-map (keymap-lookup nil "m")))
 
-;; Do not show keys binded to `helix-mark-digit-argument' and
+;; Do not show keys bound to `helix-mark-digit-argument' and
 ;; `helix-mark-negative-argument' commands in which-key popup.
 (with-eval-after-load 'which-key
   (defvar which-key-replacement-alist)

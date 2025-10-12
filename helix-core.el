@@ -15,7 +15,7 @@
 ;; in the sense that they are not created with `define-minor-mode' macro.
 ;;
 ;; The internal mechanism in general terms is as follows: `helix-mode-map-alist'
-;; symbol is stored in `emulation-mode-map-alists' list, and keymap binded to it
+;; symbol is stored in `emulation-mode-map-alists' list, and keymap bound to it
 ;; is changed on every Helix state change.
 ;;
 ;; Every state has general globally shared keymap, and "nested" keymaps that are
