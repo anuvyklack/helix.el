@@ -198,10 +198,11 @@ RANGES is a list of cons cells with positions (START . END)."
     (read-string prompt nil 'helix-regex-history)))
 
 (defun helix-add-to-regex-history (regex)
-  (let ((history-delete-duplicates t))
-    (add-to-history 'helix-regex-history regex helix-regex-history-max))
-  (set-register '/ regex)
-  (message "Register / set: %s" regex))
+  (when (length> regex 2) ; Reduce the noise level.
+    (let ((history-delete-duplicates t))
+      (add-to-history 'helix-regex-history regex helix-regex-history-max))
+    (set-register '/ regex)
+    (message "Register / set: %s" regex)))
 
 (defun helix-search-pattern ()
   "Return regexp from \"/\" register."
