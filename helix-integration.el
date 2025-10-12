@@ -70,9 +70,20 @@ in the command loop, and the fake cursors can pick up on those instead."
 (helix-cache-input read-char-from-minibuffer)
 (helix-cache-input register-read-with-preview)  ; used by read-string
 
-;; Commands that don't work with multiple-cursors
+;;; Commands that don't work with multiple-cursors
+
 (helix-unsupported-command isearch-forward)
 (helix-unsupported-command isearch-backward)
+
+;; Between invocations, `cycle-spacing' stores internal data in the
+;; `cycle-spacing--context' variable. The original position is stored
+;; as a number rather than a marker, and invalidates when other cursors
+;; modify the buffer content.
+(helix-unsupported-command cycle-spacing)
+
+;; Replace it with `just-one-space' while multiple-cursors are active.
+(helix-keymap-set helix-multiple-cursors-mode-map
+  "<remap> <cycle-spacing>" #'just-one-space)
 
 ;;; Advices for built-in commands
 
