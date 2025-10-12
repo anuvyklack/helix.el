@@ -253,8 +253,8 @@ in the command loop, and the fake cursors can pick up on those instead."
   "C-j" #'next-line-or-history-element
   "C-k" #'previous-line-or-history-element)
 
-;; `C-j' in `read--expression-map' is binded to `read--expression-try-read'
-;; which is also binded to `RET'. Remove it, to make the binding from the
+;; `C-j' in `read--expression-map' is bound to `read--expression-try-read'
+;; which is also bound to `RET'. Remove it, to make the binding from the
 ;; parent `read-expression-map' keymap available.
 (keymap-unset read--expression-map "C-j" :remove)
 
