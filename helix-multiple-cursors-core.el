@@ -595,6 +595,7 @@ first fake cursor with `helix-create-fake-cursor', and disabled when you
 delete last one with `helix-delete-fake-cursor'."
   :global nil
   :interactive nil
+  :keymap (make-sparse-keymap)
   (if helix-multiple-cursors-mode
       (helix--disable-minor-modes-incompatible-with-multiple-cursors)
     (helix--delete-all-fake-cursors)
