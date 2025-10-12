@@ -198,8 +198,9 @@ RANGES is a list of cons cells with positions (START . END)."
     (read-string prompt nil 'helix-regex-history)))
 
 (defun helix-add-to-regex-history (regex)
-  (let ((history-delete-duplicates t))
-    (add-to-history 'helix-regex-history regex helix-regex-history-max))
+  (when (length> regex 2) ;; Reduce the noise level.
+    (let ((history-delete-duplicates t))
+      (add-to-history 'helix-regex-history regex helix-regex-history-max)))
   (set-register '/ regex)
   (message "Register / set: %s" regex))
 
@@ -228,9 +229,8 @@ RANGES is a list of cons cells with positions (START . END)."
       (when-let* ((pattern (condition-case nil
                                (minibuffer-with-setup-hook #'helix-search--start-session
                                  (helix-read-regexp (if (< 0 direction) "/" "?")))
-                             (quit
-                              (when region
-                                (apply #'helix-set-region region)))))
+                             (quit (when region
+                                     (apply #'helix-set-region region)))))
                   ((not (string-empty-p pattern))))
         (helix-add-to-regex-history pattern)
         pattern))))
