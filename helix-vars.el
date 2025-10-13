@@ -366,10 +366,6 @@ use `helix-state-property'.")
 Determine how many lines should be scrolled.
 Default value is 0 - scroll half the screen.")
 
-(defvar helix-mark-map (make-sparse-keymap)
-  "Keymap for Helix `m' prefix key commands.")
-(fset 'helix-mark-map helix-mark-map)
-
 (defvar helix-window-map (make-sparse-keymap)
   "Keymap for window-related commands.")
 (fset 'helix-window-map helix-window-map)
