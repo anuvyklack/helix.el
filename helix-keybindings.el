@@ -37,22 +37,13 @@
 (helix-keymap-global-set :state 'normal
   ":" #'execute-extended-command
 
-  "0" #'digit-argument
-  "1" #'digit-argument
-  "2" #'digit-argument
-  "3" #'digit-argument
-  "4" #'digit-argument
-  "5" #'digit-argument
-  "6" #'digit-argument
-  "7" #'digit-argument
-  "8" #'digit-argument
-  "9" #'digit-argument
-
-  ;; Motions
+  ;; Arrows
   "<left>"  #'helix-backward-char
   "<down>"  #'helix-next-line
   "<up>"    #'helix-previous-line
   "<right>" #'helix-forward-char
+
+  ;; Motions
   "h"   #'helix-backward-char
   "j"   #'helix-next-line
   "k"   #'helix-previous-line
@@ -148,6 +139,12 @@
   "_"   #'helix-trim-whitespaces-from-selection
   "&"   #'helix-align-selections
 
+  ;; Surround
+  "m m" #'helix-jump-to-match-item
+  "m s" #'helix-surround
+  "m d" #'helix-surround-delete
+  "m r" #'helix-surround-change
+
   ;; Search
   "/"   #'helix-search-forward
   "?"   #'helix-search-backward
@@ -173,6 +170,7 @@
   "C-<i>" #'helix-forward-mark-ring
   "C-S-o" #'helix-backward-global-mark-ring
   "C-S-i" #'helix-forward-global-mark-ring
+  "g a"   #'describe-char
   "g c"   #'comment-dwim
   "g i"   #'imenu
   "g f"   #'find-file-at-point
@@ -193,7 +191,7 @@
   "[ x" #'xref-go-back
   "] x" #'xref-go-forward)
 
-;;;; `m' keybindings
+;;;; Mark commands
 
 (helix-define-command helix-mark-digit-argument (arg)
   "Like `digit-argument' but keep `m' prefix key active."
@@ -211,129 +209,118 @@
 
 ;; Do not show keys bound to `helix-mark-digit-argument' and
 ;; `helix-mark-negative-argument' commands in which-key popup.
-(with-eval-after-load 'which-key
-  (defvar which-key-replacement-alist)
-  (dolist (elt '(((nil . "helix-mark-digit-argument") . ignore)
-                 ((nil . "helix-mark-negative-argument") . ignore)))
-    (cl-pushnew elt which-key-replacement-alist :test #'equal)))
+(dolist (cmd '(helix-mark-digit-argument
+               helix-mark-negative-argument))
+  (cl-pushnew `((nil . ,(symbol-name cmd)) . ignore)
+              which-key-replacement-alist :test #'equal))
 
 (helix-keymap-global-set :state 'normal
-  "m" #'helix-mark-map)
+  "m -" #'helix-mark-negative-argument
+  "m 0" #'helix-mark-digit-argument
+  "m 1" #'helix-mark-digit-argument
+  "m 2" #'helix-mark-digit-argument
+  "m 3" #'helix-mark-digit-argument
+  "m 4" #'helix-mark-digit-argument
+  "m 5" #'helix-mark-digit-argument
+  "m 6" #'helix-mark-digit-argument
+  "m 7" #'helix-mark-digit-argument
+  "m 8" #'helix-mark-digit-argument
+  "m 9" #'helix-mark-digit-argument
 
-(helix-keymap-set helix-mark-map
-  "-" #'helix-mark-negative-argument
-  "0" #'helix-mark-digit-argument
-  "1" #'helix-mark-digit-argument
-  "2" #'helix-mark-digit-argument
-  "3" #'helix-mark-digit-argument
-  "4" #'helix-mark-digit-argument
-  "5" #'helix-mark-digit-argument
-  "6" #'helix-mark-digit-argument
-  "7" #'helix-mark-digit-argument
-  "8" #'helix-mark-digit-argument
-  "9" #'helix-mark-digit-argument
-
-  ;; Surround
-  "m" #'helix-jump-to-match-item
-  "s" #'helix-surround
-  "d" #'helix-surround-delete
-  "r" #'helix-surround-change
-
-  ;; Mark
-  "w"   #'helix-mark-inner-word
-  "i w" #'helix-mark-inner-word
-  "a w" #'helix-mark-a-word
-  "W"   #'helix-mark-inner-WORD
-  "i W" #'helix-mark-inner-WORD
-  "a W" #'helix-mark-a-WORD
+  "m w"   #'helix-mark-inner-word
+  "m i w" #'helix-mark-inner-word
+  "m a w" #'helix-mark-a-word
+  "m W"   #'helix-mark-inner-WORD
+  "m i W" #'helix-mark-inner-WORD
+  "m a W" #'helix-mark-a-WORD
   ;; sentence
-  "."   #'helix-mark-inner-sentence
-  "i ." #'helix-mark-inner-sentence
-  "a ." #'helix-mark-a-sentence
-  "i s" #'helix-mark-inner-sentence
-  "a s" #'helix-mark-a-sentence
+  "m ."   #'helix-mark-inner-sentence
+  "m i ." #'helix-mark-inner-sentence
+  "m a ." #'helix-mark-a-sentence
+  "m i s" #'helix-mark-inner-sentence
+  "m a s" #'helix-mark-a-sentence
   ;; function
-  "f"   #'helix-mark-inner-function
-  "i f" #'helix-mark-inner-function
-  "a f" #'helix-mark-a-function
+  "m f"   #'helix-mark-inner-function
+  "m i f" #'helix-mark-inner-function
+  "m a f" #'helix-mark-a-function
   ;; paragraph
-  "p"   #'helix-mark-inner-paragraph
-  "i p" #'helix-mark-inner-paragraph
-  "a p" #'helix-mark-a-paragraph
+  "m p"   #'helix-mark-inner-paragraph
+  "m i p" #'helix-mark-inner-paragraph
+  "m a p" #'helix-mark-a-paragraph
 
-  "\""   #'helix-mark-inner-double-quoted
-  "i \"" #'helix-mark-inner-double-quoted
-  "a \"" #'helix-mark-a-double-quoted
-  "'"    #'helix-mark-inner-single-quoted
-  "i '"  #'helix-mark-inner-single-quoted
-  "a '"  #'helix-mark-a-single-quoted
-  "`"    #'helix-mark-inner-back-quoted
-  "i `"  #'helix-mark-inner-back-quoted
-  "a `"  #'helix-mark-a-back-quoted
+  "m \""   #'helix-mark-inner-double-quoted
+  "m i \"" #'helix-mark-inner-double-quoted
+  "m a \"" #'helix-mark-a-double-quoted
+  "m '"    #'helix-mark-inner-single-quoted
+  "m i '"  #'helix-mark-inner-single-quoted
+  "m a '"  #'helix-mark-a-single-quoted
+  "m `"    #'helix-mark-inner-back-quoted
+  "m i `"  #'helix-mark-inner-back-quoted
+  "m a `"  #'helix-mark-a-back-quoted
 
-  "("   #'helix-mark-inner-paren
-  ")"   #'helix-mark-inner-paren
-  "i (" #'helix-mark-inner-paren
-  "i )" #'helix-mark-inner-paren
-  "a (" #'helix-mark-a-paren
-  "a )" #'helix-mark-a-paren
+  "m ("   #'helix-mark-inner-paren
+  "m )"   #'helix-mark-inner-paren
+  "m i (" #'helix-mark-inner-paren
+  "m i )" #'helix-mark-inner-paren
+  "m a (" #'helix-mark-a-paren
+  "m a )" #'helix-mark-a-paren
 
-  "["   #'helix-mark-inner-bracket
-  "]"   #'helix-mark-inner-bracket
-  "i [" #'helix-mark-inner-bracket
-  "i ]" #'helix-mark-inner-bracket
-  "a [" #'helix-mark-a-bracket
-  "a ]" #'helix-mark-a-bracket
+  "m ["   #'helix-mark-inner-bracket
+  "m ]"   #'helix-mark-inner-bracket
+  "m i [" #'helix-mark-inner-bracket
+  "m i ]" #'helix-mark-inner-bracket
+  "m a [" #'helix-mark-a-bracket
+  "m a ]" #'helix-mark-a-bracket
 
-  "{"   #'helix-mark-inner-curly
-  "}"   #'helix-mark-inner-curly
-  "i {" #'helix-mark-inner-curly
-  "i }" #'helix-mark-inner-curly
-  "a {" #'helix-mark-a-curly
-  "a }" #'helix-mark-a-curly
+  "m {"   #'helix-mark-inner-curly
+  "m }"   #'helix-mark-inner-curly
+  "m i {" #'helix-mark-inner-curly
+  "m i }" #'helix-mark-inner-curly
+  "m a {" #'helix-mark-a-curly
+  "m a }" #'helix-mark-a-curly
 
-  "<"   #'helix-mark-inner-angle
-  ">"   #'helix-mark-inner-angle
-  "i <" #'helix-mark-inner-angle
-  "i >" #'helix-mark-inner-angle
-  "a <" #'helix-mark-an-angle
-  "a >" #'helix-mark-an-angle
+  "m <"   #'helix-mark-inner-angle
+  "m >"   #'helix-mark-inner-angle
+  "m i <" #'helix-mark-inner-angle
+  "m i >" #'helix-mark-inner-angle
+  "m a <" #'helix-mark-an-angle
+  "m a >" #'helix-mark-an-angle
 
-  "!"   #'helix-mark-inner-surround
-  "@"   #'helix-mark-inner-surround
-  "#"   #'helix-mark-inner-surround
-  "$"   #'helix-mark-inner-surround
-  "%"   #'helix-mark-inner-surround
-  "^"   #'helix-mark-inner-surround
-  "&"   #'helix-mark-inner-surround
-  "*"   #'helix-mark-inner-surround
-  "~"   #'helix-mark-inner-surround
-  "="   #'helix-mark-inner-surround
-  "_"   #'helix-mark-inner-surround
+  "m !"   #'helix-mark-inner-surround
+  "m @"   #'helix-mark-inner-surround
+  "m #"   #'helix-mark-inner-surround
+  "m $"   #'helix-mark-inner-surround
+  "m %"   #'helix-mark-inner-surround
+  "m ^"   #'helix-mark-inner-surround
+  "m &"   #'helix-mark-inner-surround
+  "m *"   #'helix-mark-inner-surround
+  "m ~"   #'helix-mark-inner-surround
+  "m ="   #'helix-mark-inner-surround
+  "m _"   #'helix-mark-inner-surround
 
-  "i !" #'helix-mark-inner-surround
-  "i @" #'helix-mark-inner-surround
-  "i #" #'helix-mark-inner-surround
-  "i $" #'helix-mark-inner-surround
-  "i %" #'helix-mark-inner-surround
-  "i ^" #'helix-mark-inner-surround
-  "i &" #'helix-mark-inner-surround
-  "i *" #'helix-mark-inner-surround
-  "i ~" #'helix-mark-inner-surround
-  "i =" #'helix-mark-inner-surround
-  "i _" #'helix-mark-inner-surround
+  "m i !" #'helix-mark-inner-surround
+  "m i @" #'helix-mark-inner-surround
+  "m i #" #'helix-mark-inner-surround
+  "m i $" #'helix-mark-inner-surround
+  "m i %" #'helix-mark-inner-surround
+  "m i ^" #'helix-mark-inner-surround
+  "m i &" #'helix-mark-inner-surround
+  "m i *" #'helix-mark-inner-surround
+  "m i ~" #'helix-mark-inner-surround
+  "m i =" #'helix-mark-inner-surround
+  "m i _" #'helix-mark-inner-surround
 
-  "a !" #'helix-mark-a-surround
-  "a @" #'helix-mark-a-surround
-  "a #" #'helix-mark-a-surround
-  "a $" #'helix-mark-a-surround
-  "a %" #'helix-mark-a-surround
-  "a ^" #'helix-mark-a-surround
-  "a &" #'helix-mark-a-surround
-  "a *" #'helix-mark-a-surround
-  "a ~" #'helix-mark-a-surround
-  "a =" #'helix-mark-a-surround
-  "a _" #'helix-mark-a-surround)
+  "m a !" #'helix-mark-a-surround
+  "m a @" #'helix-mark-a-surround
+  "m a #" #'helix-mark-a-surround
+  "m a $" #'helix-mark-a-surround
+  "m a %" #'helix-mark-a-surround
+  "m a ^" #'helix-mark-a-surround
+  "m a &" #'helix-mark-a-surround
+  "m a *" #'helix-mark-a-surround
+  "m a ~" #'helix-mark-a-surround
+  "m a =" #'helix-mark-a-surround
+  "m a _" #'helix-mark-a-surround)
 
 ;;;; Windows
 
