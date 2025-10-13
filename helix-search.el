@@ -468,40 +468,40 @@ If INVERT is non-nil — remove selections that match regexp."
                                      :face 'helix-search-highlight))
          (case-fold-search case)
          (deactivate-mark nil))
-    (let ((search (lambda (dir)
-                    (let ((case-fold-search case))
-                      (if exclusive?
-                          (cond ((<= 0 dir direction) ;; t n
-                                 (forward-char))
-                                ((<= dir direction 0) ;; T n
-                                 (backward-char)))
-                        ;; not exclusive?
-                        (cond ((< dir 0 direction) ;; f N
-                               (backward-char))
-                              ((< direction 0 dir) ;; F N
-                               (forward-char))))
-                      (if (helix-search pattern dir nil t t)
-                          (prog1 t
-                            (setf (helix-highlight-direction hl) dir)
-                            (save-match-data
-                              (helix-highlight-update hl))
-                            (if exclusive?
-                                (cond ((<= 0 dir direction) ;; t n
-                                       (backward-char))
-                                      ((<= dir direction 0) ;; T n
-                                       (forward-char)))
-                              ;; not exclusive?
-                              (cond ((< dir 0 direction) ;; f N
-                                     (forward-char))
-                                    ((< direction 0 dir) ;; F N
-                                     (backward-char)))))
-                        ;; else
-                        (prog1 nil
-                          (helix-highlight-delete hl)))))))
-      (when (funcall search direction)
-        (let* ((next (lambda () (interactive) (funcall search direction)))
-               (prev (lambda () (interactive) (funcall search (- direction))))
-               (on-exit (lambda () (helix-highlight-delete hl))))
+    (cl-labels ((search (dir)
+                  (let ((case-fold-search case))
+                    (if exclusive?
+                        (cond ((<= 0 dir direction) ;; t n
+                               (forward-char))
+                              ((<= dir direction 0) ;; T n
+                               (backward-char)))
+                      ;; else
+                      (cond ((< dir 0 direction) ;; f N
+                             (backward-char))
+                            ((< direction 0 dir) ;; F N
+                             (forward-char))))
+                    (if (helix-search pattern dir nil t t)
+                        (prog1 t
+                          (setf (helix-highlight-direction hl) dir)
+                          (save-match-data
+                            (helix-highlight-update hl))
+                          (if exclusive?
+                              (cond ((<= 0 dir direction) ;; t n
+                                     (backward-char))
+                                    ((<= dir direction 0) ;; T n
+                                     (forward-char)))
+                            ;; not exclusive?
+                            (cond ((< dir 0 direction) ;; f N
+                                   (forward-char))
+                                  ((< direction 0 dir) ;; F N
+                                   (backward-char)))))
+                      ;; else
+                      (prog1 nil
+                        (helix-highlight-delete hl))))))
+      (when (search direction)
+        (let ((next (lambda () (interactive) (search direction)))
+              (prev (lambda () (interactive) (search (- direction))))
+              (on-exit (lambda () (helix-highlight-delete hl))))
           (set-transient-map (define-keymap
                                "n" next
                                "N" prev)
