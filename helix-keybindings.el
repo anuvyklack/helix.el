@@ -209,10 +209,11 @@
 
 ;; Do not show keys bound to `helix-mark-digit-argument' and
 ;; `helix-mark-negative-argument' commands in which-key popup.
-(dolist (cmd '(helix-mark-digit-argument
-               helix-mark-negative-argument))
-  (cl-pushnew `((nil . ,(symbol-name cmd)) . ignore)
-              which-key-replacement-alist :test #'equal))
+(with-eval-after-load 'which-key
+  (dolist (cmd '(helix-mark-digit-argument
+                 helix-mark-negative-argument))
+    (cl-pushnew `((nil . ,(symbol-name cmd)) . ignore)
+                which-key-replacement-alist :test #'equal)))
 
 (helix-keymap-global-set :state 'normal
   "m -" #'helix-mark-negative-argument
