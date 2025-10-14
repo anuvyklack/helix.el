@@ -52,7 +52,7 @@ action. The step is terminated with `helix--single-undo-step-end'."
     (unless (null (car-safe buffer-undo-list))
       (undo-boundary))
     (setq helix--undo-list-pointer buffer-undo-list)
-    (helix--undo-boundary-1)))
+    (helix--push-undo-boundary-1)))
 
 (defvar helix-insert-state)
 
@@ -61,7 +61,7 @@ action. The step is terminated with `helix--single-undo-step-end'."
   (when (and helix--in-single-undo-step
              ;; Merged all changes in Insert state into one undo step.
              (not helix-insert-state))
-    (helix--undo-boundary-2)
+    (helix--push-undo-boundary-2)
     (unless (eq buffer-undo-list helix--undo-list-pointer)
       (let ((undo-list buffer-undo-list))
         (while (and (consp undo-list)
@@ -70,8 +70,8 @@ action. The step is terminated with `helix--single-undo-step-end'."
         (let ((equiv (gethash (car undo-list)
                               undo-equiv-table)))
           ;; Remove undo boundaries (nil elements) from `buffer-undo-list'
-          ;; withing current undo step. Also remove entries that move point
-          ;; during undo (numbers), because we handle cursors positions manually
+          ;; withing current undo step. Also remove number entries -- they
+          ;; move point during undo, and we handle cursors positions manually
           ;; to synchronize real cursor with fake ones.
           (setq undo-list (helix-destructive-filter
                            (lambda (i) (or (numberp i) (null i)))
@@ -85,12 +85,12 @@ action. The step is terminated with `helix--single-undo-step-end'."
     (setq helix--in-single-undo-step nil
           helix--undo-list-pointer nil)))
 
-(defun helix--undo-boundary-1 ()
+(defun helix--push-undo-boundary-1 ()
   (setq helix--undo-boundary
         `(apply helix--undo-step-end ,(helix-cursors-positions)))
   (push helix--undo-boundary buffer-undo-list))
 
-(defun helix--undo-boundary-2 ()
+(defun helix--push-undo-boundary-2 ()
   (when helix--undo-boundary
     (let ((undo-list buffer-undo-list))
       (while (and (consp undo-list)
@@ -104,21 +104,12 @@ action. The step is terminated with `helix--single-undo-step-end'."
       (setq helix--undo-boundary nil
             buffer-undo-list undo-list))))
 
-;; (defmacro helix-with-undo-boundaries (&rest body)
-;;   (declare (indent 0) (debug t))
-;;   `(progn
-;;      (helix--undo-boundary-1)
-;;      (unwind-protect
-;;          (progn
-;;            ,@body)
-;;        (helix--undo-boundary-2))))
-
 (defun helix--undo-step-start (cursors-positions)
   "This function always called from `buffer-undo-list' during undo by
 `primitive-undo' function. It is the first one from a pair of functions:
 `helix--undo-step-start' and `helix--undo-step-end', which are executed
 at beginning and end of a single undo step and restores real and fake
-cursors points and regions after undo/redo step.
+cursors positions and regions after undo/redo step.
 
 CURSORS-POSITIONS is an alist returned by `helix-cursors-positions' function."
   (push `(apply helix--undo-step-end ,cursors-positions)
@@ -129,7 +120,7 @@ CURSORS-POSITIONS is an alist returned by `helix-cursors-positions' function."
 `primitive-undo' function. It is the second one from a pair of functions:
 `helix--undo-step-start' and `helix--undo-step-end', which are executed
 at beginning and end of a single undo step and restores real and fake
-cursors points and regions after undo/redo step.
+cursors positions and regions after undo/redo step.
 
 CURSORS-POSITIONS is an alist returned by `helix-cursors-positions' function."
   (maphash (lambda (id cursor)
