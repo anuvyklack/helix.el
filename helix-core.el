@@ -458,67 +458,84 @@ according to the Helix STATE."
 (defun helix-keymap-set (keymap &rest args)
   "Create keybinding from KEY to DEFINITION in KEYMAP.
 
-`:STATE' is an optional keyword argument that specifies the Helix state
-in which the keybindings will be active. It must appear before any
-KEY/DEFINITION pairs.
+`:STATE' is an optional keyword argument that specifies the Helix state in
+which the keybindings will be active. Can be a symbol or list of symbols.
+It must appear before any KEY/DEFINITION pairs.
 
 KEY and DEFINITION arguments are like those in `keymap-set'.
 If DEFINITION is nil, the corresponding key binding will be removed from KEYMAP.
 Any number of KEY/DEFINITION pairs can be provided.
 
+Without `:STATE', this function works like `keymap-set' except that multiple
+keybindings can be set at once.
+
 Example:
 
-   (helix-keymap-set org-mode-map :state \\='normal
+   (helix-keymap-set keymap :state \\='(normal motion)
       \"f\" \\='foo
-      \"b\" nil)
+      \"b\" nil) ; unbind
 
 \(fn KEYMAP [:STATE STATE] &rest [KEY DEFINITION]...)"
   (declare (indent defun))
-  (let ((state (pcase (car-safe args)
-                 (:state (pop args)
-                         (pop args)))))
-    (when state
+  (let ((states (pcase (car-safe args)
+                  (:state (pop args)
+                          (ensure-list (pop args))))))
+    (dolist (state states)
       (cl-assert (helix-state-p state) nil
                  "Helix state `%s' is not known to be defined" state))
     (cl-assert (cl-evenp (length args)) nil
                "The number of [KEY DEFINITION] pairs is not even")
-    (let ((map (if state
-                   (or (helix-get-nested-helix-keymap keymap state)
-                       (helix-create-nested-helix-keymap keymap state))
-                 keymap)))
-      (cl-loop for (key definition) on args by #'cddr
-               do (if definition
-                      (keymap-set map key definition)
-                    (keymap-unset map key :remove))))))
+    (let ((maps (if states
+                    (cl-loop for state in states
+                             collect
+                             (or (helix-get-nested-helix-keymap keymap state)
+                                 (helix-create-nested-helix-keymap keymap state)))
+                  (list keymap))))
+      (dolist (map maps)
+        (cl-loop for (key definition) on args by #'cddr
+                 do (if definition
+                        (keymap-set map key definition)
+                      (keymap-unset map key :remove)))))))
 
 (defun helix-keymap-global-set (&rest args)
   "Create keybinding from KEY to DEFINITION in `global-map'.
 
 `:STATE' is an optional keyword argument. If provided, keybindings are set in
-the main keymap for that Helix state. Without `:STATE', this function works
-like `keymap-global-set' except that multiple keybindings can be set at once.
+the main keymap for specified Helix state. Can be a symbol or list of symbols.
 It must appear before any KEY/DEFINITION pairs.
 
 KEY, DEFINITION arguments are like those of `keymap-global-set'.
 If DEFINITION is nil, then keybinding will be remove from keymap.
 Any number of KEY DEFINITION pairs are accepted.
 
+Without `:STATE', this function works like `keymap-global-set' except that
+multiple keybindings can be set at once.
+
+Example:
+
+   (helix-keymap-global-set :state \\='(normal motion)
+      \"f\" \\='foo
+      \"b\" nil) ; unbind
+
 \(fn [:STATE STATE] &rest [KEY DEFINITION]...)"
   (declare (indent defun))
-  (let ((state (pcase (car-safe args)
-                 (:state (pop args)
-                         (pop args)))))
-    (when (and state (not (helix-state-p state)))
-      (user-error "Helix state `%s' is not known to be defined" state))
+  (let ((states (pcase (car-safe args)
+                  (:state (pop args)
+                          (ensure-list (pop args))))))
+    (dolist (state states)
+      (cl-assert (helix-state-p state) nil
+                 "Helix state `%s' is not known to be defined" state))
     (unless (cl-evenp (length args))
       (user-error "The number of [KEY DEFINITION] pairs is not even"))
-    (let ((map (if state
-                   (helix-state-property state :keymap)
-                 (current-global-map))))
-      (cl-loop for (key definition) on args by #'cddr
-               do (if definition
-                      (keymap-set map key definition)
-                    (keymap-unset map key :remove))))))
+    (let ((maps (if states
+                    (cl-loop for state in states
+                             collect (helix-state-property state :keymap))
+                  (list (current-global-map)))))
+      (dolist (map maps)
+        (cl-loop for (key definition) on args by #'cddr
+                 do (if definition
+                        (keymap-set map key definition)
+                      (keymap-unset map key :remove)))))))
 
 (defun helix-keymap-local-set (&rest args)
   "Create keybinding from KEY to DEFINITION in current local keymap.

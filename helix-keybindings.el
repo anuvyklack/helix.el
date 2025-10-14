@@ -410,9 +410,8 @@
 ;;; Conditional keybindings
 
 (when helix-want-zz-scroll-to-center
-  (dolist (state '(normal motion))
-    (helix-keymap-global-set :state state
-      "z z" #'helix-smooth-scroll-line-to-center)))
+  (helix-keymap-global-set :state '(normal motion)
+    "z z" #'helix-smooth-scroll-line-to-center))
 
 (provide 'helix-keybindings)
 ;;; helix-keybindings.el ends here
