@@ -24,19 +24,6 @@ buffer local variable."
      (make-variable-buffer-local ',symbol)
      (put ',symbol 'permanent-local t)))
 
-(defmacro helix-add-to-alist (alist &rest elements)
-  "Add the association of KEY and VAL to the value of ALIST.
-If the list already contains an entry for KEY, update that entry;
-otherwise prepend it to the list.
-
-\(fn ALIST [KEY VAL]...)"
-  (declare (indent defun))
-  `(progn
-     ,@(cl-loop for (key val) on elements by #'cddr
-                collect `(setf (alist-get ,key ,alist nil nil #'equal)
-                               ,val))
-     ,alist))
-
 (defvar helix--advices nil
   "Inner variable for `helix-define-advice'.")
 

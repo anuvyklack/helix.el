@@ -132,16 +132,26 @@
 ;;; Helix states
 
 (defmacro helix-define-state (state doc &rest body)
-  "Define Helix state STATE.
+  "Define new Helix STATE.
 DOC is a general description and shows up in all docstrings.
-
 BODY is executed each time the state is enabled or disabled.
 
 Optional keyword arguments:
-- `:keymap'
-- `:cursor' - default cursor specification.
-- `:enter-hook' - list of functions to run on each entry/exit of this state.
-- `:exit-hook' - Lisp form to evaluate after state hooks have been run.
+
+`:keymap'      Keymap that will be active while Helix is in STATE.
+             Can be accessed via `helix-STATE-state-map' variable.
+
+`:cursor'      Cursor apperance when Helix is in STATE.
+             Can be a cursor type as per `cursor-type', a color string
+             as passed to `set-cursor-color', a zero-argument function
+             for changing the cursor, or a list of the above.
+             Can be accessed via `helix-STATE-state-cursor' variable.
+
+`:enter-hook'  List of functions to run on each entry to STATE.
+             Can be accessed via `helix-STATE-state-enter-hook' variable.
+
+`:exit-hook'   List of functions to run on each exit from STATE.
+             Can be accessed via `helix-STATE-state-exit-hook' variable.
 
 \(fn STATE DOC [[KEY VAL]...] BODY...)"
   (declare (indent defun)
@@ -150,8 +160,7 @@ Optional keyword arguments:
                     [&optional stringp]
                     [&rest [keywordp sexp]]
                     def-body)))
-  (let* ((state-name (concat (capitalize (symbol-name state))
-                             " state"))
+  (let* ((state-name (concat (capitalize (symbol-name state)) " state"))
          (symbol (intern (format "helix-%s-state" state)))
          (variable symbol)
          (statefun symbol)
@@ -171,30 +180,29 @@ Optional keyword arguments:
         (:enter-hook (setq enter-hook-value (ensure-list arg)))
         (:exit-hook (setq exit-hook-value (ensure-list arg)))))
     `(progn
-       ;; Save the state's properties in `helix-state-properties' for runtime lookup.
-       (helix-add-to-alist helix-state-properties
-         ',state (list
-                  :name ,state-name
-                  :variable ',variable
-                  :function ',statefun
-                  :cursor (defvar ,cursor ,cursor-value
-                            ,(format "Cursor for %s.
+       (defvar ,cursor ,cursor-value
+         ,(format "Cursor for %s.
 May be a cursor type as per `cursor-type', a color string as passed
 to `set-cursor-color', a zero-argument function for changing the
 cursor, or a list of the above." state-name))
-                  :keymap (defvar ,keymap ,(or keymap-value '(make-sparse-keymap))
-                            ,(format "Global keymap for Helix %s." state-name))
-                  :modes (defvar ,modes nil
-                           ,(format "List of major and minor modes such that if any of them is active in the
-current buffer, than Helix will start in %s." state-name))
-                  :enter-hook (prog1 (defvar ,enter-hook nil
-                                       ,(format "Hooks to run on entry %s." state-name))
-                                (dolist (func ',enter-hook-value)
-                                  (add-hook ',enter-hook func)))
-                  :exit-hook (prog1 (defvar ,exit-hook nil
-                                      ,(format "Hooks to run on exit %s." state-name))
-                               (dolist (func ',exit-hook-value)
-                                 (add-hook ',exit-hook func)))))
+       (defvar ,keymap ,(or keymap-value '(make-sparse-keymap))
+         ,(format "Global keymap for Helix %s." state-name))
+       (defvar ,modes nil
+         ,(format "List of major and minor modes for which Helix initial state is %s." state-name))
+       (defvar ,enter-hook nil ,(format "Hooks to run on entry %s." state-name))
+       (defvar ,exit-hook  nil ,(format "Hooks to run on exit %s." state-name))
+       (dolist (func ,enter-hook-value) (add-hook ',enter-hook func))
+       (dolist (func ,exit-hook-value)  (add-hook ',exit-hook func))
+       ;; Save state properties in `helix-state-properties' for runtime lookup.
+       (setf (alist-get ',state helix-state-properties)
+             '( :name ,state-name
+                :variable ,variable
+                :function ,statefun
+                :keymap ,keymap
+                :cursor ,cursor
+                :enter-hook ,enter-hook
+                :exit-hook ,exit-hook
+                :modes ,modes))
        ;; State variable
        (helix-defvar-local ,variable nil
          ,(format "Non nil if Helix is in %s." state-name))
