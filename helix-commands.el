@@ -1988,12 +1988,15 @@ narrowing doesn't affect other windows displaying the same buffer. Call
   (when (use-region-p)
     (helix-restore-newline-at-eol)
     (let ((orig-buffer (current-buffer))
+          (name (or buffer-file-name
+                    list-buffers-directory))
           (beg (region-beginning))
           (end (region-end)))
       (deactivate-mark)
       (helix-clone-indirect-buffer-same-window)
-      (narrow-to-region beg end)
-      (setq helix--narrowed-base-buffer orig-buffer))))
+      (setq list-buffers-directory name
+            helix--narrowed-base-buffer orig-buffer)
+      (narrow-to-region beg end))))
 
 ;; zw
 (helix-define-command helix-widen-indirectly-narrowed (&optional arg)
