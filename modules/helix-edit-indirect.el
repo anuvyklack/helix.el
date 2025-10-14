@@ -82,12 +82,15 @@ already an edit-indirect buffer active overlapping any portion of region, an
                                      nil nil nil nil
                                      major-mode)
                   major-mode))
+          (name (or buffer-file-name
+                    list-buffers-directory))
           (vars (cl-loop for symbol in '(default-directory lexical-binding)
                          collect symbol
                          collect (symbol-value symbol))))
       (let ((buffer (edit-indirect-region beg end)))
         (set-buffer buffer)
         (funcall mode)
+        (setq list-buffers-directory name)
         (eval `(setq-local ,@vars) t)
         (beginning-of-buffer)
         (switch-to-buffer buffer)))))
