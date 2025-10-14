@@ -25,29 +25,28 @@
   (helix-keymap-set keymap :state 'normal
     "m h"   #'helix-outline-mark-subtree ; `h' is for heading
     "m i h" #'helix-outline-mark-subtree)
-  (dolist (state '(normal motion))
-    (helix-keymap-set keymap :state state
-      "z <tab>"     #'outline-cycle
-      "z <backtab>" #'outline-cycle-buffer
-      "z <return>"  #'outline-insert-heading
-      "z j"   #'outline-next-visible-heading
-      "z k"   #'outline-previous-visible-heading
-      "z C-j" #'outline-forward-same-level
-      "z C-k" #'outline-backward-same-level
-      "z u"   #'helix-outline-up-heading
-      "z o"   #'helix-outline-open
-      "z c"   #'outline-hide-subtree
-      "z r"   #'outline-show-all
-      "z m"   #'outline-hide-sublevels
-      "z 2"   #'helix-outline-show-2-sublevels
-      "z p"   #'helix-outline-hide-other  ; `p' for path
-      "z O"   #'outline-show-branches
-      "z <"   #'outline-promote
-      "z >"   #'outline-demote
-      "z M-h" #'outline-promote
-      "z M-l" #'outline-demote
-      "z M-j" #'outline-move-subtree-down
-      "z M-k" #'outline-move-subtree-up)))
+  (helix-keymap-set keymap :state '(normal motion)
+    "z <tab>"     #'outline-cycle
+    "z <backtab>" #'outline-cycle-buffer
+    "z <return>"  #'outline-insert-heading
+    "z j"   #'outline-next-visible-heading
+    "z k"   #'outline-previous-visible-heading
+    "z C-j" #'outline-forward-same-level
+    "z C-k" #'outline-backward-same-level
+    "z u"   #'helix-outline-up-heading
+    "z o"   #'helix-outline-open
+    "z c"   #'outline-hide-subtree
+    "z r"   #'outline-show-all
+    "z m"   #'outline-hide-sublevels
+    "z 2"   #'helix-outline-show-2-sublevels
+    "z p"   #'helix-outline-hide-other  ; `p' for path
+    "z O"   #'outline-show-branches
+    "z <"   #'outline-promote
+    "z >"   #'outline-demote
+    "z M-h" #'outline-promote
+    "z M-l" #'outline-demote
+    "z M-j" #'outline-move-subtree-down
+    "z M-k" #'outline-move-subtree-up))
 
 (setq outline-navigation-repeat-map
       (define-keymap
