@@ -1178,9 +1178,12 @@ FUN on each invocation should move point."
 
 (defun helix-letters-are-self-insert-p ()
   "Return t if any of the a-z keys are bound to self-insert command."
-  ;; (mapcar #'char-to-string (number-sequence ?a ?z))
-  (cl-dolist (key '("a" "b" "c" "d" "e" "f" "g" "h" "i" "j" "k" "l" "m"
-                    "n" "o" "p" "q" "r" "s" "t" "u" "v" "w" "x" "y" "z"))
+  ;; This is a fancy way to produce following list in compile time:
+  ;;   '("a" "b" "c" "d" "e" "f" "g" "h" "i" "j" "k" "l" "m"
+  ;;     "n" "o" "p" "q" "r" "s" "t" "u" "v" "w" "x" "y" "z")
+  ;; I just couldn't help myself :)
+  (cl-dolist (key (eval-when-compile
+                    (mapcar #'char-to-string (number-sequence ?a ?z))))
     (if-let* ((cmd (key-binding key))
               ((symbolp cmd))
               ((string-match-p "\\`.*self-insert.*\\'"
