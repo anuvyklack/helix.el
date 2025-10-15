@@ -1,10 +1,11 @@
 ;;; helix-scrolling.el --- Scrolling commands -*- lexical-binding: t; -*-
 ;;
-;; Copyright (C) 2025 Yuriy Artemyev
+;; Copyright © 2025 Yuriy Artemyev
 ;;
 ;; Author: Yuriy Artemyev <anuvyklack@gmail.com>
 ;; Maintainer: Yuriy Artemyev <anuvyklack@gmail.com>
 ;; Version: 0.0.1
+;; Homepage: https://github.com/anuvyklack/helix.el
 ;; Package-Requires: ((emacs "29.1"))
 ;;
 ;; This file is not part of GNU Emacs.
