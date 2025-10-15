@@ -1,10 +1,11 @@
 ;;; helix-common.el --- Common functions -*- lexical-binding: t; -*-
 ;;
-;; Copyright (C) 2025 Yuriy Artemyev
+;; Copyright © 2025 Yuriy Artemyev
 ;;
 ;; Author: Yuriy Artemyev <anuvyklack@gmail.com>
 ;; Maintainer: Yuriy Artemyev <anuvyklack@gmail.com>
 ;; Version: 0.0.1
+;; Homepage: https://github.com/anuvyklack/helix.el
 ;; Package-Requires: ((emacs "29.1"))
 ;;
 ;; This file is not part of GNU Emacs.
@@ -156,8 +157,7 @@ COUNT minus number of steps moved; if backward, COUNT plus number moved.
        ,n)))
 
 ;;; Things
-
-;; `helix-line' thing
+;;;; `helix-line'
 
 ;; The need for this thing arose from the requirement to select a folded section
 ;; of the buffer (in Org-mode or Outline-mode) using the `x' key command.
@@ -207,13 +207,13 @@ Adopted from `move-beginning-of-line'."
     ;; Obey field constraints.
     (goto-char (constrain-to-field (point) orig-point (/= count 1) t nil))))
 
-;; `helix-visual-line' thing
+;;;; `helix-visual-line'
 
 (put 'helix-visual-line 'forward-op #'vertical-motion)
 ;; (put 'helix-visual-line 'beginning-op #'beginning-of-visual-line)
 ;; (put 'helix-visual-line 'end-op       #'end-of-visual-line)
 
-;; `helix-word' thing
+;;;; `helix-word'
 
 (defun forward-helix-word (&optional count)
   "Move point COUNT words forward (backward if COUNT is negative).
@@ -232,7 +232,7 @@ Word is:
               (word-combining-categories  helix-cjk-word-combining-categories))
           (forward-word dir)))))
 
-;; `helix-WORD' thing
+;;;; `helix-WORD'
 
 (defun forward-helix-WORD (&optional count)
   "Move point COUNT WORDs forward (backward if COUNT is negative).
@@ -246,7 +246,7 @@ WORD is any space separated sequence of characters."
     (unless (helix-line-boundary-p dir)
       (helix-skip-chars "^\n\r\t\f " dir))))
 
-;; `helix-sentence' thing
+;;;; `helix-sentence'
 
 (defun forward-helix-sentence (&optional count)
   "Move point COUNT sentences forward (backward if COUNT is negative).
@@ -257,7 +257,7 @@ What is sentence is defined by `forward-sentence-function'."
   (helix-motion-loop (dir (or count 1))
     (ignore-errors (forward-sentence dir))))
 
-;; `helix-paragraph' thing
+;;;; `helix-paragraph'
 
 (defun forward-helix-paragraph (&optional count)
   "Move point COUNT paragraphs forward (backward if COUNT is negative).
@@ -271,7 +271,7 @@ on sign of COUNT."
              (start-of-paragraph-text)
              (beginning-of-line))))))
 
-;; `helix-function' thing
+;;;; `helix-function'
 
 (defun forward-helix-function (&optional count)
   "Move point COUNT functions forward (backward if COUNT is negative).
@@ -280,14 +280,14 @@ on sign of COUNT."
   (helix-motion-loop (dir (or count 1))
     (if (natnump dir) (end-of-defun) (beginning-of-defun))))
 
-;; `helix-sexp' thing
+;;;; `helix-sexp'
 
 (defun forward-helix-sexp (&optional count)
   (helix-motion-loop (dir (or count 1))
     (ignore-errors
       (forward-sexp dir))))
 
-;; `helix-comment' thing
+;;;; `helix-comment'
 
 (put 'helix-comment 'bounds-of-thing-at-point #'helix-bounds-of-comment-at-point-ppss)
 
