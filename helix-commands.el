@@ -1380,18 +1380,33 @@ already there."
   :merge-selections t
   (interactive "p")
   (helix-push-point)
-  (helix-mark-a-thing 'helix-function count)
-  (helix-set-region (save-excursion
-                      ;; Take comments that belongs to the current function.
-                      (goto-char (region-beginning))
-                      (car (bounds-of-thing-at-point 'helix-paragraph)))
-                    (save-excursion
-                      ;; Exclude comments that belongs to the following function.
-                      (goto-char (region-end))
-                      (or (car-safe (bounds-of-thing-at-point 'helix-paragraph))
-                          (point)))
-                    (helix-region-direction)
-                    :adjust)
+  (-let* ((thing 'helix-function)
+          ((thing-beg . thing-end) (helix-bounds-of-count-things-at-point thing count))
+          beg end)
+    (or (-if-let ((_ . space-end)
+                  (progn
+                    (goto-char thing-end)
+                    (helix-bounds-of-complement-of-thing-at-point thing)))
+            (setq beg (progn
+                        ;; Take comments that belongs to the current function.
+                        (goto-char thing-beg)
+                        (car (bounds-of-thing-at-point 'helix-paragraph)))
+                  end (progn
+                        ;; Exclude comments that belongs to the next function.
+                        (goto-char space-end)
+                        (car (bounds-of-thing-at-point 'helix-paragraph)))))
+        (-if-let ((space-beg . _)
+                  (progn
+                    (goto-char thing-beg)
+                    (helix-bounds-of-complement-of-thing-at-point thing)))
+            (setq beg space-beg
+                  end thing-end))
+        (setq beg (progn
+                    ;; Take comments that belongs to the current function.
+                    (goto-char thing-beg)
+                    (car (bounds-of-thing-at-point 'helix-paragraph)))
+              end thing-end))
+    (helix-set-region beg end (helix-sign count) :adjust))
   (helix-reveal-point-when-on-top))
 
 ;; mi"
