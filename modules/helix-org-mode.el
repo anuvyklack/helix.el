@@ -35,6 +35,9 @@
   "<"     #'helix-org-<
   ">"     #'helix-org->
 
+  "[ RET" #'helix-org-insert-item-above
+  "] RET" #'helix-org-insert-item-below
+
   ;; "C-o"   #'org-mark-ring-goto
   ;;         #'org-mark-ring-push
 
@@ -279,6 +282,57 @@ In tables, move column to the right."
   :merge-selections t
   (interactive)
   (helix-mark-a-sentence 'helix-org-sentence))
+
+;; [ RET
+(helix-define-command helix-org-insert-item-above ()
+  "Inserts a new heading, list item or table cell above the current one."
+  :multiple-cursors t
+  (interactive)
+  (helix-org--insert-item -1))
+
+;; ] RET
+(helix-define-command helix-org-insert-item-below ()
+  "Inserts a new heading, lilst item or table cell below the current one."
+  :multiple-cursors t
+  (interactive)
+  (helix-org--insert-item 1))
+
+(defun helix-org--insert-item (direction)
+  (pcase (-> (org-element-at-point)
+             (org-element-lineage '( headline inlinetask
+                                     plain-list item
+                                     table table-row)
+                                  :with-self)
+             (org-element-type))
+    ;; Add a new list item (carrying over checkboxes if necessary)
+    ((or 'plain-list 'item)
+     (let ((orig-point (point))
+           (check-box? (progn (org-beginning-of-item)
+                              (org-at-item-checkbox-p))))
+       (if (< direction 0) (org-beginning-of-item) (org-end-of-item))
+       (org-insert-item check-box?)))
+    ;; Add a new table row
+    ((or `table `table-row)
+     (org-table-insert-row (natnump direction)))
+    ;; Otherwise, insert a new heading.
+    (_
+     ;; We intentionally avoid `org-insert-heading' and the like because they
+     ;; impose unpredictable whitespace rules depending on the cursor position.
+     ;; It's simpler to express this command's responsibility at a lower level
+     ;; than work around all the quirks in org's API.
+     (let ((level (or (org-current-level) 1)))
+       (if (natnump direction)
+           (let (org-insert-heading-respect-content)
+             (goto-char (line-end-position))
+             (org-end-of-subtree)
+             (insert "\n\n" (make-string level ?*) " "))
+         ;; else
+         (org-back-to-heading)
+         (insert (make-string level ?*) " ")
+         (save-excursion (insert "\n")))
+       (run-hooks 'org-insert-heading-hook))))
+  (when (org-invisible-p) (org-show-hidden-entry))
+  (helix-insert-state 1))
 
 ;;; AST climbing
 
