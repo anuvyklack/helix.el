@@ -175,13 +175,15 @@ and brackets."
       (-when-let ((beg . end) (bounds-of-thing-at-point sexp))
         (helix-set-region beg end count))
       (setq count (- count dir)))
-    (if (zerop count) 0
-      (prog1 (helix-motion-loop (dir count)
-               (ignore-error scan-error
-                 (goto-char (paredit-next-up/down-point dir +1))))
+    (unless (zerop count)
+      (unwind-protect
+          (helix-motion-loop (dir count)
+            (condition-case nil
+                (goto-char (paredit-next-up/down-point dir +1))
+              (scan-error (user-error "No sexp up"))))
         (-when-let ((beg . end) (bounds-of-thing-at-point sexp))
-          (helix-set-region beg end count))
-        (helix-reveal-point-when-on-top)))))
+          (helix-set-region beg end count))))
+    (helix-reveal-point-when-on-top)))
 
 ;; M-o or C-k or H
 (helix-define-command helix-paredit-up-sexp-backward (count)
