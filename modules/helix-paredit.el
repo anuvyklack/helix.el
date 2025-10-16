@@ -113,50 +113,32 @@ and brackets."
   :multiple-cursors t
   :merge-selections 'extend-selection
   (interactive "p")
-  (let ((dir (helix-sign count)))
-    (unless (use-region-p)
-      (let ((oldpoint (point)))
-        (and (zerop (helix-paredit-up-sexp-forward dir))
-             (/= (point) oldpoint)
-             (setq count (- count dir)))))
-    (unless (zerop count)
-      (let ((sexp 'helix-paredit-sexp)
-            (region-dir (helix-region-direction)))
-        (if helix--extend-selection
-            (helix-paredit--extend-selection-with-sexp-forward count)
-          ;; else
-          (-when-let ((beg . end) (bounds-of-thing-at-point sexp))
-            (if (natnump count)
-                (progn
-                  (if (= (region-end) beg)
-                      (setq count (- count dir)))
-                  (goto-char end))
-              ;; else
-              (if (= (region-beginning) end)
-                  (setq count (- count dir)))
-              (goto-char beg)))
-          (forward-thing sexp count)
-          (-when-let ((beg . end) (bounds-of-thing-at-point sexp))
-            (helix-set-region beg end region-dir))))))
-  (helix-reveal-point-when-on-top))
-
-(defun helix-paredit--extend-selection-with-sexp-forward (count)
-  (let* ((sexp 'helix-paredit-sexp)
-         (region-dir (helix-region-direction))
-         (dir (helix-sign count))
-         (rest (if (natnump region-dir)
-                   (helix-forward-end-of-thing sexp count)
-                 (helix-forward-beginning-of-thing sexp count)))
-         (region-reversed? (/= (helix-region-direction) region-dir)))
-    (when (and region-reversed? (zerop rest))
-      (forward-thing sexp count))
-    ;; Adjust mark position
-    (when (or region-reversed?
-              (= (point) (mark)))
-      (save-excursion
-        (goto-char (mark-marker))
-        (-when-let ((beg . end) (bounds-of-thing-at-point sexp))
-          (set-marker (mark-marker) (if (natnump dir) beg end)))))))
+  (unless (zerop count)
+    (let* ((sexp 'helix-paredit-sexp)
+           (dir (helix-sign count))
+           (region-dir (if (use-region-p) (helix-region-direction) dir)))
+      ;; +1 because `forward-thing' moves point first to the boundary of the
+      ;; current thing, and only than to the next thing.
+      (when (/= dir region-dir)
+        (setq count (+ count dir)))
+      (forward-thing sexp count)
+      (if helix--extend-selection
+          (let ((new-region-dir (if (use-region-p) (helix-region-direction) region-dir)))
+            (when (and (= new-region-dir region-dir)
+                       (/= dir region-dir))
+              (forward-thing sexp region-dir))
+            ;; If region reversed -- adjust mark position.
+            (when (or (/= new-region-dir region-dir)
+                      (= (point) (mark)))
+              (save-excursion
+                (goto-char (mark-marker))
+                (-when-let ((beg . end) (bounds-of-thing-at-point sexp))
+                  (set-marker (mark-marker) (if (natnump dir) beg end))))))
+        ;; else
+        (-if-let ((beg . end) (bounds-of-thing-at-point sexp))
+            (helix-set-region beg end region-dir)
+          (deactivate-mark))))
+    (helix-reveal-point-when-on-top)))
 
 ;; M-p or C-h
 (helix-define-command helix-paredit-backward-sexp (count)
