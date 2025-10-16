@@ -2011,8 +2011,7 @@ narrowing doesn't affect other windows displaying the same buffer. Call
 Incrementally kill indirect buffers (under the assumption they were created by
 `helix-narrow-to-region-indirectly') and switch to their base buffer.
 
-With `universal-argument' kill all indirect buffers, return the base buffer and
-widen it.
+With \\[universal-argument] kill all indirect buffers, return the base buffer and widen it.
 
 If the current buffer is not an indirect buffer, works like `widen'."
   :multiple-cursors nil
