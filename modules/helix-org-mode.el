@@ -23,94 +23,130 @@
 (add-hook 'org-mode-hook #'helix-surround-settings-for-org-mode)
 
 (helix-keymap-set org-mode-map :state 'normal
-  "C-c SPC" #'org-ctrl-c-ctrl-c
+  ;; `J' and `K' keys are already occupied in Helix.
+  "H"     'org-shiftleft
+  "L"     'org-shiftright
 
-  "z u"   #'helix-org-up-heading
-  "g h"   #'helix-org-first-non-blank
+  "M-h"   'org-metaleft
+  "M-j"   'org-metadown
+  "M-k"   'org-metaup
+  "M-l"   'org-metaright
 
-  "d"     #'helix-org-cut
-  "p"     #'helix-org-paste-after
-  "P"     #'helix-org-paste-before
-  "="     #'org-indent-region
-  "<"     #'helix-org-<
-  ">"     #'helix-org->
+  "M-H"   'org-shiftmetaleft
+  "M-J"   'org-shiftmetadown
+  "M-K"   'org-shiftmetaup
+  "M-L"   'org-shiftmetaright
 
-  "[ RET" #'helix-org-insert-item-above
-  "] RET" #'helix-org-insert-item-below
+  "C-S-h" 'org-shiftcontrolleft
+  "C-S-j" 'org-shiftcontroldown
+  "C-S-k" 'org-shiftcontrolup
+  "C-S-l" 'org-shiftcontrolright
 
-  ;; "C-o"   #'org-mark-ring-goto
-  ;;         #'org-mark-ring-push
+  "C-c SPC" 'org-ctrl-c-ctrl-c
 
-  "[ s"   #'org-backward-sentence
-  "] s"   #'org-forward-sentence
-  "[ ."   #'org-backward-sentence
-  "] ."   #'org-forward-sentence
+  "z u"   'helix-org-up-heading
+  "g h"   'helix-org-first-non-blank
 
-  "M-o"   #'helix-org-up-element
-  "M-i"   #'helix-org-down-element
-  "M-n"   #'helix-org-next-element
-  "M-p"   #'helix-org-previous-element
+  "d"     'helix-org-cut
+  "p"     'helix-org-paste-after
+  "P"     'helix-org-paste-before
+  "="     'org-indent-region
+  "<"     'helix-org-<
+  ">"     'helix-org->
 
-  "m ."   #'helix-org-mark-inner-sentence
-  "m i s" #'helix-org-mark-inner-sentence
-  "m a s" #'helix-org-mark-a-sentence
+  "[ RET" 'helix-org-insert-item-above
+  "] RET" 'helix-org-insert-item-below
 
-  "m h"   #'org-mark-subtree
-  "m i h" #'org-mark-subtree
+  ;; "C-o"   'org-mark-ring-goto
+  ;;         'org-mark-ring-push
 
-  "m /"   #'helix-mark-inner-org-emphasis
-  "m i /" #'helix-mark-inner-org-emphasis
-  "m a /" #'helix-mark-an-org-emphasis
+  "[ s"   'org-backward-sentence
+  "] s"   'org-forward-sentence
+  "[ ."   'org-backward-sentence
+  "] ."   'org-forward-sentence
 
-  "m *"   #'helix-mark-inner-org-emphasis
-  "m i *" #'helix-mark-inner-org-emphasis
-  "m a *" #'helix-mark-an-org-emphasis
+  "M-o"   'helix-org-up-element
+  "M-i"   'helix-org-down-element
+  "M-n"   'helix-org-next-element
+  "M-p"   'helix-org-previous-element
 
-  "m _"   #'helix-mark-inner-org-emphasis
-  "m i _" #'helix-mark-inner-org-emphasis
-  "m a _" #'helix-mark-an-org-emphasis
+  "m ."   'helix-org-mark-inner-sentence
+  "m i s" 'helix-org-mark-inner-sentence
+  "m a s" 'helix-org-mark-a-sentence
 
-  "m +"   #'helix-mark-inner-org-emphasis
-  "m i +" #'helix-mark-inner-org-emphasis
-  "m a +" #'helix-mark-an-org-emphasis
+  "m h"   'org-mark-subtree
+  "m i h" 'org-mark-subtree
 
-  "m ="   #'helix-mark-inner-org-verbatim
-  "m i =" #'helix-mark-inner-org-verbatim
-  "m a =" #'helix-mark-an-org-verbatim
+  "m /"   'helix-mark-inner-org-emphasis
+  "m i /" 'helix-mark-inner-org-emphasis
+  "m a /" 'helix-mark-an-org-emphasis
 
-  "m ~"   #'helix-mark-inner-org-verbatim
-  "m i ~" #'helix-mark-inner-org-verbatim
-  "m a ~" #'helix-mark-an-org-verbatim)
+  "m *"   'helix-mark-inner-org-emphasis
+  "m i *" 'helix-mark-inner-org-emphasis
+  "m a *" 'helix-mark-an-org-emphasis
 
-(with-eval-after-load 'org-capture
-  (helix-keymap-set org-capture-mode-map :state 'normal
-    "Z R" #'org-capture-refile
-    "Z Z" #'org-capture-finalize
-    "Z Q" #'org-capture-kill))
+  "m _"   'helix-mark-inner-org-emphasis
+  "m i _" 'helix-mark-inner-org-emphasis
+  "m a _" 'helix-mark-an-org-emphasis
 
-(let ((map org-read-date-minibuffer-local-map))
-  (org-defkey map (kbd "M-l") #'org-calendar-forward-day)
-  (org-defkey map (kbd "M-h") #'org-calendar-backward-day)
-  (org-defkey map (kbd "M-j") #'org-calendar-forward-week)
-  (org-defkey map (kbd "M-k") #'org-calendar-backward-week)
-  (org-defkey map (kbd "M-L") #'org-calendar-forward-month)
-  (org-defkey map (kbd "M-H") #'org-calendar-backward-month)
-  (org-defkey map (kbd "M-J") #'org-calendar-forward-year)
-  (org-defkey map (kbd "M-K") #'org-calendar-backward-year))
+  "m +"   'helix-mark-inner-org-emphasis
+  "m i +" 'helix-mark-inner-org-emphasis
+  "m a +" 'helix-mark-an-org-emphasis
+
+  "m ="   'helix-mark-inner-org-verbatim
+  "m i =" 'helix-mark-inner-org-verbatim
+  "m a =" 'helix-mark-an-org-verbatim
+
+  "m ~"   'helix-mark-inner-org-verbatim
+  "m i ~" 'helix-mark-inner-org-verbatim
+  "m a ~" 'helix-mark-an-org-verbatim)
 
 (when helix-want-C-hjkl-keys
   (helix-keymap-set org-mode-map :state 'normal
-    "C-h" #'helix-org-up-element
-    "C-j" #'helix-org-next-element
-    "C-k" #'helix-org-previous-element
-    "C-l" #'helix-org-down-element))
+    "C-h" 'helix-org-up-element
+    "C-j" 'helix-org-next-element
+    "C-k" 'helix-org-previous-element
+    "C-l" 'helix-org-down-element))
 
 (when helix-want-M-hjkl-keys
   (helix-keymap-set org-mode-map :state 'normal
-    "M-h" #'helix-org-up-element
-    "M-j" #'helix-org-next-element
-    "M-k" #'helix-org-previous-element
-    "M-l" #'helix-org-down-element))
+    "M-h" 'helix-org-up-element
+    "M-j" 'helix-org-next-element
+    "M-k" 'helix-org-previous-element
+    "M-l" 'helix-org-down-element))
+
+(let ((map org-read-date-minibuffer-local-map))
+  (org-defkey map (kbd "M-l") 'org-calendar-forward-day)
+  (org-defkey map (kbd "M-h") 'org-calendar-backward-day)
+  (org-defkey map (kbd "M-j") 'org-calendar-forward-week)
+  (org-defkey map (kbd "M-k") 'org-calendar-backward-week)
+  (org-defkey map (kbd "M-L") 'org-calendar-forward-month)
+  (org-defkey map (kbd "M-H") 'org-calendar-backward-month)
+  (org-defkey map (kbd "M-J") 'org-calendar-forward-year)
+  (org-defkey map (kbd "M-K") 'org-calendar-backward-year))
+
+(with-eval-after-load 'org-capture
+  (helix-keymap-set org-capture-mode-map :state 'normal
+    "Z R" 'org-capture-refile
+    "Z Z" 'org-capture-finalize
+    "Z Q" 'org-capture-kill))
+
+(with-eval-after-load 'org-src
+  (helix-keymap-set org-src-mode-map :state 'normal
+    "Z Z" 'org-edit-src-exit
+    "Z Q" 'org-edit-src-abort))
+
+(with-eval-after-load 'org-table
+  (helix-keymap-set org-table-fedit-map :state 'normal
+    "Z Z" 'org-table-fedit-finish
+    "Z Q" 'org-table-fedit-abort ))
+
+;;;; Repeat mode
+
+(put 'helix-org-up-heading 'repeat-map 'helix-org-navigation-repeat-map)
+
+(defvar-keymap helix-org-navigation-repeat-map
+  "u" 'helix-org-up-heading)
 
 ;;; Advices
 
