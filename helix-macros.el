@@ -124,6 +124,22 @@ If selection is no linewise work like `helix-save-region'."
        (helix-save-region
          ,@body))))
 
+(defmacro helix-restore-region-on-error (&rest body)
+  (declare (indent 0) (debug t))
+  (let ((region (gensym "region"))
+        (point-pos (gensym "point"))
+        (something-goes-wrong? (make-symbol "something-goes-wrong?")))
+    `(let ((,region (helix-region))
+           (,point-pos (point))
+           (,something-goes-wrong? t))
+       (unwind-protect
+           (prog1 (progn ,@body)
+             (setq ,something-goes-wrong? nil))
+         (when ,something-goes-wrong?
+           (if ,region
+               (apply #'helix-set-region ,region)
+             (goto-char ,point-pos)))))))
+
 (defmacro helix-define-command (command args  &rest body)
   "Define Helix COMMAND.
 Wrapper around `defun' macro, that additionally takes following keyword
