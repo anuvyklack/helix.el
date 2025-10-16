@@ -26,8 +26,6 @@
 ;; By default `M-u' is bound to `upcase-word'.
 (keymap-global-set "M-u" #'universal-argument)
 (keymap-set universal-argument-map "M-u" #'universal-argument-more)
-;; (helix-keymap-global-set :state 'normal "M-u" #'universal-argument)
-;; (helix-keymap-global-set :state 'motion "M-u" #'universal-argument)
 
 ;;; Normal state
 

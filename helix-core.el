@@ -112,8 +112,7 @@
         (when helix-want-minibuffer
           (add-hook 'minibuffer-setup-hook #'helix-local-mode))
         (add-hook 'window-configuration-change-hook #'helix-update-cursor)
-        (add-to-list 'mode-line-misc-info
-                     '(:eval (helix-multiple-cursors--indicator))))
+        (add-to-list 'mode-line-misc-info '(:eval (helix-multiple-cursors--indicator))))
     ;; else
     (cl-loop for (fun _how advice) in helix--advices
              do (advice-remove fun advice))

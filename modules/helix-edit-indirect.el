@@ -51,7 +51,7 @@
 ;;;###autoload
 (defun helix-edit-indirect (arg)
   "Copy region without text properties, to a separate buffer.
-With `universal-argument' ask which major mode to use in edit-indirect buffer.
+With \\[universal-argument] ask which major mode to use in edit-indirect buffer.
 
 This differs from `helix-narrow-to-region-indirectly' which clones buffer
 inidrectly with narrowing in that the text properties are not shared, so the
