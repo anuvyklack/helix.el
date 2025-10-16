@@ -26,8 +26,6 @@
 ;; By default `M-u' is bound to `upcase-word'.
 (keymap-global-set "M-u" #'universal-argument)
 (keymap-set universal-argument-map "M-u" #'universal-argument-more)
-;; (helix-keymap-global-set :state 'normal "M-u" #'universal-argument)
-;; (helix-keymap-global-set :state 'motion "M-u" #'universal-argument)
 
 ;;; Normal state
 
@@ -177,6 +175,7 @@
   "g f"   #'find-file-at-point
   "g x"   #'browse-url-at-point
   "g q"   #'fill-region
+  "g Q"   #'fill-region-as-paragraph
   "] b"   #'next-buffer
   "[ b"   #'previous-buffer
   "] SPC" #'helix-add-blank-line-below
@@ -357,7 +356,7 @@
   "q"   #'helix-kill-current-buffer-and-window
   "b"   #'clone-indirect-buffer-other-window
   "B"   #'helix-clone-indirect-buffer-same-window
-  "z"   #'bury-buffer
+  "z"   #'bury-buffer ; mnemonics: "z" is the last letter
   "x"   #'scratch-buffer
   ;; xref
   "g d" #'xref-find-definitions-other-window

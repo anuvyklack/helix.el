@@ -30,10 +30,10 @@
   "Move forward to the end of the COUNT-th following THING.
 `forward-thing' first moves to the  boundary of the current THING, then to the
 next THING. This function skips first step and always moves to the next THING."
-  (unless count (setq count 1))
+  (or count (setq count 1))
   (if (zerop count) 0
     (-when-let ((beg . end) (bounds-of-thing-at-point thing))
-      (goto-char (if (natnump count) end beg)))
+      (goto-char (if (< count 0) beg end)))
     (forward-thing thing count)))
 
 (defun helix-forward-beginning-of-thing (thing &optional count)
@@ -43,7 +43,7 @@ Returns the count of steps left to move.
 
 Works only with THINGs, that returns the count of steps left to move,
 such as `helix-word', `helix-sentence', `helix-line', `paragraph'."
-  (unless count (setq count 1))
+  (or count (setq count 1))
   (if (zerop count) 0
     (let ((rest (helix-forward-following-thing thing count)))
       (when (and (/= rest count)
@@ -58,11 +58,11 @@ Returns the count of steps left to move.
 
 Works only with THINGs, that returns the count of steps left to move,
 such as `helix-word', `helix-sentence', `helix-line', `paragraph'."
-  (unless count (setq count 1))
+  (or count (setq count 1))
   (if (zerop count) 0
     (let ((rest (helix-forward-following-thing thing count)))
       (when (and (/= rest count)
-                 (< count 0)) ;; movind backward
+                 (< count 0)) ;; moving backward
         (forward-thing thing))
       rest)))
 
@@ -278,7 +278,7 @@ on sign of COUNT."
 Returns then count of functions left to move, positive of negative depending
 on sign of COUNT."
   (helix-motion-loop (dir (or count 1))
-    (if (natnump dir) (end-of-defun) (beginning-of-defun))))
+    (if (< dir 0) (beginning-of-defun) (end-of-defun))))
 
 ;;;; `helix-sexp'
 
@@ -327,7 +327,7 @@ line(s). With no region, select current line. Uses visual lines if
       t)))
 
 (defun helix-mark-inner-thing (thing &optional count adjust-end)
-  (unless count (setq count 1))
+  (or count (setq count 1))
   (cl-assert (/= count 0))
   (if adjust-end (helix-restore-newline-at-eol))
   (-let (((beg . end) (helix-bounds-of-count-things-at-point thing count)))
@@ -399,22 +399,21 @@ such as `helix-word', `helix-sentence', `helix-line', `paragraph'."
   "Select from point to the end of the THING (or COUNT following THINGs).
 If no THING at point select COUNT following THINGs."
   (helix-restore-region-on-error
-    (let ((pnt (point))
+    (let ((point-pos (point))
           (dir (helix-sign count)))
       (helix-restore-newline-at-eol)
       (if (helix-end-of-buffer-p dir)
-          (user-error (if (natnump count) "End of buffer" "Beginning of buffer"))
+          (user-error (if (< dir 0) "Beginning of buffer" "End of buffer"))
         ;; else
-        (helix-push-point pnt)
+        (helix-push-point point-pos)
         (let ((start (if helix--extend-selection
                          (mark)
                        (when (-if-let ((thing-beg . thing-end)
                                        (bounds-of-thing-at-point thing))
                                  ;; We are at the boundary of the THING toward
                                  ;; the motion direction.
-                                 (= (point) (if (natnump dir)
-                                                thing-end
-                                              thing-beg))
+                                 (= (point)
+                                    (if (< dir 0) thing-beg thing-end))
                                ;; No thing at point at all.
                                t)
                          (helix-forward-following-thing thing dir)
@@ -661,7 +660,7 @@ If REGEXP? is non-nil LEFT and RIGHT will be searched as regexp patterns
 
 If BALANCED? is non-nil all nested LEFT RIGHT pairs on the way will
 be skipped."
-  (unless direction (setq direction 1))
+  (or direction (setq direction 1))
   (save-excursion
     (if balanced?
         (helix-surround--search-outward-balanced left right direction limits regexp?)
@@ -861,7 +860,7 @@ BEG, END position and done the indentation."
                (set-marker (mark-marker) (point)))))
 
 (defsubst helix-end-of-buffer-p (direction)
-  (if (natnump direction) (eobp) (bobp)))
+  (if (< direction 0) (bobp) (eobp)))
 
 (defun helix-bolp ()
   "Like `bolp' but consider visual lines when `visual-line-mode' is enabled."
@@ -944,7 +943,7 @@ If VISIBLE? is non-nil skip invisible matches.
 
 When REGEXP? is non-nil this function modifies the match data
 that `match-beginning', `match-end' and `match-data' access."
-  (unless direction (setq direction 1))
+  (or direction (setq direction 1))
   (when-let* ((result (if regexp?
                           (re-search-forward string limit t direction)
                         (search-forward string limit t direction))))
@@ -957,7 +956,7 @@ that `match-beginning', `match-end' and `match-data' access."
 (defun helix-re-search-with-wrap (regexp &optional direction)
   "Search REGEXP from the point toward the DIRECTION.
 If nothing found, wrap around the buffer and search up to the point."
-  (unless direction (setq direction 1))
+  (or direction (setq direction 1))
   (when (and (use-region-p)
              (/= direction (helix-region-direction)))
     (goto-char (mark-marker)))
@@ -977,7 +976,7 @@ otherwise it will be searched literally.
 
 When REGEXP? is non-nil this function modifies the match data
 that `match-beginning', `match-end' and `match-data' access."
-  (unless direction (setq direction 1))
+  (or direction (setq direction 1))
   (cond ((and regexp? (< 0 direction))
          (looking-at string))
         ((and regexp? (< direction 0))
@@ -1174,7 +1173,7 @@ FUN on each invocation should move point."
 
 (defun helix-letters-are-self-insert-p ()
   "Return t if any of the a-z keys are bound to self-insert command."
-  ;; This is a fancy way to produce following list in compile time:
+  ;; This is just a fancy way to produce following list in compile time:
   ;;   '("a" "b" "c" "d" "e" "f" "g" "h" "i" "j" "k" "l" "m"
   ;;     "n" "o" "p" "q" "r" "s" "t" "u" "v" "w" "x" "y" "z")
   ;; I just couldn't help myself :)

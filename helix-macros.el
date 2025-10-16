@@ -140,7 +140,7 @@ If selection is no linewise work like `helix-save-region'."
                (apply #'helix-set-region ,region)
              (goto-char ,point-pos)))))))
 
-(defmacro helix-define-command (command args  &rest body)
+(defmacro helix-define-command (command args &rest body)
   "Define Helix COMMAND.
 Wrapper around `defun' macro, that additionally takes following keyword
 parameters:

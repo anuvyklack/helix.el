@@ -178,7 +178,7 @@ The current state is stored in the overlay for later retrieval."
 (defun helix--create-fake-cursor-1 (id point mark)
   "Create a fake cursor with ID at POINT and fake region between POINT and MARK.
 This function is the guts of the `helix-create-fake-cursor'."
-  (unless id (setq id (helix--new-fake-cursor-id)))
+  (or id (setq id (helix--new-fake-cursor-id)))
   (save-excursion
     (goto-char point)
     (let ((cursor (helix--set-cursor-overlay nil point)))
@@ -298,7 +298,7 @@ Return CURSOR."
 
 (defun helix--store-cursor-state (overlay point mark)
   "Store POINT, MARK and variables relevant to fake cursor into OVERLAY."
-  (unless mark (setq mark point))
+  (or mark (setq mark point))
   (-if-let (pnt (overlay-get overlay 'point))
       (set-marker pnt point)
     (overlay-put overlay 'point (copy-marker point t)))

@@ -1647,7 +1647,7 @@ keys to repeat motion forward/backward."
 Auto-detect word boundaries at the beginning and end of the search pattern."
   :multiple-cursors nil
   (interactive)
-  (let ((quote (if helix-use-pcre-regex #'rxt-quote-pcre #'regexp-quote))
+  (let ((quote-fn (if helix-use-pcre-regex #'rxt-quote-pcre #'regexp-quote))
         patterns)
     (helix-with-each-cursor
       (when (use-region-p)
@@ -1668,7 +1668,7 @@ Auto-detect word boundaries at the beginning and end of the search pattern."
                        (->> (buffer-substring-no-properties (1- end) (1+ end))
                             (string-match-p "[[:word:]][^[:word:]]")))))
                (string (->> (buffer-substring-no-properties (point) (mark))
-                            (funcall quote))))
+                            (funcall quote-fn))))
           (push (concat (if open-word-boundary "\\b")
                         string
                         (if close-word-boundary "\\b"))
@@ -2011,8 +2011,7 @@ narrowing doesn't affect other windows displaying the same buffer. Call
 Incrementally kill indirect buffers (under the assumption they were created by
 `helix-narrow-to-region-indirectly') and switch to their base buffer.
 
-With `universal-argument' kill all indirect buffers, return the base buffer and
-widen it.
+With \\[universal-argument] kill all indirect buffers, return the base buffer and widen it.
 
 If the current buffer is not an indirect buffer, works like `widen'."
   :multiple-cursors nil

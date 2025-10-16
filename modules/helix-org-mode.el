@@ -305,13 +305,11 @@ GRANULARITY specifies the parsing level (see `org-element-parse-buffer')."
             end (min end (org-element-end section)))
       ;; Find smallest enclosing element within `section' element AST.
       (cl-loop with element = (helix-org--parse-element section granularity)
-               with nested-element
-               do (setq nested-element
-                        (-find (lambda (el)
-                                 (<= (org-element-begin el)
-                                     beg end
-                                     (org-element-end el)))
-                               (org-element-contents element)))
+               for nested-element = (-find (lambda (el)
+                                             (<= (org-element-begin el)
+                                                 beg end
+                                                 (org-element-end el)))
+                                           (org-element-contents element))
                while nested-element
                do (setq element nested-element)
                finally return element))))
