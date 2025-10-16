@@ -417,9 +417,8 @@ If no THING at point select COUNT following THINGs."
                                               thing-beg))
                                ;; No thing at point at all.
                                t)
-                         (if (natnump dir)
-                             (helix-forward-beginning-of-thing thing dir)
-                           (helix-forward-end-of-thing thing dir)))
+                         (helix-forward-following-thing thing dir)
+                         (forward-thing thing (- dir)))
                        (point)))
               (end (progn (forward-thing thing count)
                           (point))))
