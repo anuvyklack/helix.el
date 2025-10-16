@@ -282,10 +282,9 @@ RANGES is a list of cons cells with positions (START . END)."
 (defun helix-search--set-target-overlay (beg end)
   (if helix-search--overlay
       (move-overlay helix-search--overlay beg end)
-    (setq helix-search--overlay
-          (-doto (make-overlay beg end nil t nil)
-            (overlay-put 'face 'region)
-            (overlay-put 'priority 99)))))
+    (setq helix-search--overlay (-doto (make-overlay beg end nil t nil)
+                                  (overlay-put 'face 'region)
+                                  (overlay-put 'priority 99)))))
 
 (defun helix-search--stop-session ()
   "Stop interactive select."

@@ -85,7 +85,7 @@
         (add-hook 'post-command-hook #'helix--post-command-hook 90 t)
         (add-hook 'deactivate-mark-hook #'helix-disable-newline-at-eol nil t)
         (add-hook 'after-revert-hook #'helix-delete-all-fake-cursors nil t)
-        (helix-switch-to-initial-state))
+        (helix-switch-state (helix-initial-state)))
     ;; else
     (remove-hook 'post-command-hook #'helix--post-command-hook t)
     (remove-hook 'pre-command-hook #'helix--pre-commad-hook t)
@@ -108,8 +108,7 @@
         (when helix-want-minibuffer
           (add-hook 'minibuffer-setup-hook #'helix-local-mode))
         (add-hook 'window-configuration-change-hook #'helix-update-cursor)
-        (add-to-list 'mode-line-misc-info
-                     '(:eval (helix-multiple-cursors--indicator))))
+        (add-to-list 'mode-line-misc-info '(:eval (helix-multiple-cursors--indicator))))
     ;; else
     (cl-loop for (fun _how advice) in helix--advices
              do (advice-remove fun advice))
@@ -120,7 +119,7 @@
   "Turn on `helix-local-mode' in current buffer if appropriate."
   (cond (helix-local-mode
          ;; Set Helix state according to new major-mode.
-         (helix-switch-to-initial-state))
+         (helix-switch-state (helix-initial-state)))
         ((not (minibufferp))
          (helix-local-mode 1))))
 
