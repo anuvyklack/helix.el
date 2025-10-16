@@ -159,6 +159,10 @@ COUNT minus number of steps moved; if backward, COUNT plus number moved.
 ;;; Things
 ;;;; `helix-line'
 
+;; The difference from built-in `line' thing is that `helix-line' ignores
+;; invisible parts of the buffer (lines folded by `outline-minor-mode' for
+;; example) and always denotes visible lines.
+;;
 ;; The need for this thing arose from the requirement to select a folded section
 ;; of the buffer (in Org-mode or Outline-mode) using the `x' key command.
 
@@ -830,7 +834,7 @@ YANK-FUNCTION should be a `yank' like function."
         (deactivate-mark nil))
     (helix-ensure-region-direction direction)
     (when (helix-string-ends-with-newline (current-kill 0 :do-not-move))
-      (forward-line (if (natnump direction) 1 0)))
+      (forward-thing 'helix-line (if (natnump direction) 1 0)))
     (cl-letf (((symbol-function 'push-mark) #'helix-push-mark))
       (funcall yank-function))
     (helix-set-region (mark t) (point) region-dir :adjust)
