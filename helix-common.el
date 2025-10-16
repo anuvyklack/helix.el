@@ -26,8 +26,8 @@
 
 ;;; Motions
 
-(defun helix-forward-next-thing (thing &optional count)
-  "Move forward to the end of the COUNT-th next THING.
+(defun helix-forward-following-thing (thing &optional count)
+  "Move forward to the end of the COUNT-th following THING.
 `forward-thing' first moves to the  boundary of the current THING, then to the
 next THING. This function skips first step and always moves to the next THING."
   (unless count (setq count 1))
@@ -45,7 +45,7 @@ Works only with THINGs, that returns the count of steps left to move,
 such as `helix-word', `helix-sentence', `helix-line', `paragraph'."
   (unless count (setq count 1))
   (if (zerop count) 0
-    (let ((rest (helix-forward-next-thing thing count)))
+    (let ((rest (helix-forward-following-thing thing count)))
       (when (and (/= rest count)
                  (natnump count)) ;; moving forward
         (forward-thing thing -1))
@@ -60,7 +60,7 @@ Works only with THINGs, that returns the count of steps left to move,
 such as `helix-word', `helix-sentence', `helix-line', `paragraph'."
   (unless count (setq count 1))
   (if (zerop count) 0
-    (let ((rest (helix-forward-next-thing thing count)))
+    (let ((rest (helix-forward-following-thing thing count)))
       (when (and (/= rest count)
                  (< count 0)) ;; movind backward
         (forward-thing thing))
