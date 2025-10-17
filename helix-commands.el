@@ -975,6 +975,7 @@ entered regexp withing current selections."
   "Split selections on line boundaries."
   :multiple-cursors nil
   (interactive)
+  (helix-disable-newline-at-eol)
   (helix-with-each-cursor
     (helix-extend-selection -1)
     (when (use-region-p)
