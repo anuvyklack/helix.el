@@ -473,7 +473,7 @@ is enabled (via `v'), the selection will expand linewise to include all lines
 to the chosen one."
   :multiple-cursors nil
   (interactive "p")
-  (setq direction (helix-sign direction))
+  (cl-callf helix-sign direction)
   (when-let* ((pos (save-excursion
                      (let ((goal-column (window-hscroll)))
                        (-> (lambda () (interactive) (line-move direction))
@@ -901,7 +901,7 @@ If ARG positive number — enable, negative — disable."
   (interactive "p")
   (let ((motion-dir (helix-sign count)))
     (and (helix-expand-selection-to-full-lines motion-dir)
-         (setq count (- count motion-dir)))
+         (cl-callf - count motion-dir))
     (unless (zerop count)
       (helix-restore-newline-at-eol)
       (let* ((line (if visual-line-mode 'helix-visual-line 'helix-line))
@@ -1229,7 +1229,7 @@ at START-COLUMN, ends at END-COLUMN and consists of NUMBER-OF-LINES."
       (helix-with-real-cursor-as-fake
         (let ((cursors (helix-all-fake-cursors :sort)))
           (when backward
-            (setq cursors (nreverse cursors)))
+            (cl-callf nreverse cursors))
           (dotimes (_ count)
             (helix--rotate-selections-content-1 cursors))))
       ;; Restore original regions direction.
@@ -1557,7 +1557,7 @@ keys to repeat motion forward/backward."
   :multiple-cursors t
   :merge-selections 'extend-selection
   (interactive "p")
-  (setq count (- count))
+  (cl-callf - count)
   (let ((char (read-char "F")))
     (helix-maybe-set-mark)
     (helix-motion-loop (dir count)
@@ -1584,7 +1584,7 @@ keys to repeat motion forward/backward."
   :multiple-cursors t
   :merge-selections 'extend-selection
   (interactive "p")
-  (setq count (- count))
+  (cl-callf - count)
   (let ((char (read-char "T")))
     (helix-maybe-set-mark)
     (helix-motion-loop (dir count)
@@ -1617,7 +1617,7 @@ keys to repeat motion forward/backward."
   (helix-disable-newline-at-eol)
   (unless helix-search--direction (setq helix-search--direction 1))
   (when (< helix-search--direction 0)
-    (setq count (- count)))
+    (cl-callf - count))
   (let ((regexp (helix-search-pattern))
         (region-dir (if (use-region-p) (helix-region-direction) 1)))
     (helix-recenter-point-on-jump
@@ -1691,7 +1691,7 @@ Do not auto-detect word boundaries in the search pattern."
       (when (use-region-p)
         (push (funcall quote (buffer-substring-no-properties (point) (mark)))
               patterns)))
-    (setq patterns (nreverse patterns))
+    (cl-callf nreverse patterns)
     (let* ((separator (if helix-use-pcre-regex "|" "\\|"))
            (regexp (apply #'concat (-interpose separator patterns))))
       (helix-add-to-regex-history regexp)
@@ -1780,8 +1780,8 @@ lines and reindent the region."
              (end (copy-marker (region-end) t))
              (linewise-selection? (helix-logical-lines-p)))
         (when linewise-selection?
-          (setq left (s-trim left)
-                right (s-trim right)))
+          (cl-callf s-trim left)
+          (cl-callf s-trim right))
         (goto-char beg)
         (insert left)
         (when linewise-selection? (newline))

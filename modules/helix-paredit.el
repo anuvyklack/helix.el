@@ -120,7 +120,7 @@ and brackets."
       ;; +1 because `forward-thing' moves point first to the boundary of the
       ;; current thing, and only than to the next thing.
       (when (/= dir region-dir)
-        (setq count (+ count dir)))
+        (cl-callf + count dir))
       (forward-thing sexp count)
       (if helix--extend-selection
           (let ((new-region-dir (if (use-region-p) (helix-region-direction) region-dir)))
@@ -166,15 +166,15 @@ and brackets."
                          (or (/= sexp-beg beg)
                              (/= sexp-end end)))
                 (helix-set-region sexp-beg sexp-end count)
-                (setq count (- count dir))))
+                (cl-callf - count dir)))
           ;; else
           (helix-set-region sexp-beg sexp-end count)
-          (setq count (- count dir)))
+          (cl-callf - count dir))
       ;; else
       (forward-thing sexp dir)
       (-when-let ((beg . end) (bounds-of-thing-at-point sexp))
         (helix-set-region beg end count))
-      (setq count (- count dir)))
+      (cl-callf - count dir))
     (unless (zerop count)
       (unwind-protect
           (helix-motion-loop (dir count)
