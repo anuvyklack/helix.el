@@ -475,7 +475,7 @@ the data needed for multiple cursors functionality."
                      :mark (copy-marker (mark-marker)))))
     (dolist (var helix-fake-cursor-specific-vars)
       (if (boundp var)
-          (setq state (plist-put state var (symbol-value var)))))
+          (cl-callf plist-put state var (symbol-value var))))
     (helix--delete-region-overlay)
     state))
 

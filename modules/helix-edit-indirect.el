@@ -118,7 +118,7 @@ already an edit-indirect buffer active overlapping any portion of region, an
     (let ((indentation 0))
       (while (not (eobp))
         (unless (s-blank-str? (thing-at-point 'line))
-          (setq indentation (min indentation (current-indentation))))
+          (cl-callf min indentation (current-indentation)))
         (forward-line))
       indentation)))
 
