@@ -37,7 +37,7 @@ of all cursors when yanking."
                                        (funcall interprogram-paste-function))))
     (when (listp interprogram-paste)
       ;; Use `reverse' to avoid modifying external data.
-      (setq interprogram-paste (reverse interprogram-paste)))
+      (cl-callf reverse interprogram-paste))
     ;; Add `interprogram-paste' to `kill-ring's of all cursors real and
     ;; fake. This is what `current-kill' do internally, but we have to do
     ;; it ourselves, because `interprogram-paste-function' is not a pure

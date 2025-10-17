@@ -421,7 +421,7 @@ according to the Helix STATE."
 (defun helix-minor-mode-for-keymap (keymap)
   "Return the minor mode associated with KEYMAP or t if it doesn't have one."
   (when (symbolp keymap)
-    (setq keymap (symbol-value keymap)))
+    (cl-callf symbol-value keymap))
   (or (car (rassq keymap minor-mode-map-alist))
       t))
 

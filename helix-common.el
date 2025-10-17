@@ -153,7 +153,7 @@ COUNT minus number of steps moved; if backward, COUNT plus number moved.
             (,dir (helix-sign ,n)))
        (while (and (/= ,n 0)
                    (/= (point) (progn ,@body (point))))
-         (setq ,n (- ,n ,dir)))
+         (cl-callf - ,n ,dir))
        ,n)))
 
 ;;; Things
@@ -368,7 +368,7 @@ Count things forward if COUNT is positive, or backward if negative."
                       (if (< dir 0) (cl-rotatef thing-beg thing-end))
                       (prog1 thing-beg
                         (goto-char thing-end)
-                        (setq count (- count dir))))
+                        (cl-callf - count dir)))
                   ;; else
                   (forward-thing thing dir)
                   (forward-thing thing (- dir))
@@ -698,13 +698,13 @@ that is used when BALANCED? argument is non-nil."
                      (let ((close-dist (helix-distance pnt close-pos))
                            (open-dist  (helix-distance pnt open-pos)))
                        (cond ((< open-dist close-dist)
-                              (setq level (1+ level))
+                              (cl-incf level)
                               (goto-char open-pos))
                              (t
-                              (setq level (1- level))
+                              (cl-decf level)
                               (goto-char close-pos)))))
                     (close-pos
-                     (setq level (1- level))
+                     (cl-decf level)
                      (goto-char close-pos))
                     (t (cl-return))))))
         (if (eql level 0)
@@ -776,7 +776,7 @@ and jump to the new top position."
   (when mark-ring
     (deactivate-mark)
     (when (= (point) (car mark-ring))
-      (setq mark-ring (helix-rotate-ring mark-ring backward?)))
+      (cl-callf helix-rotate-ring mark-ring backward?))
     (helix-recenter-point-on-jump
       (goto-char (car mark-ring)))))
 
@@ -788,7 +788,7 @@ forward (or BACKWARD) and jump to new top location."
   (when (setq global-mark-ring (-filter #'marker-buffer global-mark-ring))
     (when (eq (marker-buffer (car global-mark-ring))
               (current-buffer))
-      (setq global-mark-ring (helix-rotate-ring global-mark-ring backward?)))
+      (cl-callf helix-rotate-ring global-mark-ring backward?))
     (helix-recenter-point-on-jump
       (let* ((marker (car global-mark-ring))
 	     (buffer (marker-buffer marker))
