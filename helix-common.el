@@ -789,7 +789,7 @@ balanced expressions."
 If point is already there, rotate `mark-ring' forward (or BACKWARD)
 and jump to the new top position."
   (when mark-ring
-    (deactivate-mark)
+    (helix-maybe-deactivate-mark)
     (when (= (point) (car mark-ring))
       (cl-callf helix-rotate-ring mark-ring backward?))
     (helix-recenter-point-on-jump
