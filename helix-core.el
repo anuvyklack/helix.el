@@ -112,12 +112,14 @@
         (when helix-want-minibuffer
           (add-hook 'minibuffer-setup-hook #'helix-local-mode))
         (add-hook 'window-configuration-change-hook #'helix-update-cursor)
-        (add-to-list 'mode-line-misc-info '(:eval (helix-multiple-cursors--indicator))))
+        (add-to-list 'mode-line-misc-info '(:eval (helix-multiple-cursors--indicator)))
+        (setq-default forward-sexp-function #'helix-forward-sexp-only))
     ;; else
     (cl-loop for (fun _how advice) in helix--advices
              do (advice-remove fun advice))
     (remove-hook 'minibuffer-setup-hook #'helix-local-mode)
-    (remove-hook 'window-configuration-change-hook #'helix-update-cursor)))
+    (remove-hook 'window-configuration-change-hook #'helix-update-cursor)
+    (setq-default forward-sexp-function nil)))
 
 (defun helix--initialize ()
   "Turn on `helix-local-mode' in current buffer if appropriate."

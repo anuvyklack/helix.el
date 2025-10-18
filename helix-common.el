@@ -291,6 +291,14 @@ on sign of COUNT."
     (ignore-errors
       (forward-sexp dir))))
 
+(defun helix-forward-sexp-only (&optional count)
+  "Default value for `forward-sexp-function'.
+Unlike `forward-sexp-default-function' this one doesn't move to the end of the
+buffer if no sexp forward."
+  (when-let ((pos (scan-sexps (point) count)))
+    (goto-char pos)
+    (if (< count 0) (backward-prefix-chars))))
+
 ;;;; `helix-comment'
 
 (put 'helix-comment 'bounds-of-thing-at-point #'helix-bounds-of-comment-at-point-ppss)
