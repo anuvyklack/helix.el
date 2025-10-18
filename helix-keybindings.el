@@ -22,10 +22,24 @@
 
 ;;; Universal argument
 
-;; Bind `universal-argument' to `M-u' since `C-u' is used for scrolling.
-;; By default `M-u' is bound to `upcase-word'.
-(keymap-global-set "M-u" #'universal-argument)
-(keymap-set universal-argument-map "M-u" #'universal-argument-more)
+(defun helix--setup-universal-argument-keys-h ()
+  "Rebind `universal-argument' to `M-u' since `C-u' is used for scrolling.
+By default `M-u' is bound to `upcase-word', so we can use it."
+  (if helix-mode
+      (progn
+        (keymap-global-set "M-u" #'universal-argument)
+        (keymap-set universal-argument-map "M-u" #'universal-argument-more)
+        ;; Unbind `C-u' so that \\[universal-argument] links in help buffers
+        ;; are displayed as `M-u'.
+        (keymap-global-unset "C-u" t)
+        (keymap-unset universal-argument-map "C-u" t))
+    ;; else
+    (keymap-global-set "C-u" #'universal-argument)
+    (keymap-set universal-argument-map "C-u" #'universal-argument-more)
+    (keymap-global-set "M-u" #'upcase-word)
+    (keymap-unset universal-argument-map "M-u" t)))
+
+(add-hook 'helix-mode-hook #'helix--setup-universal-argument-keys-h)
 
 ;;; Normal state
 
