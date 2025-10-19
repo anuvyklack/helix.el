@@ -206,90 +206,57 @@ Use visual line when `visual-line-mode' is active."
     (setq temporary-goal-column most-positive-fixnum
           this-command 'next-line)))
 
-;; ]p or }
-(helix-define-command helix-mark-paragraph-forward (count)
-  "Select paragraph forward.
-If point is inside a paragraph, select to the end of current paragraph.
-Otherwise, select to the beginning of the COUNT-th next paragraph."
+;; }
+(helix-define-command helix-forward-paragraph (count &optional move-to-end?)
+  "Select to the beginning of the COUNT-th next paragraph."
   :multiple-cursors t
   :merge-selections t
   (interactive "p")
   (let ((thing 'helix-paragraph)
-        (initial-pos (point)))
+        (initial-pos (point))
+        (dir (helix-sign count)))
     (helix-restore-region-on-error
-      (if (eolp) (forward-char))
-      (if (eobp) (user-error "End of buffer"))
-      (helix-push-point initial-pos)
-      (-let (((thing-beg . thing-end) (bounds-of-thing-at-point thing))
-             start end)
-        (cond ((and (/= (point) thing-beg)
-                    (/= (point) thing-end)
-                    (= count 1))
-               (setq start (if helix--extend-selection (mark) (point))
-                     end   thing-end))
-              ((and (= (point) thing-end)
-                    (use-region-p))
-               (setq start (mark)
-                     end   (progn (helix-forward-beginning-of-thing thing count)
-                                  (point))))
-              ((= (point) thing-end)
-               (setq start (progn (helix-forward-beginning-of-thing thing 1)
-                                  (point))
-                     end   (progn (helix-forward-beginning-of-thing thing count)
-                                  (point))))
-              (t
-               (setq start (if helix--extend-selection (mark) (point))
-                     end   (progn (helix-forward-beginning-of-thing thing count)
-                                  (point)))))
-        (helix-set-region start end nil :adjust)
+      ;; (if (eolp) (forward-char))
+      (helix-restore-newline-at-eol)
+      (if (helix-end-of-buffer-p dir)
+          (user-error (if (< dir 0) "Beginning of buffer" "End of buffer"))
+        ;; else
+        (helix-push-point initial-pos)
+        (helix-set-region (if helix--extend-selection (mark) (point))
+                          (progn
+                            (cond ((and (< dir 0) move-to-end?)
+                                   (helix-forward-end-of-thing thing count))
+                                  ((and (< 0 dir) (not move-to-end?))
+                                   (helix-forward-beginning-of-thing thing count))
+                                  (t
+                                   (forward-thing thing count)))
+                            (point))
+                          dir :adjust)
         (helix-reveal-point-when-on-top)))))
 
-;; [p or {
-(helix-define-command helix-mark-paragraph-backward (count)
+;; {
+(helix-define-command helix-backward-paragraph (count)
   "Select to the beginning of the COUNT-th previous paragraph."
   :multiple-cursors t
   :merge-selections t
   (interactive "p")
-  (let ((thing 'helix-paragraph)
-        (initial-pos (point)))
-    (helix-restore-region-on-error
-      (helix-restore-newline-at-eol)
-      (helix-push-point initial-pos)
-      (if (bobp) (user-error "Beginning of buffer"))
-      (let ((start (if helix--extend-selection (mark) (point)))
-            (end (progn (forward-thing thing (- count))
-                        (point))))
-        (helix-set-region start end nil :adjust)
-        (helix-reveal-point-when-on-top)))))
+  (helix-forward-paragraph (- count)))
 
-;; ]f (Helix editor emulation)
-(helix-define-command helix-mark-forward-to-beginning-of-function (count)
-  "Select from point to the start of the COUNT-th next function.
-This function behaves the same as `]f' in the Helix text editor."
+;; ]p
+(helix-define-command helix-forward-paragraph-end (count)
+  "Select to the end of the COUNT-th next paragraph."
   :multiple-cursors t
   :merge-selections t
   (interactive "p")
-  (helix-push-point)
-  (helix-restore-newline-at-eol)
-  (helix-set-region (if helix--extend-selection (mark) (point))
-                    (progn
-                      (helix-forward-beginning-of-thing 'helix-function count)
-                      (point))
-                    nil :adjust))
+  (helix-forward-paragraph count t))
 
-;; [f (Helix editor emulation)
-(helix-define-command helix-mark-backward-to-beginning-of-function (count)
-  "Select from point to the start of the COUNT-th previous function.
-This function behaves the same as `[f' in the Helix text editor."
+;; [p
+(helix-define-command helix-backward-paragraph-end (count)
+  "Select to the end of the COUNT-th previous paragraph."
   :multiple-cursors t
   :merge-selections t
   (interactive "p")
-  (helix-push-point)
-  (helix-restore-newline-at-eol)
-  (helix-set-region (if helix--extend-selection (mark) (point))
-                    (progn (forward-thing 'helix-function (- count))
-                           (point))
-                    nil :adjust))
+  (helix-forward-paragraph (- count) t))
 
 ;; ]f (alternative version)
 (helix-define-command helix-mark-function-forward (count)

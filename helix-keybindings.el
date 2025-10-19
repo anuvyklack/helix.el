@@ -76,10 +76,10 @@ By default `M-u' is bound to `upcase-word', so we can use it."
   "g l" #'helix-end-of-line-command
   "g g" #'helix-beginning-of-buffer
   "G"   #'helix-end-of-buffer
-  "] p" #'helix-mark-paragraph-forward
-  "[ p" #'helix-mark-paragraph-backward
-  "}"   #'helix-mark-paragraph-forward
-  "{"   #'helix-mark-paragraph-backward
+  "}"   #'helix-forward-paragraph
+  "{"   #'helix-backward-paragraph
+  "] p" #'helix-forward-paragraph-end
+  "[ p" #'helix-backward-paragraph-end
   "] f" #'helix-mark-function-forward
   "[ f" #'helix-mark-function-backward
   "] s" #'helix-mark-sentence-forward
