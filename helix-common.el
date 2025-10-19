@@ -388,8 +388,13 @@ Count things forward if COUNT is positive, or backward if negative."
                   (forward-thing thing dir)
                   (forward-thing thing (- dir))
                   (point)))
-           (end (progn (forward-thing thing count)
-                       (point))))
+           (end (progn
+                  (setq count (forward-thing thing count))
+                  (point))))
+      (when (/= count 0)
+        (goto-char beg)
+        (forward-thing thing (- count))
+        (setq beg (point)))
       (if (< end beg) (cl-rotatef beg end))
       (cons beg end))))
 
