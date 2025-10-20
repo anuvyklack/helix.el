@@ -45,10 +45,12 @@ Works only with THINGs, that returns the count of steps left to move,
 such as `helix-word', `helix-sentence', `helix-line', `paragraph'."
   (or count (setq count 1))
   (if (zerop count) 0
-    (let ((rest (helix-forward-following-thing thing count)))
+    (let ((dir (helix-sign count))
+          (rest (helix-forward-following-thing thing count)))
       (when (and (/= rest count)
-                 (natnump count)) ;; moving forward
-        (forward-thing thing -1))
+                 (natnump dir)) ; moving forward
+        (-when-let ((beg . _) (bounds-of-thing-at-point thing))
+          (goto-char beg)))
       rest)))
 
 (defun helix-forward-end-of-thing (thing &optional count)
