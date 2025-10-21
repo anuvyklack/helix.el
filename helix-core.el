@@ -99,6 +99,7 @@
 
 (put 'helix-local-mode 'permanent-local t)
 
+;;;###autoload (autoload 'helix-mode "helix" nil t)
 (define-globalized-minor-mode helix-mode helix-local-mode helix--initialize
   :group 'helix
   (if helix-mode
