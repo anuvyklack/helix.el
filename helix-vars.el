@@ -49,6 +49,7 @@
     helix-embark
     helix-vertico
     helix-corfu
+    helix-consult
     helix-deadgrep
     ;; helix-edit-indirect ; alternative `zn' version
     )

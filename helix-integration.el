@@ -492,6 +492,23 @@ in the command loop, and the fake cursors can pick up on those instead."
   ;; Close corfu popup on Insert state exit.
   (add-hook 'helix-insert-state-exit-hook 'corfu-quit))
 
+;;;; consult
+
+(with-eval-after-load 'consult
+  (helix-cache-input consult--read)
+
+  (put 'consult-yank-pop 'multiple-cursors t)
+
+  (dolist (cmd '(consult-line
+                 consult-mark
+                 consult-global-mark
+                 consult-imenu
+                 consult-outline
+                 consult-grep
+                 consult-git-grep
+                 consult-ripgrep))
+    (helix-advice-add cmd :before #'helix-deactivate-mark-a)))
+
 ;;;; deadgrep
 
 (with-eval-after-load 'deadgrep
