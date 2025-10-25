@@ -352,6 +352,7 @@ By default `M-u' is bound to `upcase-word', so we can use it."
   "V"   #'helix-root-window-vsplit
   "c"   #'helix-window-delete
   "o"   #'delete-other-windows
+  "p"   #'toggle-window-dedicated
 
   "w"   #'other-window
   "h"   #'helix-window-left
@@ -383,6 +384,7 @@ By default `M-u' is bound to `upcase-word', so we can use it."
   "C-V" #'helix-root-window-vsplit
   "C-c" #'helix-window-delete
   "C-o" #'delete-other-windows
+  "C-p" #'toggle-window-dedicated
   ;; Jump over windows
   "C-w" #'other-window
   "C-h" #'helix-window-left
