@@ -433,7 +433,8 @@ in the command loop, and the fake cursors can pick up on those instead."
 
 (helix-keymap-set special-mode-map ;; :state 'motion
   "g"   nil ; unbind `revert-buffer'
-  "g r" #'revert-buffer
+  "g a" #'describe-char
+  "g r" #'revert-buffer       ; also "C-w r"
   "g g" #'beginning-of-buffer ; also "<"
   "G"   #'end-of-buffer)      ; also ">"
 
