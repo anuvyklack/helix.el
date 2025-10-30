@@ -37,19 +37,6 @@
              (add-hook 'minibuffer-setup-hook #'helix-local-mode)
            (remove-hook 'minibuffer-setup-hook #'helix-local-mode))))
 
-(defcustom helix-modules '(helix-corfu
-                           helix-custom
-                           helix-deadgrep
-                           helix-embark
-                           helix-helpful
-                           helix-info
-                           helix-org-mode
-                           helix-outline
-                           helix-vertico)
-  "This variable must be set before Helix is loaded!"
-  :type '(list symbol)
-  :group 'helix)
-
 (defcustom helix-use-pcre-regex t
   "If non-nil use PCRE regexp syntax instead of Emacs one."
   :type 'integer
@@ -354,16 +341,6 @@ list of categories."
 
 (push (expand-file-name "modules" (file-name-directory load-file-name))
       load-path)
-
-(defvar helix-modules--load-after
-  '((helix-corfu    . corfu)
-    (helix-custom   . cus-edit)
-    (helix-deadgrep . deadgrep)
-    (helix-helpful  . helpful)
-    (helix-info     . info)
-    (helix-org-mode . org)
-    (helix-outline  . outline)
-    (helix-vertico  . vertico)))
 
 (helix-defvar-local helix-mode-map-alist nil
   "Association list of keymaps for current Helix state.

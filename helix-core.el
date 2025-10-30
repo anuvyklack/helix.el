@@ -104,10 +104,6 @@
       (progn
         (dolist (fun-how-advice helix--advices)
           (apply #'advice-add fun-how-advice))
-        (dolist (module helix-modules)
-          (if-let ((package (alist-get module helix-modules--load-after)))
-              (with-eval-after-load package (require module))
-            (require module)))
         (when helix-want-minibuffer
           (add-hook 'minibuffer-setup-hook #'helix-local-mode))
         (add-hook 'window-configuration-change-hook #'helix-update-cursor)
