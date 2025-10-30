@@ -346,13 +346,13 @@ By default `M-u' is bound to `upcase-word', so we can use it."
   ;; windows
   "RET" #'same-window-prefix
   "n"   #'other-window-prefix
-  "s"   #'helix-window-split
-  "v"   #'helix-window-vsplit
-  "S"   #'helix-root-window-split
-  "V"   #'helix-root-window-vsplit
-  "c"   #'helix-window-delete
-  "o"   #'delete-other-windows
-  "p"   #'toggle-window-dedicated
+  "s"   '("split window horizontally" . helix-window-split)
+  "v"   '("split window vertically" . helix-window-vsplit)
+  "S"   '("split root window horizontally" . helix-root-window-split)
+  "V"   '("split root window vertically" . helix-root-window-vsplit)
+  "c"   '("close window" . helix-window-delete)
+  "o"   '("close other windows" . delete-other-windows)
+  "p"   '("pin buffer to window" . toggle-window-dedicated)
 
   "w"   #'other-window
   "h"   #'helix-window-left
@@ -383,13 +383,13 @@ By default `M-u' is bound to `upcase-word', so we can use it."
 
   ;; Duplicate all keys with ctrl prefix.
   "C-n" #'other-window-prefix
-  "C-s" #'helix-window-split
-  "C-v" #'helix-window-vsplit
-  "C-S" #'helix-root-window-split
-  "C-V" #'helix-root-window-vsplit
-  "C-c" #'helix-window-delete
-  "C-o" #'delete-other-windows
-  "C-p" #'toggle-window-dedicated
+  "C-s" '("split window horizontally" . helix-window-split)
+  "C-v" '("split window vertically" . helix-window-vsplit)
+  "C-S" '("split root window horizontally" . helix-root-window-split)
+  "C-V" '("split root window vertically" . helix-root-window-vsplit)
+  "C-c" '("close window" . helix-window-delete)
+  "C-o" '("close other windows" . delete-other-windows)
+  "C-p" '("pin buffer to window" . toggle-window-dedicated)
   ;; Jump over windows
   "C-w" #'other-window
   "C-h" #'helix-window-left
