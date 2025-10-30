@@ -381,6 +381,11 @@ The point must located right after the closing bracket."
   "M-n" 'helix-paredit-forward-sexp
   "M-p" 'helix-paredit-backward-sexp
 
+  "C-h" 'helix-paredit-backward-sexp
+  "C-j" 'helix-paredit-down-sexp
+  "C-k" 'helix-paredit-up-sexp-backward
+  "C-l" 'helix-paredit-forward-sexp
+
   "M-h" 'helix-paredit-backward-sexp
   "M-j" 'helix-paredit-down-sexp
   "M-k" 'helix-paredit-up-sexp-backward
@@ -413,7 +418,7 @@ The point must located right after the closing bracket."
 
 ;;; Minor mode
 
-;;;###autoload
+;;;###autoload (autoload 'helix-paredit-mode "helix-paredit" nil t)
 (define-minor-mode helix-paredit-mode
   "Helix integration with Paredit."
   :keymap helix-paredit-mode-map
