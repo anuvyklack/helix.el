@@ -409,9 +409,13 @@ in the command loop, and the fake cursors can pick up on those instead."
 
 ;;;; repeat-mode
 
-(with-eval-after-load 'repeat
-  (setopt repeat-exit-key "<escape>")
-  (put 'undo 'repeat-map nil))
+(setopt repeat-exit-key "<escape>")
+
+(put 'undo 'repeat-map nil) ; Do not repeat `undo'.
+
+(helix-keymap-set buffer-navigation-repeat-map
+  "]" #'next-buffer
+  "[" #'previous-buffer)
 
 ;;;; shortdoc
 
