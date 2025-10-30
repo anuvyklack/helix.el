@@ -123,17 +123,20 @@ and brackets."
         (cl-callf + count dir))
       (forward-thing sexp count)
       (if helix--extend-selection
-          (let ((new-region-dir (if (use-region-p) (helix-region-direction) region-dir)))
-            (when (and (= new-region-dir region-dir)
-                       (/= dir region-dir))
-              (forward-thing sexp region-dir))
-            ;; If region reversed -- adjust mark position.
-            (when (or (/= new-region-dir region-dir)
-                      (= (point) (mark)))
-              (save-excursion
-                (goto-char (mark-marker))
-                (-when-let ((beg . end) (bounds-of-thing-at-point sexp))
-                  (set-marker (mark-marker) (if (natnump dir) beg end))))))
+          (let* ((new-region-dir (if (use-region-p) (helix-region-direction) region-dir))
+                 (end (progn
+                        (when (and (= new-region-dir region-dir)
+                                   (/= dir region-dir))
+                          (forward-thing sexp region-dir))
+                        (point)))
+                 (beg (or (when (or (/= new-region-dir region-dir)
+                                    (= (point) (mark)))
+                            ;; If region reversed -- adjust mark position.
+                            (goto-char (mark))
+                            (-if-let ((beg . end) (bounds-of-thing-at-point sexp))
+                                (if (natnump dir) beg end)))
+                          (mark))))
+            (helix-set-region beg end))
         ;; else
         (-if-let ((beg . end) (bounds-of-thing-at-point sexp))
             (helix-set-region beg end region-dir)
