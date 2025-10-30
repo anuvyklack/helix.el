@@ -326,7 +326,7 @@ list of categories."
 
 ;;; Variables
 
-(push (expand-file-name "modules" (file-name-directory load-file-name))
+(push (expand-file-name "extensions" (file-name-directory load-file-name))
       load-path)
 
 (helix-defvar-local helix-mode-map-alist nil

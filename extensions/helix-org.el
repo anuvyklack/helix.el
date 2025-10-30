@@ -1,4 +1,4 @@
-;;; helix-org-mode.el -*- lexical-binding: t; -*-
+;;; helix-org.el -*- lexical-binding: t; -*-
 ;;
 ;; Copyright © 2025 Yuriy Artemyev
 ;;
@@ -15,7 +15,7 @@
 ;; Integration Helix with Org-mode.
 ;;
 ;;; Code:
-(require 'helix-outline)
+;; (require 'helix-outline)
 (require 'org)
 
 ;;; Keybindings
@@ -711,5 +711,5 @@ a parent with different boundaries or reaches a `section' element."
           (match-end 2)
           (match-end 4))))
 
-(provide 'helix-org-mode)
-;;; helix-org-mode.el ends here
+(provide 'helix-org)
+;;; helix-org.el ends here
