@@ -446,18 +446,13 @@ in the command loop, and the fake cursors can pick up on those instead."
 
 (with-eval-after-load 'winner
   (helix-keymap-set winner-mode-map :state '(normal motion)
-    "C-w u" #'winner-undo
-    "C-w U" #'winner-redo))
+    "C-w u" 'winner-undo
+    "C-w U" 'winner-redo))
 
 (with-eval-after-load 'tab-bar
-  ;; `C-<tab>' and `C-S-<tab>' are bound by deafult.
-  (helix-keymap-set tab-bar-mode-map :state '(normal motion)
-    "C-w TAB" #'tab-new
-    "] t"     #'tab-next
-    "[ t"     #'tab-previous)
   (helix-keymap-set tab-bar-history-mode-map :state '(normal motion)
-    "C-w u"   #'tab-bar-history-back
-    "C-w U"   #'tab-bar-history-forward))
+    "C-w u" 'tab-bar-history-back
+    "C-w U" 'tab-bar-history-forward))
 
 ;; (add-hook 'winner-mode-hook
 ;;           (defun helix-setup-winner-mode-keys ()
