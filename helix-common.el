@@ -1324,5 +1324,9 @@ function prevents that. It is intended to be used as `:after' advice."
 Can be used as advice."
   (helix-insert-state 1))
 
+(defun helix--execute-for-all-cursors-a (&rest _)
+  "Execute selected command for all cursors."
+  (setq helix-this-command this-command))
+
 (provide 'helix-common)
 ;;; helix-common.el ends here

@@ -24,10 +24,12 @@
 ;;; Integration multiple cursors with Emacs functionality
 
 ;; M-x
+(helix-advice-add 'execute-extended-command :after #'helix--execute-for-all-cursors-a)
 (put 'execute-extended-command 'multiple-cursors 'false)
-(helix-define-advice execute-extended-command (:after (&rest _) helix)
-  "Execute selected command for all cursors."
-  (setq helix-this-command this-command))
+
+;; M-X
+(helix-advice-add 'execute-extended-command-for-buffer :after #'helix--execute-for-all-cursors-a)
+(put 'execute-extended-command-for-buffer 'multiple-cursors 'false)
 
 (helix-define-advice current-kill (:before (n &optional _do-not-move) helix)
   "Make sure pastes from other programs are added to `kill-ring's
