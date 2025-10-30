@@ -2003,5 +2003,19 @@ If the current buffer is not an indirect buffer, works like `widen'."
           ((switch-to-buffer base-buffer)
            (kill-buffer orig-buffer)))))
 
+;; C-w :
+(helix-define-command helix-execute-extended-command-other-window ()
+  :multiple-cursors nil
+  (interactive)
+  (other-window-prefix)
+  (call-interactively #'execute-extended-command))
+
+;; C-w C-:
+(helix-define-command helix-execute-extended-command-for-buffer-other-window ()
+  :multiple-cursors nil
+  (interactive)
+  (other-window-prefix)
+  (call-interactively #'execute-extended-command-for-buffer))
+
 (provide 'helix-commands)
 ;;; helix-commands.el ends here

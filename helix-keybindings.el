@@ -376,6 +376,11 @@ By default `M-u' is bound to `upcase-word', so we can use it."
   ;; xref
   "g d" #'xref-find-definitions-other-window
 
+  ":"   #'helix-execute-extended-command-other-window
+  "C-:" #'helix-execute-extended-command-for-buffer-other-window
+  "M-x" #'helix-execute-extended-command-other-window
+  "M-X" #'helix-execute-extended-command-for-buffer-other-window
+
   ;; Duplicate all keys with ctrl prefix.
   "C-n" #'other-window-prefix
   "C-s" #'helix-window-split
