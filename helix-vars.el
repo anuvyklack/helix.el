@@ -149,10 +149,10 @@ If this value is nil, there is no ceiling."
 (defvar helix-minor-modes-incompatible-with-multiple-cursors
   '(corfu-mode
     company-mode
-    flyspell-mode)
-  "List of minor-modes that does not work well with multiple cursors.
-They are temporarily disabled when there are more then one cursor
-in the buffer.")
+    flyspell-mode
+    prettify-symbols-mode)
+  "List of minor-modes that will be temporarily disabled while there are more
+then one cursor in the buffer.")
 
 (defcustom helix-update-highlight-delay 0.02
   "Time in seconds of idle before updating search highlighting.
