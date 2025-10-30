@@ -496,7 +496,8 @@ Example:
         (cl-loop for (key definition) on args by #'cddr
                  do (if definition
                         (keymap-set map key definition)
-                      (keymap-unset map key :remove)))))))
+                      (keymap-unset map key :remove)))))
+    keymap))
 
 (defun helix-keymap-global-set (&rest args)
   "Create keybinding from KEY to DEFINITION in `global-map'.
