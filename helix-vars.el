@@ -54,6 +54,30 @@ This variable must be set before Helix is loaded!"
   :type 'boolean
   :group 'helix)
 
+(defcustom helix-want-C-hjkl-keys t
+    "If non-nil, bind `C-h', `C-j', `C-k', `C-l' to commands for crawling the AST.
+To access help commands, use `F1' instead of `C-h'.
+AST stands for Abstract Syntax Tree.
+
+These commands are also bound to `M-i', `M-n', `M-p', `M-o' for compatibility
+with the Helix text editor.
+
+This variable must be set before Helix is loaded!"
+  :type 'boolean
+  :group 'helix)
+
+(defcustom helix-want-M-hjkl-keys nil
+  "If non-nil, bind `M-h', `M-j', `M-k', `M-l' to commands for crawling the AST.
+To access help commands, use `F1' instead of `C-h'.
+AST stands for Abstract Syntax Tree.
+
+These commands are also bound to `M-i', `M-n', `M-p', `M-o' for compatibility
+with the Helix text editor.
+
+This variable must be set before Helix is loaded!"
+  :type 'boolean
+  :group 'helix)
+
 (defcustom helix-match-fake-cursor-style t
   "If non-nil, attempt to match the `cursor-type' that the user has selected.
 We only can match `bar' and `box' types.
