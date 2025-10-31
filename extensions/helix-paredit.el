@@ -381,16 +381,6 @@ The point must located right after the closing bracket."
   "M-n" 'helix-paredit-forward-sexp
   "M-p" 'helix-paredit-backward-sexp
 
-  "C-h" 'helix-paredit-backward-sexp
-  "C-j" 'helix-paredit-down-sexp
-  "C-k" 'helix-paredit-up-sexp-backward
-  "C-l" 'helix-paredit-forward-sexp
-
-  "M-h" 'helix-paredit-backward-sexp
-  "M-j" 'helix-paredit-down-sexp
-  "M-k" 'helix-paredit-up-sexp-backward
-  "M-l" 'helix-paredit-forward-sexp
-
   "H"   'helix-paredit-up-sexp-backward
   "L"   'helix-paredit-up-sexp-forward
 
@@ -401,6 +391,20 @@ The point must located right after the closing bracket."
   "g c" 'paredit-comment-dwim
   ;; "g q" 'paredit-reindent-defun
   )
+
+(when helix-want-C-hjkl-keys
+  (helix-keymap-set helix-paredit-mode-map :state 'normal
+    "C-h" 'helix-paredit-backward-sexp
+    "C-j" 'helix-paredit-down-sexp
+    "C-k" 'helix-paredit-up-sexp-backward
+    "C-l" 'helix-paredit-forward-sexp))
+
+(when helix-want-M-hjkl-keys
+  (helix-keymap-set helix-paredit-mode-map :state 'normal
+    "M-h" 'helix-paredit-backward-sexp
+    "M-j" 'helix-paredit-down-sexp
+    "M-k" 'helix-paredit-up-sexp-backward
+    "M-l" 'helix-paredit-forward-sexp))
 
 (keymap-set helix-paredit-mode-map "RET" #'paredit-newline)
 
