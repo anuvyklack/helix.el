@@ -143,10 +143,11 @@
 
 ;;;; Repeat mode
 
-(put 'helix-org-up-heading 'repeat-map 'helix-org-navigation-repeat-map)
+(put 'helix-org-up-heading 'repeat-map 'org-navigation-repeat-map)
 
-(defvar-keymap helix-org-navigation-repeat-map
-  "u" 'helix-org-up-heading)
+(setq org-navigation-repeat-map
+      (define-keymap
+        "u" 'helix-org-up-heading))
 
 ;;; Advices
 
