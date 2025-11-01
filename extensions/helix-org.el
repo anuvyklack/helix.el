@@ -460,11 +460,11 @@ GRANULARITY specifies the parsing level (see `org-element-parse-buffer')."
         ((and (memq last-command '(helix-org-down-element
                                    helix-org-next-element
                                    helix-org-previous-element
-                                   org-cycle                                ; TAB
-                                   helix-smooth-scroll-line-not-to-very-top ; zz
-                                   helix-smooth-scroll-line-to-center       ; zz
-                                   helix-smooth-scroll-line-to-top          ; zt
-                                   helix-smooth-scroll-line-to-bottom))     ; zb
+                                   org-cycle                             ; TAB
+                                   helix-smooth-scroll-line-to-eye-level ; zz
+                                   helix-smooth-scroll-line-to-center    ; zz
+                                   helix-smooth-scroll-line-to-top       ; zt
+                                   helix-smooth-scroll-line-to-bottom))  ; zb
               helix-org--current-element)
          helix-org--current-element)
         (t

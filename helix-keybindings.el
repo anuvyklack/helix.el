@@ -173,7 +173,7 @@ By default `M-u' is bound to `upcase-word', so we can use it."
   "C-u" #'helix-smooth-scroll-up
   "C-e" #'helix-mix-scroll-line-down
   "C-y" #'helix-mix-scroll-line-up
-  "z z" #'helix-smooth-scroll-line-not-to-very-top
+  "z z" #'helix-smooth-scroll-line-to-eye-level
   "z t" #'helix-smooth-scroll-line-to-top
   "z b" #'helix-smooth-scroll-line-to-bottom
 
@@ -421,7 +421,7 @@ By default `M-u' is bound to `upcase-word', so we can use it."
   "C-u" #'helix-smooth-scroll-up
   "C-e" #'helix-mix-scroll-line-down
   "C-y" #'helix-mix-scroll-line-up
-  "z z" #'helix-smooth-scroll-line-not-to-very-top
+  "z z" #'helix-smooth-scroll-line-to-eye-level
   "z t" #'helix-smooth-scroll-line-to-top
   "z b" #'helix-smooth-scroll-line-to-bottom)
 
