@@ -424,14 +424,20 @@ in the command loop, and the fake cursors can pick up on those instead."
 
 ;;;; special-mode
 
-;; hjkl keys are free in `special-mode-map' by default, so we can use them.
-(helix-keymap-set special-mode-map
+(helix-keymap-set special-mode-map ;; :state 'motion
   "h"   #'left-char
   "j"   #'next-line
   "k"   #'previous-line
-  "l"   #'right-char)
+  "l"   #'right-char
+  ":"   #'execute-extended-command
 
-(helix-keymap-set special-mode-map ;; :state 'motion
+  ;; Switch to Normal state. This allows you to select and copy arbitrary text
+  ;; in special modes, which is very handy.
+  "i"   #'helix-normal-state
+  ;; Use "zx" or "C-x C-s" to switch back to motion state.
+  ;; Saving special buffer has little sense, so we can reuse it.
+  "<remap> <save-buffer>" #'helix-motion-state
+
   "g"   nil ; unbind `revert-buffer'
   "g a" #'describe-char
   "g r" #'revert-buffer       ; also "C-w r"

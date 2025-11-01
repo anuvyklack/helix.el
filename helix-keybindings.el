@@ -195,6 +195,9 @@ By default `M-u' is bound to `upcase-word', so we can use it."
   "] SPC" #'helix-add-blank-line-below
   "[ SPC" #'helix-add-blank-line-above
 
+  "z x"   #'save-buffer
+  "Z Z"   #'save-buffer
+
   ;; Narrow to region
   "z n" #'helix-narrow-to-region-indirectly
   "z w" #'helix-widen-indirectly-narrowed
