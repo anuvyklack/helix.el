@@ -432,11 +432,21 @@ in the command loop, and the fake cursors can pick up on those instead."
   "l"   #'right-char)
 
 (helix-keymap-set special-mode-map ;; :state 'motion
+  ;; Switch to Normal state. This allows you to select and copy arbitrary text
+  ;; in special modes, which is very handy. Use "zx" or "ZZ" to switch back to
+  ;; Motion state.
+  "i"   #'helix-normal-state
+
   "g"   nil ; unbind `revert-buffer'
   "g a" #'describe-char
   "g r" #'revert-buffer       ; also "C-w r"
   "g g" #'beginning-of-buffer ; also "<"
   "G"   #'end-of-buffer)      ; also ">"
+
+;; Switch to Motion state from Normal one in special buffers.
+(helix-keymap-set special-mode-map :state 'normal
+  "z x" #'helix-motion-state
+  "Z Z" #'helix-motion-state)
 
 ;;;; prog-mode
 
