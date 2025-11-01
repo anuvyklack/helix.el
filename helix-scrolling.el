@@ -253,7 +253,7 @@ If COUNT > 1 scroll smoothly."
 (put 'helix-smooth-scroll-line-to-center 'multiple-cursors 'false)
 
 ;; zz (another version)
-(defun helix-smooth-scroll-line-not-to-very-top ()
+(defun helix-smooth-scroll-line-to-eye-level ()
   "Smoothly scroll current line not to the very top of the window."
   (interactive)
   (let* ((window-height (- (window-text-height nil t)
@@ -268,8 +268,8 @@ If COUNT > 1 scroll smoothly."
     (when (= row-at-point 0) (recenter 0))
     (pixel-scroll-precision-interpolate delta nil 1)))
 
-(put 'helix-smooth-scroll-line-not-to-very-top 'scroll-command t)
-(put 'helix-smooth-scroll-line-not-to-very-top 'multiple-cursors 'false)
+(put 'helix-smooth-scroll-line-to-eye-level 'scroll-command t)
+(put 'helix-smooth-scroll-line-to-eye-level 'multiple-cursors 'false)
 
 ;; zt
 (defun helix-smooth-scroll-line-to-top ()
