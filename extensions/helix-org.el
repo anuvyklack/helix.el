@@ -532,7 +532,8 @@ be set manually."
             (save-excursion
               (goto-char (region-beginning))
               (when (org-invisible-p (line-end-position))
-                (org-cycle)))
+                (org-cycle)
+                (org-show-hidden-entry)))
             (helix-org--current-element child)
             (helix-set-region (org-element-begin child)
                               (- (org-element-end child)
