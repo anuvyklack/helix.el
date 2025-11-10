@@ -399,13 +399,6 @@ The point must located right after the closing bracket."
     "C-k" 'helix-paredit-up-sexp-backward
     "C-l" 'helix-paredit-forward-sexp))
 
-(when helix-want-M-hjkl-keys
-  (helix-keymap-set helix-paredit-mode-map :state 'normal
-    "M-h" 'helix-paredit-backward-sexp
-    "M-j" 'helix-paredit-down-sexp
-    "M-k" 'helix-paredit-up-sexp-backward
-    "M-l" 'helix-paredit-forward-sexp))
-
 (keymap-set helix-paredit-mode-map "RET" #'paredit-newline)
 
 (helix-keymap-set helix-paredit-mode-map :state 'insert

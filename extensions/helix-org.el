@@ -108,13 +108,6 @@
     "C-k" 'helix-org-previous-element
     "C-l" 'helix-org-down-element))
 
-(when helix-want-M-hjkl-keys
-  (helix-keymap-set org-mode-map :state 'normal
-    "M-h" 'helix-org-up-element
-    "M-j" 'helix-org-next-element
-    "M-k" 'helix-org-previous-element
-    "M-l" 'helix-org-down-element))
-
 (let ((map org-read-date-minibuffer-local-map))
   (org-defkey map (kbd "M-l") 'org-calendar-forward-day)
   (org-defkey map (kbd "M-h") 'org-calendar-backward-day)
