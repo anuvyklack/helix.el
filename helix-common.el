@@ -204,7 +204,7 @@ moves only over visible lines."
   "Move point to the beginning of the current visible logical line.
 This is actually refactored `move-beginning-of-line' command."
   (or count (setq count 1))
-  (let ((orig-point (point)))
+  (let ((init-point (point)))
     ;; Move by lines, if COUNT is not 1 (the default).
     (when (/= count 1)
       (let ((line-move-visual nil))
@@ -216,11 +216,11 @@ This is actually refactored `move-beginning-of-line' command."
         (goto-char (previous-char-property-change (point)))
         (goto-char (line-beginning-position))))
     ;; Now find first visible char in the line.
-    (while (and (< (point) orig-point)
+    (while (and (< (point) init-point)
                 (invisible-p (point)))
-      (goto-char (next-char-property-change (point) orig-point)))
+      (goto-char (next-char-property-change (point) init-point)))
     ;; Obey field constraints.
-    (goto-char (constrain-to-field (point) orig-point (/= count 1) t nil))))
+    (goto-char (constrain-to-field (point) init-point (/= count 1) t nil))))
 
 ;;;; `helix-visual-line'
 

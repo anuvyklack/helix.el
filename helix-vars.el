@@ -32,8 +32,8 @@
   "Whether to enable Helix in minibuffer(s)."
   :type 'boolean
   :group 'helix
-  :set (lambda (sym value)
-         (set-default sym value)
+  :set (lambda (symbol value)
+         (set-default symbol value)
          (if (and helix-mode value)
              (add-hook 'minibuffer-setup-hook #'helix-local-mode)
            (remove-hook 'minibuffer-setup-hook #'helix-local-mode))))

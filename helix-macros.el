@@ -167,15 +167,14 @@ parameters:
                     def-body)))
   (let (doc properties key value)
     ;; collect docstring
-    (setq doc (when (< 1 (length body))
-                (pcase (car body)
-                  (`(format . ,args)
-                   (apply #'format args))
-                  ((and (pred stringp) doc)
-                   doc))))
+    (setq doc (pcase (car-safe body)
+                (`(format . ,args)
+                 (apply #'format args))
+                ((and (pred stringp) doc)
+                 doc)))
     (when doc (pop body))
     ;; collect keywords
-    (while (keywordp (car body))
+    (while (keywordp (car-safe body))
       (setq key   (pop body)
             value (pop body))
       (pcase key
