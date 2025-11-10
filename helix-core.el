@@ -354,29 +354,29 @@ MODE and STATE should be symbols."
   "Unmap insertion keys from normal state.
 This is useful for read-only modes that starts in normal state."
   (helix-keymap-set keymap
-    "<remap> <helix-insert>" #'ignore
-    "<remap> <helix-append>" #'ignore
-    "<remap> <helix-insert-line>" #'ignore
-    "<remap> <helix-append-line>" #'ignore
-    "<remap> <helix-open-below>" #'ignore
-    "<remap> <helix-open-above>" #'ignore
-    "<remap> <helix-change>" #'ignore
-    "<remap> <helix-cut>" #'ignore
-    "<remap> <helix-delete>" #'ignore
-    "<remap> <helix-undo>" #'ignore
-    "<remap> <helix-redo>" #'ignore
-    "<remap> <helix-paste-after>" #'ignore
-    "<remap> <helix-paste-before>" #'ignore
+    "<remap> <helix-insert>"                 #'ignore
+    "<remap> <helix-append>"                 #'ignore
+    "<remap> <helix-insert-line>"            #'ignore
+    "<remap> <helix-append-line>"            #'ignore
+    "<remap> <helix-open-below>"             #'ignore
+    "<remap> <helix-open-above>"             #'ignore
+    "<remap> <helix-change>"                 #'ignore
+    "<remap> <helix-cut>"                    #'ignore
+    "<remap> <helix-delete>"                 #'ignore
+    "<remap> <helix-undo>"                   #'ignore
+    "<remap> <helix-redo>"                   #'ignore
+    "<remap> <helix-paste-after>"            #'ignore
+    "<remap> <helix-paste-before>"           #'ignore
     "<remap> <helix-replace-with-kill-ring>" #'ignore
-    "<remap> <helix-paste-pop>" #'ignore
-    "<remap> <helix-paste-undo-pop>" #'ignore
-    "<remap> <helix-join-line>" #'ignore
-    "<remap> <helix-downcase>" #'ignore
-    "<remap> <helix-upcase>" #'ignore
-    "<remap> <helix-invert-case>" #'ignore
-    "<remap> <indent-region>" #'ignore
-    "<remap> <indent-rigidly-left>" #'ignore
-    "<remap> <indent-rigidly-right>" #'ignore))
+    "<remap> <helix-paste-pop>"              #'ignore
+    "<remap> <helix-paste-undo-pop>"         #'ignore
+    "<remap> <helix-join-line>"              #'ignore
+    "<remap> <helix-downcase>"               #'ignore
+    "<remap> <helix-upcase>"                 #'ignore
+    "<remap> <helix-invert-case>"            #'ignore
+    "<remap> <indent-region>"                #'ignore
+    "<remap> <indent-rigidly-left>"          #'ignore
+    "<remap> <indent-rigidly-right>"         #'ignore))
 
 ;;; Keymaps
 
@@ -404,8 +404,8 @@ according to the Helix STATE."
               ;;                      edebug-mode-map)))
               ;;         `((edebug-mode . ,map))))
               ;; Helix buffer local overriding map
-              ,@(-if-let (map (helix-get-nested-helix-keymap
-                               helix-overriding-local-map state))
+              ,@(if-let ((map (helix-get-nested-helix-keymap
+                               helix-overriding-local-map state)))
                     (list `(:helix-override-map . ,map)))
               ;; Helix keymaps nested in other keymaps
               ,@(let (helix-map maps)
