@@ -171,15 +171,24 @@ COUNT minus number of steps moved; if backward, COUNT plus number moved.
 (put 'helix-line 'forward-op #'helix--forward-line)
 (put 'helix-line 'bounds-of-thing-at-point
      (lambda ()
-       (cons (save-excursion (helix--beginning-of-line 1) (point))
-             (save-excursion (helix--forward-line 1) (point)))))
+       (cons (save-excursion
+               (helix--beginning-of-line 1)
+               ;; `helix--beginning-of-line' may leave point after invisible
+               ;; characters if line starts with such of these (e.g., with
+               ;; a link at column 0 in Org mode). Really move to the beginning
+               ;; of the current visible line.
+               (beginning-of-line)
+               (point))
+             (save-excursion
+               (helix--forward-line 1)
+               (point)))))
 
+;; Adopted from `move-end-of-line'.
 (defun helix--forward-line (&optional count)
   "Goto COUNT visible logical lines forward (backward if COUNT is negative).
 The difference from `forward-line' is that this function ignores invisible parts
 of the buffer (lines folded by `outline-minor-mode' for example) and always
 moves only over visible lines."
-  ;; Adopted from `move-end-of-line'.
   (or count (setq count 1))
   (let ((goal-column 0)
         (line-move-visual nil)
@@ -192,8 +201,8 @@ moves only over visible lines."
                        (point) 'invisible))))))
 
 (defun helix--beginning-of-line (&optional count)
-  "Go to the beginning of the current visible logical line.
-Adopted from `move-beginning-of-line'."
+  "Move point to the beginning of the current visible logical line.
+This is actually refactored `move-beginning-of-line' command."
   (or count (setq count 1))
   (let ((orig-point (point)))
     ;; Move by lines, if COUNT is not 1 (the default).
