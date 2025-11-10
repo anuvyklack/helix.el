@@ -883,7 +883,8 @@ If ARG positive number — enable, negative — disable."
                           (forward-thing line (- motion-dir))
                           (point))
                       (mark))))
-        (helix-set-region start end nil :adjust)))))
+        (helix-set-region start end nil :adjust)))
+    (setq disable-point-adjustment t)))
 
 ;; X
 (helix-define-command helix-expand-line-selection-backward (count)
