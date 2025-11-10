@@ -480,6 +480,9 @@ be set manually."
   :merge-selections t
   (interactive "p")
   (helix-restore-newline-at-eol)
+  (when (and (not (bobp))
+             (invisible-p (1- (point))))
+    (goto-char (previous-single-char-property-change (point) 'invisible)))
   (-let* (((beg . end) (if (use-region-p)
                            (car (region-bounds))
                          (cons (point) (point))))
@@ -488,7 +491,8 @@ be set manually."
                      (org-element-at-point))))
     ;; Climb up the tree until element fully contains region.
     (while (and element
-                (or (org-element-type-p element 'section) ; skip section
+                (or (invisible-p (org-element-begin element))
+                    (org-element-type-p element 'section) ; skip section
                     (let ((element-beg (org-element-begin element))
                           (element-end (- (org-element-end element)
                                           (org-element-post-blank element))))
