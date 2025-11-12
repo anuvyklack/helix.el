@@ -124,15 +124,33 @@
     "Z Z" 'org-capture-finalize
     "Z Q" 'org-capture-kill))
 
-(with-eval-after-load 'org-src
-  (helix-keymap-set org-src-mode-map :state 'normal
-    "Z Z" 'org-edit-src-exit
-    "Z Q" 'org-edit-src-abort))
-
 (with-eval-after-load 'org-table
   (helix-keymap-set org-table-fedit-map :state 'normal
+    "z x" 'org-table-fedit-finish
     "Z Z" 'org-table-fedit-finish
-    "Z Q" 'org-table-fedit-abort ))
+    "Z Q" 'org-table-fedit-abort))
+
+;;;; org-src
+
+(with-eval-after-load 'org-src
+  (helix-keymap-set org-src-mode-map :state 'normal
+    "z x" 'org-edit-src-save
+    "Z Z" 'org-edit-src-exit
+    "Z Q" 'org-edit-src-abort
+    "C-c C-c" 'org-edit-src-exit
+    "C-c SPC" 'org-edit-src-exit))
+
+(add-hook 'org-src-mode-hook 'helix--org-src-h)
+
+(defun helix--org-src-h ()
+  (helix-update-active-keymaps)
+  (when org-edit-src-persistent-message
+    (setq header-line-format
+          (let ((ZZ (propertize "ZZ" 'face 'help-key-binding))
+                (ZQ (propertize "ZQ" 'face 'help-key-binding)))
+            (if org-src--allow-write-back
+                (format "Edit, then exit with %s or abort with %s" ZZ ZQ)
+              (format "Exit with %s or abort with %s" ZZ ZQ))))))
 
 ;;;; Repeat mode
 
