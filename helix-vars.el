@@ -97,7 +97,7 @@ or a list of the above."
   :type '(set symbol (cons symbol symbol) string function)
   :group 'helix)
 
-(defcustom helix-motion-state-cursor 'hbar
+(defcustom helix-motion-state-cursor '(hbar . 4)
   "Cursor apperance when Helix is in Motion state.
 Can be a cursor type as per `cursor-type', a color string as passed to
 `set-cursor-color', a zero-argument function for changing the cursor, or
