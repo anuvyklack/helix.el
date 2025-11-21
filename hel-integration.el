@@ -303,7 +303,7 @@ in the command loop, and the fake cursors can pick up on those instead."
     "C-j" #'next-error-no-select
     "C-k" #'previous-error-no-select)
 
-  (hel-keymap-set occur-edit-mode-map
+  (hel-keymap-set occur-edit-mode-map :state 'normal
     "g o"      #'occur-mode-goto-occurrence-other-window
     "<escape>" #'occur-cease-edit
     "Z Z"      #'occur-cease-edit
