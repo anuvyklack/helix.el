@@ -315,6 +315,13 @@ If no sentence at point select COUNT previous sentences."
       (up-list 1))))
   (hel-reveal-point-when-on-top))
 
+;; C-s
+(hel-define-command hel-save-point-to-mark-ring ()
+  "Store main cursor to `mark-ring'."
+  :multiple-cursors nil
+  (interactive)
+  (hel-push-point))
+
 ;; C-o
 (hel-define-command hel-backward-mark-ring ()
   "Jump to the top position on `mark-ring'.

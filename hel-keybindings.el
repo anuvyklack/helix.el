@@ -179,6 +179,7 @@ By default `M-u' is bound to `upcase-word', so we can use it."
 
   ;; Misc
   "."     #'repeat
+  "C-s"   #'hel-save-point-to-mark-ring
   "C-o"   #'hel-backward-mark-ring
   "C-<i>" #'hel-forward-mark-ring
   "C-S-o" #'hel-backward-global-mark-ring
