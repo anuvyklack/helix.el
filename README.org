@@ -1,7 +1,4 @@
-#+title: Helix Emulation Layer for Emacs
-
-[[https://helix-editor.com/][Helix Editor]] emulation layer. It also can be called "Hell" (Helix Emulation Layer)
-to continue the tradition started by [[https://github.com/emacs-evil/evil][Evil]].
+#+title: Hel — Helix Emulation Layer for Emacs
 
 The main difference between Kakoune and Helix, in terms of emulating, is how
 they handle expanding selections: Kakoune use =shift= + motions, while Helix has
@@ -74,9 +71,9 @@ in Emacs.
 
 ** Acknowledgments
 
-Helix depends on [[https://github.com/magnars/dash.el][dash.el]], [[https://github.com/joddie/pcre2el][pcre2el]], and [[https://github.com/abo-abo/avy][avy]] wonderful packages.
+Hel depends on [[https://github.com/magnars/dash.el][dash.el]], [[https://github.com/joddie/pcre2el][pcre2el]], and [[https://github.com/abo-abo/avy][avy]] wonderful packages.
 
-Helix is heavily inspired by: [[https://github.com/emacs-evil/evil][evil]], [[https://github.com/magnars/multiple-cursors.el][multiple-cursors.el]], [[https://github.com/meow-edit/meow][meow]], [[https://github.com/mkleehammer/surround][surround]],
+Hel is heavily inspired by: [[https://github.com/emacs-evil/evil][evil]], [[https://github.com/magnars/multiple-cursors.el][multiple-cursors.el]], [[https://github.com/meow-edit/meow][meow]], [[https://github.com/mkleehammer/surround][surround]],
 [[https://github.com/aome510/kak.el][kak.el]], [[https://github.com/doomemacs/doomemacs][doomemacs]], [[https://github.com/bbatsov/crux][crux]].
 
 You are welcome to go and give them all a star!

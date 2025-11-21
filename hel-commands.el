@@ -1,18 +1,18 @@
-;;; helix-commands.el --- Helix commands -*- lexical-binding: t; -*-
+;;; hel-commands.el --- Hel commands -*- lexical-binding: t; -*-
 ;;
 ;; Copyright © 2025 Yuriy Artemyev
 ;;
 ;; Author: Yuriy Artemyev <anuvyklack@gmail.com>
 ;; Maintainer: Yuriy Artemyev <anuvyklack@gmail.com>
 ;; Version: 0.0.1
-;; Homepage: https://github.com/anuvyklack/helix.el
+;; Homepage: https://github.com/anuvyklack/hel.el
 ;; Package-Requires: ((emacs "29.1"))
 ;;
 ;; This file is not part of GNU Emacs.
 ;;
 ;;; Commentary:
 ;;
-;;  Helix commands
+;;  Hel commands
 ;;
 ;;; Code:
 
@@ -21,119 +21,119 @@
 (require 'pcre2el)
 (require 'cl-lib)
 (require 'thingatpt)
-(require 'helix-common)
-(require 'helix-core)
-(require 'helix-multiple-cursors-core)
-(require 'helix-search)
+(require 'hel-common)
+(require 'hel-core)
+(require 'hel-multiple-cursors-core)
+(require 'hel-search)
 (require 'avy)
 
 ;; ESC in normal state
-(helix-define-command helix-normal-state-escape ()
-  "Command for ESC key in Helix Normal state."
+(hel-define-command hel-normal-state-escape ()
+  "Command for ESC key in Hel Normal state."
   :multiple-cursors t
   (interactive)
-  (cond (helix--extend-selection
-         (helix-extend-selection -1))
+  (cond (hel--extend-selection
+         (hel-extend-selection -1))
         (t
          (deactivate-mark))))
 
 ;;; Motions
 
 ;; h
-(helix-define-command helix-backward-char (count)
+(hel-define-command hel-backward-char (count)
   "Move backward COUNT chars."
   :multiple-cursors t
   :merge-selections 'extend-selection
   (interactive "p")
-  (helix-maybe-deactivate-mark)
+  (hel-maybe-deactivate-mark)
   (backward-char count))
 
 ;; l
-(helix-define-command helix-forward-char (count)
+(hel-define-command hel-forward-char (count)
   "Move forward COUNT chars."
   :multiple-cursors t
   :merge-selections 'extend-selection
   (interactive "p")
-  (helix-maybe-deactivate-mark)
+  (hel-maybe-deactivate-mark)
   (forward-char count))
 
 ;; j
-(helix-define-command helix-next-line (count)
+(hel-define-command hel-next-line (count)
   "Move to the next COUNT line. Move upward if COUNT is negative.
 If both linewise selection (`x' key) and extending selection (`v' key)
-are active — works like `helix-expand-line-selection'."
+are active — works like `hel-expand-line-selection'."
   :multiple-cursors t
   :merge-selections 'extend-selection
   (interactive "p")
-  (if (and helix--extend-selection (helix-logical-lines-p))
-      (helix-expand-line-selection count)
+  (if (and hel--extend-selection (hel-logical-lines-p))
+      (hel-expand-line-selection count)
     ;; else
-    (helix-maybe-deactivate-mark)
+    (hel-maybe-deactivate-mark)
     ;; Preserve the column: the behaviour is hard-coded and the column is
     ;; preserved if and only if the previous was `next-line' or `previous-line'.
     (setq this-command (if (natnump count) 'next-line 'previous-line))
     (funcall-interactively 'next-line count)))
 
 ;; k
-(helix-define-command helix-previous-line (count)
+(hel-define-command hel-previous-line (count)
   "Move to the previous COUNT line. Move downward if COUNT is negative.
 If both linewise selection (`x' key) and extending selection (`v' key)
-are active — works like `helix-expand-line-selection-backward'."
+are active — works like `hel-expand-line-selection-backward'."
   :multiple-cursors t
   :merge-selections 'extend-selection
   (interactive "p")
-  (helix-next-line (- count)))
+  (hel-next-line (- count)))
 
 ;; w
-(helix-define-command helix-forward-word-start (count)
+(hel-define-command hel-forward-word-start (count)
   "Move to the COUNT-th next word start."
   :multiple-cursors t
   :merge-selections 'extend-selection
   (interactive "p")
-  (helix--forward-word-start 'helix-word count))
+  (hel--forward-word-start 'hel-word count))
 
 ;; W
-(helix-define-command helix-forward-WORD-start (count)
+(hel-define-command hel-forward-WORD-start (count)
   "Move to the COUNT-th next WORD start."
   :multiple-cursors t
   :merge-selections 'extend-selection
   (interactive "p")
-  (helix--forward-word-start 'helix-WORD count))
+  (hel--forward-word-start 'hel-WORD count))
 
 ;; b
-(helix-define-command helix-backward-word-start (count)
+(hel-define-command hel-backward-word-start (count)
   "Move to the COUNT-th previous word start."
   :multiple-cursors t
   :merge-selections 'extend-selection
   (interactive "p")
-  (helix--backward-word-start 'helix-word count))
+  (hel--backward-word-start 'hel-word count))
 
 ;; B
-(helix-define-command helix-backward-WORD-start (count)
+(hel-define-command hel-backward-WORD-start (count)
   "Move to the COUNT-th previous WORD start."
   :multiple-cursors t
   :merge-selections 'extend-selection
   (interactive "p")
-  (helix--backward-word-start 'helix-WORD count))
+  (hel--backward-word-start 'hel-WORD count))
 
 ;; e
-(helix-define-command helix-forward-word-end (count)
+(hel-define-command hel-forward-word-end (count)
   "Move to the COUNT-th next word end."
   :multiple-cursors t
   :merge-selections 'extend-selection
   (interactive "p")
-  (helix--forward-word-end 'helix-word count))
+  (hel--forward-word-end 'hel-word count))
 
 ;; E
-(helix-define-command helix-forward-WORD-end (count)
+(hel-define-command hel-forward-WORD-end (count)
   "Move COUNT-th next WORD end."
   :multiple-cursors t
   :merge-selections 'extend-selection
   (interactive "p")
-  (helix--forward-word-end 'helix-WORD count))
+  (hel--forward-word-end 'hel-WORD count))
 
 ;; gg
-(helix-define-command helix-beginning-of-buffer (num)
+(hel-define-command hel-beginning-of-buffer (num)
   "Move point to the beginning of the buffer.
 With numeric arg NUM, put point NUM/10 of the way from the beginning.
 If the buffer is narrowed, this command uses the beginning of the
@@ -141,9 +141,9 @@ accessible part of the buffer.
 Push mark at previous position, unless extending selection."
   :multiple-cursors nil
   (interactive "P")
-  (helix-delete-all-fake-cursors)
-  (helix-push-point)
-  (helix-maybe-deactivate-mark)
+  (hel-delete-all-fake-cursors)
+  (hel-push-point)
+  (hel-maybe-deactivate-mark)
   (if num
       (progn
         (goto-char (+ (point-min)
@@ -156,49 +156,49 @@ Push mark at previous position, unless extending selection."
     (recenter 0)))
 
 ;; G
-(helix-define-command helix-end-of-buffer ()
+(hel-define-command hel-end-of-buffer ()
   "Move point the end of the buffer."
   :multiple-cursors nil
   (interactive)
-  (helix-delete-all-fake-cursors)
-  (helix-push-point)
-  (helix-maybe-deactivate-mark)
+  (hel-delete-all-fake-cursors)
+  (hel-push-point)
+  (hel-maybe-deactivate-mark)
   (goto-char (point-max)))
 
 ;; gs
-(helix-define-command helix-beginning-of-line-command ()
+(hel-define-command hel-beginning-of-line-command ()
   "Move point to beginning of current line.
 Use visual line when `visual-line-mode' is active."
   :multiple-cursors t
   :merge-selections t
-  (declare (interactive-only helix-beginning-of-line-command))
+  (declare (interactive-only hel-beginning-of-line-command))
   (interactive)
-  (helix-set-region (if helix--extend-selection (mark) (point))
-                    (helix-beginning-of-line)))
+  (hel-set-region (if hel--extend-selection (mark) (point))
+                  (hel-beginning-of-line)))
 
 ;; gh
-(helix-define-command helix-first-non-blank ()
+(hel-define-command hel-first-non-blank ()
   "Move point to beginning of current line skipping indentation.
 Use visual line when `visual-line-mode' is active."
   :multiple-cursors t
   :merge-selections t
   (interactive)
-  (helix-set-region (if helix--extend-selection (mark) (point))
-                    (progn (helix-beginning-of-line)
-                           (skip-syntax-forward " " (line-end-position))
-                           (backward-prefix-chars)
-                           (point))))
+  (hel-set-region (if hel--extend-selection (mark) (point))
+                  (progn (hel-beginning-of-line)
+                         (skip-syntax-forward " " (line-end-position))
+                         (backward-prefix-chars)
+                         (point))))
 
 ;; gl
-(helix-define-command helix-end-of-line-command ()
+(hel-define-command hel-end-of-line-command ()
   "Move point to end of current line.
 Use visual line when `visual-line-mode' is active."
   :multiple-cursors t
   :merge-selections t
-  (declare (interactive-only helix-end-of-line-command))
+  (declare (interactive-only hel-end-of-line-command))
   (interactive)
-  (helix-set-region (if helix--extend-selection (mark) (point))
-                    (helix-end-of-line))
+  (hel-set-region (if hel--extend-selection (mark) (point))
+                  (hel-end-of-line))
   ;; "Stick" cursor to the end of line after moving to it. Vertical
   ;; motions right after "gl" will place point at the end of each line.
   (when (and (not visual-line-mode)
@@ -207,100 +207,100 @@ Use visual line when `visual-line-mode' is active."
           this-command 'next-line)))
 
 ;; }
-(helix-define-command helix-forward-paragraph (count &optional move-to-end?)
+(hel-define-command hel-forward-paragraph (count &optional move-to-end?)
   "Select to the beginning of the COUNT-th next paragraph."
   :multiple-cursors t
   :merge-selections t
   (interactive "p")
-  (let ((thing 'helix-paragraph)
+  (let ((thing 'hel-paragraph)
         (initial-pos (point))
-        (dir (helix-sign count)))
-    (helix-restore-region-on-error
+        (dir (hel-sign count)))
+    (hel-restore-region-on-error
       ;; (if (eolp) (forward-char))
-      (helix-restore-newline-at-eol)
-      (if (helix-end-of-buffer-p dir)
+      (hel-restore-newline-at-eol)
+      (if (hel-end-of-buffer-p dir)
           (user-error (if (< dir 0) "Beginning of buffer" "End of buffer"))
         ;; else
-        (helix-push-point initial-pos)
-        (helix-set-region (if helix--extend-selection (mark) (point))
-                          (progn
-                            (cond ((and (< dir 0) move-to-end?)
-                                   (helix-forward-end-of-thing thing count))
-                                  ((and (< 0 dir) (not move-to-end?))
-                                   (helix-forward-beginning-of-thing thing count))
-                                  (t
-                                   (forward-thing thing count)))
-                            (point))
-                          dir :adjust)
-        (helix-reveal-point-when-on-top)))))
+        (hel-push-point initial-pos)
+        (hel-set-region (if hel--extend-selection (mark) (point))
+                        (progn
+                          (cond ((and (< dir 0) move-to-end?)
+                                 (hel-forward-end-of-thing thing count))
+                                ((and (< 0 dir) (not move-to-end?))
+                                 (hel-forward-beginning-of-thing thing count))
+                                (t
+                                 (forward-thing thing count)))
+                          (point))
+                        dir :adjust)
+        (hel-reveal-point-when-on-top)))))
 
 ;; {
-(helix-define-command helix-backward-paragraph (count)
+(hel-define-command hel-backward-paragraph (count)
   "Select to the beginning of the COUNT-th previous paragraph."
   :multiple-cursors t
   :merge-selections t
   (interactive "p")
-  (helix-forward-paragraph (- count)))
+  (hel-forward-paragraph (- count)))
 
 ;; ]p
-(helix-define-command helix-forward-paragraph-end (count)
+(hel-define-command hel-forward-paragraph-end (count)
   "Select to the end of the COUNT-th next paragraph."
   :multiple-cursors t
   :merge-selections t
   (interactive "p")
-  (helix-forward-paragraph count t))
+  (hel-forward-paragraph count t))
 
 ;; [p
-(helix-define-command helix-backward-paragraph-end (count)
+(hel-define-command hel-backward-paragraph-end (count)
   "Select to the end of the COUNT-th previous paragraph."
   :multiple-cursors t
   :merge-selections t
   (interactive "p")
-  (helix-forward-paragraph (- count) t))
+  (hel-forward-paragraph (- count) t))
 
 ;; ]f (alternative version)
-(helix-define-command helix-mark-function-forward (count)
+(hel-define-command hel-mark-function-forward (count)
   "Select from point to the end of the function (or COUNT-th next functions).
 If no function at point select COUNT next functions."
   :multiple-cursors t
   :merge-selections t
   (interactive "p")
-  (helix-mark-thing-forward 'helix-function count))
+  (hel-mark-thing-forward 'hel-function count))
 
 ;; [f (alternative version)
-(helix-define-command helix-mark-function-backward (count)
+(hel-define-command hel-mark-function-backward (count)
   "Select from point to the end of the function (or COUNT-th next functions).
 If no function at point select COUNT previous functions."
   :multiple-cursors t
   :merge-selections t
   (interactive "p")
-  (helix-mark-thing-forward 'helix-function (- count)))
+  (hel-mark-thing-forward 'hel-function (- count)))
 
 ;; ]s
-(helix-define-command helix-mark-sentence-forward (count)
+(hel-define-command hel-mark-sentence-forward (count)
   "Select from point to the end of the sentence (or COUNT-th next sentences).
 If no sentence at point select COUNT next sentences."
   :multiple-cursors t
   :merge-selections t
   (interactive "p")
-  (helix-mark-thing-forward 'helix-sentence count))
+  (hel-mark-thing-forward 'hel-sentence count))
 
 ;; [s
-(helix-define-command helix-mark-sentence-backward (count)
+(hel-define-command hel-mark-sentence-backward (count)
   "Select from point to the start of the sentence (or COUNT-th next sentences).
 If no sentence at point select COUNT previous sentences."
   :multiple-cursors t
   :merge-selections t
   (interactive "p")
-  (helix-mark-thing-forward 'helix-sentence (- count)))
+  (hel-mark-thing-forward 'hel-sentence (- count)))
 
 ;; mm
 ;; TODO: The most bare-boned version. Need upgrade.
-(helix-define-command helix-jump-to-match-item ()
+(hel-define-command hel-jump-to-match-item ()
   "Jump between matching brackets."
   :multiple-cursors t
   (interactive)
-  (helix-maybe-deactivate-mark)
+  (hel-maybe-deactivate-mark)
   (ignore-errors
     (cond
      ;; before open bracket
@@ -313,17 +313,17 @@ If no sentence at point select COUNT previous sentences."
       (forward-list -1))
      (t
       (up-list 1))))
-  (helix-reveal-point-when-on-top))
+  (hel-reveal-point-when-on-top))
 
 ;; C-o
-(helix-define-command helix-backward-mark-ring ()
+(hel-define-command hel-backward-mark-ring ()
   "Jump to the top position on `mark-ring'.
 If point is already there, rotate `mark-ring' forward (like revolver cylinder)
 and jump to new top position.
 
 In Emacs, mark has two purposes: when active, it acts as a boundary for region;
 when inactive, it can be used to store the previous significant position. The
-Helix approach is based on selections, and mark is never used to store previous
+Hel approach is based on selections, and mark is never used to store previous
 position. So unlike the `pop-to-mark-command' which puts the value from `mark'
 into `point' and value from `mark-ring' into `mark', this command puts the value
 from `mark-ring' directly into `point' skipping `mark'.
@@ -331,41 +331,41 @@ from `mark-ring' directly into `point' skipping `mark'.
 \(Does not affect global mark ring)."
   :multiple-cursors t
   (interactive)
-  (helix--jump-over-mark-ring))
+  (hel--jump-over-mark-ring))
 
 ;; C-i
-(helix-define-command helix-forward-mark-ring ()
+(hel-define-command hel-forward-mark-ring ()
   "Jump to the top position on `mark-ring'.
 If point is already there, rotate `mark-ring' backward and jump to new top
-position. See `helix-backward-mark-ring'.
+position. See `hel-backward-mark-ring'.
 
 \(Does not affect global mark ring)."
   :multiple-cursors t
   (interactive)
-  (helix--jump-over-mark-ring t))
+  (hel--jump-over-mark-ring t))
 
 ;; C-S-o
-(helix-define-command helix-backward-global-mark-ring ()
+(hel-define-command hel-backward-global-mark-ring ()
   "Jump to the top location on `global-mark-ring'.
 If current buffer is the same as the target one, rotate `global-mark-ring'
 forward (like revolver cylinder) and jump to new top location."
   :multiple-cursors t
   (interactive)
-  (helix--jump-over-global-mark-ring))
+  (hel--jump-over-global-mark-ring))
 
 ;; C-S-i
-(helix-define-command helix-forward-global-mark-ring ()
+(hel-define-command hel-forward-global-mark-ring ()
   "Jump to the top location on `global-mark-ring'.
 If current buffer is the same as the target one, rotate `global-mark-ring'
 backward and jump to new top location."
   :multiple-cursors t
   (interactive)
-  (helix--jump-over-global-mark-ring t))
+  (hel--jump-over-global-mark-ring t))
 
 ;;; Avy (Easymotion)
 
 ;; gw
-(helix-define-command helix-avy-word-forward ()
+(hel-define-command hel-avy-word-forward ()
   "Move to a word start after the point, choosing it with Avy."
   :multiple-cursors nil
   (interactive)
@@ -374,14 +374,14 @@ backward and jump to new top location."
             (-> (avy--regex-candidates avy-goto-word-0-regexp
                                        (point) (window-end nil t))
                 (avy-process)))
-      (helix-delete-all-fake-cursors)
-      (helix-push-point orig-point)
-      (helix-set-region (if helix--extend-selection (mark) (point))
-                        (progn (forward-thing 'helix-word)
-                               (point))))))
+      (hel-delete-all-fake-cursors)
+      (hel-push-point orig-point)
+      (hel-set-region (if hel--extend-selection (mark) (point))
+                      (progn (forward-thing 'hel-word)
+                             (point))))))
 
 ;; gb
-(helix-define-command helix-avy-word-backward ()
+(hel-define-command hel-avy-word-backward ()
   "Move to a word start before the point, choosing it with Avy."
   :multiple-cursors nil
   (interactive)
@@ -391,16 +391,16 @@ backward and jump to new top location."
                                        (window-start) (point))
                 (nreverse)
                 (avy-process)))
-      (helix-delete-all-fake-cursors)
-      (helix-push-point orig-point)
-      (if helix--extend-selection
-          (helix-set-region (mark) (point))
-        (helix-set-region (point)
-                          (progn (forward-thing 'helix-word)
-                                 (point)))))))
+      (hel-delete-all-fake-cursors)
+      (hel-push-point orig-point)
+      (if hel--extend-selection
+          (hel-set-region (mark) (point))
+        (hel-set-region (point)
+                        (progn (forward-thing 'hel-word)
+                               (point)))))))
 
 ;; gW
-(helix-define-command helix-avy-WORD-forward ()
+(hel-define-command hel-avy-WORD-forward ()
   "Move to a WORD start after the point, choosing it with Avy."
   :multiple-cursors nil
   (interactive)
@@ -408,14 +408,14 @@ backward and jump to new top location."
     (when (let ((avy-all-windows nil))
             (-> (avy--regex-candidates "[^ \r\n\t]+" (point) (window-end nil t))
                 (avy-process)))
-      (helix-delete-all-fake-cursors)
-      (helix-push-point orig-point)
-      (helix-set-region (if helix--extend-selection (mark) (point))
-                        (progn (forward-thing 'helix-WORD)
-                               (point))))))
+      (hel-delete-all-fake-cursors)
+      (hel-push-point orig-point)
+      (hel-set-region (if hel--extend-selection (mark) (point))
+                      (progn (forward-thing 'hel-WORD)
+                             (point))))))
 
 ;; gB
-(helix-define-command helix-avy-WORD-backward ()
+(hel-define-command hel-avy-WORD-backward ()
   "Move to a WORD start before the point, choosing it with Avy."
   :multiple-cursors nil
   (interactive)
@@ -424,35 +424,35 @@ backward and jump to new top location."
             (-> (avy--regex-candidates "[^ \r\n\t]+" (window-start) (point))
                 (nreverse)
                 (avy-process)))
-      (helix-delete-all-fake-cursors)
-      (helix-push-point orig-point)
-      (if helix--extend-selection
-          (helix-set-region (mark) (point))
-        (helix-set-region (point)
-                          (progn (forward-thing 'helix-WORD)
-                                 (point)))))))
+      (hel-delete-all-fake-cursors)
+      (hel-push-point orig-point)
+      (if hel--extend-selection
+          (hel-set-region (mark) (point))
+        (hel-set-region (point)
+                        (progn (forward-thing 'hel-WORD)
+                               (point)))))))
 
 ;; gj
-(helix-define-command helix-avy-next-line (direction)
+(hel-define-command hel-avy-next-line (direction)
   "Move to a following line, selected using Avy.
 When both linewise selection is active (via `x') and selection expansion
 is enabled (via `v'), the selection will expand linewise to include all lines
 to the chosen one."
   :multiple-cursors nil
   (interactive "p")
-  (cl-callf helix-sign direction)
+  (cl-callf hel-sign direction)
   (when-let* ((pos (save-excursion
                      (let ((goal-column (window-hscroll)))
                        (-> (lambda () (interactive) (line-move direction))
-                           (helix-collect-positions)
+                           (hel-collect-positions)
                            (avy-process)))))
               ((natnump pos)))
-    (helix-delete-all-fake-cursors)
-    (helix-push-point)
-    (if helix--extend-selection
-        (let ((lines? (helix-logical-lines-p)))
-          (helix-set-region (mark) pos)
-          (if lines? (helix-expand-selection-to-full-lines)))
+    (hel-delete-all-fake-cursors)
+    (hel-push-point)
+    (if hel--extend-selection
+        (let ((lines? (hel-logical-lines-p)))
+          (hel-set-region (mark) pos)
+          (if lines? (hel-expand-selection-to-full-lines)))
       ;; else
       (deactivate-mark)
       (let ((column (current-column)))
@@ -460,137 +460,137 @@ to the chosen one."
         (move-to-column column)))))
 
 ;; gk
-(helix-define-command helix-avy-previous-line (direction)
+(hel-define-command hel-avy-previous-line (direction)
   "Move to a preceding line, selected using Avy.
 When both linewise selection is active (via `x') and selection expansion
 is enabled (via `v'), the selection will expand linewise to include all lines
 to the chosen one."
   :multiple-cursors nil
   (interactive "p")
-  (helix-avy-next-line (- direction)))
+  (hel-avy-next-line (- direction)))
 
 ;;; Changes
 
 ;; i
-(helix-define-command helix-insert ()
+(hel-define-command hel-insert ()
   "Switch to Insert state before region."
   :multiple-cursors nil
   (interactive)
-  (helix-with-each-cursor
-    (helix-ensure-region-direction -1))
-  (helix-insert-state 1))
+  (hel-with-each-cursor
+    (hel-ensure-region-direction -1))
+  (hel-insert-state 1))
 
 ;; a
-(helix-define-command helix-append ()
+(hel-define-command hel-append ()
   "Switch to Insert state after region."
   :multiple-cursors nil
   (interactive)
-  (helix-with-each-cursor
-    (helix-ensure-region-direction 1))
-  (helix-insert-state 1))
+  (hel-with-each-cursor
+    (hel-ensure-region-direction 1))
+  (hel-insert-state 1))
 
 ;; I
-(helix-define-command helix-insert-line ()
+(hel-define-command hel-insert-line ()
   "Switch to insert state at beginning of current line."
   :multiple-cursors nil
   (interactive)
-  (helix--insert-or-append-on-line -1))
+  (hel--insert-or-append-on-line -1))
 
 ;; A
-(helix-define-command helix-append-line ()
+(hel-define-command hel-append-line ()
   "Switch to Insert state at the end of the current line."
   :multiple-cursors nil
   (interactive)
-  (helix--insert-or-append-on-line 1))
+  (hel--insert-or-append-on-line 1))
 
-(defun helix--insert-or-append-on-line (direction)
+(defun hel--insert-or-append-on-line (direction)
   "Switch to insert state at beginning or end of current line
 depending on DIRECTION."
   ;; Remain only one cursor on each line.
-  (when helix-multiple-cursors-mode
-    (helix-with-real-cursor-as-fake
+  (when hel-multiple-cursors-mode
+    (hel-with-real-cursor-as-fake
       ;; Line numbers start from 1, so 0 as initial value is out of scope.
       (let ((current-line 0))
-        (-each (helix-all-fake-cursors :sort)
+        (-each (hel-all-fake-cursors :sort)
           (lambda (cursor)
             (let ((line (line-number-at-pos
                          (overlay-get cursor 'point))))
               (if (eql line current-line)
-                  (helix--delete-fake-cursor cursor)
+                  (hel--delete-fake-cursor cursor)
                 (setq current-line line))))))))
-  (helix-with-each-cursor
+  (hel-with-each-cursor
     (if (natnump direction)
-        (helix-end-of-line)
-      (helix-first-non-blank))
+        (hel-end-of-line)
+      (hel-first-non-blank))
     (set-marker (mark-marker) (point)))
-  (helix-insert-state 1))
+  (hel-insert-state 1))
 
 ;; o
-(helix-define-command helix-open-below ()
+(hel-define-command hel-open-below ()
   "Open new line below selection."
   :multiple-cursors nil
   (interactive)
-  (helix-with-each-cursor
-    (when (use-region-p) (helix-ensure-region-direction 1))
+  (hel-with-each-cursor
+    (when (use-region-p) (hel-ensure-region-direction 1))
     (move-end-of-line nil)
     (newline-and-indent)
     (set-marker (mark-marker) (point)))
-  (helix-insert-state 1))
+  (hel-insert-state 1))
 
 ;; O
-(helix-define-command helix-open-above ()
+(hel-define-command hel-open-above ()
   "Open new line above selection."
   :multiple-cursors nil
   (interactive)
-  (helix-with-each-cursor
-    (when (use-region-p) (helix-ensure-region-direction -1))
+  (hel-with-each-cursor
+    (when (use-region-p) (hel-ensure-region-direction -1))
     (move-beginning-of-line nil)
     (newline)
     (forward-line -1)
     (indent-according-to-mode)
     (set-marker (mark-marker) (point)))
-  (helix-insert-state 1))
+  (hel-insert-state 1))
 
 ;; ] SPC
-(helix-define-command helix-add-blank-line-below (count)
+(hel-define-command hel-add-blank-line-below (count)
   "Add COUNT blank lines below selection."
   :multiple-cursors t
   (interactive "p")
-  (helix-save-linewise-selection
-    (helix-ensure-region-direction 1)
-    (helix--forward-line 1)
+  (hel-save-linewise-selection
+    (hel-ensure-region-direction 1)
+    (hel--forward-line 1)
     (newline count)))
 
 ;; [ SPC
-(helix-define-command helix-add-blank-line-above (count)
+(hel-define-command hel-add-blank-line-above (count)
   "Add COUNT blank lines above selection."
   :multiple-cursors t
   (interactive "p")
-  (helix-save-region
-    (helix-ensure-region-direction -1)
-    (helix--beginning-of-line)
+  (hel-save-region
+    (hel-ensure-region-direction -1)
+    (hel--beginning-of-line)
     (newline count)))
 
 ;; c
-(helix-define-command helix-change ()
+(hel-define-command hel-change ()
   "Delete region and enter Insert state."
   :multiple-cursors nil
   (interactive)
-  (helix-with-each-cursor
+  (hel-with-each-cursor
     (cond ((use-region-p)
-           (let ((logical-lines? (helix-logical-lines-p))
-                 (visual-lines? (helix-visual-lines-p)))
+           (let ((logical-lines? (hel-logical-lines-p))
+                 (visual-lines? (hel-visual-lines-p)))
              (kill-region nil nil t)
              (cond (logical-lines?
                     (indent-according-to-mode))
                    (visual-lines?
                     (insert " ")
                     (backward-char)))))
-          ((not (helix-bolp))
+          ((not (hel-bolp))
            (delete-char -1))
           ((bolp)
            (indent-according-to-mode))))
-  (helix-insert-state 1))
+  (hel-insert-state 1))
 
 ;; TODO:
 ;; - If point is surrounded by (balanced) whitespace and a brace delimiter
@@ -601,43 +601,43 @@ depending on DIRECTION."
 ;; |
 ;; } => {|}
 ;; d
-(helix-define-command helix-cut (count)
+(hel-define-command hel-cut (count)
   "Kill (cut) text in region. I.e. delete text and put it in the `kill-ring'.
 If no selection — delete COUNT chars before point."
   :multiple-cursors t
   (interactive "p")
-  (when (helix-logical-lines-p)
-    (helix-restore-newline-at-eol))
+  (when (hel-logical-lines-p)
+    (hel-restore-newline-at-eol))
   (cond ((use-region-p)
          (kill-region nil nil t))
         (t
          (delete-char (- count))))
-  (helix-extend-selection -1))
+  (hel-extend-selection -1))
 
 ;; D
-(helix-define-command helix-delete (count)
+(hel-define-command hel-delete (count)
   "Delete text in region, without modifying the `kill-ring'.
 If no selection — delete COUNT chars after point."
   :multiple-cursors t
   (interactive "p")
-  (when (helix-logical-lines-p)
-    (helix-restore-newline-at-eol))
+  (when (hel-logical-lines-p)
+    (hel-restore-newline-at-eol))
   (cond ((use-region-p)
          (delete-region (region-beginning) (region-end)))
         (t
          (delete-char count)))
-  (helix-extend-selection -1))
+  (hel-extend-selection -1))
 
 ;; C-w in insert state
-(helix-define-command helix-delete-backward-word ()
+(hel-define-command hel-delete-backward-word ()
   :multiple-cursors t
   (interactive)
   (delete-region (point) (progn
-                           (helix-backward-word-start 1)
+                           (hel-backward-word-start 1)
                            (point))))
 
 ;; u
-(helix-define-command helix-undo ()
+(hel-define-command hel-undo ()
   "Undo."
   :multiple-cursors nil
   (interactive)
@@ -647,7 +647,7 @@ If no selection — delete COUNT chars after point."
     (undo-only)))
 
 ;; U
-(helix-define-command helix-redo ()
+(hel-define-command hel-redo ()
   "Redo."
   :multiple-cursors nil
   (interactive)
@@ -657,7 +657,7 @@ If no selection — delete COUNT chars after point."
     (undo-redo)))
 
 ;; y
-(helix-define-command helix-copy ()
+(hel-define-command hel-copy ()
   "Copy selection into `kill-ring'."
   :multiple-cursors nil
   (interactive)
@@ -666,48 +666,48 @@ If no selection — delete COUNT chars after point."
   (when (use-region-p)
     (let ((deactivate-mark nil)
           any?)
-      (helix-with-each-cursor
+      (hel-with-each-cursor
         (when (use-region-p)
-          (copy-region-as-kill (region-beginning) (if helix--newline-at-eol
+          (copy-region-as-kill (region-beginning) (if hel--newline-at-eol
                                                       (1+ (region-end))
                                                     (region-end)))
           (setq any? t))
-        (helix-extend-selection -1))
+        (hel-extend-selection -1))
       (when any? (message "Copied into kill-ring")))
-    (helix-maybe-set-killed-rectangle)
-    (helix-pulse-main-region)))
+    (hel-maybe-set-killed-rectangle)
+    (hel-pulse-main-region)))
 
-(defun helix-maybe-set-killed-rectangle ()
+(defun hel-maybe-set-killed-rectangle ()
   "Add the latest `kill-ring' entry for each cursor to `killed-rectangle',
 unless they all are equal. You can paste them later with `yank-rectangle'."
-  (when helix-multiple-cursors-mode
-    (let ((entries (helix-with-real-cursor-as-fake
+  (when hel-multiple-cursors-mode
+    (let ((entries (hel-with-real-cursor-as-fake
                      (-map (lambda (cursor)
                              (car-safe (overlay-get cursor 'kill-ring)))
-                           (helix-all-fake-cursors :sort)))))
-      (unless (helix-all-elements-are-equal-p entries)
+                           (hel-all-fake-cursors :sort)))))
+      (unless (hel-all-elements-are-equal-p entries)
         (setq killed-rectangle entries)))))
 
 ;; p
-(helix-define-command helix-paste-after ()
+(hel-define-command hel-paste-after ()
   "Paste after selection."
   :multiple-cursors t
   (interactive)
-  (helix-paste #'yank 1))
+  (hel-paste #'yank 1))
 
 ;; P
-(helix-define-command helix-paste-before ()
+(hel-define-command hel-paste-before ()
   "Paste before selection."
   :multiple-cursors t
   (interactive)
-  (helix-paste #'yank -1))
+  (hel-paste #'yank -1))
 
 ;; C-p
-(helix-define-command helix-paste-pop (count)
+(hel-define-command hel-paste-pop (count)
   "Replace just-pasted text with next COUNT element from `kill-ring'."
   :multiple-cursors t
   (interactive "p")
-  (helix-disable-newline-at-eol)
+  (hel-disable-newline-at-eol)
   (let ((deactivate-mark nil))
     (let ((yank-pop (or (command-remapping 'yank-pop)
                         #'yank-pop)))
@@ -718,34 +718,34 @@ unless they all are equal. You can paste them later with `yank-rectangle'."
       (deactivate-mark))))
 
 ;; C-n
-(helix-define-command helix-paste-undo-pop (count)
+(hel-define-command hel-paste-undo-pop (count)
   "Replace just-pasted text with previous COUNT element from `kill-ring'."
   :multiple-cursors t
   (interactive "p")
-  (helix-paste-pop (- count)))
+  (hel-paste-pop (- count)))
 
 ;; R
-(helix-define-command helix-replace-with-kill-ring ()
+(hel-define-command hel-replace-with-kill-ring ()
   "Replace selection content with yanked text from `kill-ring'."
   :multiple-cursors t
   (interactive)
   (when (use-region-p)
-    (when (helix-string-ends-with-newline (current-kill 0 :do-not-move))
-      (helix-restore-newline-at-eol))
+    (when (hel-string-ends-with-newline (current-kill 0 :do-not-move))
+      (hel-restore-newline-at-eol))
     (let ((deactivate-mark nil)
-          (dir (helix-region-direction)))
+          (dir (hel-region-direction)))
       (delete-region (region-beginning) (region-end))
-      (cl-letf (((symbol-function 'push-mark) #'helix-push-mark))
+      (cl-letf (((symbol-function 'push-mark) #'hel-push-mark))
         (yank))
-      (helix-set-region (mark t) (point) dir :adjust)
-      (helix-extend-selection -1))))
+      (hel-set-region (mark t) (point) dir :adjust)
+      (hel-extend-selection -1))))
 
 ;; J
-(helix-define-command helix-join-line ()
+(hel-define-command hel-join-line ()
   "Join the selected lines."
   :multiple-cursors t
   (interactive)
-  (helix-save-region
+  (hel-save-region
     (let* ((deactivate-mark nil)
            (region? (use-region-p))
            (count (let ((n (if region?
@@ -754,7 +754,7 @@ unless they all are equal. You can paste them later with `yank-rectangle'."
                     (if (> n 1) (1- n) n))))
       (when region? (goto-char (region-beginning)))
       ;; All these `let' bindings are actually move point.
-      (let ((in-comment? (helix-comment-at-pos-p
+      (let ((in-comment? (hel-comment-at-pos-p
                           (progn (move-beginning-of-line nil)
                                  (skip-chars-forward " \t")
                                  (point))))
@@ -770,34 +770,34 @@ unless they all are equal. You can paste them later with `yank-rectangle'."
         (fixup-whitespace)))))
 
 ;; <
-(helix-define-command helix-indent-left (count)
+(hel-define-command hel-indent-left (count)
   :multiple-cursors t
   (interactive "p")
   (cl-assert (/= count 0))
-  (helix-indent #'indent-rigidly-left count))
+  (hel-indent #'indent-rigidly-left count))
 
 ;; >
-(helix-define-command helix-indent-right (count)
+(hel-define-command hel-indent-right (count)
   :multiple-cursors t
   (interactive "p")
   (cl-assert (/= count 0))
-  (helix-indent #'indent-rigidly-right count))
+  (hel-indent #'indent-rigidly-right count))
 
 ;; ~
-(helix-define-command helix-invert-case ()
+(hel-define-command hel-invert-case ()
   "Invert case of characters."
   :multiple-cursors t
   (interactive)
-  (if-let ((region (helix-region)))
+  (if-let ((region (hel-region)))
       (-let (((beg end) region)
              (deactivate-mark nil))
-        (helix-invert-case-in-region beg end)
-        (apply #'helix-set-region region))
+        (hel-invert-case-in-region beg end)
+        (apply #'hel-set-region region))
     ;; else
-    (helix-invert-case-in-region (point) (1+ (point)))))
+    (hel-invert-case-in-region (point) (1+ (point)))))
 
 ;; ` or gu
-(helix-define-command helix-downcase ()
+(hel-define-command hel-downcase ()
   "Convert text in selection to lower case.
 With no selection downcase the character after point."
   :multiple-cursors t
@@ -808,7 +808,7 @@ With no selection downcase the character after point."
     (downcase-region (point) (progn (forward-char) (point)))))
 
 ;; M-` or gU
-(helix-define-command helix-upcase ()
+(hel-define-command hel-upcase ()
   "Convert text in selection to upper case.
 With no selection upcase the character after point."
   :multiple-cursors t
@@ -821,90 +821,90 @@ With no selection upcase the character after point."
 ;;; Selections
 
 ;; M-;
-(helix-define-command helix-exchange-point-and-mark ()
+(hel-define-command hel-exchange-point-and-mark ()
   "Exchange point and mark."
   :multiple-cursors t
   (interactive)
   (when (use-region-p)
-    (helix--exchange-point-and-mark)
-    (when (and (not helix-executing-command-for-fake-cursor)
+    (hel--exchange-point-and-mark)
+    (when (and (not hel-executing-command-for-fake-cursor)
                (called-interactively-p 'any))
-      (helix-reveal-point-when-on-top))))
+      (hel-reveal-point-when-on-top))))
 
 ;; v
-(helix-define-command helix-extend-selection (arg)
+(hel-define-command hel-extend-selection (arg)
   "Toggle extending selections.
 If ARG is nil — toggle extending selection.
 If ARG positive number — enable, negative — disable."
   :multiple-cursors t
-  (interactive `(,(if helix--extend-selection -1 1)))
+  (interactive `(,(if hel--extend-selection -1 1)))
   (pcase arg
-    (-1 (setq helix--extend-selection nil)
-        (unless helix-executing-command-for-fake-cursor
-          (helix-update-cursor)))
-    (_ (setq helix--extend-selection t)
+    (-1 (setq hel--extend-selection nil)
+        (unless hel-executing-command-for-fake-cursor
+          (hel-update-cursor)))
+    (_ (setq hel--extend-selection t)
        (or (region-active-p)
            (set-mark (point)))
-       (unless helix-executing-command-for-fake-cursor
-         (set-cursor-color (face-attribute 'helix-extend-selection-cursor
+       (unless hel-executing-command-for-fake-cursor
+         (set-cursor-color (face-attribute 'hel-extend-selection-cursor
                                            :background))))))
 
 ;; ;
-(helix-define-command helix-collapse-selection ()
+(hel-define-command hel-collapse-selection ()
   "Deactivate selection."
   :multiple-cursors t
   (interactive)
-  (if helix--extend-selection
+  (if hel--extend-selection
       (progn
-        (helix-disable-newline-at-eol)
+        (hel-disable-newline-at-eol)
         (set-mark (point)))
     (deactivate-mark)))
 
 ;; x
-(helix-define-command helix-expand-line-selection (count)
+(hel-define-command hel-expand-line-selection (count)
   "Expand or contract current selection linewise downward COUNT times."
   :multiple-cursors t
   :merge-selections t
   (interactive "p")
-  (let ((motion-dir (helix-sign count)))
-    (and (helix-expand-selection-to-full-lines motion-dir)
+  (let ((motion-dir (hel-sign count)))
+    (and (hel-expand-selection-to-full-lines motion-dir)
          (cl-callf - count motion-dir))
     (unless (zerop count)
-      (helix-restore-newline-at-eol)
-      (let* ((line (if visual-line-mode 'helix-visual-line 'helix-line))
-             (region-dir (helix-region-direction))
+      (hel-restore-newline-at-eol)
+      (let* ((line (if visual-line-mode 'hel-visual-line 'hel-line))
+             (region-dir (hel-region-direction))
              (end (progn (forward-thing line count)
                          (when (= (point) (mark-marker))
                            (forward-thing line motion-dir))
                          (point)))
-             (start (if (/= region-dir (helix-region-direction))
+             (start (if (/= region-dir (hel-region-direction))
                         (save-excursion
                           (goto-char (mark-marker))
                           (forward-thing line (- motion-dir))
                           (point))
                       (mark))))
-        (helix-set-region start end nil :adjust)))
+        (hel-set-region start end nil :adjust)))
     (setq disable-point-adjustment t)))
 
 ;; X
-(helix-define-command helix-expand-line-selection-backward (count)
+(hel-define-command hel-expand-line-selection-backward (count)
   "Expand or contract current selection linewise upward COUNT times."
   :multiple-cursors t
   (interactive "p")
-  (helix-expand-line-selection (- count)))
+  (hel-expand-line-selection (- count)))
 
 ;; %
-(helix-define-command helix-mark-whole-buffer ()
+(hel-define-command hel-mark-whole-buffer ()
   :multiple-cursors nil
   (interactive)
-  (helix-delete-all-fake-cursors)
-  (helix-push-point)
+  (hel-delete-all-fake-cursors)
+  (hel-push-point)
   ;; `minibuffer-prompt-end'is really `point-min' in most cases, but if we're
   ;; in the minibuffer, this is at the end of the prompt.
-  (helix-set-region (minibuffer-prompt-end) (point-max) -1 :adjust))
+  (hel-set-region (minibuffer-prompt-end) (point-max) -1 :adjust))
 
 ;; s
-(helix-define-command helix-select-regex (&optional invert)
+(hel-define-command hel-select-regex (&optional invert)
   "Create new selections for all matches to the regexp entered withing current
 selections.
 
@@ -913,8 +913,8 @@ entered regexp withing current selections."
   :multiple-cursors nil
   (interactive)
   (when (region-active-p)
-    (helix-with-real-cursor-as-fake
-      (let* ((cursors (helix-all-fake-cursors))
+    (hel-with-real-cursor-as-fake
+      (let* ((cursors (hel-all-fake-cursors))
              (ranges (-map (lambda (cursor)
                              (if (overlay-get cursor 'mark-active)
                                  (let ((point (marker-position
@@ -925,35 +925,35 @@ entered regexp withing current selections."
                                        (cons point mark)
                                      (cons mark point)))))
                            cursors)))
-        (-each cursors #'helix-hide-fake-cursor)
-        (if (helix-select-interactively-in ranges invert)
-            (-each cursors #'helix--delete-fake-cursor)
+        (-each cursors #'hel-hide-fake-cursor)
+        (if (hel-select-interactively-in ranges invert)
+            (-each cursors #'hel--delete-fake-cursor)
           ;; Restore original cursors
-          (-each cursors #'helix-show-fake-cursor))))))
+          (-each cursors #'hel-show-fake-cursor))))))
 
 ;; S
-(helix-define-command helix-split-region ()
+(hel-define-command hel-split-region ()
   "Split each selection according to the regexp entered."
   :multiple-cursors nil
   (interactive)
-  (helix-select-regex t))
+  (hel-select-regex t))
 
 ;; M-s
-(helix-define-command helix-split-region-on-newline ()
+(hel-define-command hel-split-region-on-newline ()
   "Split selections on line boundaries."
   :multiple-cursors nil
   (interactive)
-  (helix-disable-newline-at-eol)
-  (helix-with-each-cursor
-    (helix-extend-selection -1)
+  (hel-disable-newline-at-eol)
+  (hel-with-each-cursor
+    (hel-extend-selection -1)
     (when (use-region-p)
       (let ((end (region-end)))
-        (helix-ensure-region-direction 1)
+        (hel-ensure-region-direction 1)
         (goto-char (mark-marker))
         (catch 'done
           (let (border)
             (while t
-              (helix-end-of-line)
+              (hel-end-of-line)
               (when (<= end (point))
                 (goto-char end)
                 (throw 'done nil))
@@ -962,46 +962,46 @@ entered regexp withing current selections."
               (when (<= end (point))
                 (goto-char border)
                 (throw 'done nil))
-              (helix-create-fake-cursor border (mark))
+              (hel-create-fake-cursor border (mark))
               (set-marker (mark-marker) (point)))))))))
 
 ;; K
-(helix-define-command helix-keep-selections ()
+(hel-define-command hel-keep-selections ()
   "Keep selections that match to the regexp entered."
   :multiple-cursors nil
   (interactive)
-  (helix-filter-selections))
+  (hel-filter-selections))
 
 ;; M-K
-(helix-define-command helix-remove-selections ()
+(hel-define-command hel-remove-selections ()
   "Remove selections that match to the regexp entered."
   :multiple-cursors nil
   (interactive)
-  (helix-filter-selections t))
+  (hel-filter-selections t))
 
 ;; _
-(helix-define-command helix-trim-whitespaces-from-selection ()
+(hel-define-command hel-trim-whitespaces-from-selection ()
   "Trim whitespaces and newlines from the both ends of selections."
   :multiple-cursors t
   (interactive)
   (when (use-region-p)
-    (let* ((dir (helix-region-direction))
-           (point (progn (helix-skip-chars " \t\r\n" (- dir))
+    (let* ((dir (hel-region-direction))
+           (point (progn (hel-skip-chars " \t\r\n" (- dir))
                          (point)))
            (mark  (progn (goto-char (mark-marker))
-                         (helix-skip-chars " \t\r\n" dir)
+                         (hel-skip-chars " \t\r\n" dir)
                          (point))))
-      (helix-set-region mark point))))
+      (hel-set-region mark point))))
 
 ;; &
-(helix-define-command helix-align-selections ()
+(hel-define-command hel-align-selections ()
   "Align selections."
   :multiple-cursors nil
   (interactive)
-  (helix-with-real-cursor-as-fake
+  (hel-with-real-cursor-as-fake
     (let ((rest (-partition-by (lambda (cursor)
                                  (line-number-at-pos (overlay-get cursor 'point)))
-                               (helix-all-fake-cursors :sort)))
+                               (hel-all-fake-cursors :sort)))
           cursors)
       (while (progn (setq cursors (mapcar #'car rest))
                     (length> cursors 1))
@@ -1013,77 +1013,77 @@ entered regexp withing current selections."
                                       (max column (current-column)))
                                     0 cursors)))
           ;; Align
-          (helix-save-window-scroll
+          (hel-save-window-scroll
             (dolist (cursor cursors)
-              (helix-with-fake-cursor cursor
+              (hel-with-fake-cursor cursor
                 (unless (= (current-column) column)
                   (let ((deactivate-mark nil)
                         (padding (s-repeat (- column (current-column)) " ")))
                     (cond ((and (use-region-p)
-                                (natnump (helix-region-direction)))
-                           (helix--exchange-point-and-mark)
+                                (natnump (hel-region-direction)))
+                           (hel--exchange-point-and-mark)
                            (insert padding)
-                           (helix--exchange-point-and-mark))
+                           (hel--exchange-point-and-mark))
                           (t
                            (insert padding)))))))))))))
 
 ;; C
-(helix-define-command helix-copy-selection (count)
+(hel-define-command hel-copy-selection (count)
   "Copy selections COUNT times down if COUNT is positive, or up if negative."
   :multiple-cursors nil
   :merge-selections t
   (interactive "p")
-  (helix-with-each-cursor
-    (helix-disable-newline-at-eol)
-    (helix-motion-loop (dir count)
+  (hel-with-each-cursor
+    (hel-disable-newline-at-eol)
+    (hel-motion-loop (dir count)
       (if (use-region-p)
-          (helix--copy-region dir)
-        (helix--copy-cursor dir)))))
+          (hel--copy-region dir)
+        (hel--copy-cursor dir)))))
 
 ;; M-c
-(helix-define-command helix-copy-selection-up (count)
+(hel-define-command hel-copy-selection-up (count)
   "Copy each selection COUNT times up."
   :multiple-cursors nil
   :merge-selections t
   (interactive "p")
-  (helix-copy-selection (- count)))
+  (hel-copy-selection (- count)))
 
-(defun helix--copy-cursor (direction)
+(defun hel--copy-cursor (direction)
   "Copy point toward the DIRECTION."
   (when-let* ((pos (save-excursion
                      (cl-loop with column = (current-column)
                               while (zerop (forward-line direction))
                               when (= (move-to-column column) column)
                               return (point))))
-              ((not (helix-fake-cursor-at pos))))
-    (unless (helix-fake-cursor-at (point))
-      (helix-create-fake-cursor-from-point))
+              ((not (hel-fake-cursor-at pos))))
+    (unless (hel-fake-cursor-at (point))
+      (hel-create-fake-cursor-from-point))
     (goto-char pos)))
 
-(defun helix--copy-region (direction)
+(defun hel--copy-region (direction)
   "Copy region toward the DIRECTION."
-  (-let* (((beg end region-dir) (helix-region))
+  (-let* (((beg end region-dir) (hel-region))
           (num-of-lines (count-lines beg end))
           (beg-column (save-excursion (goto-char beg) (current-column)))
           (end-column (save-excursion (goto-char end) (current-column))))
     (when-let* ((bounds (save-excursion
                           (goto-char (if (< direction 0) beg end))
-                          (helix--bounds-of-following-region
+                          (hel--bounds-of-following-region
                            beg-column end-column num-of-lines direction))))
       (let (point mark)
         (if (< region-dir 0)
             (-setq (point . mark) bounds)
           (-setq (mark . point) bounds))
-        (if-let* ((cursor (helix-fake-cursor-at point))
+        (if-let* ((cursor (hel-fake-cursor-at point))
                   ((= mark (overlay-get cursor 'mark))))
             nil ;; Do nothing — fake cursor is already at desired position.
           ;; else
-          (helix-create-fake-cursor-from-point)
+          (hel-create-fake-cursor-from-point)
           (goto-char point)
           (set-marker (mark-marker) mark))))))
 
-(defun helix--bounds-of-following-region ( start-column end-column
-                                           number-of-lines direction)
+(defun hel--bounds-of-following-region ( start-column end-column
+                                         number-of-lines direction)
   "Return bounds of following region toward the DIRECTION that starts
 at START-COLUMN, ends at END-COLUMN and consists of NUMBER-OF-LINES."
   (when (< direction 0)
@@ -1108,85 +1108,85 @@ at START-COLUMN, ends at END-COLUMN and consists of NUMBER-OF-LINES."
           (cons end start)))))
 
 ;; ,
-(helix-define-command helix-delete-all-fake-cursors ()
+(hel-define-command hel-delete-all-fake-cursors ()
   "Delete all fake cursors from current buffer."
   (interactive)
-  (when helix-multiple-cursors-mode
-    (helix-multiple-cursors-mode -1)))
+  (when hel-multiple-cursors-mode
+    (hel-multiple-cursors-mode -1)))
 
 ;; M-,
-(helix-define-command helix-remove-main-cursor ()
+(hel-define-command hel-remove-main-cursor ()
   "Delete main cursor and activate the next fake one."
   :multiple-cursors nil
   (interactive)
-  (when helix-multiple-cursors-mode
-    (helix-restore-point-from-fake-cursor (or (helix-next-fake-cursor (point))
-                                              (helix-first-fake-cursor)))
-    (helix-auto-multiple-cursors-mode)))
+  (when hel-multiple-cursors-mode
+    (hel-restore-point-from-fake-cursor (or (hel-next-fake-cursor (point))
+                                            (hel-first-fake-cursor)))
+    (hel-auto-multiple-cursors-mode)))
 
 ;; M-minus
-(helix-define-command helix-merge-selections ()
+(hel-define-command hel-merge-selections ()
   "Merge all cursors into single selection."
   :multiple-cursors nil
   (interactive)
-  (when helix-multiple-cursors-mode
-    (let ((beg (let ((cursor (helix-first-fake-cursor)))
+  (when hel-multiple-cursors-mode
+    (let ((beg (let ((cursor (hel-first-fake-cursor)))
                  (min (overlay-get cursor 'point)
                       (overlay-get cursor 'mark)
                       (point)
                       (if (use-region-p) (mark) most-positive-fixnum))))
-          (end (let ((cursor (helix-last-fake-cursor)))
+          (end (let ((cursor (hel-last-fake-cursor)))
                  (max (overlay-get cursor 'point)
                       (overlay-get cursor 'mark)
                       (point)
                       (if (use-region-p) (mark) 0)))))
-      (helix-delete-all-fake-cursors)
-      (helix-set-region beg end 1))))
+      (hel-delete-all-fake-cursors)
+      (hel-set-region beg end 1))))
 
 ;; )
-(helix-define-command helix-rotate-selections-forward (count)
+(hel-define-command hel-rotate-selections-forward (count)
   "Rotate main selection forward COUNT times."
   :multiple-cursors nil
   (interactive "p")
-  (when helix-multiple-cursors-mode
-    (helix-recenter-point-on-jump
+  (when hel-multiple-cursors-mode
+    (hel-recenter-point-on-jump
       (dotimes (_ count)
-        (let ((cursor (or (helix-next-fake-cursor (point))
-                          (helix-first-fake-cursor))))
-          (helix-create-fake-cursor-from-point)
-          (helix-restore-point-from-fake-cursor cursor))))))
+        (let ((cursor (or (hel-next-fake-cursor (point))
+                          (hel-first-fake-cursor))))
+          (hel-create-fake-cursor-from-point)
+          (hel-restore-point-from-fake-cursor cursor))))))
 
 ;; (
-(helix-define-command helix-rotate-selections-backward (count)
+(hel-define-command hel-rotate-selections-backward (count)
   "Rotate main selection backward COUNT times."
   :multiple-cursors nil
   (interactive "p")
-  (when helix-multiple-cursors-mode
-    (helix-recenter-point-on-jump
+  (when hel-multiple-cursors-mode
+    (hel-recenter-point-on-jump
       (dotimes (_ count)
-        (let ((cursor (or (helix-previous-fake-cursor (point))
-                          (helix-last-fake-cursor))))
-          (helix-create-fake-cursor-from-point)
-          (helix-restore-point-from-fake-cursor cursor))))))
+        (let ((cursor (or (hel-previous-fake-cursor (point))
+                          (hel-last-fake-cursor))))
+          (hel-create-fake-cursor-from-point)
+          (hel-restore-point-from-fake-cursor cursor))))))
 
 ;; M-)
-(helix-define-command helix-rotate-selections-content-forward (count)
+(hel-define-command hel-rotate-selections-content-forward (count)
   "Rotate selections content forward COUNT times."
   :multiple-cursors nil
   (interactive "p")
-  (helix--rotate-selections-content count))
+  (hel--rotate-selections-content count))
 
 ;; M-(
-(helix-define-command helix-rotate-selections-content-backward (count)
+(hel-define-command hel-rotate-selections-content-backward (count)
   "Rotate selections content backward COUNT times."
   :multiple-cursors nil
   (interactive "p")
-  (helix--rotate-selections-content count :backward))
+  (hel--rotate-selections-content count :backward))
 
-(defun helix--rotate-selections-content (count &optional backward)
-  (when (and helix-multiple-cursors-mode
+(defun hel--rotate-selections-content (count &optional backward)
+  (when (and hel-multiple-cursors-mode
              (use-region-p))
-    (let ((dir (helix-region-direction)))
+    (let ((dir (hel-region-direction)))
       ;; To correctly rotate the content of adjacent selections, we all
       ;; regions need to have negative direction.  This is due to marker
       ;; insertion type of point and mark markers of fake cursor (see
@@ -1194,41 +1194,41 @@ at START-COLUMN, ends at END-COLUMN and consists of NUMBER-OF-LINES."
       ;; mark-marker — nil.  We want beginning of a region to be advanced
       ;; on insertion at its position, and end of a region — not.
       (when (natnump dir)
-        (helix-with-each-cursor (helix--exchange-point-and-mark)))
-      (helix-with-real-cursor-as-fake
-        (let ((cursors (helix-all-fake-cursors :sort)))
+        (hel-with-each-cursor (hel--exchange-point-and-mark)))
+      (hel-with-real-cursor-as-fake
+        (let ((cursors (hel-all-fake-cursors :sort)))
           (when backward
             (cl-callf nreverse cursors))
           (dotimes (_ count)
-            (helix--rotate-selections-content-1 cursors))))
+            (hel--rotate-selections-content-1 cursors))))
       ;; Restore original regions direction.
-      (unless (eql dir (helix-region-direction))
-        (helix-with-each-cursor (helix--exchange-point-and-mark))))))
+      (unless (eql dir (hel-region-direction))
+        (hel-with-each-cursor (hel--exchange-point-and-mark))))))
 
-(defun helix--rotate-selections-content-1 (cursors)
+(defun hel--rotate-selections-content-1 (cursors)
   "Rotate regions content for all CURSORS."
   (let* ((first-cursor (car cursors))
          (content (buffer-substring (overlay-get first-cursor 'point)
                                     (overlay-get first-cursor 'mark))))
     (dolist (cursor (cdr cursors))
-      (setq content (helix-exchange-fake-region-content cursor content)))
-    (helix-exchange-fake-region-content first-cursor content)))
+      (setq content (hel-exchange-fake-region-content cursor content)))
+    (hel-exchange-fake-region-content first-cursor content)))
 
-(defun helix-exchange-fake-region-content (cursor content)
+(defun hel-exchange-fake-region-content (cursor content)
   "Exchange the CURSORs region content with CONTENT and return the old one."
-  (helix-with-fake-cursor cursor
+  (hel-with-fake-cursor cursor
     (let ((deactivate-mark nil) ;; Do not deactivate mark after insertion.
-          (dir (helix-region-direction))
+          (dir (hel-region-direction))
           (new-content (buffer-substring (point) (mark))))
       (delete-region (point) (mark))
       (insert content)
-      (helix-ensure-region-direction dir)
+      (hel-ensure-region-direction dir)
       new-content)))
 
 ;; (keymap-lookup nil "M-<down-mouse-1>")
 
 ;; M-<right-mouse>
-(helix-define-command helix-toggle-cursor-on-click (event)
+(hel-define-command hel-toggle-cursor-on-click (event)
   "Add a cursor where you click, or remove a fake cursor that is
 already there."
   :multiple-cursors nil
@@ -1242,271 +1242,271 @@ already there."
     (select-window (posn-window position))
     (when-let* ((pos (posn-point position))
                 ((numberp pos)))
-      (if-let* ((cursor (helix-fake-cursor-at pos)))
-          (helix-delete-fake-cursor cursor)
-        (helix-create-fake-cursor pos)))))
+      (if-let* ((cursor (hel-fake-cursor-at pos)))
+          (hel-delete-fake-cursor cursor)
+        (hel-create-fake-cursor pos)))))
 
 ;;;; Mark
 
 ;; miw
-(helix-define-command helix-mark-inner-word (count)
+(hel-define-command hel-mark-inner-word (count)
   :multiple-cursors t
   :merge-selections t
   (interactive "p")
-  (helix-mark-inner-thing 'helix-word count))
+  (hel-mark-inner-thing 'hel-word count))
 
 ;; miW
-(helix-define-command helix-mark-inner-WORD (count)
+(hel-define-command hel-mark-inner-WORD (count)
   :multiple-cursors t
   :merge-selections t
   (interactive "p")
-  (helix-mark-inner-thing 'helix-WORD count))
+  (hel-mark-inner-thing 'hel-WORD count))
 
 ;; maw
-(helix-define-command helix-mark-a-word ()
+(hel-define-command hel-mark-a-word ()
   :multiple-cursors t
   :merge-selections t
   (interactive)
-  (helix--mark-a-word 'helix-word))
+  (hel--mark-a-word 'hel-word))
 
 ;; maW
-(helix-define-command helix-mark-a-WORD ()
+(hel-define-command hel-mark-a-WORD ()
   :multiple-cursors t
   :merge-selections t
   (interactive)
-  (helix--mark-a-word 'helix-WORD))
+  (hel--mark-a-word 'hel-WORD))
 
 ;; mis
-(helix-define-command helix-mark-inner-sentence (count)
+(hel-define-command hel-mark-inner-sentence (count)
   :multiple-cursors t
   :merge-selections t
   (interactive "p")
-  (helix-mark-inner-thing 'helix-sentence count))
+  (hel-mark-inner-thing 'hel-sentence count))
 
 ;; mas
-(helix-define-command helix-mark-a-sentence (&optional thing)
+(hel-define-command hel-mark-a-sentence (&optional thing)
   :multiple-cursors t
   :merge-selections t
   (interactive)
-  (or thing (setq thing 'helix-sentence))
+  (or thing (setq thing 'hel-sentence))
   (-when-let ((thing-beg . thing-end) (bounds-of-thing-at-point thing))
     (-let [(beg . end)
            (or (progn
                  (goto-char thing-end)
                  (with-restriction (line-beginning-position) (line-end-position)
                    (-if-let ((_ . space-end)
-                             (helix-bounds-of-complement-of-thing-at-point thing))
+                             (hel-bounds-of-complement-of-thing-at-point thing))
                        (cons thing-beg space-end))))
                (progn
                  (goto-char thing-beg)
                  (with-restriction (line-beginning-position) (line-end-position)
                    (-if-let ((space-beg . _)
-                             (helix-bounds-of-complement-of-thing-at-point thing))
+                             (hel-bounds-of-complement-of-thing-at-point thing))
                        (cons space-beg thing-end))))
                (cons thing-beg thing-end))]
-      (helix-set-region beg end))))
+      (hel-set-region beg end))))
 
 ;; mip
-(helix-define-command helix-mark-inner-paragraph (count)
+(hel-define-command hel-mark-inner-paragraph (count)
   :multiple-cursors t
   :merge-selections t
   (interactive "p")
-  (helix-push-point)
-  (helix-mark-inner-thing 'helix-paragraph count t)
-  (helix-reveal-point-when-on-top))
+  (hel-push-point)
+  (hel-mark-inner-thing 'hel-paragraph count t)
+  (hel-reveal-point-when-on-top))
 
 ;; map
-(helix-define-command helix-mark-a-paragraph (count)
+(hel-define-command hel-mark-a-paragraph (count)
   :multiple-cursors t
   :merge-selections t
   (interactive "p")
-  (helix-push-point)
-  (helix-mark-a-thing 'helix-paragraph count t)
-  (helix-reveal-point-when-on-top))
+  (hel-push-point)
+  (hel-mark-a-thing 'hel-paragraph count t)
+  (hel-reveal-point-when-on-top))
 
 ;; mif
-(helix-define-command helix-mark-inner-function (count)
+(hel-define-command hel-mark-inner-function (count)
   :multiple-cursors t
   :merge-selections t
   (interactive "p")
-  (helix-push-point)
-  (helix-mark-inner-thing 'helix-function count t)
-  (helix-ensure-region-direction -1)
-  (helix-reveal-point-when-on-top))
+  (hel-push-point)
+  (hel-mark-inner-thing 'hel-function count t)
+  (hel-ensure-region-direction -1)
+  (hel-reveal-point-when-on-top))
 
 ;; maf
-(helix-define-command helix-mark-a-function (count)
+(hel-define-command hel-mark-a-function (count)
   :multiple-cursors t
   :merge-selections t
   (interactive "p")
-  (helix-push-point)
-  (-let* ((thing 'helix-function)
-          ((thing-beg . thing-end) (helix-bounds-of-count-things-at-point thing count))
+  (hel-push-point)
+  (-let* ((thing 'hel-function)
+          ((thing-beg . thing-end) (hel-bounds-of-count-things-at-point thing count))
           beg end)
     (or (-if-let ((_ . space-end)
                   (progn
                     (goto-char thing-end)
-                    (helix-bounds-of-complement-of-thing-at-point thing)))
+                    (hel-bounds-of-complement-of-thing-at-point thing)))
             (setq beg (progn
                         ;; Take comments that belongs to the current function.
                         (goto-char thing-beg)
-                        (car (bounds-of-thing-at-point 'helix-paragraph)))
+                        (car (bounds-of-thing-at-point 'hel-paragraph)))
                   end (progn
                         ;; Exclude comments that belongs to the next function.
                         (goto-char space-end)
-                        (car (bounds-of-thing-at-point 'helix-paragraph)))))
+                        (car (bounds-of-thing-at-point 'hel-paragraph)))))
         (-if-let ((space-beg . _)
                   (progn
                     (goto-char thing-beg)
-                    (helix-bounds-of-complement-of-thing-at-point thing)))
+                    (hel-bounds-of-complement-of-thing-at-point thing)))
             (setq beg space-beg
                   end thing-end))
         (setq beg (progn
                     ;; Take comments that belongs to the current function.
                     (goto-char thing-beg)
-                    (car (bounds-of-thing-at-point 'helix-paragraph)))
+                    (car (bounds-of-thing-at-point 'hel-paragraph)))
               end thing-end))
-    (helix-set-region beg end (helix-sign count) :adjust))
-  (helix-reveal-point-when-on-top))
+    (hel-set-region beg end (hel-sign count) :adjust))
+  (hel-reveal-point-when-on-top))
 
 ;; mi"
-(helix-define-command helix-mark-inner-double-quoted ()
+(hel-define-command hel-mark-inner-double-quoted ()
   :multiple-cursors t
   :merge-selections t
   (interactive)
-  (-when-let ((beg . end) (helix-bounds-of-quoted-at-point ?\"))
-    (helix-set-region (1+ beg) (1- end))))
+  (-when-let ((beg . end) (hel-bounds-of-quoted-at-point ?\"))
+    (hel-set-region (1+ beg) (1- end))))
 
 ;; ma"
-(helix-define-command helix-mark-a-double-quoted ()
+(hel-define-command hel-mark-a-double-quoted ()
   :multiple-cursors t
   :merge-selections t
   (interactive)
-  (-when-let ((beg . end) (helix-bounds-of-quoted-at-point ?\"))
-    (helix-set-region beg end)))
+  (-when-let ((beg . end) (hel-bounds-of-quoted-at-point ?\"))
+    (hel-set-region beg end)))
 
 ;; mi'
-(helix-define-command helix-mark-inner-single-quoted ()
+(hel-define-command hel-mark-inner-single-quoted ()
   :multiple-cursors t
   :merge-selections t
   (interactive)
-  (-when-let ((beg . end) (helix-bounds-of-quoted-at-point ?'))
-    (helix-set-region (1+ beg) (1- end))))
+  (-when-let ((beg . end) (hel-bounds-of-quoted-at-point ?'))
+    (hel-set-region (1+ beg) (1- end))))
 
 ;; ma'
-(helix-define-command helix-mark-a-single-quoted ()
+(hel-define-command hel-mark-a-single-quoted ()
   :multiple-cursors t
   :merge-selections t
   (interactive)
-  (-when-let ((beg . end) (helix-bounds-of-quoted-at-point ?'))
-    (helix-set-region beg end)))
+  (-when-let ((beg . end) (hel-bounds-of-quoted-at-point ?'))
+    (hel-set-region beg end)))
 
 ;; mi`
-(helix-define-command helix-mark-inner-back-quoted ()
+(hel-define-command hel-mark-inner-back-quoted ()
   :multiple-cursors t
   :merge-selections t
   (interactive)
-  (-when-let ((beg . end) (helix-bounds-of-quoted-at-point ?`))
-    (helix-set-region (1+ beg) (1- end))))
+  (-when-let ((beg . end) (hel-bounds-of-quoted-at-point ?`))
+    (hel-set-region (1+ beg) (1- end))))
 
 ;; ma`
-(helix-define-command helix-mark-a-back-quoted ()
+(hel-define-command hel-mark-a-back-quoted ()
   :multiple-cursors t
   :merge-selections t
   (interactive)
-  (-when-let ((beg . end) (helix-bounds-of-quoted-at-point ?`))
-    (helix-set-region beg end)))
+  (-when-let ((beg . end) (hel-bounds-of-quoted-at-point ?`))
+    (hel-set-region beg end)))
 
 ;; mi( mi)
-(helix-define-command helix-mark-inner-paren ()
+(hel-define-command hel-mark-inner-paren ()
   :multiple-cursors t
   :merge-selections t
   (interactive)
-  (-when-let ((_ beg end _) (helix-4-bounds-of-brackets-at-point ?\( ?\)))
-    (helix-set-region beg end)))
+  (-when-let ((_ beg end _) (hel-4-bounds-of-brackets-at-point ?\( ?\)))
+    (hel-set-region beg end)))
 
 ;; ma( ma)
-(helix-define-command helix-mark-a-paren ()
+(hel-define-command hel-mark-a-paren ()
   :multiple-cursors t
   :merge-selections t
   (interactive)
-  (-when-let ((beg . end) (helix-bounds-of-brackets-at-point ?\( ?\)))
-    (helix-set-region beg end)))
+  (-when-let ((beg . end) (hel-bounds-of-brackets-at-point ?\( ?\)))
+    (hel-set-region beg end)))
 
 ;; mi[ mi]
-(helix-define-command helix-mark-inner-bracket ()
+(hel-define-command hel-mark-inner-bracket ()
   :multiple-cursors t
   :merge-selections t
   (interactive)
-  (-when-let ((_ beg end _) (helix-4-bounds-of-brackets-at-point ?\[ ?\]))
-    (helix-set-region beg end)))
+  (-when-let ((_ beg end _) (hel-4-bounds-of-brackets-at-point ?\[ ?\]))
+    (hel-set-region beg end)))
 
 ;; ma[ ma]
-(helix-define-command helix-mark-a-bracket ()
+(hel-define-command hel-mark-a-bracket ()
   :multiple-cursors t
   :merge-selections t
   (interactive)
-  (-when-let ((beg . end) (helix-bounds-of-brackets-at-point ?\[ ?\]))
-    (helix-set-region beg end)))
+  (-when-let ((beg . end) (hel-bounds-of-brackets-at-point ?\[ ?\]))
+    (hel-set-region beg end)))
 
 ;; mi{ mi}
-(helix-define-command helix-mark-inner-curly ()
+(hel-define-command hel-mark-inner-curly ()
   :multiple-cursors t
   :merge-selections t
   (interactive)
-  (-when-let ((_ beg end _) (helix-4-bounds-of-brackets-at-point ?{ ?}))
-    (helix-set-region beg end)))
+  (-when-let ((_ beg end _) (hel-4-bounds-of-brackets-at-point ?{ ?}))
+    (hel-set-region beg end)))
 
 ;; ma{ ma}
-(helix-define-command helix-mark-a-curly ()
+(hel-define-command hel-mark-a-curly ()
   :multiple-cursors t
   :merge-selections t
   (interactive)
-  (-when-let ((beg . end) (helix-bounds-of-brackets-at-point ?{ ?}))
-    (helix-set-region beg end)))
+  (-when-let ((beg . end) (hel-bounds-of-brackets-at-point ?{ ?}))
+    (hel-set-region beg end)))
 
 ;; mi< mi>
-(helix-define-command helix-mark-inner-angle ()
+(hel-define-command hel-mark-inner-angle ()
   :multiple-cursors t
   :merge-selections t
   (interactive)
-  (-when-let ((_ beg end _) (helix-4-bounds-of-brackets-at-point ?< ?>))
-    (helix-set-region beg end)))
+  (-when-let ((_ beg end _) (hel-4-bounds-of-brackets-at-point ?< ?>))
+    (hel-set-region beg end)))
 
 ;; ma< ma>
-(helix-define-command helix-mark-an-angle ()
+(hel-define-command hel-mark-an-angle ()
   :multiple-cursors t
   :merge-selections t
   (interactive)
-  (-when-let ((beg _ _ end) (helix-4-bounds-of-brackets-at-point ?< ?>))
-    (helix-set-region beg end)))
+  (-when-let ((beg _ _ end) (hel-4-bounds-of-brackets-at-point ?< ?>))
+    (hel-set-region beg end)))
 
-(helix-define-command helix-mark-inner-surround ()
+(hel-define-command hel-mark-inner-surround ()
   :multiple-cursors t
   :merge-selections t
   (interactive)
   (when-let* ((char (if (characterp last-command-event)
                         last-command-event
                       (get last-command-event 'ascii-character)))
-              (bounds (helix-surround--4-bounds char)))
+              (bounds (hel-surround--4-bounds char)))
     (-let [(_ beg end _) bounds]
-      (helix-set-region beg end))))
+      (hel-set-region beg end))))
 
-(helix-define-command helix-mark-a-surround ()
+(hel-define-command hel-mark-a-surround ()
   :multiple-cursors t
   :merge-selections t
   (interactive)
   (when-let* ((char (if (characterp last-command-event)
                         last-command-event
                       (get last-command-event 'ascii-character)))
-              (bounds (helix-surround--4-bounds char)))
+              (bounds (hel-surround--4-bounds char)))
     (-let [(beg _ _ end) bounds]
-      (helix-set-region beg end))))
+      (hel-set-region beg end))))
 
 ;;; Search
 
 ;; f
-(helix-define-command helix-find-char-forward (count)
+(hel-define-command hel-find-char-forward (count)
   "Prompt user for CHAR and move to the next COUNT'th occurrence of it.
 Right after this command while hints are active, you can use `n' and `N'
 keys to repeat motion forward/backward."
@@ -1514,12 +1514,12 @@ keys to repeat motion forward/backward."
   :merge-selections 'extend-selection
   (interactive "p")
   (let ((char (read-char "f")))
-    (helix-maybe-set-mark)
-    (helix-motion-loop (dir count)
-      (helix-find-char char dir nil))))
+    (hel-maybe-set-mark)
+    (hel-motion-loop (dir count)
+      (hel-find-char char dir nil))))
 
 ;; F
-(helix-define-command helix-find-char-backward (count)
+(hel-define-command hel-find-char-backward (count)
   "Prompt user for CHAR and move to the previous COUNT'th occurrence of it.
 Right after this command while hints are active, you can use `n' and `N'
 keys to repeat motion forward/backward."
@@ -1528,12 +1528,12 @@ keys to repeat motion forward/backward."
   (interactive "p")
   (cl-callf - count)
   (let ((char (read-char "F")))
-    (helix-maybe-set-mark)
-    (helix-motion-loop (dir count)
-      (helix-find-char char dir nil))))
+    (hel-maybe-set-mark)
+    (hel-motion-loop (dir count)
+      (hel-find-char char dir nil))))
 
 ;; t
-(helix-define-command helix-till-char-forward (count)
+(hel-define-command hel-till-char-forward (count)
   "Prompt user for CHAR and move before the next COUNT'th occurrence of it.
 Right after this command while hints are active, you can use `n' and `N'
 keys to repeat motion forward/backward."
@@ -1541,12 +1541,12 @@ keys to repeat motion forward/backward."
   :merge-selections 'extend-selection
   (interactive "p")
   (let ((char (read-char "t")))
-    (helix-maybe-set-mark)
-    (helix-motion-loop (dir count)
-      (helix-find-char char dir t))))
+    (hel-maybe-set-mark)
+    (hel-motion-loop (dir count)
+      (hel-find-char char dir t))))
 
 ;; T
-(helix-define-command helix-till-char-backward (count)
+(hel-define-command hel-till-char-backward (count)
   "Prompt user for CHAR and move before the prevous COUNT'th occurrence of it.
 Right after this command while hints are active, you can use `n' and `N'
 keys to repeat motion forward/backward."
@@ -1555,70 +1555,70 @@ keys to repeat motion forward/backward."
   (interactive "p")
   (cl-callf - count)
   (let ((char (read-char "T")))
-    (helix-maybe-set-mark)
-    (helix-motion-loop (dir count)
-      (helix-find-char char dir t))))
+    (hel-maybe-set-mark)
+    (hel-motion-loop (dir count)
+      (hel-find-char char dir t))))
 
 ;; /
-(helix-define-command helix-search-forward (count)
+(hel-define-command hel-search-forward (count)
   :multiple-cursors nil
   :merge-selections t
   (interactive "p")
-  (when (helix-search-interactively)
-    (setq helix-search--direction 1)
-    (helix-search-next count)))
+  (when (hel-search-interactively)
+    (setq hel-search--direction 1)
+    (hel-search-next count)))
 
 ;; ?
-(helix-define-command helix-search-backward (count)
+(hel-define-command hel-search-backward (count)
   :multiple-cursors nil
   :merge-selections t
   (interactive "p")
-  (when (helix-search-interactively -1)
-    (setq helix-search--direction -1)
-    (helix-search-next count)))
+  (when (hel-search-interactively -1)
+    (setq hel-search--direction -1)
+    (hel-search-next count)))
 
 ;; n
-(helix-define-command helix-search-next (count)
+(hel-define-command hel-search-next (count)
   "Select next COUNT search match."
   :multiple-cursors nil
   :merge-selections t
   (interactive "p")
-  (helix-disable-newline-at-eol)
-  (unless helix-search--direction (setq helix-search--direction 1))
-  (when (< helix-search--direction 0)
+  (hel-disable-newline-at-eol)
+  (unless hel-search--direction (setq hel-search--direction 1))
+  (when (< hel-search--direction 0)
     (cl-callf - count))
-  (let ((regexp (helix-search-pattern))
-        (region-dir (if (use-region-p) (helix-region-direction) 1)))
-    (helix-recenter-point-on-jump
-      (helix-motion-loop (search-dir count)
+  (let ((regexp (hel-search-pattern))
+        (region-dir (if (use-region-p) (hel-region-direction) 1)))
+    (hel-recenter-point-on-jump
+      (hel-motion-loop (search-dir count)
         (-when-let ((beg . end) (save-excursion
-                                  (helixf-search--search regexp search-dir)))
+                                  (helf-search--search regexp search-dir)))
           ;; Push mark on first invocation.
-          (unless (or (memq last-command '(helix-search-next helix-search-previous))
-                      (helix-search--keep-highlight-p last-command))
-            (helix-push-point))
-          (when (and helix--extend-selection (use-region-p))
-            (helix-create-fake-cursor-from-point))
-          (helix-set-region beg end region-dir))))
-    (helix-highlight-search-pattern regexp)))
+          (unless (or (memq last-command '(hel-search-next hel-search-previous))
+                      (hel-search--keep-highlight-p last-command))
+            (hel-push-point))
+          (when (and hel--extend-selection (use-region-p))
+            (hel-create-fake-cursor-from-point))
+          (hel-set-region beg end region-dir))))
+    (hel-highlight-search-pattern regexp)))
 
 ;; N
-(helix-define-command helix-search-previous (count)
+(hel-define-command hel-search-previous (count)
   "Select previous COUNT search match."
   :multiple-cursors nil
   :merge-selections t
   (interactive "p")
-  (helix-search-next (- count)))
+  (hel-search-next (- count)))
 
 ;; *
-(helix-define-command helix-construct-search-pattern ()
+(hel-define-command hel-construct-search-pattern ()
   "Construct search pattern from all current selections and store it to / register.
 Auto-detect word boundaries at the beginning and end of the search pattern."
   :multiple-cursors nil
   (interactive)
-  (let ((quote-fn (if helix-use-pcre-regex #'rxt-quote-pcre #'regexp-quote))
+  (let ((quote-fn (if hel-use-pcre-regex #'rxt-quote-pcre #'regexp-quote))
         patterns)
-    (helix-with-each-cursor
+    (hel-with-each-cursor
       (when (use-region-p)
         (let* ((beg (region-beginning))
                (end (region-end))
@@ -1643,48 +1643,48 @@ Auto-detect word boundaries at the beginning and end of the search pattern."
                         (if close-word-boundary "\\b"))
                 patterns))))
     (setq patterns (nreverse (-uniq patterns)))
-    (let* ((separator (if helix-use-pcre-regex "|" "\\|"))
+    (let* ((separator (if hel-use-pcre-regex "|" "\\|"))
            (regexp (apply #'concat (-interpose separator patterns))))
-      (helix-add-to-regex-history regexp)
-      (helix-highlight-search-pattern regexp))))
+      (hel-add-to-regex-history regexp)
+      (hel-highlight-search-pattern regexp))))
 
 ;; M-*
-(helix-define-command helix-construct-search-pattern-no-bounds ()
+(hel-define-command hel-construct-search-pattern-no-bounds ()
   "Construct search pattern from all current selection and store it to / register.
 Do not auto-detect word boundaries in the search pattern."
   :multiple-cursors nil
   (interactive)
-  (let ((quote (if helix-use-pcre-regex #'rxt-quote-pcre #'regexp-quote))
+  (let ((quote (if hel-use-pcre-regex #'rxt-quote-pcre #'regexp-quote))
         patterns)
-    (helix-with-each-cursor
+    (hel-with-each-cursor
       (when (use-region-p)
         (push (funcall quote (buffer-substring-no-properties (point) (mark)))
               patterns)))
     (cl-callf nreverse patterns)
-    (let* ((separator (if helix-use-pcre-regex "|" "\\|"))
+    (let* ((separator (if hel-use-pcre-regex "|" "\\|"))
            (regexp (apply #'concat (-interpose separator patterns))))
-      (helix-add-to-regex-history regexp)
-      (helix-highlight-search-pattern regexp))))
+      (hel-add-to-regex-history regexp)
+      (hel-highlight-search-pattern regexp))))
 
 ;;; Surround
 
-(cl-defun helix-surround-add-pair (key pair &key search regexp balanced)
-  "Add a new insert-delete pattern for Helix surround functionality.
+(cl-defun hel-surround-add-pair (key pair &key search regexp balanced)
+  "Add a new insert-delete pattern for Hel surround functionality.
 
 Positional arguments:
 
 KEY        A character that will activates this pattern.
 
 PAIR       Cons cell (LEFT . RIGHT) with strings, or function that returns such
-           cons cell. The strigs that will be inserted by `helix-surround' and
-           `helix-surround-change' functions.
+           cons cell. The strigs that will be inserted by `hel-surround' and
+           `hel-surround-change' functions.
 
 Keyword arguments:
 
 :SEARCH    Any of:
            1. Cons cell with strings (LEFT . RIGHT) of patterns that will be used
-              to search of two substrings to delete by `helix-surround-delete'
-              and `helix-surround-change' functions.
+              to search of two substrings to delete by `hel-surround-delete'
+              and `hel-surround-change' functions.
            2. nil — the value from PAIR argument will be used instead.
            3. Function that return cons cell with strings (LEFT . RIGHT) like
               in 1.
@@ -1707,23 +1707,23 @@ cell with stirngs (LEFT . RIGHT) or a function, that returns such cons cell. If
 :BALANCED  When non-nil all nested balanced LEFT RIGHT pairs will be skipped,
            else the first found pattern will be accepted.
 
-This function populates the buffer local `helix-surround-alist' variable,
+This function populates the buffer local `hel-surround-alist' variable,
 and thus should be called from major-modes hooks.
 
-See the defaul value of `helix-surround-alist' variable and `helix-integration.el'
+See the defaul value of `hel-surround-alist' variable and `hel-integration.el'
 file for examples."
   (declare (indent 2))
   (push (cons key `(:insert ,pair
-                    :search ,(or search pair)
-                    :regexp ,regexp
-                    :balanced ,balanced))
-        helix-surround-alist))
+                            :search ,(or search pair)
+                            :regexp ,regexp
+                            :balanced ,balanced))
+        hel-surround-alist))
 
-(defun helix-surround--read-char ()
+(defun hel-surround--read-char ()
   "Read char from minibuffer and return (LEFT . RIGHT) pair with strings
 to surround with."
   (let* ((char (read-char "surround: "))
-         (pair-or-fun-or-nil (-some-> (alist-get char helix-surround-alist)
+         (pair-or-fun-or-nil (-some-> (alist-get char hel-surround-alist)
                                (plist-get :insert))))
     (pcase pair-or-fun-or-nil
       ((and (pred functionp) fn)
@@ -1733,21 +1733,21 @@ to surround with."
       (_ (cons (char-to-string char) (char-to-string char))))))
 
 ;; Cache the function output to use with all cursors.
-(helix-cache-input helix-surround--read-char)
+(hel-cache-input hel-surround--read-char)
 
 ;; ms
-(helix-define-command helix-surround ()
+(hel-define-command hel-surround ()
   "Enclose the selected region in chosen delimiters.
 If the region consist of full lines, insert delimiters on separate
 lines and reindent the region."
   :multiple-cursors t
   (interactive)
   (when (use-region-p)
-    (helix-save-region
-      (-let (((left . right) (helix-surround--read-char))
+    (hel-save-region
+      (-let (((left . right) (hel-surround--read-char))
              (beg (copy-marker (region-beginning)))
              (end (copy-marker (region-end) t))
-             (linewise-selection? (helix-logical-lines-p)))
+             (linewise-selection? (hel-logical-lines-p)))
         (when linewise-selection?
           (cl-callf s-trim left)
           (cl-callf s-trim right))
@@ -1760,29 +1760,29 @@ lines and reindent the region."
         (indent-region beg end)
         (set-marker beg nil)
         (set-marker end nil)))
-    (helix-extend-selection -1)))
+    (hel-extend-selection -1)))
 
 ;; md
-(helix-define-command helix-surround-delete ()
+(hel-define-command hel-surround-delete ()
   :multiple-cursors t
   (interactive)
   (when-let* ((key (read-char "Delete pair: "))
-              (bounds (helix-surround--4-bounds key)))
+              (bounds (hel-surround--4-bounds key)))
     (-let (((left-beg left-end right-beg right-end) bounds)
            (deactivate-mark nil))
-      (helix-disable-newline-at-eol)
+      (hel-disable-newline-at-eol)
       (delete-region right-beg right-end)
       (delete-region left-beg left-end))))
 
 ;; mr
-(helix-define-command helix-surround-change ()
+(hel-define-command hel-surround-change ()
   :multiple-cursors t
   (interactive)
   (when-let* ((char (read-char "Delete pair: "))
-              (bounds (helix-surround--4-bounds char)))
+              (bounds (hel-surround--4-bounds char)))
     (-let* (((left-beg left-end right-beg right-end) bounds)
             (char (read-char "Insert pair: "))
-            (pair-or-fun (-some-> (alist-get char helix-surround-alist)
+            (pair-or-fun (-some-> (alist-get char hel-surround-alist)
                            (plist-get :insert)))
             ((left . right) (pcase pair-or-fun
                               ((and (pred functionp) fun)
@@ -1801,7 +1801,7 @@ lines and reindent the region."
 
 ;;; Window navigation
 
-(helix-define-command helix-window-split (window-to-split)
+(hel-define-command hel-window-split (window-to-split)
   "Split current window horisontally.
 All children of the parent of the splitted window will be rebalanced."
   :multiple-cursors nil
@@ -1811,13 +1811,13 @@ All children of the parent of the splitted window will be rebalanced."
     (balance-windows (window-parent new-window))
     new-window))
 
-(helix-define-command helix-root-window-split ()
+(hel-define-command hel-root-window-split ()
   "Split root window of current frame horisontally and rebalance all windows."
   :multiple-cursors nil
   (interactive)
-  (helix-window-split (frame-root-window)))
+  (hel-window-split (frame-root-window)))
 
-(helix-define-command helix-window-vsplit (window-to-split)
+(hel-define-command hel-window-vsplit (window-to-split)
   "Split the current window vertically.
 All children of the parent of the splitted window will be rebalanced."
   :multiple-cursors nil
@@ -1827,41 +1827,41 @@ All children of the parent of the splitted window will be rebalanced."
     (balance-windows (window-parent new-window))
     new-window))
 
-(helix-define-command helix-root-window-vsplit ()
+(hel-define-command hel-root-window-vsplit ()
   "Split root window of current frame vertically and rebalance all windows."
   :multiple-cursors nil
   (interactive)
-  (helix-window-vsplit (frame-root-window)))
+  (hel-window-vsplit (frame-root-window)))
 
-(helix-define-command helix-window-left (count)
+(hel-define-command hel-window-left (count)
   "Move the cursor to new COUNT-th window left of the current one."
   :multiple-cursors nil
   (interactive "p")
   (dotimes (_ count)
     (windmove-left)))
 
-(helix-define-command helix-window-right (count)
+(hel-define-command hel-window-right (count)
   "Move the cursor to new COUNT-th window right of the current one."
   :multiple-cursors nil
   (interactive "p")
   (dotimes (_ count)
     (windmove-right)))
 
-(helix-define-command helix-window-up (count)
+(hel-define-command hel-window-up (count)
   "Move the cursor to new COUNT-th window up of the current one."
   :multiple-cursors nil
   (interactive "p")
   (dotimes (_ count)
     (windmove-up)))
 
-(helix-define-command helix-window-down (count)
+(hel-define-command hel-window-down (count)
   "Move the cursor to new COUNT-th window down of the current one."
   :multiple-cursors nil
   (interactive "p")
   (dotimes (_ count)
     (windmove-down)))
 
-(defmacro helix-save-side-windows (&rest body)
+(defmacro hel-save-side-windows (&rest body)
   "Toggle side windows, evaluate BODY, restore side windows."
   (declare (indent defun) (debug (&rest form)))
   (let ((sides (make-symbol "sidesvar")))
@@ -1871,9 +1871,9 @@ All children of the parent of the splitted window will be rebalanced."
            (progn ,@body)
          (when ,sides (window-toggle-side-windows))))))
 
-(defun helix-move-window (side)
+(defun hel-move-window (side)
   "SIDE has the same meaning as in `split-window'."
-  (helix-save-side-windows
+  (hel-save-side-windows
     (unless (one-window-p)
       (save-excursion
         (let ((w (window-state-get (selected-window))))
@@ -1887,31 +1887,31 @@ All children of the parent of the splitted window will be rebalanced."
               (select-window newwin)))))
       (balance-windows))))
 
-(helix-define-command helix-move-window-left ()
+(hel-define-command hel-move-window-left ()
   "Swap window with one to the left."
   :multiple-cursors nil
   (interactive)
-  (helix-move-window 'left))
+  (hel-move-window 'left))
 
-(helix-define-command helix-move-window-right ()
+(hel-define-command hel-move-window-right ()
   "Swap window with one to the right."
   :multiple-cursors nil
   (interactive)
-  (helix-move-window 'right))
+  (hel-move-window 'right))
 
-(helix-define-command helix-move-window-up ()
+(hel-define-command hel-move-window-up ()
   "Swap window with one upwards."
   :multiple-cursors nil
   (interactive)
-  (helix-move-window 'up))
+  (hel-move-window 'up))
 
-(helix-define-command helix-move-window-down ()
+(hel-define-command hel-move-window-down ()
   "Swap window with one downwards."
   :multiple-cursors nil
   (interactive)
-  (helix-move-window 'down))
+  (hel-move-window 'down))
 
-(helix-define-command helix-window-delete ()
+(hel-define-command hel-window-delete ()
   "Delete the current window or tab.
 Rebalance all children of the deleted window's parent window."
   :multiple-cursors nil
@@ -1927,7 +1927,7 @@ Rebalance all children of the deleted window's parent window."
       ;; any further children (then rebalancing is not necessary anyway)
       (ignore-errors (balance-windows parent)))))
 
-(helix-define-command helix-clone-indirect-buffer-same-window ()
+(hel-define-command hel-clone-indirect-buffer-same-window ()
   "Create indirect buffer and open it in the current window.
 This command was written because `clone-indirect-buffer' calls `pop-to-buffer'
 and opens a new window."
@@ -1936,7 +1936,7 @@ and opens a new window."
   (-doto (clone-indirect-buffer nil nil)
     (switch-to-buffer)))
 
-(helix-define-command helix-kill-current-buffer-and-window ()
+(hel-define-command hel-kill-current-buffer-and-window ()
   "Kill the current buffer and delete the current window or tab."
   :multiple-cursors nil
   (interactive)
@@ -1954,31 +1954,31 @@ and opens a new window."
       (ignore-errors (balance-windows parent-win)))))
 
 ;; zn
-(helix-define-command helix-narrow-to-region-indirectly ()
+(hel-define-command hel-narrow-to-region-indirectly ()
   "Restrict editing in this buffer to the current region, indirectly.
 This recursively creates indirect clones of the current buffer so that the
 narrowing doesn't affect other windows displaying the same buffer. Call
-`helix-widen-indirectly-narrowed' to undo it (incrementally)."
+`hel-widen-indirectly-narrowed' to undo it (incrementally)."
   :multiple-cursors t
   (interactive)
   (when (use-region-p)
-    (helix-restore-newline-at-eol)
+    (hel-restore-newline-at-eol)
     (let ((orig-buffer (current-buffer))
           (name (or buffer-file-name
                     list-buffers-directory))
           (beg (region-beginning))
           (end (region-end)))
       (deactivate-mark)
-      (helix-clone-indirect-buffer-same-window)
+      (hel-clone-indirect-buffer-same-window)
       (setq list-buffers-directory name
-            helix--narrowed-base-buffer orig-buffer)
+            hel--narrowed-base-buffer orig-buffer)
       (narrow-to-region beg end))))
 
 ;; zw
-(helix-define-command helix-widen-indirectly-narrowed (&optional arg)
+(hel-define-command hel-widen-indirectly-narrowed (&optional arg)
   "Widens narrowed buffers.
 Incrementally kill indirect buffers (under the assumption they were created by
-`helix-narrow-to-region-indirectly') and switch to their base buffer.
+`hel-narrow-to-region-indirectly') and switch to their base buffer.
 
 With \\[universal-argument] kill all indirect buffers, return the base buffer and widen it.
 
@@ -1988,14 +1988,14 @@ If the current buffer is not an indirect buffer, works like `widen'."
   (unless (buffer-narrowed-p)
     (user-error "Buffer isn't narrowed"))
   (let ((orig-buffer (current-buffer))
-        (base-buffer helix--narrowed-base-buffer))
+        (base-buffer hel--narrowed-base-buffer))
     (cond ((or (not base-buffer)
                (not (buffer-live-p base-buffer)))
            (widen))
           (arg
            (let ((buffer orig-buffer)
                  (buffers-to-kill (list orig-buffer)))
-             (while (setq buffer (buffer-local-value 'helix--narrowed-base-buffer buffer))
+             (while (setq buffer (buffer-local-value 'hel--narrowed-base-buffer buffer))
                (push buffer buffers-to-kill))
              (switch-to-buffer (buffer-base-buffer))
              (->> buffers-to-kill
@@ -2005,18 +2005,18 @@ If the current buffer is not an indirect buffer, works like `widen'."
            (kill-buffer orig-buffer)))))
 
 ;; C-w :
-(helix-define-command helix-execute-extended-command-other-window ()
+(hel-define-command hel-execute-extended-command-other-window ()
   :multiple-cursors nil
   (interactive)
   (other-window-prefix)
   (call-interactively #'execute-extended-command))
 
 ;; C-w C-:
-(helix-define-command helix-execute-extended-command-for-buffer-other-window ()
+(hel-define-command hel-execute-extended-command-for-buffer-other-window ()
   :multiple-cursors nil
   (interactive)
   (other-window-prefix)
   (call-interactively #'execute-extended-command-for-buffer))
 
-(provide 'helix-commands)
-;;; helix-commands.el ends here
+(provide 'hel-commands)
+;;; hel-commands.el ends here

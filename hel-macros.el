@@ -1,11 +1,11 @@
-;;; helix-macros.el --- Macros -*- lexical-binding: t; -*-
+;;; hel-macros.el --- Macros -*- lexical-binding: t; -*-
 ;;
 ;; Copyright © 2025 Yuriy Artemyev
 ;;
 ;; Author: Yuriy Artemyev <anuvyklack@gmail.com>
 ;; Maintainer: Yuriy Artemyev <anuvyklack@gmail.com>
 ;; Version: 0.0.1
-;; Homepage: https://github.com/anuvyklack/helix.el
+;; Homepage: https://github.com/anuvyklack/hel.el
 ;; Package-Requires: ((emacs "29.1"))
 ;;
 ;; This file is not part of GNU Emacs.
@@ -15,7 +15,7 @@
 (require 'cl-lib)
 (require 'dash)
 
-(defmacro helix-defvar-local (symbol &optional initvalue docstring)
+(defmacro hel-defvar-local (symbol &optional initvalue docstring)
   "The same as `defvar-local' but additionaly marks SYMBOL as permanent
 buffer local variable."
   (declare (indent defun)
@@ -25,12 +25,12 @@ buffer local variable."
      (make-variable-buffer-local ',symbol)
      (put ',symbol 'permanent-local t)))
 
-(defvar helix--advices nil
-  "Inner variable for `helix-define-advice'.")
+(defvar hel--advices nil
+  "Inner variable for `hel-define-advice'.")
 
-(defmacro helix-define-advice (symbol args &rest body)
+(defmacro hel-define-advice (symbol args &rest body)
   "Wrapper around `define-advice' that automatically add/remove advice
-when `helix-mode' is toggled on or off.
+when `hel-mode' is toggled on or off.
 
 \(fn SYMBOL (HOW LAMBDA-LIST &optional NAME) &rest BODY)"
   (declare (indent 2) (doc-string 3) (debug (sexp sexp def-body)))
@@ -40,24 +40,24 @@ when `helix-mode' is toggled on or off.
     (signal 'wrong-number-of-arguments (list 2 4 (length args))))
   (let* ((how (nth 0 args))
          (lambda-list (nth 1 args))
-         (name (or (nth 2 args) 'helix))
+         (name (or (nth 2 args) 'hel))
          (advice (intern (format "%s@%s" symbol name))))
     `(prog1 (defun ,advice ,lambda-list ,@body)
-       (cl-pushnew '(,symbol ,how ,advice) helix--advices
+       (cl-pushnew '(,symbol ,how ,advice) hel--advices
                    :test #'equal)
-       (when helix-mode
+       (when hel-mode
          (advice-add ',symbol ,how #',advice)))))
 
-(defmacro helix-advice-add (symbol how function)
+(defmacro hel-advice-add (symbol how function)
   "Wrapper around `advice-add' that automatically add/remove advice
-when `helix-mode' is toggled on or off"
+when `hel-mode' is toggled on or off"
   `(progn
-     (cl-pushnew (list ,symbol ,how ,function) helix--advices
+     (cl-pushnew (list ,symbol ,how ,function) hel--advices
                  :test #'equal)
-     (when helix-mode
+     (when hel-mode
        (advice-add ,symbol ,how ,function))))
 
-(defmacro helix-recenter-point-on-jump (&rest body)
+(defmacro hel-recenter-point-on-jump (&rest body)
   "Recenter point on jumps during BODY evaluating if it lands out of the screen.
 This macro calls `redisplay' internally and should be used with care to avoid
 flickering."
@@ -66,10 +66,10 @@ flickering."
      (prog1 (progn ,@body)
        ;; Update the screen so that the temporary value for
        ;; `scroll-conservatively' is taken into account.
-       (unless helix-executing-command-for-fake-cursor
+       (unless hel-executing-command-for-fake-cursor
          (redisplay)))))
 
-(defmacro helix-save-region (&rest body)
+(defmacro hel-save-region (&rest body)
   "Evaluate BODY with preserving original region.
 The difference from `save-mark-and-excursion' is that both point and mark are
 saved as markers and correctly handle case when text was inserted before region."
@@ -83,15 +83,15 @@ saved as markers and correctly handle case when text was inserted before region.
          (let ((deactivate-mark nil)
                (,beg (copy-marker (region-beginning) t))
                (,end (copy-marker (region-end)))
-               (,dir (helix-region-direction))
-               (,newline-at-eol helix--newline-at-eol))
+               (,dir (hel-region-direction))
+               (,newline-at-eol hel--newline-at-eol))
            (unwind-protect
                (save-excursion ,@body)
-             (helix-set-region ,beg ,end ,dir (and ,newline-at-eol
-                                                   (/= ,beg ,end)
-                                                   (save-excursion
-                                                     (goto-char ,end)
-                                                     (eolp))))
+             (hel-set-region ,beg ,end ,dir (and ,newline-at-eol
+                                                 (/= ,beg ,end)
+                                                 (save-excursion
+                                                   (goto-char ,end)
+                                                   (eolp))))
              (set-marker ,beg nil)
              (set-marker ,end nil)))
        ;; else
@@ -102,34 +102,34 @@ saved as markers and correctly handle case when text was inserted before region.
            (goto-char ,pnt)
            (set-marker ,pnt nil))))))
 
-(defmacro helix-save-linewise-selection (&rest body)
+(defmacro hel-save-linewise-selection (&rest body)
   "Evaluate BODY keeping linewise selection.
-If selection is no linewise work like `helix-save-region'."
+If selection is no linewise work like `hel-save-region'."
   (declare (indent 0) (debug t))
   (let ((beg (gensym "region-beg"))
         (end (gensym "region-end"))
         (dir (gensym "region-dir")))
-    `(if (helix-logical-lines-p)
+    `(if (hel-logical-lines-p)
          (let ((deactivate-mark nil)
                (,beg (copy-marker (region-beginning)))
                (,end (copy-marker (region-end) t))
-               (,dir (helix-region-direction)))
+               (,dir (hel-region-direction)))
            (unwind-protect
                (save-excursion
                  ,@body)
-             (helix-set-region ,beg ,end ,dir)
-             (helix-expand-selection-to-full-lines ,dir)
+             (hel-set-region ,beg ,end ,dir)
+             (hel-expand-selection-to-full-lines ,dir)
              (set-marker ,beg nil)
              (set-marker ,end nil)))
-       (helix-save-region
+       (hel-save-region
          ,@body))))
 
-(defmacro helix-restore-region-on-error (&rest body)
+(defmacro hel-restore-region-on-error (&rest body)
   (declare (indent 0) (debug t))
   (let ((region (gensym "region"))
         (point-pos (gensym "point"))
         (something-goes-wrong? (make-symbol "something-goes-wrong?")))
-    `(let ((,region (helix-region))
+    `(let ((,region (hel-region))
            (,point-pos (point))
            (,something-goes-wrong? t))
        (unwind-protect
@@ -137,11 +137,11 @@ If selection is no linewise work like `helix-save-region'."
              (setq ,something-goes-wrong? nil))
          (when ,something-goes-wrong?
            (if ,region
-               (apply #'helix-set-region ,region)
+               (apply #'hel-set-region ,region)
              (goto-char ,point-pos)))))))
 
-(defmacro helix-define-command (command args &rest body)
-  "Define Helix COMMAND.
+(defmacro hel-define-command (command args &rest body)
+  "Define Hel COMMAND.
 Wrapper around `defun' macro, that additionally takes following keyword
 parameters:
 
@@ -154,7 +154,7 @@ parameters:
         single selection.
   - `extend-selection' (symbol)
         Selections will be checked on overlapping only when extending selections
-        is enabled (`helix-extend-selection').
+        is enabled (`hel-extend-selection').
 
 \(fn COMMAND (ARGS...) [DOC] [[KEY VALUE]...] BODY...)"
   (declare (indent defun)
@@ -191,5 +191,5 @@ parameters:
          ,@body)
        ,@properties)))
 
-(provide 'helix-macros)
-;;; helix-macros.el ends here
+(provide 'hel-macros)
+;;; hel-macros.el ends here

@@ -1,11 +1,11 @@
-;;; helix-multiple-cursors-core.el --- Multiple cursors for Helix -*- lexical-binding: t; -*-
+;;; hel-multiple-cursors-core.el --- Multiple cursors for Hel -*- lexical-binding: t; -*-
 ;;
 ;; Copyright © 2025 Yuriy Artemyev
 ;;
 ;; Authors: Yuriy Artemyev <anuvyklack@gmail.com>
 ;; Maintainer: Yuriy Artemyev <anuvyklack@gmail.com>
 ;; Version: 0.0.1
-;; Homepage: https://github.com/anuvyklack/helix.el
+;; Homepage: https://github.com/anuvyklack/hel.el
 ;; Package-Requires: ((emacs "29.1"))
 ;;
 ;; This file is not part of GNU Emacs.
@@ -19,7 +19,7 @@
 ;; cursor by Emacs command loop. Then in `post-command-hook' it executed for all
 ;; fake cursors. Fake cursor is an overlay that emulates cursor and stores
 ;; inside point, mark, kill-ring and some other variables (full list is in
-;; `helix-fake-cursor-specific-vars'). Executing command for fake cursor looks
+;; `hel-fake-cursor-specific-vars'). Executing command for fake cursor looks
 ;; as follows: set point and mark to positions saved in fake cursor overlay,
 ;; restore all variables from it, execute command in this environment, store
 ;; point, mark and new state into fake cursor overlay.
@@ -28,7 +28,7 @@
 ;; command will be execute for all cursors. Any other value except `nil' — it
 ;; will be executed only once for real (main) cursor. If `multiple-cursors'
 ;; property is `nil' i.e. absent user will be prompted how execute this command
-;; and choosen value is permanently stored in `helix-whitelist-file' file.
+;; and choosen value is permanently stored in `hel-whitelist-file' file.
 ;;
 ;; ID 0 is always corresponding to real cursor.
 
@@ -38,32 +38,32 @@
 (require 'cl-lib)
 (require 'subr-x)
 (require 'rect)
-(require 'helix-common)
+(require 'hel-common)
 
 ;;; Undo
 
-(defun helix--single-undo-step-beginning ()
+(defun hel--single-undo-step-beginning ()
   "Initiate atomic undo step.
 All following buffer modifications are grouped together as a single
-action. The step is terminated with `helix--single-undo-step-end'."
-  (unless (or helix--in-single-undo-step
-              (helix-undo-command-p this-command)
+action. The step is terminated with `hel--single-undo-step-end'."
+  (unless (or hel--in-single-undo-step
+              (hel-undo-command-p this-command)
               (eq buffer-undo-list t))
-    (setq helix--in-single-undo-step t)
+    (setq hel--in-single-undo-step t)
     (unless (null (car-safe buffer-undo-list))
       (undo-boundary))
-    (setq helix--undo-list-pointer buffer-undo-list)
-    (helix--push-undo-boundary-1)))
+    (setq hel--undo-list-pointer buffer-undo-list)
+    (hel--push-undo-boundary-1)))
 
-(defvar helix-insert-state)
+(defvar hel-insert-state)
 
-(defun helix--single-undo-step-end ()
-  "Finalize atomic undo step started by `helix--single-undo-step-beginning'."
-  (when (and helix--in-single-undo-step
+(defun hel--single-undo-step-end ()
+  "Finalize atomic undo step started by `hel--single-undo-step-beginning'."
+  (when (and hel--in-single-undo-step
              ;; Merged all changes in Insert state into one undo step.
-             (not helix-insert-state))
-    (helix--push-undo-boundary-2)
-    (unless (eq buffer-undo-list helix--undo-list-pointer)
+             (not hel-insert-state))
+    (hel--push-undo-boundary-2)
+    (unless (eq buffer-undo-list hel--undo-list-pointer)
       (let ((undo-list buffer-undo-list))
         (while (and (consp undo-list)
                     (eq (car undo-list) nil))
@@ -74,156 +74,156 @@ action. The step is terminated with `helix--single-undo-step-end'."
           ;; withing current undo step. Also remove number entries -- they
           ;; move point during undo, and we handle cursors positions manually
           ;; to synchronize real cursor with fake ones.
-          (setq undo-list (helix-destructive-filter
+          (setq undo-list (hel-destructive-filter
                            (lambda (i) (or (numberp i) (null i)))
                            undo-list
-                           helix--undo-list-pointer))
+                           hel--undo-list-pointer))
           ;; Restore "undo" status of the tip of `buffer-undo-list'.
           (when equiv
             (puthash (car undo-list) equiv
                      undo-equiv-table)))
         (setq buffer-undo-list undo-list)))
-    (setq helix--in-single-undo-step nil
-          helix--undo-list-pointer nil)))
+    (setq hel--in-single-undo-step nil
+          hel--undo-list-pointer nil)))
 
-(defun helix--push-undo-boundary-1 ()
-  (setq helix--undo-boundary
-        `(apply helix--undo-step-end ,(helix-cursors-positions)))
-  (push helix--undo-boundary buffer-undo-list))
+(defun hel--push-undo-boundary-1 ()
+  (setq hel--undo-boundary
+        `(apply hel--undo-step-end ,(hel-cursors-positions)))
+  (push hel--undo-boundary buffer-undo-list))
 
-(defun helix--push-undo-boundary-2 ()
-  (when helix--undo-boundary
+(defun hel--push-undo-boundary-2 ()
+  (when hel--undo-boundary
     (let ((undo-list buffer-undo-list))
       (while (and (consp undo-list)
                   (eq (car undo-list) nil))
         (pop undo-list))
-      (if (equal (car undo-list) helix--undo-boundary)
+      (if (equal (car undo-list) hel--undo-boundary)
           (pop undo-list)
         ;; else
-        (push `(apply helix--undo-step-start ,(helix-cursors-positions))
+        (push `(apply hel--undo-step-start ,(hel-cursors-positions))
               undo-list))
-      (setq helix--undo-boundary nil
+      (setq hel--undo-boundary nil
             buffer-undo-list undo-list))))
 
-(defun helix--undo-step-start (cursors-positions)
+(defun hel--undo-step-start (cursors-positions)
   "This function always called from `buffer-undo-list' during undo by
 `primitive-undo' function. It is the first one from a pair of functions:
-`helix--undo-step-start' and `helix--undo-step-end', which are executed
+`hel--undo-step-start' and `hel--undo-step-end', which are executed
 at beginning and end of a single undo step and restores real and fake
 cursors positions and regions after undo/redo step.
 
-CURSORS-POSITIONS is an alist returned by `helix-cursors-positions' function."
-  (push `(apply helix--undo-step-end ,cursors-positions)
+CURSORS-POSITIONS is an alist returned by `hel-cursors-positions' function."
+  (push `(apply hel--undo-step-end ,cursors-positions)
         buffer-undo-list))
 
-(defun helix--undo-step-end (&optional cursors-positions)
+(defun hel--undo-step-end (&optional cursors-positions)
   "This function always called from `buffer-undo-list' during undo by
 `primitive-undo' function. It is the second one from a pair of functions:
-`helix--undo-step-start' and `helix--undo-step-end', which are executed
+`hel--undo-step-start' and `hel--undo-step-end', which are executed
 at beginning and end of a single undo step and restores real and fake
 cursors positions and regions after undo/redo step.
 
-CURSORS-POSITIONS is an alist returned by `helix-cursors-positions' function."
+CURSORS-POSITIONS is an alist returned by `hel-cursors-positions' function."
   (maphash (lambda (id cursor)
              (unless (assoc id cursors-positions #'eql)
-               (helix--delete-fake-cursor cursor)))
-           helix--cursors-table)
+               (hel--delete-fake-cursor cursor)))
+           hel--cursors-table)
   (dolist (val cursors-positions)
     (-let [(id point mark newline-at-eol) val]
       (pcase id
-        (0 (helix-set-region mark point nil newline-at-eol))
+        (0 (hel-set-region mark point nil newline-at-eol))
         (_ (let ((mark-active (not (null mark)))
-                 (helix--newline-at-eol newline-at-eol))
-             (if-let* ((cursor (gethash id helix--cursors-table)))
-                 (helix-move-fake-cursor cursor point mark :update)
-               (helix--create-fake-cursor-1 id point mark)))))))
-  (helix-auto-multiple-cursors-mode)
-  (push `(apply helix--undo-step-start ,cursors-positions)
+                 (hel--newline-at-eol newline-at-eol))
+             (if-let* ((cursor (gethash id hel--cursors-table)))
+                 (hel-move-fake-cursor cursor point mark :update)
+               (hel--create-fake-cursor-1 id point mark)))))))
+  (hel-auto-multiple-cursors-mode)
+  (push `(apply hel--undo-step-start ,cursors-positions)
         buffer-undo-list))
 
 ;;; Fake cursor object
 
-(defun helix--new-fake-cursor-id ()
+(defun hel--new-fake-cursor-id ()
   "Return new unique cursor id.
 IDs' are used to keep track of cursors for undo."
-  (cl-incf helix--fake-cursor-last-used-id))
+  (cl-incf hel--fake-cursor-last-used-id))
 
-(defvar helix--max-cursors-original nil
+(defvar hel--max-cursors-original nil
   "This variable maintains the original maximum number of cursors.
-When `helix-create-fake-cursor' is called and `helix-max-cursors-number' is
-overridden, this value serves as a backup so that `helix-max-cursors-number'
-can take on a new value. When `helix--delete-all-fake-cursors' is called,
+When `hel-create-fake-cursor' is called and `hel-max-cursors-number' is
+overridden, this value serves as a backup so that `hel-max-cursors-number'
+can take on a new value. When `hel--delete-all-fake-cursors' is called,
 the values are reset.")
 
-(defun helix-create-fake-cursor (point &optional mark id)
+(defun hel-create-fake-cursor (point &optional mark id)
   "Create a fake cursor at POINT position.
 If MARK is passed a fake active region overlay between POINT
 and MARK will be created.
 The ID, if specified, will be assigned to the new cursor.
 Otherwise, the new unique ID will be created.
 The current state is stored in the overlay for later retrieval."
-  (unless helix--max-cursors-original
-    (setq helix--max-cursors-original helix-max-cursors-number))
-  (when helix-max-cursors-number
-    (when-let* ((num (helix-number-of-cursors))
-                ((<= helix-max-cursors-number num)))
+  (unless hel--max-cursors-original
+    (setq hel--max-cursors-original hel-max-cursors-number))
+  (when hel-max-cursors-number
+    (when-let* ((num (hel-number-of-cursors))
+                ((<= hel-max-cursors-number num)))
       (if (yes-or-no-p (format "%d active cursors. Continue? " num))
-          (setq helix-max-cursors-number (read-number "Enter a new, temporary maximum: "))
-        (helix--delete-all-fake-cursors)
+          (setq hel-max-cursors-number (read-number "Enter a new, temporary maximum: "))
+        (hel--delete-all-fake-cursors)
         (error "Aborted: too many cursors"))))
-  (prog1 (helix--create-fake-cursor-1 id point mark)
-    (unless helix-multiple-cursors-mode
-      (helix-multiple-cursors-mode 1))))
+  (prog1 (hel--create-fake-cursor-1 id point mark)
+    (unless hel-multiple-cursors-mode
+      (hel-multiple-cursors-mode 1))))
 
-(defun helix--create-fake-cursor-1 (id point mark)
+(defun hel--create-fake-cursor-1 (id point mark)
   "Create a fake cursor with ID at POINT and fake region between POINT and MARK.
-This function is the guts of the `helix-create-fake-cursor'."
-  (or id (setq id (helix--new-fake-cursor-id)))
+This function is the guts of the `hel-create-fake-cursor'."
+  (or id (setq id (hel--new-fake-cursor-id)))
   (save-excursion
     (goto-char point)
-    (let ((cursor (helix--set-cursor-overlay nil point)))
+    (let ((cursor (hel--set-cursor-overlay nil point)))
       (overlay-put cursor 'id id)
       (overlay-put cursor 'type 'fake-cursor)
       (overlay-put cursor 'priority 100)
-      (helix--store-cursor-state cursor point mark)
-      (helix--set-fake-region-overlay cursor)
-      (puthash id cursor helix--cursors-table)
+      (hel--store-cursor-state cursor point mark)
+      (hel--set-fake-region-overlay cursor)
+      (puthash id cursor hel--cursors-table)
       cursor)))
 
-(defun helix--delete-all-fake-cursors ()
+(defun hel--delete-all-fake-cursors ()
   "Remove all fake cursors overlays form current buffer.
-It is likely that you need `helix-delete-all-fake-cursors' function,
+It is likely that you need `hel-delete-all-fake-cursors' function,
 not this one."
-  (when helix--max-cursors-original
-    (setq helix-max-cursors-number helix--max-cursors-original
-          helix--max-cursors-original nil))
-  (mapc #'helix--delete-fake-cursor (helix-all-fake-cursors)))
+  (when hel--max-cursors-original
+    (setq hel-max-cursors-number hel--max-cursors-original
+          hel--max-cursors-original nil))
+  (mapc #'hel--delete-fake-cursor (hel-all-fake-cursors)))
 
-(defun helix-create-fake-cursor-from-point (&optional id)
+(defun hel-create-fake-cursor-from-point (&optional id)
   "Create a fake cursor with an optional fake region based on point and mark.
 Assign the ID to the new fake cursor, if specified.
 The current state is stored in it for later retrieval."
-  (helix-create-fake-cursor (point) (mark t) id))
+  (hel-create-fake-cursor (point) (mark t) id))
 
-(defun helix-move-fake-cursor (cursor point &optional mark update)
+(defun hel-move-fake-cursor (cursor point &optional mark update)
   "Move fake CURSOR to new POINT.
 If MARK is non-nil also set fake region.
 Move fake CURSOR and its region according to new POINT and MARK.
 Optionally UPDATE fake-cursors state."
   (set-marker (overlay-get cursor 'point) point)
   (set-marker (overlay-get cursor 'mark) (or mark point))
-  (when update (helix-update-fake-cursor-state cursor))
-  (helix--set-cursor-overlay cursor point)
-  (helix--set-fake-region-overlay cursor)
+  (when update (hel-update-fake-cursor-state cursor))
+  (hel--set-cursor-overlay cursor point)
+  (hel--set-fake-region-overlay cursor)
   cursor)
 
-(defun helix-delete-fake-cursor (cursor)
-  "Delete fake CURSOR and disable `helix-multiple-cursors-mode' if no
+(defun hel-delete-fake-cursor (cursor)
+  "Delete fake CURSOR and disable `hel-multiple-cursors-mode' if no
 more fake cursors are remaining."
-  (helix--delete-fake-cursor cursor)
-  (helix-auto-multiple-cursors-mode))
+  (hel--delete-fake-cursor cursor)
+  (hel-auto-multiple-cursors-mode))
 
-(defun helix--set-cursor-overlay (cursor pos)
+(defun hel--set-cursor-overlay (cursor pos)
   "Move or create fake CURSOR overlay at position POS.
 If CURSOR is nil — create new fake cursor overlay at POS.
 Return CURSOR."
@@ -239,16 +239,16 @@ Return CURSOR."
                         (make-overlay pos pos nil t nil))
                        (t
                         (make-overlay pos (1+ pos) nil t nil))))
-    (let ((face (cond (helix--extend-selection
-                       'helix-extend-selection-cursor)
-                      (helix-insert-state
-                       'helix-insert-state-fake-cursor)
+    (let ((face (cond (hel--extend-selection
+                       'hel-extend-selection-cursor)
+                      (hel-insert-state
+                       'hel-insert-state-fake-cursor)
                       (t
-                       'helix-normal-state-fake-cursor))))
-      (cond ((and helix-match-fake-cursor-style
-                  (helix-cursor-is-bar-p))
+                       'hel-normal-state-fake-cursor))))
+      (cond ((and hel-match-fake-cursor-style
+                  (hel-cursor-is-bar-p))
              (overlay-put cursor 'face nil)
-             (overlay-put cursor 'before-string (propertize helix-bar-fake-cursor 'face face))
+             (overlay-put cursor 'before-string (propertize hel-bar-fake-cursor 'face face))
              (overlay-put cursor 'after-string nil))
             ((eolp)
              (overlay-put cursor 'face nil)
@@ -260,11 +260,11 @@ Return CURSOR."
              (overlay-put cursor 'after-string nil))))
     cursor))
 
-(defun helix--set-fake-region-overlay (cursor)
+(defun hel--set-fake-region-overlay (cursor)
   "For fake CURSOR setup the overlay looking like active region when appropriate."
   (let ((beg (overlay-get cursor 'point))
         (end (overlay-get cursor 'mark))
-        (newline-at-eol? (overlay-get cursor 'helix--newline-at-eol)))
+        (newline-at-eol? (overlay-get cursor 'hel--newline-at-eol)))
     (if (and (overlay-get cursor 'mark-active)
              (or (/= beg end) newline-at-eol?))
         (progn
@@ -281,22 +281,22 @@ Return CURSOR."
                            (overlay-put 'priority 1)))
             (overlay-put cursor 'fake-region region)))
       ;; else
-      (helix--delete-fake-region-overlay cursor))))
+      (hel--delete-fake-region-overlay cursor))))
 
-(defun helix--delete-fake-cursor (cursor)
+(defun hel--delete-fake-cursor (cursor)
   "Delete CURSOR overlay."
-  (remhash (overlay-get cursor 'id) helix--cursors-table)
+  (remhash (overlay-get cursor 'id) hel--cursors-table)
   (set-marker (overlay-get cursor 'point) nil)
   (set-marker (overlay-get cursor 'mark) nil)
-  (helix--delete-fake-region-overlay cursor)
+  (hel--delete-fake-region-overlay cursor)
   (delete-overlay cursor))
 
-(defun helix--delete-fake-region-overlay (cursor)
+(defun hel--delete-fake-region-overlay (cursor)
   "Remove the dependent region overlay for a given CURSOR overlay."
   (-some-> (overlay-get cursor 'fake-region)
     (delete-overlay)))
 
-(defun helix--store-cursor-state (overlay point mark)
+(defun hel--store-cursor-state (overlay point mark)
   "Store POINT, MARK and variables relevant to fake cursor into OVERLAY."
   (or mark (setq mark point))
   (-if-let (pnt (overlay-get overlay 'point))
@@ -305,151 +305,151 @@ Return CURSOR."
   (-if-let (mrk (overlay-get overlay 'mark))
       (set-marker mrk mark)
     (overlay-put overlay 'mark (copy-marker mark)))
-  (dolist (var helix-fake-cursor-specific-vars)
+  (dolist (var hel-fake-cursor-specific-vars)
     (if (boundp var)
         (overlay-put overlay var (symbol-value var))))
   overlay)
 
-(defun helix-update-fake-cursor-state (cursor)
+(defun hel-update-fake-cursor-state (cursor)
   "Update variables stored in fake CURSOR."
-  (dolist (var helix-fake-cursor-specific-vars)
+  (dolist (var hel-fake-cursor-specific-vars)
     (if (boundp var)
         (overlay-put cursor var (symbol-value var)))))
 
-(defun helix-restore-point-from-fake-cursor (cursor)
+(defun hel-restore-point-from-fake-cursor (cursor)
   "Restore point, mark and variables from fake CURSOR overlay and delete it."
-  (helix--restore-cursor-state cursor)
-  (helix--delete-fake-cursor cursor)
-  (if helix--newline-at-eol
-      (helix--set-region-overlay (region-beginning) (1+ (region-end)))
-    (helix--delete-region-overlay)))
+  (hel--restore-cursor-state cursor)
+  (hel--delete-fake-cursor cursor)
+  (if hel--newline-at-eol
+      (hel--set-region-overlay (region-beginning) (1+ (region-end)))
+    (hel--delete-region-overlay)))
 
-(defun helix--restore-cursor-state (overlay)
+(defun hel--restore-cursor-state (overlay)
   "Restore point, mark and cursor variables saved in OVERLAY."
   (goto-char (overlay-get overlay 'point))
   (set-marker (mark-marker) (overlay-get overlay 'mark))
-  (dolist (var helix-fake-cursor-specific-vars)
+  (dolist (var hel-fake-cursor-specific-vars)
     (if (boundp var)
         (set var (overlay-get overlay var))))
-  (helix--delete-fake-region-overlay overlay)
+  (hel--delete-fake-region-overlay overlay)
   (delete-overlay overlay))
 
-(defun helix-hide-fake-cursor (cursor)
+(defun hel-hide-fake-cursor (cursor)
   "Disable the fake-CURSOR visibility in the buffer without deleting it."
-  (helix--delete-fake-region-overlay cursor)
+  (hel--delete-fake-region-overlay cursor)
   (delete-overlay cursor)
   cursor)
 
-(defun helix-show-fake-cursor (cursor)
+(defun hel-show-fake-cursor (cursor)
   "Restore fake-CURSOR visibility if it was previously hidden with
-`helix-hide-fake-cursor'."
+`hel-hide-fake-cursor'."
   (let ((point (overlay-get cursor 'point))
         (mark (overlay-get cursor 'mark)))
-    (helix--set-cursor-overlay cursor point)
-    (helix--set-fake-region-overlay cursor)))
+    (hel--set-cursor-overlay cursor point)
+    (hel--set-fake-region-overlay cursor)))
 
-(defun helix-fake-cursor-p (overlay)
+(defun hel-fake-cursor-p (overlay)
   "Return t if an OVERLAY is a fake cursor."
   (eq (overlay-get overlay 'type) 'fake-cursor))
 
-(defun helix-fake-region-p (overlay)
+(defun hel-fake-region-p (overlay)
   "Return t if an OVERLAY is a fake region."
   (eq (overlay-get overlay 'type) 'fake-region))
 
 ;;; Access fake cursors
 
-(defun helix-all-fake-cursors (&optional sort)
+(defun hel-all-fake-cursors (&optional sort)
   "Return list with all fake cursors in current buffer.
 If SORT is non-nil sort cursors in order they are located in buffer."
-  (let ((cursors (hash-table-values helix--cursors-table)))
+  (let ((cursors (hash-table-values hel--cursors-table)))
     (if sort
         (sort cursors (lambda (c1 c2)
                         (< (overlay-get c1 'point)
                            (overlay-get c2 'point))))
       cursors)))
 
-(defun helix-fake-cursors-in (start end)
+(defun hel-fake-cursors-in (start end)
   "Return list of fake cursors within START...END buffer positions."
-  (-filter #'helix-fake-cursor-p
+  (-filter #'hel-fake-cursor-p
            (overlays-in start end)))
 
-(defun helix-cursor-with-id (id)
+(defun hel-cursor-with-id (id)
   "Return the cursor with the given ID if it is stil alive."
-  (if-let* ((cursor (gethash id helix--cursors-table))
-            ((helix-overlay-live-p cursor)))
+  (if-let* ((cursor (gethash id hel--cursors-table))
+            ((hel-overlay-live-p cursor)))
       cursor))
 
-(defun helix-fake-cursor-at (position)
+(defun hel-fake-cursor-at (position)
   "Return the fake cursor at POSITION, or nil if no one."
   (--find (= position (overlay-get it 'point))
-          (helix-fake-cursors-in position (1+ position))))
+          (hel-fake-cursors-in position (1+ position))))
 
-(defun helix-next-fake-cursor (&optional position)
+(defun hel-next-fake-cursor (&optional position)
   "Return the next fake cursor after the POSITION."
   ;; (unless position (setq position (point)))
   (cl-loop for pos = (next-overlay-change position)
            then (next-overlay-change pos)
            until (eql pos (point-max))
-           thereis (helix-fake-cursor-at pos)))
+           thereis (hel-fake-cursor-at pos)))
 
-(defun helix-previous-fake-cursor (position)
+(defun hel-previous-fake-cursor (position)
   "Return the first fake cursor before the POSITION."
   (cl-loop for pos = (previous-overlay-change position)
            then (previous-overlay-change pos)
            until (eql pos (point-min))
-           thereis (helix-fake-cursor-at pos)))
+           thereis (hel-fake-cursor-at pos)))
 
-(defun helix-first-fake-cursor ()
+(defun hel-first-fake-cursor ()
   "Return the first fake cursor in the buffer."
   (-min-by (lambda (a b)
              (> (overlay-get a 'point)
                 (overlay-get b 'point)))
-           (helix-all-fake-cursors)))
+           (hel-all-fake-cursors)))
 
-(defun helix-last-fake-cursor ()
+(defun hel-last-fake-cursor ()
   "Return the last fake cursor in the buffer."
   (-max-by (lambda (a b)
              (> (overlay-get a 'point)
                 (overlay-get b 'point)))
-           (helix-all-fake-cursors)))
+           (hel-all-fake-cursors)))
 
-(defun helix-number-of-cursors ()
+(defun hel-number-of-cursors ()
   "The number of cursors (real and fake) in the buffer."
-  (1+ (hash-table-count helix--cursors-table)))
+  (1+ (hash-table-count hel--cursors-table)))
 
-(defun helix-any-fake-cursors-p ()
+(defun hel-any-fake-cursors-p ()
   "Return non-nil if there are fake cursors in the buffer."
-  (not (hash-table-empty-p helix--cursors-table)))
+  (not (hash-table-empty-p hel--cursors-table)))
 
-(defun helix-cursors-positions ()
+(defun hel-cursors-positions ()
   "Return alist with positions data of all cursors.
 Alist containes cons cells:
 
     (ID . (POINT MARK NEWLINE-AT-EOL?))
 
-NEWLINE-AT-EOL? is the cursors value of the `helix--newline-at-eol' variable.
+NEWLINE-AT-EOL? is the cursors value of the `hel--newline-at-eol' variable.
 MARK is nil if cursor has no region.
 
 Real cursor has ID 0 and is the first element (car) of the list."
   (let (alist)
-    (when helix-multiple-cursors-mode
-      (dolist (cursor (helix-all-fake-cursors))
+    (when hel-multiple-cursors-mode
+      (dolist (cursor (hel-all-fake-cursors))
         (push (list (overlay-get cursor 'id) ;; id
                     (marker-position (overlay-get cursor 'point)) ;; point
                     (if (overlay-get cursor 'mark-active)
                         (marker-position (overlay-get cursor 'mark))) ;; mark
-                    (overlay-get cursor 'helix--newline-at-eol))
+                    (overlay-get cursor 'hel--newline-at-eol))
               alist)))
     (push (list 0 ;; id
                 (point)
                 (if mark-active (mark))
-                helix--newline-at-eol)
+                hel--newline-at-eol)
           alist)
     alist))
 
 ;;; Executing commands for real and fake cursors
 
-(defmacro helix-save-window-scroll (&rest body)
+(defmacro hel-save-window-scroll (&rest body)
   "Save the window scroll position, evaluate BODY, restore it."
   (declare (indent 0) (debug t))
   (let ((win-start (make-symbol "win-start"))
@@ -461,25 +461,25 @@ Real cursor has ID 0 and is the first element (car) of the list."
        (set-window-hscroll nil ,win-hscroll)
        (set-marker ,win-start nil))))
 
-(defmacro helix-save-excursion (&rest body)
+(defmacro hel-save-excursion (&rest body)
   "Like `save-excursion' but additionally save and restore all
 the data needed for multiple cursors functionality."
   (declare (indent 0) (debug t))
   (let ((state (make-symbol "point-state")))
-    `(let ((,state (helix--conserve-main-cursor-state)))
+    `(let ((,state (hel--conserve-main-cursor-state)))
        (save-excursion ,@body)
-       (helix--restore-main-cursor-state ,state))))
+       (hel--restore-main-cursor-state ,state))))
 
-(defun helix--conserve-main-cursor-state ()
+(defun hel--conserve-main-cursor-state ()
   (let ((state (list :point (copy-marker (point) t)
                      :mark (copy-marker (mark-marker)))))
-    (dolist (var helix-fake-cursor-specific-vars)
+    (dolist (var hel-fake-cursor-specific-vars)
       (if (boundp var)
           (cl-callf plist-put state var (symbol-value var))))
-    (helix--delete-region-overlay)
+    (hel--delete-region-overlay)
     state))
 
-(defun helix--restore-main-cursor-state (state)
+(defun hel--restore-main-cursor-state (state)
   (goto-char (let ((pnt (plist-get state :point)))
                (prog1 (marker-position pnt)
                  (set-marker pnt nil))))
@@ -487,53 +487,53 @@ the data needed for multiple cursors functionality."
               (let ((mrk (plist-get state :mark)))
                 (prog1 (marker-position mrk)
                   (set-marker mrk nil))))
-  (dolist (var helix-fake-cursor-specific-vars)
+  (dolist (var hel-fake-cursor-specific-vars)
     (if (boundp var)
         (set var (plist-get state var))))
-  (if (and helix--newline-at-eol mark-active)
-      (helix--set-region-overlay (region-beginning) (1+ (region-end)))
-    (helix--delete-region-overlay)))
+  (if (and hel--newline-at-eol mark-active)
+      (hel--set-region-overlay (region-beginning) (1+ (region-end)))
+    (hel--delete-region-overlay)))
 
-(defmacro helix-with-fake-cursor (cursor &rest body)
+(defmacro hel-with-fake-cursor (cursor &rest body)
   "Move point to the fake CURSOR, restore the environment from it,
 evaluate BODY, update fake CURSOR."
   (declare (indent 1) (debug (symbolp &rest form)))
-  `(let ((helix-executing-command-for-fake-cursor t))
-     (helix--restore-cursor-state ,cursor)
+  `(let ((hel-executing-command-for-fake-cursor t))
+     (hel--restore-cursor-state ,cursor)
      (unwind-protect
          (progn ,@body)
-       (helix-move-fake-cursor ,cursor (point) (mark t) :update))))
+       (hel-move-fake-cursor ,cursor (point) (mark t) :update))))
 
-(defmacro helix-with-each-cursor (&rest body)
+(defmacro hel-with-each-cursor (&rest body)
   "Evaluate BODY for all cursors: real and fake ones."
   (declare (indent 0) (debug t))
   ;; First collect fake cursors because BODY can create new cursors,
   ;; and we want it to be executed only for original ones.
-  `(let ((cursors (if helix-multiple-cursors-mode
-                      (helix-all-fake-cursors))))
+  `(let ((cursors (if hel-multiple-cursors-mode
+                      (hel-all-fake-cursors))))
      ;; Main cursor
      ,@body
      ;; Fake cursors
      (when cursors
-       (helix-save-window-scroll
-         (helix-save-excursion
+       (hel-save-window-scroll
+         (hel-save-excursion
            (dolist (cursor cursors)
-             (helix-with-fake-cursor cursor
+             (hel-with-fake-cursor cursor
                ,@body)))))))
 
-(defun helix-execute-command-for-all-cursors (command)
+(defun hel-execute-command-for-all-cursors (command)
   "Call COMMAND interactively for all cursors: real and fake ones."
-  (helix--call-interactively command)
-  (helix--execute-command-for-all-fake-cursors command)
-  (when (helix-merge-regions-p command)
-    (helix-merge-overlapping-regions))
-  (setq helix--input-cache nil))
+  (hel--call-interactively command)
+  (hel--execute-command-for-all-fake-cursors command)
+  (when (hel-merge-regions-p command)
+    (hel-merge-overlapping-regions))
+  (setq hel--input-cache nil))
 
-(defun helix--execute-command-for-all-fake-cursors (command)
+(defun hel--execute-command-for-all-fake-cursors (command)
   "Call COMMAND interactively for each fake cursor."
-  (when helix-multiple-cursors-mode
+  (when hel-multiple-cursors-mode
     (cond ((and (symbolp command)
-                (get command 'helix-unsupported))
+                (get command 'hel-unsupported))
            (message "%S is not supported with multiple cursors" command))
           ((or
             ;; If it's a lambda, we can't know if it's supported or not -
@@ -541,14 +541,14 @@ evaluate BODY, update fake CURSOR."
             (not (symbolp command))
             (pcase (get command 'multiple-cursors)
               ('t t)
-              ('nil (helix--prompt-for-unknown-command command))))
-           (helix-save-window-scroll
-             (helix-save-excursion
-               (dolist (cursor (helix-all-fake-cursors))
-                 (helix-with-fake-cursor cursor
-                   (helix--call-interactively command)))))))))
+              ('nil (hel--prompt-for-unknown-command command))))
+           (hel-save-window-scroll
+             (hel-save-excursion
+               (dolist (cursor (hel-all-fake-cursors))
+                 (hel-with-fake-cursor cursor
+                   (hel--call-interactively command)))))))))
 
-(defun helix--call-interactively (command)
+(defun hel--call-interactively (command)
   "Run COMMAND, simulating the parts of the command loop that
 makes sense for fake cursor."
   (unless (eq command 'ignore)
@@ -563,67 +563,67 @@ makes sense for fake cursor."
   ;; (when deactivate-mark (deactivate-mark))
   )
 
-(defmacro helix-with-real-cursor-as-fake (&rest body)
+(defmacro hel-with-real-cursor-as-fake (&rest body)
   "Temporarily convert real cursor into fake-cursor one with ID 0.
 Restore it after BODY evaluation if it is still alive."
   (declare (indent 0) (debug t))
   (let ((real-cursor (make-symbol "real-cursor")))
-    `(let ((,real-cursor (helix--create-fake-cursor-1 0 (point) (mark t))))
-       (helix--delete-region-overlay)
+    `(let ((,real-cursor (hel--create-fake-cursor-1 0 (point) (mark t))))
+       (hel--delete-region-overlay)
        (unwind-protect (progn ,@body)
-         (cond ((helix-overlay-live-p ,real-cursor)
-                (helix-restore-point-from-fake-cursor ,real-cursor))
-               ((helix-any-fake-cursors-p)
-                (helix-restore-point-from-fake-cursor (helix-first-fake-cursor))))
-         (helix-auto-multiple-cursors-mode)
-         (helix-update-cursor)))))
+         (cond ((hel-overlay-live-p ,real-cursor)
+                (hel-restore-point-from-fake-cursor ,real-cursor))
+               ((hel-any-fake-cursors-p)
+                (hel-restore-point-from-fake-cursor (hel-first-fake-cursor))))
+         (hel-auto-multiple-cursors-mode)
+         (hel-update-cursor)))))
 
 ;;; Multiple cursors minor mode
 
-(define-minor-mode helix-multiple-cursors-mode
+(define-minor-mode hel-multiple-cursors-mode
   "Minor mode, which is active when there are multiple cursors in the buffer.
 No need to activate it manually: it is activated automatically when you create
-first fake cursor with `helix-create-fake-cursor', and disabled when you
-delete last one with `helix-delete-fake-cursor'."
+first fake cursor with `hel-create-fake-cursor', and disabled when you
+delete last one with `hel-delete-fake-cursor'."
   :global nil
   :interactive nil
   :keymap (make-sparse-keymap)
-  (if helix-multiple-cursors-mode
-      (helix--disable-minor-modes-incompatible-with-multiple-cursors)
-    (helix--delete-all-fake-cursors)
-    (helix--enable-minor-modes-incompatible-with-multiple-cursors)))
+  (if hel-multiple-cursors-mode
+      (hel--disable-minor-modes-incompatible-with-multiple-cursors)
+    (hel--delete-all-fake-cursors)
+    (hel--enable-minor-modes-incompatible-with-multiple-cursors)))
 
-(defun helix-auto-multiple-cursors-mode ()
-  "Enable `helix-multiple-cursors' if there are multiple cursors,
+(defun hel-auto-multiple-cursors-mode ()
+  "Enable `hel-multiple-cursors' if there are multiple cursors,
 disable if only one."
-  (when (xor helix-multiple-cursors-mode
-             (helix-any-fake-cursors-p))
-    (helix-multiple-cursors-mode 'toggle)))
+  (when (xor hel-multiple-cursors-mode
+             (hel-any-fake-cursors-p))
+    (hel-multiple-cursors-mode 'toggle)))
 
-(defun helix--disable-minor-modes-incompatible-with-multiple-cursors ()
+(defun hel--disable-minor-modes-incompatible-with-multiple-cursors ()
   "Disable incompatible minor modes while there are multiple cursors
 in the buffer."
-  (dolist (mode helix-minor-modes-incompatible-with-multiple-cursors)
+  (dolist (mode hel-minor-modes-incompatible-with-multiple-cursors)
     (when (and (boundp mode) (symbol-value mode))
-      (push mode helix--temporarily-disabled-minor-modes)
+      (push mode hel--temporarily-disabled-minor-modes)
       (funcall mode -1))))
 
-(defun helix--enable-minor-modes-incompatible-with-multiple-cursors ()
+(defun hel--enable-minor-modes-incompatible-with-multiple-cursors ()
   "Enable minor modes disabled by
-`helix--disable-minor-modes-incompatible-with-multiple-cursors'."
-  (when helix--temporarily-disabled-minor-modes
-    (dolist (mode helix--temporarily-disabled-minor-modes)
+`hel--disable-minor-modes-incompatible-with-multiple-cursors'."
+  (when hel--temporarily-disabled-minor-modes
+    (dolist (mode hel--temporarily-disabled-minor-modes)
       (funcall mode 1))
-    (setq helix--temporarily-disabled-minor-modes nil)))
+    (setq hel--temporarily-disabled-minor-modes nil)))
 
-(defun helix-multiple-cursors--indicator ()
-  (when helix-multiple-cursors-mode
-    (format helix-multiple-cursors-mode-line-indicator
-            (helix-number-of-cursors))))
+(defun hel-multiple-cursors--indicator ()
+  (when hel-multiple-cursors-mode
+    (format hel-multiple-cursors-mode-line-indicator
+            (hel-number-of-cursors))))
 
 ;;; Whitelists
 
-(defun helix--prompt-for-unknown-command (command)
+(defun hel--prompt-for-unknown-command (command)
   "Ask the user whether the COMMAND should be executed for all cursors or not,
 and remember the choice.
 
@@ -633,26 +633,26 @@ Return t if COMMMAND should be executed for all cursors."
     (if for-all?
         (progn
           (put command 'multiple-cursors t)
-          (push command helix-commands-to-run-for-all-cursors))
+          (push command hel-commands-to-run-for-all-cursors))
       ;; else
       (put command 'multiple-cursors 'false)
-      (push command helix-commands-to-run-once))
-    (helix-save-whitelists-into-file)
+      (push command hel-commands-to-run-once))
+    (hel-save-whitelists-into-file)
     for-all?))
 
-(defun helix-load-whitelists ()
-  "Load `helix-whitelist-file' file if not yet."
-  (unless helix--whitelist-file-loaded
-    (load helix-whitelist-file 'noerror 'nomessage)
-    (setq helix--whitelist-file-loaded t)
+(defun hel-load-whitelists ()
+  "Load `hel-whitelist-file' file if not yet."
+  (unless hel--whitelist-file-loaded
+    (load hel-whitelist-file 'noerror 'nomessage)
+    (setq hel--whitelist-file-loaded t)
     (mapc (lambda (command)
             (put command 'multiple-cursors t))
-          helix-commands-to-run-for-all-cursors)
+          hel-commands-to-run-for-all-cursors)
     (mapc (lambda (command)
             (put command 'multiple-cursors 'false))
-          helix-commands-to-run-once)))
+          hel-commands-to-run-once)))
 
-(defun helix--dump-whitelist (list-symbol)
+(defun hel--dump-whitelist (list-symbol)
   "Insert (setq \\='LIST-SYMBOL LIST-VALUE) into current buffer."
   (cl-symbol-macrolet ((value (symbol-value list-symbol)))
     (insert "(setq " (symbol-name list-symbol) "\n"
@@ -669,39 +669,39 @@ Return t if COMMMAND should be executed for all cursors."
     (insert "))")
     (newline)))
 
-(defun helix-save-whitelists-into-file ()
+(defun hel-save-whitelists-into-file ()
   "Save users preferences which commands to execute for one cursor
-and which for all to `helix-whitelist-file' file."
-  (with-temp-file helix-whitelist-file
+and which for all to `hel-whitelist-file' file."
+  (with-temp-file hel-whitelist-file
     (emacs-lisp-mode)
     (insert ";; -*- mode: emacs-lisp; lexical-binding: t -*-")
     (newline)
-    (insert ";; This file is automatically generated by the Helix.")
+    (insert ";; This file is automatically generated by Hel.")
     (newline)
     (insert ";; It keeps track of your preferences for running commands with multiple cursors.")
     (newline)
     (newline)
-    (helix--dump-whitelist 'helix-commands-to-run-for-all-cursors)
+    (hel--dump-whitelist 'hel-commands-to-run-for-all-cursors)
     (newline)
-    (helix--dump-whitelist 'helix-commands-to-run-once)))
+    (hel--dump-whitelist 'hel-commands-to-run-once)))
 
 ;;; Merge overlapping regions
 
-(defun helix-merge-regions-p (command)
+(defun hel-merge-regions-p (command)
   "Return non-nil if regions need to be merged after COMMAND."
-  (and helix-multiple-cursors-mode
+  (and hel-multiple-cursors-mode
        mark-active
        (cond ((symbolp command)
               (pcase (get command 'merge-selections)
-                ('extend-selection helix--extend-selection)
+                ('extend-selection hel--extend-selection)
                 (val val)))
              ((functionp command) ;; COMMAND is a lambda
               t))))
 
-(defun helix-merge-overlapping-regions ()
+(defun hel-merge-overlapping-regions ()
   "Merge overlapping regions."
-  (let ((dir (helix-region-direction)))
-    (dolist (group-or-overlapping-regions (helix--overlapping-regions))
+  (let ((dir (hel-region-direction)))
+    (dolist (group-or-overlapping-regions (hel--overlapping-regions))
       (let ((beg (point-max))
             (end (point-min))
             id delete real-cursor?)
@@ -727,25 +727,25 @@ and which for all to `helix-whitelist-file' file."
           (pcase id
             (0 (goto-char pnt)
                (set-marker (mark-marker) mrk))
-            (_ (when-let* ((cursor (gethash id helix--cursors-table)))
+            (_ (when-let* ((cursor (gethash id hel--cursors-table)))
                  (cond (real-cursor?
-                        (helix-restore-point-from-fake-cursor cursor)
+                        (hel-restore-point-from-fake-cursor cursor)
                         (goto-char pnt)
                         (set-marker (mark-marker) mrk))
                        (t
-                        (helix-move-fake-cursor cursor pnt mrk)))))))
+                        (hel-move-fake-cursor cursor pnt mrk)))))))
         (dolist (id delete)
-          (when-let* ((cursor (gethash id helix--cursors-table)))
-            (helix--delete-fake-cursor cursor)))))
-    (helix-auto-multiple-cursors-mode)))
+          (when-let* ((cursor (gethash id hel--cursors-table)))
+            (hel--delete-fake-cursor cursor)))))
+    (hel-auto-multiple-cursors-mode)))
 
-(defun helix--overlapping-regions ()
+(defun hel--overlapping-regions ()
   "Return the list of groups, where each group is a list of
 cons cells (ID . (START END)) denoting fake cursor ID and its
 region bounds. Inside each group, all regions are overlapping
 and sorted by starting position. ID 0 coresponds to the real
 cursor."
-  (let ((alist (helix--regions-ranges))
+  (let ((alist (hel--regions-ranges))
         result
         current-group
         (current-end (point-min)))
@@ -762,7 +762,7 @@ cursor."
       (push (nreverse current-group) result))
     (nreverse result)))
 
-(defun helix--regions-ranges ()
+(defun hel--regions-ranges ()
   "Return the alist with cons cells (ID . (START END)).
 \(START END) are bounds of regions. Alist is sorted by START.
 ID 0 coresponds to the real cursor."
@@ -776,13 +776,13 @@ ID 0 coresponds to the real cursor."
                                   (start (min pnt mrk))
                                   (end   (max pnt mrk)))
                              `(,id ,start ,end)))
-                         (helix-all-fake-cursors)))))
+                         (hel-all-fake-cursors)))))
     (sort alist (lambda (a b)
                   (< (-second-item a) (-second-item b))))))
 
 ;;; Integration with other Emacs functionalities
 
-(defmacro helix-cache-input (fn-name)
+(defmacro hel-cache-input (fn-name)
   "Advice function to cache users input to use it with all cursors.
 
 This macro wraps functions in around advice that caches the user's
@@ -792,27 +792,27 @@ FN-NAME must be an interactive function that takes PROMPT as its first argument,
 like `read-char' or `read-from-minibuffer'. The PROMPT argument will be used as
 a hash key to distinguish between different calls to FN-NAME within the same
 command. Calls with equal PROMPT or without it would be indistinguishable."
-  `(helix-define-advice ,fn-name (:around (orig-fun &rest args) helix-cache-input)
+  `(hel-define-advice ,fn-name (:around (orig-fun &rest args) hel-cache-input)
      "Cache the users input to use it with multiple cursors."
-     (if helix-multiple-cursors-mode
+     (if hel-multiple-cursors-mode
          (let* (;; Use PROMPT argument as a hash key to distinguish different
                 ;; calls of `read-char' like functions within one command.
                 (prompt (car-safe args))
                 (key (list ,(symbol-name fn-name) prompt)))
-           (with-memoization (alist-get key helix--input-cache nil nil #'equal)
+           (with-memoization (alist-get key hel--input-cache nil nil #'equal)
              (apply orig-fun args)))
        ;; else
        (apply orig-fun args))))
 
-(defmacro helix-unsupported-command (command)
+(defmacro hel-unsupported-command (command)
   "Adds command to list of unsupported commands and prevents it
-from being executed when `helix-multiple-cursors-mode' is active."
+from being executed when `hel-multiple-cursors-mode' is active."
   `(progn
-     (put ',command 'helix-unsupported t)
-     (helix-define-advice ,command (:around (orig-fun &rest args)
-                                            helix-unsupported)
+     (put ',command 'hel-unsupported t)
+     (hel-define-advice ,command (:around (orig-fun &rest args)
+                                          hel-unsupported)
        "Don't execute an unsupported command while multiple cursors are active."
-       (unless (and helix-multiple-cursors-mode
+       (unless (and hel-multiple-cursors-mode
                     (called-interactively-p 'any))
          (apply orig-fun args)))))
 
@@ -881,7 +881,7 @@ from being executed when `helix-multiple-cursors-mode' is active."
 ;; Execute following commands only for MAIN cursor.
 (mapc (lambda (command)
         (put command 'multiple-cursors 'false))
-      '(helix-normal-state  ;; ESC
+      '(hel-normal-state  ;; ESC
         find-file-at-point  ;; gf
         browse-url-at-point ;; gx
         save-buffer
@@ -926,5 +926,5 @@ from being executed when `helix-multiple-cursors-mode' is active."
         edebug-next-mode
         undefined))
 
-(provide 'helix-multiple-cursors-core)
-;;; helix-multiple-cursors-core.el ends here
+(provide 'hel-multiple-cursors-core)
+;;; hel-multiple-cursors-core.el ends here

@@ -1,4 +1,4 @@
-#+title: Helix Keybindings
+#+title: Hel Keybindings
 
 * Normal state
 ** Motions
@@ -190,7 +190,7 @@ for =m= prefix. Also, this is in line with Emacs tradition which has commands li
 
 - =M-u= ::
   Emacs universal argument. =C-u= is occupied for scrolling, and =M-u= by default
-  is bind to ~upcase-word~, for which Helix has itself version on =M-`= or =gU=.
+  is bind to ~upcase-word~, for which Hel has itself version on =M-`= or =gU=.
 
 - =C-d=, =C-u= ::
   Scroll down/up half of the page. If a numeric prefix is provided, scroll
@@ -206,8 +206,8 @@ for =m= prefix. Also, this is in line with Emacs tradition which has commands li
   If you want Vim default behavior, i.e. scroll to the center, use following
   snippet in your config:
   #+begin_src emacs-lisp
-  (helix-keymap-set nil 'normal
-    "z z" #'helix-smooth-scroll-line-to-center)
+  (hel-keymap-set nil 'normal
+    "z z" #'hel-smooth-scroll-line-to-center)
   #+end_src
 
 - =zt=, =zb= :: Scroll current line to the top/bottom border of the screen.
@@ -237,7 +237,7 @@ In Motion state by default only following keys are bound:
 
 - =C-w= prefix for windows layout manipulation.
 
-- =SPC= for ~helix-leader~.
+- =SPC= for ~hel-leader~.
 
 - Scrolling commands.
 

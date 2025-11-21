@@ -1,11 +1,11 @@
-;;; helix-common.el --- Common functions -*- lexical-binding: t; -*-
+;;; hel-common.el --- Common functions -*- lexical-binding: t; -*-
 ;;
 ;; Copyright © 2025 Yuriy Artemyev
 ;;
 ;; Author: Yuriy Artemyev <anuvyklack@gmail.com>
 ;; Maintainer: Yuriy Artemyev <anuvyklack@gmail.com>
 ;; Version: 0.0.1
-;; Homepage: https://github.com/anuvyklack/helix.el
+;; Homepage: https://github.com/anuvyklack/hel.el
 ;; Package-Requires: ((emacs "29.1"))
 ;;
 ;; This file is not part of GNU Emacs.
@@ -21,12 +21,12 @@
 (require 'thingatpt)
 (require 'pcre2el)
 (require 'pulse)
-(require 'helix-macros)
-(require 'helix-vars)
+(require 'hel-macros)
+(require 'hel-vars)
 
 ;;; Motions
 
-(defun helix-forward-following-thing (thing &optional count)
+(defun hel-forward-following-thing (thing &optional count)
   "Move forward to the end of the COUNT-th following THING.
 `forward-thing' first moves to the  boundary of the current THING, then to the
 next THING. This function skips first step and always moves to the next THING."
@@ -36,39 +36,39 @@ next THING. This function skips first step and always moves to the next THING."
       (goto-char (if (< count 0) beg end)))
     (forward-thing thing count)))
 
-(defun helix-forward-beginning-of-thing (thing &optional count)
+(defun hel-forward-beginning-of-thing (thing &optional count)
   "Move to the beginning of COUNT-th next THING.
 Move backward if COUNT is negative.
 Returns the count of steps left to move.
 
 Works only with THINGs, that returns the count of steps left to move,
-such as `helix-word', `helix-sentence', `helix-line', `paragraph'."
+such as `hel-word', `hel-sentence', `hel-line', `paragraph'."
   (or count (setq count 1))
   (if (zerop count) 0
-    (let ((dir (helix-sign count))
-          (rest (helix-forward-following-thing thing count)))
+    (let ((dir (hel-sign count))
+          (rest (hel-forward-following-thing thing count)))
       (when (and (/= rest count)
                  (natnump dir)) ; moving forward
         (-when-let ((beg . _) (bounds-of-thing-at-point thing))
           (goto-char beg)))
       rest)))
 
-(defun helix-forward-end-of-thing (thing &optional count)
+(defun hel-forward-end-of-thing (thing &optional count)
   "Move to the end of COUNT-th next THING.
 Move backward if COUNT is negative.
 Returns the count of steps left to move.
 
 Works only with THINGs, that returns the count of steps left to move,
-such as `helix-word', `helix-sentence', `helix-line', `paragraph'."
+such as `hel-word', `hel-sentence', `hel-line', `paragraph'."
   (or count (setq count 1))
   (if (zerop count) 0
-    (let ((rest (helix-forward-following-thing thing count)))
+    (let ((rest (hel-forward-following-thing thing count)))
       (when (and (/= rest count)
                  (< count 0)) ;; moving backward
         (forward-thing thing))
       rest)))
 
-(defun helix-skip-chars (chars &optional direction)
+(defun hel-skip-chars (chars &optional direction)
   "Move point toward the DIRECTION stopping after a char is not in CHARS string.
 Move backward when DIRECTION is negative number, forward — otherwise.
 Return t if point has moved."
@@ -76,31 +76,31 @@ Return t if point has moved."
             (skip-chars-forward chars)
           (skip-chars-backward chars))))
 
-(defun helix-skip-whitespaces (&optional direction)
+(defun hel-skip-whitespaces (&optional direction)
   "Move point toward the DIRECTION across whitespace.
 Move backward when DIRECTION is negative number, forward — otherwise.
 Return the distance traveled positive or negative depending on DIRECTION."
-  ;; Alternative: (helix-skip-chars " \t" dir)
+  ;; Alternative: (hel-skip-chars " \t" dir)
   (if (natnump (or direction 1))
       (skip-syntax-forward " " (line-end-position))
     (skip-syntax-backward " " (line-beginning-position))))
 
-(defun helix-next-char (&optional direction)
+(defun hel-next-char (&optional direction)
   "Return the next after point char toward the DIRECTION.
 If DIRECTION is positive number — get following char, otherwise preceding char."
   (if (natnump (or direction 1))
       (following-char)
     (preceding-char)))
 
-(defun helix-beginning-of-line (&optional count)
+(defun hel-beginning-of-line (&optional count)
   "Move point to the beginning of current line.
 Move over visual line when `visual-line-mode' is active."
   (if visual-line-mode
       (beginning-of-visual-line count)
-    (helix--beginning-of-line count))
+    (hel--beginning-of-line count))
   (point))
 
-(defun helix-end-of-line (&optional count)
+(defun hel-end-of-line (&optional count)
   "Move point to the end of current line.
 Move over visual line when `visual-line-mode' is active."
   (if visual-line-mode
@@ -108,35 +108,35 @@ Move over visual line when `visual-line-mode' is active."
     (move-end-of-line count))
   (point))
 
-(defun helix--forward-word-start (thing count)
+(defun hel--forward-word-start (thing count)
   "Move to the COUNT-th next start of a word-like THING."
   (cl-assert (< 0 count))
   (skip-chars-forward "\r\n")
-  (helix-set-region (if helix--extend-selection (mark) (point))
-                    (progn (when (helix-whitespace? (following-char))
-                             (cl-decf count))
-                           (forward-thing thing count)
-                           (helix-skip-whitespaces)
-                           (point))))
+  (hel-set-region (if hel--extend-selection (mark) (point))
+                  (progn (when (hel-whitespace? (following-char))
+                           (cl-decf count))
+                         (forward-thing thing count)
+                         (hel-skip-whitespaces)
+                         (point))))
 
-(defun helix--backward-word-start (thing count)
+(defun hel--backward-word-start (thing count)
   "Move to the COUNT-th previous start of a word-like THING."
   (cl-assert (< 0 count))
   (skip-chars-backward "\r\n")
-  (helix-set-region (if helix--extend-selection (mark) (point))
-                    (progn (forward-thing thing (- count))
-                           (point))))
+  (hel-set-region (if hel--extend-selection (mark) (point))
+                  (progn (forward-thing thing (- count))
+                         (point))))
 
-(defun helix--forward-word-end (thing count)
+(defun hel--forward-word-end (thing count)
   "Move to the COUNT-th next word-like THING end."
   (interactive "p")
   (cl-assert (< 0 count))
   (skip-chars-forward "\r\n")
-  (helix-set-region (if helix--extend-selection (mark) (point))
-                    (progn (forward-thing thing count)
-                           (point))))
+  (hel-set-region (if hel--extend-selection (mark) (point))
+                  (progn (forward-thing thing count)
+                         (point))))
 
-(defmacro helix-motion-loop (spec &rest body)
+(defmacro hel-motion-loop (spec &rest body)
   "Loop a certain number of times.
 Evaluate BODY repeatedly COUNT times with DIRECTION bound to 1 or -1,
 depending on the sign of COUNT. Each iteration must move point; if point
@@ -152,39 +152,39 @@ COUNT minus number of steps moved; if backward, COUNT plus number moved.
          (count (pop spec))
          (n (gensym "n")))
     `(let* ((,n ,count)
-            (,dir (helix-sign ,n)))
+            (,dir (hel-sign ,n)))
        (while (and (/= ,n 0)
                    (/= (point) (progn ,@body (point))))
          (cl-callf - ,n ,dir))
        ,n)))
 
 ;;; Things
-;;;; `helix-line'
+;;;; `hel-line'
 
-;; The difference from built-in `line' thing is that `helix-line' ignores
+;; The difference from built-in `line' thing is that `hel-line' ignores
 ;; invisible parts of the buffer (lines folded by `outline-minor-mode' for
 ;; example) and always denotes visible lines.
 ;;
 ;; The need for this thing arose from the requirement to select a folded section
 ;; of the buffer (in Org-mode or Outline-mode) using the `x' key command.
 
-(put 'helix-line 'forward-op #'helix--forward-line)
-(put 'helix-line 'bounds-of-thing-at-point
+(put 'hel-line 'forward-op #'hel--forward-line)
+(put 'hel-line 'bounds-of-thing-at-point
      (lambda ()
        (cons (save-excursion
-               (helix--beginning-of-line 1)
-               ;; `helix--beginning-of-line' may leave point after invisible
+               (hel--beginning-of-line 1)
+               ;; `hel--beginning-of-line' may leave point after invisible
                ;; characters if line starts with such of these (e.g., with
                ;; a link at column 0 in Org mode). Really move to the beginning
                ;; of the current visible line.
                (beginning-of-line)
                (point))
              (save-excursion
-               (helix--forward-line 1)
+               (hel--forward-line 1)
                (point)))))
 
 ;; Adopted from `move-end-of-line'.
-(defun helix--forward-line (&optional count)
+(defun hel--forward-line (&optional count)
   "Goto COUNT visible logical lines forward (backward if COUNT is negative).
 The difference from `forward-line' is that this function ignores invisible parts
 of the buffer (lines folded by `outline-minor-mode' for example) and always
@@ -200,7 +200,7 @@ moves only over visible lines."
            (goto-char (previous-single-char-property-change
                        (point) 'invisible))))))
 
-(defun helix--beginning-of-line (&optional count)
+(defun hel--beginning-of-line (&optional count)
   "Move point to the beginning of the current visible logical line.
 This is actually refactored `move-beginning-of-line' command."
   (or count (setq count 1))
@@ -222,15 +222,15 @@ This is actually refactored `move-beginning-of-line' command."
     ;; Obey field constraints.
     (goto-char (constrain-to-field (point) init-point (/= count 1) t nil))))
 
-;;;; `helix-visual-line'
+;;;; `hel-visual-line'
 
-(put 'helix-visual-line 'forward-op #'vertical-motion)
-;; (put 'helix-visual-line 'beginning-op #'beginning-of-visual-line)
-;; (put 'helix-visual-line 'end-op       #'end-of-visual-line)
+(put 'hel-visual-line 'forward-op #'vertical-motion)
+;; (put 'hel-visual-line 'beginning-op #'beginning-of-visual-line)
+;; (put 'hel-visual-line 'end-op       #'end-of-visual-line)
 
-;;;; `helix-word'
+;;;; `hel-word'
 
-(defun forward-helix-word (&optional count)
+(defun forward-hel-word (&optional count)
   "Move point COUNT words forward (backward if COUNT is negative).
 Returns the count of word left to move, positive or negative depending
 on sign of COUNT.
@@ -238,71 +238,71 @@ on sign of COUNT.
 Word is:
 - sequence of characters matching `[[:word:]]'
 - sequence non-word non-whitespace characters matching `[^[:word:]\\n\\r\\t\\f ]'"
-  (helix-motion-loop (dir (or count 1))
-    (helix-skip-chars "\r\n" dir)
-    (helix-skip-whitespaces dir)
-    (or (helix-line-boundary-p dir)
-        (helix-skip-chars "^[:word:]\n\r\t\f " dir)
-        (let ((word-separating-categories helix-cjk-word-separating-categories)
-              (word-combining-categories  helix-cjk-word-combining-categories))
+  (hel-motion-loop (dir (or count 1))
+    (hel-skip-chars "\r\n" dir)
+    (hel-skip-whitespaces dir)
+    (or (hel-line-boundary-p dir)
+        (hel-skip-chars "^[:word:]\n\r\t\f " dir)
+        (let ((word-separating-categories hel-cjk-word-separating-categories)
+              (word-combining-categories  hel-cjk-word-combining-categories))
           (forward-word dir)))))
 
-;;;; `helix-WORD'
+;;;; `hel-WORD'
 
-(defun forward-helix-WORD (&optional count)
+(defun forward-hel-WORD (&optional count)
   "Move point COUNT WORDs forward (backward if COUNT is negative).
 Returns the count of WORD left to move, positive or negative depending
 on sign of COUNT.
 
 WORD is any space separated sequence of characters."
-  (helix-motion-loop (dir (or count 1))
-    (helix-skip-chars "\r\n" dir)
-    (helix-skip-whitespaces dir)
-    (unless (helix-line-boundary-p dir)
-      (helix-skip-chars "^\n\r\t\f " dir))))
+  (hel-motion-loop (dir (or count 1))
+    (hel-skip-chars "\r\n" dir)
+    (hel-skip-whitespaces dir)
+    (unless (hel-line-boundary-p dir)
+      (hel-skip-chars "^\n\r\t\f " dir))))
 
-;;;; `helix-sentence'
+;;;; `hel-sentence'
 
-(defun forward-helix-sentence (&optional count)
+(defun forward-hel-sentence (&optional count)
   "Move point COUNT sentences forward (backward if COUNT is negative).
 Returns then count of sentences left to move, positive of negative depending
 on sign of COUNT.
 
 What is sentence is defined by `forward-sentence-function'."
-  (helix-motion-loop (dir (or count 1))
+  (hel-motion-loop (dir (or count 1))
     (ignore-errors (forward-sentence dir))))
 
-;;;; `helix-paragraph'
+;;;; `hel-paragraph'
 
-(defun forward-helix-paragraph (&optional count)
+(defun forward-hel-paragraph (&optional count)
   "Move point COUNT paragraphs forward (backward if COUNT is negative).
 Returns then count of paragraphs left to move, positive of negative depending
 on sign of COUNT."
   (let ((paragraph-start    (default-value 'paragraph-start))
         (paragraph-separate (default-value 'paragraph-separate)))
-    (helix-motion-loop (dir (or count 1))
+    (hel-motion-loop (dir (or count 1))
       (cond ((natnump dir) (forward-paragraph))
             ((not (bobp))
              (start-of-paragraph-text)
              (beginning-of-line))))))
 
-;;;; `helix-function'
+;;;; `hel-function'
 
-(defun forward-helix-function (&optional count)
+(defun forward-hel-function (&optional count)
   "Move point COUNT functions forward (backward if COUNT is negative).
 Returns then count of functions left to move, positive of negative depending
 on sign of COUNT."
-  (helix-motion-loop (dir (or count 1))
+  (hel-motion-loop (dir (or count 1))
     (if (< dir 0) (beginning-of-defun) (end-of-defun))))
 
-;;;; `helix-sexp'
+;;;; `hel-sexp'
 
-(defun forward-helix-sexp (&optional count)
-  (helix-motion-loop (dir (or count 1))
+(defun forward-hel-sexp (&optional count)
+  (hel-motion-loop (dir (or count 1))
     (ignore-errors
       (forward-sexp dir))))
 
-(defun helix-forward-sexp-only (&optional count)
+(defun hel-forward-sexp-only (&optional count)
   "Default value for `forward-sexp-function'.
 Unlike `forward-sexp-default-function' this one doesn't move to the end of the
 buffer if no sexp forward."
@@ -310,18 +310,18 @@ buffer if no sexp forward."
     (goto-char pos)
     (if (< count 0) (backward-prefix-chars))))
 
-(defun helix--setup-default-forward-sexp-func-h ()
-  (setq-default forward-sexp-function (if helix-mode
-                                          #'helix-forward-sexp-only
+(defun hel--setup-default-forward-sexp-func-h ()
+  (setq-default forward-sexp-function (if hel-mode
+                                          #'hel-forward-sexp-only
                                         nil)))
 
-(add-hook 'helix-mode-hook #'helix--setup-default-forward-sexp-func-h)
+(add-hook 'hel-mode-hook #'hel--setup-default-forward-sexp-func-h)
 
-;;;; `helix-comment'
+;;;; `hel-comment'
 
-(put 'helix-comment 'bounds-of-thing-at-point #'helix-bounds-of-comment-at-point-ppss)
+(put 'hel-comment 'bounds-of-thing-at-point #'hel-bounds-of-comment-at-point-ppss)
 
-(defun helix-bounds-of-comment-at-point-ppss ()
+(defun hel-bounds-of-comment-at-point-ppss ()
   "Return the bounds of a comment at point using Parse-Partial-Sexp Scanner."
   (save-excursion
     (let ((state (syntax-ppss)))
@@ -333,62 +333,62 @@ buffer if no sexp forward."
 
 ;;; Selection
 
-(defun helix-expand-selection-to-full-lines (&optional direction)
+(defun hel-expand-selection-to-full-lines (&optional direction)
   "Extend the selection so that it consists of complete lines.
 When region is active: expand selection to line boundaries to encompass full
 line(s). With no region, select current line. Uses visual lines if
 `visual-line-mode' is active, otherwise use logical lines."
-  (unless (or (helix-logical-lines-p)
-              (helix-visual-lines-p))
-    (let ((line (if visual-line-mode 'helix-visual-line 'helix-line)))
+  (unless (or (hel-logical-lines-p)
+              (hel-visual-lines-p))
+    (let ((line (if visual-line-mode 'hel-visual-line 'hel-line)))
       (if (use-region-p)
           (progn
             (let ((beg (region-beginning))
                   (end (region-end))
-                  (dir (or direction (helix-region-direction))))
-              (helix-set-region (progn (goto-char beg)
-                                       (car (bounds-of-thing-at-point line)))
-                                (progn (goto-char end)
-                                       (cdr (bounds-of-thing-at-point line)))
-                                dir :adjust)))
+                  (dir (or direction (hel-region-direction))))
+              (hel-set-region (progn (goto-char beg)
+                                     (car (bounds-of-thing-at-point line)))
+                              (progn (goto-char end)
+                                     (cdr (bounds-of-thing-at-point line)))
+                              dir :adjust)))
         ;; else no region
         (-let [(beg . end) (bounds-of-thing-at-point line)]
-          (helix-set-region beg end direction :adjust)))
+          (hel-set-region beg end direction :adjust)))
       t)))
 
-(defun helix-mark-inner-thing (thing &optional count adjust-end)
+(defun hel-mark-inner-thing (thing &optional count adjust-end)
   (or count (setq count 1))
   (cl-assert (/= count 0))
-  (if adjust-end (helix-restore-newline-at-eol))
-  (-let (((beg . end) (helix-bounds-of-count-things-at-point thing count)))
-    (helix-set-region beg end (helix-sign count) (if adjust-end :adjust))))
+  (if adjust-end (hel-restore-newline-at-eol))
+  (-let (((beg . end) (hel-bounds-of-count-things-at-point thing count)))
+    (hel-set-region beg end (hel-sign count) (if adjust-end :adjust))))
 
-(defun helix-mark-a-thing (thing count &optional adjust-end)
+(defun hel-mark-a-thing (thing count &optional adjust-end)
   "Select COUNT THINGs with spacing around.
 Works only with THINGs, that returns the count of steps left to move,
-such as `paragraph', `helix-function'."
-  (if adjust-end (helix-restore-newline-at-eol))
-  (-let* (((thing-beg . thing-end) (helix-bounds-of-count-things-at-point thing count))
+such as `paragraph', `hel-function'."
+  (if adjust-end (hel-restore-newline-at-eol))
+  (-let* (((thing-beg . thing-end) (hel-bounds-of-count-things-at-point thing count))
           ((beg . end)
            (or (progn
                  (goto-char thing-end)
                  (-if-let ((_ . space-end)
-                           (helix-bounds-of-complement-of-thing-at-point thing))
+                           (hel-bounds-of-complement-of-thing-at-point thing))
                      (cons thing-beg space-end)))
                (progn
                  (goto-char thing-beg)
                  (-if-let ((space-beg . _)
-                           (helix-bounds-of-complement-of-thing-at-point thing))
+                           (hel-bounds-of-complement-of-thing-at-point thing))
                      (cons space-beg thing-end)))
                (cons thing-beg thing-end))))
-    (helix-set-region beg end (helix-sign count) (if adjust-end :adjust))))
+    (hel-set-region beg end (hel-sign count) (if adjust-end :adjust))))
 
-(defun helix-bounds-of-count-things-at-point (thing count)
+(defun hel-bounds-of-count-things-at-point (thing count)
   "Return the bounds of COUNT things at point.
 Count things forward if COUNT is positive, or backward if negative."
   (cl-assert (/= count 0))
   (save-excursion
-    (let* ((dir (helix-sign count))
+    (let* ((dir (hel-sign count))
            (beg (-if-let ((thing-beg . thing-end) (bounds-of-thing-at-point thing))
                     (progn
                       (if (< dir 0) (cl-rotatef thing-beg thing-end))
@@ -409,12 +409,12 @@ Count things forward if COUNT is positive, or backward if negative."
       (if (< end beg) (cl-rotatef beg end))
       (cons beg end))))
 
-(defun helix-bounds-of-complement-of-thing-at-point (thing)
+(defun hel-bounds-of-complement-of-thing-at-point (thing)
   "Return the bounds of the gap between two THINGs at point.
 If there is a THING at point — return nil.
 
 Works only with THINGs, that returns the count of steps left to move,
-such as `helix-word', `helix-sentence', `helix-line', `paragraph'."
+such as `hel-word', `hel-sentence', `hel-line', `paragraph'."
   (let ((orig-point (point)))
     (if-let* ((beg (save-excursion
                      (and (zerop (forward-thing thing -1))
@@ -430,18 +430,18 @@ such as `helix-word', `helix-sentence', `helix-line', `paragraph'."
                     (< beg end))))
         (cons beg end))))
 
-(defun helix-mark-thing-forward (thing count)
+(defun hel-mark-thing-forward (thing count)
   "Select from point to the end of the THING (or COUNT following THINGs).
 If no THING at point select COUNT following THINGs."
-  (helix-restore-region-on-error
+  (hel-restore-region-on-error
     (let ((point-pos (point))
-          (dir (helix-sign count)))
-      (helix-restore-newline-at-eol)
-      (if (helix-end-of-buffer-p dir)
+          (dir (hel-sign count)))
+      (hel-restore-newline-at-eol)
+      (if (hel-end-of-buffer-p dir)
           (user-error (if (< dir 0) "Beginning of buffer" "End of buffer"))
         ;; else
-        (helix-push-point point-pos)
-        (let ((start (if helix--extend-selection
+        (hel-push-point point-pos)
+        (let ((start (if hel--extend-selection
                          (mark)
                        (when (-if-let ((thing-beg . thing-end)
                                        (bounds-of-thing-at-point thing))
@@ -451,18 +451,18 @@ If no THING at point select COUNT following THINGs."
                                     (if (< dir 0) thing-beg thing-end))
                                ;; No thing at point at all.
                                t)
-                         (helix-forward-following-thing thing dir)
+                         (hel-forward-following-thing thing dir)
                          (forward-thing thing (- dir)))
                        (point)))
               (end (progn (forward-thing thing count)
                           (point))))
-          (helix-set-region start end nil :adjust)
+          (hel-set-region start end nil :adjust)
           (when (= (region-beginning) (region-end))
-            (helix-mark-thing-forward thing dir))
-          (helix-reveal-point-when-on-top))))))
+            (hel-mark-thing-forward thing dir))
+          (hel-reveal-point-when-on-top))))))
 
-(defun helix--mark-a-word (thing)
-  "Inner implementation of `helix-mark-a-word' and `helix-mark-a-WORD' commands."
+(defun hel--mark-a-word (thing)
+  "Inner implementation of `hel-mark-a-word' and `hel-mark-a-WORD' commands."
   (-when-let ((thing-beg . thing-end) (bounds-of-thing-at-point thing))
     (-let [(beg . end)
            (or (progn
@@ -470,7 +470,7 @@ If no THING at point select COUNT following THINGs."
                  (with-restriction
                      (line-beginning-position) (line-end-position)
                    (-if-let ((_ . space-end)
-                             (helix-bounds-of-complement-of-thing-at-point thing))
+                             (hel-bounds-of-complement-of-thing-at-point thing))
                        (cons thing-beg space-end))))
                (progn
                  (goto-char thing-beg)
@@ -478,49 +478,49 @@ If no THING at point select COUNT following THINGs."
                      (save-excursion (back-to-indentation) (point))
                      (line-end-position)
                    (-if-let ((space-beg . _)
-                             (helix-bounds-of-complement-of-thing-at-point thing))
+                             (hel-bounds-of-complement-of-thing-at-point thing))
                        (cons space-beg thing-end))))
                (cons thing-beg thing-end))]
-      (helix-set-region beg end))))
+      (hel-set-region beg end))))
 
 ;;; Surround
 
-(defun helix-bounds-of-quoted-at-point (quote-mark)
+(defun hel-bounds-of-quoted-at-point (quote-mark)
   "Return a cons cell (START . END) with bounds of text region
 enclosed in QUOTE-MARKs."
-  (if-let* ((limits (or (bounds-of-thing-at-point 'helix-comment)
+  (if-let* ((limits (or (bounds-of-thing-at-point 'hel-comment)
                         (bounds-of-thing-at-point 'string))))
       (-if-let ((beg _ _ end)
-                (helix-surround-4-bounds-at-point (char-to-string quote-mark)
-                                                  (char-to-string quote-mark)
-                                                  limits))
+                (hel-surround-4-bounds-at-point (char-to-string quote-mark)
+                                                (char-to-string quote-mark)
+                                                limits))
           (cons beg end))
     ;; else
-    (helix--bounds-of-quoted-at-point-ppss quote-mark)))
+    (hel--bounds-of-quoted-at-point-ppss quote-mark)))
 
-(defun helix-surround--4-bounds (char)
-  "For given CHAR according to `helix-surround-alist' return
+(defun hel-surround--4-bounds (char)
+  "For given CHAR according to `hel-surround-alist' return
 the list (LEFT-BEG LEFT-END RIGHT-LEFT RIGHT-END) with 4 positions:
 before/after left delimiter and before/after right delimiter,"
-  (if-let* ((spec (alist-get char helix-surround-alist))
+  (if-let* ((spec (alist-get char hel-surround-alist))
             (pair-or-list (pcase (plist-get spec :search)
                             ((and fn (pred functionp))
                              (funcall fn))
                             (val val))))
       (pcase pair-or-list
         ((and (pred -cons-pair-p) `(,left . ,right))
-         (helix-surround-4-bounds-at-point left right
-                                           (bounds-of-thing-at-point 'defun)
-                                           (plist-get spec :regexp)
-                                           (plist-get spec :balanced)))
+         (hel-surround-4-bounds-at-point left right
+                                         (bounds-of-thing-at-point 'defun)
+                                         (plist-get spec :regexp)
+                                         (plist-get spec :balanced)))
         ((and list (pred proper-list-p) (guard (length= list 4)))
          list))
     ;; else
-    (helix-surround-4-bounds-at-point (char-to-string char)
-                                      (char-to-string char)
-                                      (bounds-of-thing-at-point 'defun))))
+    (hel-surround-4-bounds-at-point (char-to-string char)
+                                    (char-to-string char)
+                                    (bounds-of-thing-at-point 'defun))))
 
-(defun helix-surround-4-bounds-at-point
+(defun hel-surround-4-bounds-at-point
     (left right &optional limits regexp? balanced?)
   "Return the bounds of the text region enclosed in LEFT and RIGHT strings.
 
@@ -549,13 +549,13 @@ Return the list (LEFT-BEG LEFT-END RIGHT-LEFT RIGHT-END) with
            (eq (char-syntax (string-to-char left)) ?\( )
            (eq (char-syntax (string-to-char right)) ?\) ))
       (-if-let ((beg . end)
-                (helix-bounds-of-brackets-at-point (string-to-char left)
-                                                   (string-to-char right)))
+                (hel-bounds-of-brackets-at-point (string-to-char left)
+                                                 (string-to-char right)))
           (list beg (1+ beg) (1- end) end)))
      (t
-      (helix-surround--4-bounds-at-point-1 left right limits regexp? balanced?)))))
+      (hel-surround--4-bounds-at-point-1 left right limits regexp? balanced?)))))
 
-(defun helix-bounds-of-brackets-at-point (left right)
+(defun hel-bounds-of-brackets-at-point (left right)
   "Return the bounds of the balanced expression at point enclosed
 in LEFT and RIGHT brackets, for which the point is either: directly
 before LEFT, directly after RIGHT, or between them. All nested balanced
@@ -565,16 +565,16 @@ LEFT and RIGHT should be chars.
 
 This function is intended to search balanced brackets in programming modes,
 since internally uses Emacs built-in Parse-Partial-Sexp Scanner for balanced
-expressions. For arbitrary delimiters use `helix-surround-4-bounds-at-point'.
+expressions. For arbitrary delimiters use `hel-surround-4-bounds-at-point'.
 
 Return the cons cell (START . END) with positions before LEFT and
 after RIGHT."
   (when (eq left right)
     (user-error "Left and right brackets should not be equal"))
   (if-let* ((string-or-comment-bounds
-             (or (bounds-of-thing-at-point 'helix-comment)
+             (or (bounds-of-thing-at-point 'hel-comment)
                  (bounds-of-thing-at-point 'string)))
-            (bounds (helix-surround--4-bounds-at-point-1
+            (bounds (hel-surround--4-bounds-at-point-1
                      (char-to-string left) (char-to-string right)
                      string-or-comment-bounds
                      nil t)))
@@ -608,7 +608,7 @@ after RIGHT."
                    (if-let* ((end (scan-lists (point) 1 0)))
                        (cons (point) end))))))))))
 
-(defun helix-4-bounds-of-brackets-at-point (left right)
+(defun hel-4-bounds-of-brackets-at-point (left right)
   "Return 4 bounds of the balanced expression at point enclosed
 in LEFT and RIGHT brackets, for which the point is either: directly
 before LEFT, directly after RIGHT, or between them. All nested balanced
@@ -618,14 +618,14 @@ LEFT and RIGHT should be chars.
 
 This function is intended to search balanced brackets in programming modes,
 since internally uses Emacs built-in Parse-Partial-Sexp Scanner for balanced
-expressions. For arbitrary delimiters use `helix-surround-4-bounds-at-point'.
+expressions. For arbitrary delimiters use `hel-surround-4-bounds-at-point'.
 
 Return the list (LEFT-BEG LEFT-END RIGHT-LEFT RIGHT-END) with 4 positions:
 1. Before LEFT bracket;
 2. After LEFT bracket all following whitespaces and newlines;
 3. Before RIGHT bracket all preceding whitespaces and newlines;
 4. After RIGHT bracket."
-  (-if-let ((left-beg . right-end) (helix-bounds-of-brackets-at-point left right))
+  (-if-let ((left-beg . right-end) (hel-bounds-of-brackets-at-point left right))
       (save-excursion
         (let ((left-end (progn
                           (goto-char (1+ left-beg))
@@ -637,47 +637,47 @@ Return the list (LEFT-BEG LEFT-END RIGHT-LEFT RIGHT-END) with 4 positions:
                            (point))))
           (list left-beg left-end right-beg right-end)))))
 
-(defun helix-surround--4-bounds-at-point-1 (left right &optional limits regexp? balanced?)
-  "The internal function for `helix-surround-4-bounds-at-point'."
+(defun hel-surround--4-bounds-at-point-1 (left right &optional limits regexp? balanced?)
+  "The internal function for `hel-surround-4-bounds-at-point'."
   (save-excursion
     (let ((left-not-equal-right? (not (string-equal left right))))
       (cond
        ;; point is before LEFT
        ((and left-not-equal-right?
-             (helix-looking-at left 1 regexp?))
+             (hel-looking-at left 1 regexp?))
         (let* ((left-beg (point))
                (left-end (if regexp? (match-end 0)
                            (+ left-beg (length left)))))
           (goto-char left-end)
-          (if-let* ((right-end (helix-surround-search-outward
+          (if-let* ((right-end (hel-surround-search-outward
                                 left right 1 limits regexp? balanced?))
                     (right-beg (if regexp? (match-beginning 0)
                                  (- right-end (length right)))))
               (list left-beg left-end right-beg right-end))))
        ;; point is after RIGHT
        ((and left-not-equal-right?
-             (helix-looking-at right -1 regexp?))
+             (hel-looking-at right -1 regexp?))
         (let* ((right-end (point))
                (right-beg (if regexp? (match-beginning 0)
                             (- right-end (length right)))))
           (goto-char right-beg)
-          (if-let* ((left-beg (helix-surround-search-outward
+          (if-let* ((left-beg (hel-surround-search-outward
                                left right -1 limits regexp? balanced?))
                     (left-end (if regexp? (match-end 0)
                                 (+ left-beg (length left)))))
               (list left-beg left-end right-beg right-end))))
        (t
-        (if-let* ((left-beg (helix-surround-search-outward
+        (if-let* ((left-beg (hel-surround-search-outward
                              left right -1 limits regexp? balanced?))
                   (left-end (if regexp? (match-end 0)
                               (+ left-beg (length left))))
-                  (right-end (helix-surround-search-outward
+                  (right-end (hel-surround-search-outward
                               left right 1 limits regexp? balanced?))
                   (right-beg (if regexp? (match-beginning 0)
                                (- right-end (length right)))))
             (list left-beg left-end right-beg right-end)))))))
 
-(defun helix-surround-search-outward
+(defun hel-surround-search-outward
     (left right &optional direction limits regexp? balanced?)
   "Return the position before LEFT or after RIGHT depending on DIRECTION.
 
@@ -698,14 +698,14 @@ be skipped."
   (or direction (setq direction 1))
   (save-excursion
     (if balanced?
-        (helix-surround--search-outward-balanced left right direction limits regexp?)
+        (hel-surround--search-outward-balanced left right direction limits regexp?)
       (let ((string (if (< direction 0) left right))
             (limit  (if (< direction 0) (car limits) (cdr limits))))
-        (helix-search string direction limit regexp?)))))
+        (hel-search string direction limit regexp?)))))
 
-(defun helix-surround--search-outward-balanced
+(defun hel-surround--search-outward-balanced
     (left right &optional direction limits regexp?)
-  "This is an internal function for `helix-surround-search-outward'
+  "This is an internal function for `hel-surround-search-outward'
 that is used when BALANCED? argument is non-nil."
   (save-excursion
     (let (open close limit)
@@ -721,13 +721,13 @@ that is used when BALANCED? argument is non-nil."
         (cl-block nil
           (while (> level 0)
             (let* ((pnt (point))
-                   (open-pos (helix-search open direction limit regexp?))
+                   (open-pos (hel-search open direction limit regexp?))
                    (close-pos (progn
                                 (goto-char pnt)
-                                (helix-search close direction limit regexp?))))
+                                (hel-search close direction limit regexp?))))
               (cond ((and close-pos open-pos)
-                     (let ((close-dist (helix-distance pnt close-pos))
-                           (open-dist  (helix-distance pnt open-pos)))
+                     (let ((close-dist (hel-distance pnt close-pos))
+                           (open-dist  (hel-distance pnt open-pos)))
                        (cond ((< open-dist close-dist)
                               (cl-incf level)
                               (goto-char open-pos))
@@ -741,7 +741,7 @@ that is used when BALANCED? argument is non-nil."
         (if (eql level 0)
             (point))))))
 
-(defun helix--bounds-of-quoted-at-point-ppss (quote-mark)
+(defun hel--bounds-of-quoted-at-point-ppss (quote-mark)
   "Return a cons cell (START . END) with bounds of region around
 the point enclosed in QUOTE-MARK character.
 
@@ -775,7 +775,7 @@ balanced expressions."
 
 ;;; Mark ring
 
-(defun helix-push-point (&optional position)
+(defun hel-push-point (&optional position)
   "Push POSITION (point by default) on the `mark-ring'."
   (or position (setq position (point)))
   ;; Don't store POSITION into mark ring if it equals to the last stored one.
@@ -800,18 +800,18 @@ balanced expressions."
         (set-marker old nil))))
   nil)
 
-(defun helix--jump-over-mark-ring (&optional backward?)
+(defun hel--jump-over-mark-ring (&optional backward?)
   "Jump to the top position on `mark-ring'.
 If point is already there, rotate `mark-ring' forward (or BACKWARD)
 and jump to the new top position."
   (when mark-ring
-    (helix-maybe-deactivate-mark)
+    (hel-maybe-deactivate-mark)
     (when (= (point) (car mark-ring))
-      (cl-callf helix-rotate-ring mark-ring backward?))
-    (helix-recenter-point-on-jump
+      (cl-callf hel-rotate-ring mark-ring backward?))
+    (hel-recenter-point-on-jump
       (goto-char (car mark-ring)))))
 
-(defun helix--jump-over-global-mark-ring (&optional backward?)
+(defun hel--jump-over-global-mark-ring (&optional backward?)
   "Jump to the top location on the `global-mark-ring'.
 If current buffer is the same as the target one, rotate `global-mark-ring'
 forward (or BACKWARD) and jump to new top location."
@@ -819,8 +819,8 @@ forward (or BACKWARD) and jump to new top location."
   (when (setq global-mark-ring (-filter #'marker-buffer global-mark-ring))
     (when (eq (marker-buffer (car global-mark-ring))
               (current-buffer))
-      (cl-callf helix-rotate-ring global-mark-ring backward?))
-    (helix-recenter-point-on-jump
+      (cl-callf hel-rotate-ring global-mark-ring backward?))
+    (hel-recenter-point-on-jump
       (let* ((marker (car global-mark-ring))
 	     (buffer (marker-buffer marker))
 	     (position (marker-position marker)))
@@ -834,10 +834,10 @@ forward (or BACKWARD) and jump to new top location."
         (switch-to-buffer buffer)
         (deactivate-mark)))))
 
-(defun helix-rotate-ring (ring &optional backward-p)
+(defun hel-rotate-ring (ring &optional backward-p)
   "Rotate the RING elements.
 This function destructively modify RING and should be used the following way:
-`(setq RING (helix-rotate-ring RING))'
+`(setq RING (hel-rotate-ring RING))'
 
 RING should be a list like `mark-ring' and not the ring structure from `ring.el'."
   (if backward-p
@@ -846,11 +846,11 @@ RING should be a list like `mark-ring' and not the ring structure from `ring.el'
 
 ;;; Copy/paste
 
-(defun helix-push-mark (&optional position nomsg activate)
+(defun hel-push-mark (&optional position nomsg activate)
   "Set mark to the POSITION and push it on the `mark-ring'.
 If NOMSG is nil show `Mark set' message in echo area."
   (or position (setq position (point)))
-  (helix-push-point position)
+  (hel-push-point position)
   (set-marker (mark-marker) position (current-buffer))
   (or nomsg executing-kbd-macro (> (minibuffer-depth) 0)
       (message "Mark set"))
@@ -858,96 +858,96 @@ If NOMSG is nil show `Mark set' message in echo area."
     (set-mark (mark t)))
   nil)
 
-(defun helix-paste (yank-function direction)
+(defun hel-paste (yank-function direction)
   "Paste before/after selection depending on DIRECTION.
 YANK-FUNCTION should be a `yank' like function."
-  (let ((region-dir (if (use-region-p) (helix-region-direction) 1))
+  (let ((region-dir (if (use-region-p) (hel-region-direction) 1))
         (deactivate-mark nil))
-    (helix-ensure-region-direction direction)
-    (when (helix-string-ends-with-newline (current-kill 0 :do-not-move))
-      (forward-thing 'helix-line (if (natnump direction) 1 0)))
-    (cl-letf (((symbol-function 'push-mark) #'helix-push-mark))
+    (hel-ensure-region-direction direction)
+    (when (hel-string-ends-with-newline (current-kill 0 :do-not-move))
+      (forward-thing 'hel-line (if (natnump direction) 1 0)))
+    (cl-letf (((symbol-function 'push-mark) #'hel-push-mark))
       (funcall yank-function))
-    (helix-set-region (mark t) (point) region-dir :adjust)
-    (helix-extend-selection -1)))
+    (hel-set-region (mark t) (point) region-dir :adjust)
+    (hel-extend-selection -1)))
 
 ;;; Changes
 
-(defun helix-indent (indent-function count)
+(defun hel-indent (indent-function count)
   "Indent active region COUNT times. With no selection indent current line.
 INDENT-FUNCTION should be a `indent-rigidly-left' like function that takes
 BEG, END position and done the indentation."
   (if (use-region-p)
-      (helix-save-linewise-selection
+      (hel-save-linewise-selection
         (dotimes (_ count)
           (funcall indent-function (region-beginning) (region-end)))
-        (helix-extend-selection -1))
+        (hel-extend-selection -1))
     ;; else
-    (-let [(beg . end) (bounds-of-thing-at-point 'helix-line)]
+    (-let [(beg . end) (bounds-of-thing-at-point 'hel-line)]
       (dotimes (_ count)
         (funcall indent-function beg end)))))
 
 ;;; Utils
 
-(defun helix--exchange-point-and-mark ()
+(defun hel--exchange-point-and-mark ()
   "Exchange point and mark."
   (goto-char (prog1 (marker-position (mark-marker))
                (set-marker (mark-marker) (point)))))
 
-(defsubst helix-end-of-buffer-p (direction)
+(defsubst hel-end-of-buffer-p (direction)
   (if (< direction 0) (bobp) (eobp)))
 
-(defun helix-bolp ()
+(defun hel-bolp ()
   "Like `bolp' but consider visual lines when `visual-line-mode' is enabled."
   (if visual-line-mode
-      (helix-visual-bolp)
+      (hel-visual-bolp)
     (bolp)))
 
-(defun helix-visual-bolp ()
+(defun hel-visual-bolp ()
   "Return t if point is at the beginning of visual line."
   (save-excursion
     (let ((p (point)))
       (beginning-of-visual-line)
       (eql p (point)))))
 
-(defun helix-eolp ()
+(defun hel-eolp ()
   "Like `eolp' but consider visual lines when `visual-line-mode' is enabled."
   (if visual-line-mode
-      (helix-visual-eolp)
+      (hel-visual-eolp)
     (eolp)))
 
-(defun helix-visual-eolp ()
+(defun hel-visual-eolp ()
   "Return t if point is at the end of visual line."
   (save-excursion
     (let ((p (point)))
       (end-of-visual-line)
       (eql p (point)))))
 
-(defun helix-line-boundary-p (direction)
+(defun hel-line-boundary-p (direction)
   "If DIRECTION is negative number, checks for beginning of line,
 positive — end of line."
   (if (< direction 0) (bolp) (eolp)))
 
-(defun helix-region-direction ()
+(defun hel-region-direction ()
   "Return the direction of region: -1 if point precedes mark, 1 otherwise."
   (if (< (point) (mark-marker)) -1 1))
 
-(defun helix-logical-lines-p ()
+(defun hel-logical-lines-p ()
   "Return t if active region spawns full logical lines."
-  (and helix--newline-at-eol ;; This should guarantee that region is active.
+  (and hel--newline-at-eol ;; This should guarantee that region is active.
        (save-excursion (goto-char (region-beginning)) (bolp))
        (save-excursion (goto-char (region-end)) (eolp))))
 
-(defun helix-visual-lines-p ()
+(defun hel-visual-lines-p ()
   "Return t if active region spawns visual lines."
   (and visual-line-mode
        (use-region-p)
        (save-excursion (goto-char (region-beginning))
-                       (helix-visual-bolp))
+                       (hel-visual-bolp))
        (save-excursion (goto-char (region-end))
-                       (helix-visual-bolp))))
+                       (hel-visual-bolp))))
 
-(defun helix-whitespace? (char)
+(defun hel-whitespace? (char)
   "Non-nil when CHAR belongs to whitespace syntax class."
   (and (eql (char-syntax char) ?\s)
        (not (memq char '(?\r ?\n))))
@@ -955,14 +955,14 @@ positive — end of line."
   ;; (memq char '(?\s ?\t))
   )
 
-(defsubst helix-sign (&optional num)
+(defsubst hel-sign (&optional num)
   (cond ((< num 0) -1)
         ((zerop num) 0)
         (t 1)))
 
-(defsubst helix-distance (x y) (abs (- y x)))
+(defsubst hel-distance (x y) (abs (- y x)))
 
-(defun helix-search (string &optional direction limit regexp? visible?)
+(defun hel-search (string &optional direction limit regexp? visible?)
   "Search for STRING toward the DIRECTION.
 
 DIRECTION can be either 1 — search forward, or -1 — search backward.
@@ -985,15 +985,15 @@ that `match-beginning', `match-end' and `match-data' access."
     (if (and visible?
              (or (invisible-p (match-beginning 0))
                  (invisible-p (1- (match-end 0)))))
-        (helix-search string limit regexp? visible?)
+        (hel-search string limit regexp? visible?)
       result)))
 
-(defun helix-re-search-with-wrap (regexp &optional direction)
+(defun hel-re-search-with-wrap (regexp &optional direction)
   "Search REGEXP from the point toward the DIRECTION.
 If nothing found, wrap around the buffer and search up to the point."
   (or direction (setq direction 1))
   (when (and (use-region-p)
-             (/= direction (helix-region-direction)))
+             (/= direction (hel-region-direction)))
     (goto-char (mark-marker)))
   (or (re-search-forward regexp nil t direction)
       ;; If nothing found — wrap around buffer end and try again.
@@ -1002,7 +1002,7 @@ If nothing found, wrap around the buffer and search up to the point."
         (if (re-search-forward regexp point t direction)
             (message "Wrapped around buffer")))))
 
-(defun helix-looking-at (string &optional direction regexp?)
+(defun hel-looking-at (string &optional direction regexp?)
   "Return t if text directly after point toward the DIRECTION
 matches STRING.
 
@@ -1028,18 +1028,18 @@ that `match-beginning', `match-end' and `match-data' access."
                 (string-equal (buffer-substring-no-properties pos pnt)
                               string))))))
 
-(defun helix-string-ends-with-newline (string)
+(defun hel-string-ends-with-newline (string)
   "Return t if STRING ends with newline character."
   (eql (aref string (1- (length string)))
        ?\n))
 
-(defun helix-all-elements-are-equal-p (list)
+(defun hel-all-elements-are-equal-p (list)
   "Return t if all elemetns in the LIST are `equal' each other."
   (let ((first (-first-item list)))
     (--all? (equal first it)
             (cdr list))))
 
-(defun helix-cursor-is-bar-p ()
+(defun hel-cursor-is-bar-p ()
   "Return non-nil if `cursor-type' is bar."
   (let ((cursor-type (if (eq cursor-type t)
                          (frame-parameter nil 'cursor-type)
@@ -1048,7 +1048,7 @@ that `match-beginning', `match-end' and `match-data' access."
         (and (listp cursor-type)
              (eq (car cursor-type) 'bar)))))
 
-(defun helix-set-region (start end &optional direction newline-at-eol)
+(defun hel-set-region (start end &optional direction newline-at-eol)
   "Set the active region between START and END positions.
 
 DIRECTION of the region:
@@ -1060,76 +1060,76 @@ When DIRECTION is specified, START and END can be provided in any order.
 
 NEWLINE-AT-EOL handles trailing newline behavior. In Emacs, selecting a newline
 character at the end of a line moves point to the beginning of the next line.
-This contradicts Helix's and Vim's editors behavior. We emulate their behavior,
-by keeping the point at the end of the line and setting `helix--newline-at-eol'
+This contradicts Hel's and Vim's editors behavior. We emulate their behavior,
+by keeping the point at the end of the line and setting `hel--newline-at-eol'
 flag.
 
 NEWLINE-AT-EOL possible values:
-  nil      Set `helix--newline-at-eol' to nil.
-  t        Set `helix--newline-at-eol' to t.
+  nil      Set `hel--newline-at-eol' to nil.
+  t        Set `hel--newline-at-eol' to t.
   `:adjust'  Check if region includes trailing newline, exclude it if found,
-             and set `helix--newline-at-eol' flag."
+             and set `hel--newline-at-eol' flag."
   (pcase newline-at-eol
-    (:adjust (and (setq helix--newline-at-eol (and (/= start end)
-                                                   (save-excursion
-                                                     (goto-char (max start end))
-                                                     (bolp))))
+    (:adjust (and (setq hel--newline-at-eol (and (/= start end)
+                                                 (save-excursion
+                                                   (goto-char (max start end))
+                                                   (bolp))))
                   (cl-decf (if (< start end) end start))))
-    (_ (setq helix--newline-at-eol newline-at-eol)))
+    (_ (setq hel--newline-at-eol newline-at-eol)))
   (when (and (numberp direction)
              (xor (< 0 direction)
                   (<= start end)))
     (cl-rotatef start end))
   (set-mark start)
   (goto-char end)
-  (unless helix-executing-command-for-fake-cursor
-    (if helix--newline-at-eol
-        (helix--set-region-overlay (region-beginning) (1+ (region-end)))
-      (helix--delete-region-overlay))))
+  (unless hel-executing-command-for-fake-cursor
+    (if hel--newline-at-eol
+        (hel--set-region-overlay (region-beginning) (1+ (region-end)))
+      (hel--delete-region-overlay))))
 
-(defun helix-region ()
+(defun hel-region ()
   "Region list with parameters of the active region. If no region return nil.
 
 The result is a list with following elements:
 
   (BEG END DIRECTION NEWLINE-AT-EOL)
 
-It is suitable to restore region with `helix-set-region':
+It is suitable to restore region with `hel-set-region':
 
-  (let ((region (helix-region)))
+  (let ((region (hel-region)))
     ...
-    (apply #'helix-set-region region))"
-  (if (or helix--newline-at-eol
+    (apply #'hel-set-region region))"
+  (if (or hel--newline-at-eol
           (use-region-p))
       (list (region-beginning) (region-end)
-            (helix-region-direction)
-            helix--newline-at-eol)))
+            (hel-region-direction)
+            hel--newline-at-eol)))
 
-(defun helix-maybe-set-mark ()
+(defun hel-maybe-set-mark ()
   "Set mark at point unless extending selection is active.
 Return the position of the mark."
-  (helix-disable-newline-at-eol)
-  (unless helix--extend-selection (set-mark (point)))
+  (hel-disable-newline-at-eol)
+  (unless hel--extend-selection (set-mark (point)))
   (mark))
 
-(defun helix-maybe-deactivate-mark ()
+(defun hel-maybe-deactivate-mark ()
   "Deactivate mark unless extending selection is active."
-  (if helix--extend-selection
-      (helix-disable-newline-at-eol)
+  (if hel--extend-selection
+      (hel-disable-newline-at-eol)
     (deactivate-mark)))
 
-(defun helix-ensure-region-direction (direction)
+(defun hel-ensure-region-direction (direction)
   "Exchange point and mark if region direction mismatch DIRECTION.
 DIRECTION should be 1 or -1."
   (when (and (use-region-p)
-             (/= direction (helix-region-direction)))
-    (helix--exchange-point-and-mark)))
+             (/= direction (hel-region-direction)))
+    (hel--exchange-point-and-mark)))
 
-(defun helix-undo-command-p (command)
+(defun hel-undo-command-p (command)
   "Return non-nil if COMMAND is implementing undo/redo functionality."
-  (memq command helix-undo-commands))
+  (memq command hel-undo-commands))
 
-(defun helix-destructive-filter (predicate list &optional pointer)
+(defun hel-destructive-filter (predicate list &optional pointer)
   "Destructively remove elements in LIST that satisfy PREDICATE
 between start and POINTER.
 
@@ -1137,7 +1137,7 @@ Returns the modified list, which may have a new starting element
 if removals occur at the beginning of the list, therefore, assign
 the returned list to the original symbol like this:
 
-  (setq foo (helix-destructive-filter #\\='predicate foo))"
+  (setq foo (hel-destructive-filter #\\='predicate foo))"
   (let ((tail list)
         elem head)
     (while (and tail (not (eq tail pointer)))
@@ -1152,22 +1152,22 @@ the returned list to the original symbol like this:
                    tail (cdr tail)))))
     list))
 
-(defun helix-echo (str &optional face)
+(defun hel-echo (str &optional face)
   "Show message in echo area."
   (when face
     (put-text-property 0 (length str) 'face face str))
   (message "%s" str))
 
-(defun helix-pcre-to-elisp (regexp)
-  "Convert PCRE REGEXP into Elisp one if Helix configured to use PCRE syntax."
-  (if helix-use-pcre-regex
+(defun hel-pcre-to-elisp (regexp)
+  "Convert PCRE REGEXP into Elisp one if Hel configured to use PCRE syntax."
+  (if hel-use-pcre-regex
       (condition-case err
           (pcre-to-elisp regexp)
         (rxt-invalid-regexp
-         (helix-echo (error-message-string err) 'error)))
+         (hel-echo (error-message-string err) 'error)))
     regexp))
 
-(defun helix-match-bounds ()
+(defun hel-match-bounds ()
   "Return cons cell with bounds of the first match group in `match-data'.
 If there were no match groups in the last used regexp — return the bounds
 of the full regexp match."
@@ -1176,7 +1176,7 @@ of the full regexp match."
         (t
          (cons (match-beginning 0) (match-end 0)))))
 
-(defun helix-collect-positions (fun &optional start end)
+(defun hel-collect-positions (fun &optional start end)
   "Consecutively call FUN and collect point positions after each invocation.
 Finish as soon as point moves outside of START END buffer positions.
 FUN on each invocation should move point."
@@ -1196,7 +1196,7 @@ FUN on each invocation should move point."
                         (<= start (point) end))
              collect (cons (point) win))))
 
-(defun helix-invert-case-in-region (start end)
+(defun hel-invert-case-in-region (start end)
   "Invert case of characters within START...END buffer positions."
   (goto-char start)
   (while (< (point) end)
@@ -1206,7 +1206,7 @@ FUN on each invocation should move point."
                        (downcase char)
                      (upcase char))))))
 
-(defun helix-letters-are-self-insert-p ()
+(defun hel-letters-are-self-insert-p ()
   "Return t if any of the a-z keys are bound to self-insert command."
   ;; This is just a fancy way to produce following list in compile time:
   ;;   '("a" "b" "c" "d" "e" "f" "g" "h" "i" "j" "k" "l" "m"
@@ -1220,7 +1220,7 @@ FUN on each invocation should move point."
                                (symbol-name cmd))))
         (cl-return t))))
 
-(defun helix-comment-at-pos-p (pos)
+(defun hel-comment-at-pos-p (pos)
   "Return non-nil if position POS is inside a comment, or comment starts
 right after the point."
   (ignore-errors
@@ -1253,89 +1253,89 @@ right after the point."
              (and (/= 0 (logand (ash 1 19) s))
                   (nth 4 (syntax-ppss (- pos 2))))))))))
 
-(defun helix-overlay-live-p (overlay)
+(defun hel-overlay-live-p (overlay)
   "Return non-nil if OVERLAY is not deleted from buffer."
   (-some-> overlay
     (overlay-buffer)
     (buffer-live-p)))
 
-(defun helix-restore-newline-at-eol ()
-  "Extend active region to include trailing newline when `helix--newline-at-eol'
+(defun hel-restore-newline-at-eol ()
+  "Extend active region to include trailing newline when `hel--newline-at-eol'
 is non-nil."
-  (when helix--newline-at-eol
-    (helix-set-region (region-beginning) (1+ (region-end))
-                      (helix-region-direction))
+  (when hel--newline-at-eol
+    (hel-set-region (region-beginning) (1+ (region-end))
+                    (hel-region-direction))
     t))
 
-(defun helix-disable-newline-at-eol ()
-  (setq helix--newline-at-eol nil)
-  (unless helix-executing-command-for-fake-cursor
-    (helix--delete-region-overlay)))
+(defun hel-disable-newline-at-eol ()
+  (setq hel--newline-at-eol nil)
+  (unless hel-executing-command-for-fake-cursor
+    (hel--delete-region-overlay)))
 
-(defun helix--set-region-overlay (start end)
-  (unless helix-executing-command-for-fake-cursor
-    (if (overlayp helix-main-region-overlay)
-        (move-overlay helix-main-region-overlay start end)
-      (setq helix-main-region-overlay (-doto (make-overlay start end)
-                                        (overlay-put 'face 'region)
-                                        (overlay-put 'priority 1))))))
+(defun hel--set-region-overlay (start end)
+  (unless hel-executing-command-for-fake-cursor
+    (if (overlayp hel-main-region-overlay)
+        (move-overlay hel-main-region-overlay start end)
+      (setq hel-main-region-overlay (-doto (make-overlay start end)
+                                      (overlay-put 'face 'region)
+                                      (overlay-put 'priority 1))))))
 
-(defun helix--delete-region-overlay ()
-  (if (overlayp helix-main-region-overlay)
-      (delete-overlay helix-main-region-overlay)))
+(defun hel--delete-region-overlay ()
+  (if (overlayp hel-main-region-overlay)
+      (delete-overlay hel-main-region-overlay)))
 
-(defun helix-pulse-main-region (&optional face)
-  (if (helix-overlay-live-p helix-main-region-overlay)
-      (pulse-momentary-highlight-overlay helix-main-region-overlay face)
+(defun hel-pulse-main-region (&optional face)
+  (if (hel-overlay-live-p hel-main-region-overlay)
+      (pulse-momentary-highlight-overlay hel-main-region-overlay face)
     (pulse-momentary-highlight-region (region-beginning) (region-end) face)))
 
-(defun helix-reveal-point-when-on-top (&rest _)
+(defun hel-reveal-point-when-on-top (&rest _)
   "Reveal point when it's only partially visible.
 For some reason, Emacs can become slow while point is partially visible, so this
 function prevents that. It is intended to be used as `:after' advice."
-  (unless helix-executing-command-for-fake-cursor
+  (unless hel-executing-command-for-fake-cursor
     (redisplay)
     (when (zerop (cdr (posn-col-row (posn-at-point))))
       (recenter 0))))
 
 ;;; Advices
 
-(declare-function helix-extend-selection "helix-commands")
-(declare-function helix-insert-state "helix-core")
+(declare-function hel-extend-selection "hel-commands")
+(declare-function hel-insert-state "hel-core")
 
-(defun helix-keep-selection-a (command &rest args)
+(defun hel-keep-selection-a (command &rest args)
   "Keep region active, disable extending selection (`v' key)."
   (prog1 (let ((deactivate-mark nil))
            (apply command args))
-    (helix-extend-selection -1)))
+    (hel-extend-selection -1)))
 
-(defun helix-deactivate-mark-a (&rest _)
+(defun hel-deactivate-mark-a (&rest _)
   "Deactivate mark. This function can be used as advice."
   (deactivate-mark))
 
-(defun helix-maybe-deactivate-mark-a (&rest _)
+(defun hel-maybe-deactivate-mark-a (&rest _)
   "Deactivate mark unless extending selection is active. Can be used as advice."
-  (if helix--extend-selection
-      (helix-disable-newline-at-eol)
+  (if hel--extend-selection
+      (hel-disable-newline-at-eol)
     (deactivate-mark)))
 
-(defun helix-jump-command-a (command &rest args)
+(defun hel-jump-command-a (command &rest args)
   "Aroung advice for COMMAND that moves point."
-  (helix-delete-all-fake-cursors)
+  (hel-delete-all-fake-cursors)
   (deactivate-mark)
-  (helix-recenter-point-on-jump
+  (hel-recenter-point-on-jump
     (prog1 (apply command args)
       ;; We can land in another buffer, so deactivate mark there as well.
       (deactivate-mark))))
 
-(defun helix-switch-to-insert-state-a (&rest _)
-  "Switch Helix into Insert state.
+(defun hel-switch-to-insert-state-a (&rest _)
+  "Switch Hel into Insert state.
 Can be used as advice."
-  (helix-insert-state 1))
+  (hel-insert-state 1))
 
-(defun helix--execute-for-all-cursors-a (&rest _)
+(defun hel--execute-for-all-cursors-a (&rest _)
   "Execute selected command for all cursors."
-  (setq helix-this-command this-command))
+  (setq hel-this-command this-command))
 
-(provide 'helix-common)
-;;; helix-common.el ends here
+(provide 'hel-common)
+;;; hel-common.el ends here
