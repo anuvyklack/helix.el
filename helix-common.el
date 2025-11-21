@@ -1303,11 +1303,11 @@ function prevents that. It is intended to be used as `:after' advice."
 (declare-function helix-extend-selection "helix-commands")
 (declare-function helix-insert-state "helix-core")
 
-(defun helix-keep-selection-a (fun &rest args)
+(defun helix-keep-selection-a (command &rest args)
   "Keep region active, disable extending selection (`v' key)."
-  (let ((deactivate-mark nil))
-    (apply fun args))
-  (helix-extend-selection -1))
+  (prog1 (let ((deactivate-mark nil))
+           (apply command args))
+    (helix-extend-selection -1)))
 
 (defun helix-deactivate-mark-a (&rest _)
   "Deactivate mark. This function can be used as advice."
@@ -1324,9 +1324,9 @@ function prevents that. It is intended to be used as `:after' advice."
   (helix-delete-all-fake-cursors)
   (deactivate-mark)
   (helix-recenter-point-on-jump
-    (apply command args)
-    ;; We can land in another buffer, so deactivate mark there as well.
-    (deactivate-mark)))
+    (prog1 (apply command args)
+      ;; We can land in another buffer, so deactivate mark there as well.
+      (deactivate-mark))))
 
 (defun helix-switch-to-insert-state-a (&rest _)
   "Switch Helix into Insert state.
