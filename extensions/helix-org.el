@@ -167,6 +167,12 @@
 (helix-advice-add 'org-next-visible-heading     :before #'helix-deactivate-mark-a)
 (helix-advice-add 'org-previous-visible-heading :before #'helix-deactivate-mark-a)
 
+(dolist (cmd '(org-shiftleft
+               org-shiftright
+               org-shiftmetaleft
+               org-shiftmetaright))
+  (helix-advice-add cmd :around #'helix-keep-selection-a))
+
 ;;; Commands
 
 ;; (dolist (cmd '(org-cycle      ; TAB
