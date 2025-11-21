@@ -386,7 +386,8 @@ In tables, move column to the right."
          (save-excursion (insert "\n")))
        (run-hooks 'org-insert-heading-hook))))
   (when (org-invisible-p) (org-show-hidden-entry))
-  (helix-insert-state 1))
+  ;; (helix-insert-state 1)
+  )
 
 ;;; AST climbing
 
