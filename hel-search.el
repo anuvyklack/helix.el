@@ -272,12 +272,15 @@ RANGES is a list of cons cells with positions (START . END)."
                      (/= (window-start) hel-search--window-start))
             (set-window-start nil hel-search--window-start :noforce)))))))
 
+;; TODO: skip or open invisible matches.
 (defun helf-search--search (regexp dir)
   (if (hel-re-search-with-wrap regexp dir)
-      (let ((match (hel-match-bounds)))
-        (if (or (eq search-invisible t)
-                (not (isearch-range-invisible (car match) (cdr match))))
-            match))))
+      (hel-match-bounds)
+      ;; (let ((match (hel-match-bounds)))
+      ;;   (if (or (eq search-invisible t)
+      ;;           (not (isearch-range-invisible (car match) (cdr match))))
+      ;;       match))
+    ))
 
 (defun hel-search--set-target-overlay (beg end)
   (if hel-search--overlay

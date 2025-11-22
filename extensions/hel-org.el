@@ -498,6 +498,8 @@ be set manually."
   :merge-selections t
   (interactive "p")
   (hel-restore-newline-at-eol)
+  ;; BUG: When paragraph starts with link, currently we lands at invisible
+  ;;   position, skip it and select the entire heading.
   (when (and (not (bobp))
              (invisible-p (1- (point))))
     (goto-char (previous-single-char-property-change (point) 'invisible)))
