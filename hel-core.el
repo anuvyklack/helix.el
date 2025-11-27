@@ -606,7 +606,7 @@ Example:
       \"f\" \\='foo
       \"b\" nil) ; unbind
 
-\(fn [:STATE STATE] &rest [KEY DEFINITION]...)"
+\(fn [:state STATE] &rest [KEY DEFINITION]...)"
   (declare (indent defun))
   (let ((states (pcase (car-safe args)
                   (:state (pop args)

@@ -1,5 +1,28 @@
 #+title: Hel — Helix Emulation Layer for Emacs
 
+Hel is [[https://helix-editor.com/][Helix]] editor emulation layer in Emacs.
+
+** Documentation
+- [[file:docs/customization.org][Customizations]]
+- [[file:docs/keybindings.org][Keybindings]]
+
+** Installation
+
+Hel in on Melpa yet.
+
+Manual installation:
+#+begin_src emacs-lisp
+;; Dependencies
+(use-package avy :ensure t)
+(use-package pcre2el :ensure t)
+
+(use-package hel
+  :vc (:url "https://github.com/anuvyklack/hel.git" :rev "main")
+  :config (hel-mode))
+#+end_src
+
+** Kakoune vs Helix
+
 The main difference between Kakoune and Helix, in terms of emulating, is how
 they handle expanding selections: Kakoune use =shift= + motions, while Helix has
 separate state on =v= key.  Since I originally started from Vim, I prefer the
@@ -15,13 +38,20 @@ in Emacs.
 
 - Multiple cursors based modal editing inside Emacs!
 
-- Smooth scrolling out of the box.
-
-- Built-in God-mode or Meow Keypad like functionality.
+- Undo/redo that plays well with multiple cursors.
 
 - PCRE regexps by default (thanks to [[https://github.com/joddie/pcre2el][pcre2el]]).
 
-- Undo/redo that plays well with multiple cursors.
+- Smooth scrolling out of the box.
+
+- Built-in Meow Keypad / God-mode like functionality.
+
+** Commands that are not implemented
+
+- =.= (repeat) — Need to decide what it should repeat.
+- =r= — replace
+- =M-u=, =M-U= — traverse undo tree
+- =q=, =Q= — record keyboard macros
 
 ** Differences from Helix text editor
 
@@ -61,13 +91,22 @@ in Emacs.
 
 - Scrolling keybindings are taken from Vim instead of Helix.
 
-** Commands that are not implemented
+** Extensions
+*** Leader
+#+begin_src emacs-lisp
+(use-package hel-leader)
+#+end_src
 
-- =.= (repeat) — Need to decide what it should repeat.
-- =r= — replace
-- =C-i= / =C-o=, =C-s= — jumplist
-- =M-u=, =M-U= — traverse undo tree
-- =q=, =Q= — record keyboard macros
+*** Paredit
+#+begin_src emacs-lisp
+(use-package paredit :ensure t)
+(use-package hel-paredit)
+#+end_src
+
+*** Org mode
+#+begin_src emacs-lisp
+(use-package hel-org :after org)
+#+end_src
 
 ** Acknowledgments
 
