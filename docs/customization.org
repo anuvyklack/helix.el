@@ -1,35 +1,150 @@
-#+title: Configuration
+* Hel Customization Guide
+** Setup Keybindings
 
-* Faces
+#+begin_quote
+*Note:* In all following functions
+  - ~:state~ is an optional argument — you may not pass it.
+  - To remove keybinding — pass ~nil~ as DEFINITION.
+#+end_quote
 
-- ~hel-fake-cursor-extend-selection~ ::
-  The face used for fake cursors when extending selection is active.
+- ~hel-keymap-set~ :: Bind or unbind keys in a specified keymap.
 
-- ~hel-lazy-highlight~ ::
-  Face for highlighting matches in interactive search with =/=, =?=, =*=, =M-*=, =n=, =N=.
+#+begin_src emacs-lisp
+(hel-keymap-set KEYMAP [:state STATE] &rest [KEY DEFINITION]...)
+#+end_src
 
-* Variables
+Bind any number of KEY / DEFINITION pairs. If STATE is specified, the bindings
+are applied in that Hel state.
+
+In addition, ~hel-keymap-set~ provides a convenient API for managing key
+bindings in Emacs: you can supply any number of KEY / DEFINITION pairs, and if
+a DEFINITION is ~nil~, that key will be unbound.
+
+#+begin_src emacs-lisp
+(hel-keymap-set org-mode-map :state 'normal
+  "RET" 'org-open-at-point
+  "TAB" nil) ; unbind
+#+end_src
+
+- ~hel-keymap-global-set~ ::
+  Bind keys globally. All other is the same as for ~hel-keymap-set~.
+
+- ~hel-keymap-local-set~ ::
+  Bind keys in buffer-local keymap. See documentation for ~current-local-map~
+  function for details on what a local keymap is.
+
+- ~hel-keymap-overriding-set~ ::
+  Create buffer-local keybindings which take precedence over all others.
+
+** Initial states for major modes
+
+- ~hel-set-initial-state~ ::
+  Set the initial Hel state for a major mode.
+
+#+begin_src emacs-lisp
+(hel-set-initial-state 'help-mode 'normal)
+#+end_src
+
+Hel uses a simple heuristic: if letter keys are self-inserting in the major
+mode, Hel starts in Normal state; otherwise, it starts in Motion state.
+
+** Surround
+
+~hel-surround-alist~ variable defines patterns for =ms= (surround), =md= (delete
+surround), and =mr= (change surround) commands. It is buffer-local so you can
+modify it from major-mode hooks. See its documentation and default value fo the
+structure and examples.
+
+*** Examples
+
+** Variables
+*** Regex Settings
 
 - ~hel-use-pcre-regex~ ::
-  If non-nil use PCRE regexp syntax instead of Emacs one.
+  If non-nil, use PCRE regexp syntax instead of Emacs syntax.
+  Default ~t~.
 
 - ~hel-regex-history-max~ ::
-  Maximum length of regexp search ring before oldest elements are thrown away.
-  This ring is uesd with =/=, =?=, =*=, =M-*=, =n=, =N= commands.
+  Maximum length of regexp search ring before oldest elements are discarded.
+  Used with =/=, =?=, =*=, =M-*=, =n=, =N= commands. Default: 16.
+
+*** Cursor Settings
+
+- ~hel-normal-state-cursor~ ::
+  Cursor appearance in Normal state. Can be a cursor type, color string,
+  function, or list of these.
+
+- ~hel-insert-state-cursor~ ::
+  Cursor appearance in Insert state.
+
+- ~hel-motion-state-cursor~ ::
+  Cursor appearance in Motion state.
+
+- ~hel-match-fake-cursor-style~ ::
+  If non-nil, attempt to match fake cursor style to real cursor type (only bar
+  and box).
+
+- ~hel-bar-fake-cursor~ ::
+  Character used as fake cursor when ~cursor-type~ is ~bar~ and
+  ~hel-match-fake-cursor-style~ is non-nil.
+
+*** Multiple Cursors Settings
 
 - ~hel-max-cursors-number~ ::
-  If your Emacs slows down or freezes when using too many cursors, customize
-  this value appropriately. Cursors will be added until this value is reached,
-  at which point you can either temporarily override the value or abort the
-  operation entirely. Default is ~nil~ — no ceiling.
+  Safety ceiling for number of active cursors. If nil, no limit.
 
 - ~hel-minor-modes-incompatible-with-multiple-cursors~ ::
-  List of minor-modes that does not work well with multiple cursors. They are
-  temporarily disabled when there are more then one cursor in the buffer.
+  List of minor modes temporarily disabled when multiple cursors are active.
 
-- ~hel-keep-search-highlight-commands~ ::
-  List of commands which should preserve search hints.
+- ~hel-multiple-cursors-mode-line-indicator~ ::
+  Mode line indicator when there multiple cursors in the buffer.
 
-- ~hel-surround-alist~ ::
-  Allows to customize patterns used for surrounding with =ms=, =md= and =mc= commands.
-  See built-in documentation with =C-h v hel-surround-alist=.
+- ~hel-whitelist-file~ ::
+  File path for saving command execution preferences.
+
+*** Behavior Settings
+
+- ~hel-want-minibuffer~ ::
+  Whether to enable Hel in minibuffer.
+
+- ~hel-want-C-hjkl-keys~ ::
+  If non-nil, bind =C-h=, =C-j=, =C-k=, =C-l= for AST navigation. Use =F1= instead of =C-h=
+  for help.
+
+  *Note:* Must be set before Hel is loaded!
+
+- ~hel-want-zz-scroll-to-center~ ::
+  If you want to return the Vim default =zz= behavior — scrolls to window center.
+
+  *Note:* Must be set before Hel is loaded!
+
+- ~hel-reactivate-selection-after-insert-state~ ::
+  When non-nil, selection is reactivated on exiting Insert state if it was
+  active on entry (like in Helix).
+
+** Faces
+
+- ~hel-normal-state-fake-cursor~ ::
+  Face used for fake cursors when Hel is in Normal state.
+
+- ~hel-insert-state-fake-cursor~ ::
+  Face used for fake cursors when Hel is in Insert state.
+
+- ~hel-extend-selection-cursor~ ::
+  Face used for all cursors when extending selection is active (=v= key).
+
+- ~hel-search-highlight~ ::
+  Face for highlighting matches during interactive search with =/=, =?=, =*=, =M-*=, =n=, =N=.
+
+- ~hel-mode-line-cursors-indicator~ ::
+  Face for the active cursors count indicator in the mode line.
+
+** API
+
+- ~hel-define-state~ ::
+  Hel uses this macro to define its built-in states. You can also use it
+  to create your own Hel state. See its documentation for more details.
+
+- ~hel-define-command~ ::
+  A wrapper around the ~defun~ macro that additionally accepts several keyword
+  arguments for multiple-cursor support. See its documentation for details.

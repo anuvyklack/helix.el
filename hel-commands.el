@@ -317,7 +317,7 @@ If no sentence at point select COUNT previous sentences."
 
 ;; C-s
 (hel-define-command hel-save-point-to-mark-ring ()
-  "Store main cursor to `mark-ring'."
+  "Store main cursor position to `mark-ring'."
   :multiple-cursors nil
   (interactive)
   (hel-push-point))
@@ -326,7 +326,7 @@ If no sentence at point select COUNT previous sentences."
 (hel-define-command hel-backward-mark-ring ()
   "Jump to the top position on `mark-ring'.
 If point is already there, rotate `mark-ring' forward (like revolver cylinder)
-and jump to new top position.
+and jump to the new top position.
 
 In Emacs, mark has two purposes: when active, it acts as a boundary for region;
 when inactive, it can be used to store the previous significant position. The

@@ -1,15 +1,110 @@
-#+title: Hel Keybindings
+#+title: Keybindings Reference
+
+You actually don't need this file. Emacs has an absolutely wonderful help
+system that neither Vim nor Helix has anything close to. It is self-documented.
+
+You can always place cursor on any variable or command you're interested in,
+press =:= (or =M-x=), then call ~helpful-at-point~ (from [[https://github.com/Wilfred/helpful][helpful]] package) to see the
+full documentation about it. Bind it to key for more convenient access. =M= is
+good choice since it's unused in Hel.
+#+begin_src emacs-lisp
+(hel-keymap-set emacs-lisp-mode-map :state 'normal
+  "M" 'helpful-at-point)
+#+end_src
+
+Hel keybindings are defined in the =hel-keybindings.el= file. Using the advice
+above, you can read the documentation for any command bound to a key you’re
+interested in.
+
+* Insert state
+
+In Insert state Hel doesn’t bind any keys by default, so you get the standard
+Emacs editing experience here.
+
+* Motion state
+
+Motion state is the default state for special buffers: grep results, error
+lists, file managers — anything not intended for text editing. A simple
+heuristic is used: if any letter key is not self-inserting, Hel enables Motion
+state; otherwise, it uses Normal state.
+
+* Keys common between Normal and Motion states
+
+- =:= :: Emacs analoug of command pallete. (Native key is =M-x=)
+
+- =M-u= ::
+  Emacs universal argument. Since =C-u= is used for scrolling, and =M-u= by default
+  is bind to ~upcase-word~, for which Hel has itself version on =M-`= or =gU=.
+
+- =SPC= :: leader key (if ~hel-leader~ extension is loaded)
+
+- =i= ::
+  Switch to Normal state. This allows you to select and copy arbitrary text in
+  special modes. To switch back, use =zx= or =C-x C-s= (~hel-motion-state~).
+
+** Windows
+
+- =C-w s=, =C-w v= :: Split window horizontally/vertically.
+
+- =C-w d=, =C-w c= :: Delete current window or tab.
+
+- =C-w h=, =C-w j=, =C-w k=, =C-w l= ::
+  Go to the window to the left/down/up/right.
+
+- =C-w w= :: Cycle to next window
+
+- =C-w h=, =C-w j=, =C-w k=, =C-w l= ::
+  Go to the window toward in direction.
+
+- =C-w H=, =C-w J=, =C-w K=, =C-w L= :: Move window in direction.
+
+All window commands also work with =C-= prefix for convenience: =C-w C-s=, =C-w C-v=,
+etc.
+
+** Scrolling
+
+Scrolling commands are taken from Vim.
+
+- =C-d= / =C-u= ::
+  Scroll *down* / *up* half of the page. If a numeric prefix is provided, scroll
+  this amount of lines and remember it for further use. To reset it use 0
+  prefix. (like in Vim)
+
+- =C-f= / =C-b= :: Scroll *down* / *up* full page.
+
+- =C-e= / =C-y= :: Scroll *down* / *up* COUNT lines.
+
+- =zt= / =zb= :: Scroll current line to the *top* / *bottom* border of the screen.
+
+- =zz= :: Scrolls current line to the eye level.
+
+  If you want Vim default behavior set following variable *before* requiring Hel:
+  #+begin_src emacs-lisp
+  (setopt hel-want-zz-scroll-to-center t)
+  #+end_src
+
+** Buffers
+
+- =C-w r= :: Revert current buffer.
+
+- =C-w d= :: Kill current buffer.
+- =C-w q= :: Kill current buffer and close window.
+
+- =C-w z= ::
+  Burry current buffer: put it the end of the list of all buffers.
+  Mnemonics: "z" is the last letter.
+
+- =]b= / =[b= :: next/previous buffer
+
+- =C-w x= :: ~scratch-buffer~
 
 * Normal state
 ** Motions
 
 - =h=, =j=, =k=, =l= :: Arrows.
 
-- =w=, =W= :: Move to the next word or WORD start.
-
-- =b=, =B= :: Move to the previous word or WORD start.
-
-- =e=, =E= :: Move to the next word or WORD start.
+- =w=, =b=, =e= :: word motions
+- =W=, =B=, =E= :: WORD motions
 
 - =f=, =F= :: Find next/previous char.
   While hints are active use =n= / =N= to repeat motion.
@@ -17,11 +112,11 @@
 - =t=, =T= :: Till next/previous char.
   While hints are active use =n= / =N= to repeat motion.
 
-- =gs=, =gh=, =gl= ::
+- =gs=, =gh=, =gl= :: Move to beginning/end of line
 
 - =gg=, =G= :: Go to the first/last line of the buffer.
 
-- =]p=, =[p= or =}=, ={= :: Move to the end/start of the paragraph.
+- =}=, ={= or =]p=, =[p= :: Move over paragraphs.
 
 *** Easymotion
 
@@ -170,7 +265,7 @@ for =m= prefix. Also, this is in line with Emacs tradition which has commands li
 - =mm= :: Go to matching bracket.
 - =ms= :: Surrond selection.
 - =md= :: Delete surround.
-- =mc= or =mr= :: Change (replace) surround.
+- =mr= :: Change (replace) surround.
 
 ** Search
 
@@ -186,59 +281,50 @@ for =m= prefix. Also, this is in line with Emacs tradition which has commands li
 
 - =n=, =N= :: Select next/previous match to the regexp from ~/~ register.
 
-** Scrolling
+** Jumplist
 
-- =M-u= ::
-  Emacs universal argument. =C-u= is occupied for scrolling, and =M-u= by default
-  is bind to ~upcase-word~, for which Hel has itself version on =M-`= or =gU=.
+- =C-s= :: Save current main cursor position to the mark-ring.
 
-- =C-d=, =C-u= ::
-  Scroll down/up half of the page. If a numeric prefix is provided, scroll
-  this amount of lines and remember it for further use. To reset it use 0
-  prefix. (like in Vim)
+- =C-o= / =C-i= ::
+  Go-to previous/next position in the mark-ring. Read help for
+  ~hel-backward-mark-ring~ command.
 
-- =C-f=, =C-b= :: Scroll down/up full page.
+- =C-O= / =C-I= ::
+  Go-to previous/next position in the ~global-mark-ring~ (read about it in Emacs
+  manual).
 
-- =C-e=, =C-y= :: Scroll down/up COUNT lines.
+** Miscellaneous
 
-- =zz= ::
-  Scrolls current line to the upper part of the screen, 20% below the top border.
-  If you want Vim default behavior, i.e. scroll to the center, use following
-  snippet in your config:
-  #+begin_src emacs-lisp
-  (hel-keymap-set nil 'normal
-    "z z" #'hel-smooth-scroll-line-to-center)
-  #+end_src
+- =zx= :: save buffer
 
-- =zt=, =zb= :: Scroll current line to the top/bottom border of the screen.
+- =.=  :: repeat last command
+- =gc= :: comment selection
 
-** Windows
+- =gi= :: ~imenu~
+- =ga= :: Show various information about the position before cursor: code point,
+  faces, overlays, etc.
 
-- =C-w s=, =C-w v= :: Split window horizontally/vertically.
+- =zn= :: Narrow buffer to selection.
+- =zw= :: Remove narrowing.
 
-- =C-w d=, =C-w c= :: Delete current window or tab.
+- =gq= :: Fill each of the paragraphs in the region.
+- =gQ= :: Fill the region as if it were a single paragraph.
 
-- =C-w h=, =C-w j=, =C-w k=, =C-w l= ::
-  Go to the window to the left/down/up/right.
+- =gf= :: Open file path under cursor (like in Vim)
+- =gx= :: Open URL under cursor (like in Vim)
 
-- =C-w C-h=, =C-w C-j=, =C-w C-k=, =C-w C-l= ::
-  Go to the window to the left/down/up/right.
+- =[ SPC= / =] SPC= :: Add empty line above/below.
 
-- =C-w H=, =C-w J=, =C-w K=, =C-w L= ::
-  Move window to the left/down/up/right.
+** Xref (Emacs go-to definition framework)
 
-** Other
+- =gd= :: Jump to definition.
 
-- =gf= :: ~find-file-at-point~ (like in Vim)
-- =gx= :: ~browse-url-at-point~ (like in Vim)
+- =C-w gd= :: Jump to definition in another window.
 
-* Motion
-In Motion state by default only following keys are bound:
+- =gD= :: Find all references.
 
-- =C-w= prefix for windows layout manipulation.
+- =[x= / =]x= ::
+  Go to the previous/next position in xref history. It appeares to be very handy
+  to have these positions in a stack separate from the jumplist (unlike how Vim
+  does).
 
-- =SPC= for ~hel-leader~.
-
-- Scrolling commands.
-
-- =M-u= for universal argument, since =C-u= is occupide by scrolling.

@@ -12,6 +12,11 @@
 ;;
 ;;; Commentary:
 ;;
+;; How to read this table: If you evaluate `read-key' and press a key from the
+;; first column, the value you get is in the second column. If you pass the
+;; value from the second column to the `single-key-description' function, you
+;; get the value shown in the third column.
+;;
 ;; │ Key  -> │ `read-key'   ->  │ `single-key-description' │
 ;; ├─────────┼──────────────────┼──────────────────────────┤
 ;; │ TAB     │ 9                │ "TAB"                    │
@@ -184,9 +189,10 @@ Return the found command."
       (hel-leader--handle-input-key key))))
 
 (defun hel-leader--handle-input-key (key)
+  "KEY is a string returned by `single-key-description'."
   (cond ((and (hel-leader--C-x-or-C-c?)
               (equal "SPC" key))
-         ;; Toggle pending modifier if we are in C-x or C-c state.
+         ;; Toggle pending modifier if we are in "C-x" or "C-c" state.
          (setq hel-leader--pending-modifier
                (if (or (null hel-leader--pending-modifier)
                        (eq 'literal hel-leader--pending-modifier))
@@ -312,7 +318,7 @@ different events."
       (string-join (reverse hel-leader--keys) " ")))
 
 (defun hel-leader--C-x-or-C-c? ()
-  "Return t if keys collected by hel-leader begin from C-x or C-c."
+  "Return `t' if keys collected by `hel-leader' begin from \"C-x\" or \"C-c\"."
   (if hel-leader--keys
       (let ((first-key (-last-item hel-leader--keys)))
         (member first-key '("C-x" "C-c")))))

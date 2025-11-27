@@ -160,7 +160,7 @@ remain invisible to `define-globalized-minor-mode'. This function ensures
 DOC is a general description and shows up in all docstrings.
 BODY is executed each time the state is enabled or disabled.
 
-Optional keyword arguments:
+Optional KEY keyword arguments:
 
 `:keymap'        Keymap that will be active while Hel is in STATE.
                Can be accessed via `hel-STATE-state-map' variable.
@@ -546,15 +546,15 @@ according to the Hel STATE."
 (defun hel-keymap-set (keymap &rest args)
   "Create keybinding from KEY to DEFINITION in KEYMAP.
 
-`:STATE' is an optional keyword argument that specifies the Hel state in
+STATE is an optional keyword argument that specifies the Hel state in
 which the keybindings will be active. Can be a symbol or list of symbols.
-It must appear before any KEY/DEFINITION pairs.
+It must appear before any KEY / DEFINITION pairs.
 
 KEY and DEFINITION arguments are like those in `keymap-set'.
 If DEFINITION is nil, the corresponding key binding will be removed from KEYMAP.
-Any number of KEY/DEFINITION pairs can be provided.
+Any number of KEY / DEFINITION pairs can be provided.
 
-Without `:STATE', this function works like `keymap-set' except that multiple
+Without STATE, this function works like `keymap-set' except that multiple
 keybindings can be set at once.
 
 Example:
@@ -563,7 +563,7 @@ Example:
       \"f\" \\='foo
       \"b\" nil) ; unbind
 
-\(fn KEYMAP [:STATE STATE] &rest [KEY DEFINITION]...)"
+\(fn KEYMAP [:state STATE] &rest [KEY DEFINITION]...)"
   (declare (indent defun))
   (let ((states (pcase (car-safe args)
                   (:state (pop args)
@@ -589,15 +589,15 @@ Example:
 (defun hel-keymap-global-set (&rest args)
   "Create keybinding from KEY to DEFINITION in `global-map'.
 
-`:STATE' is an optional keyword argument. If provided, keybindings are set in
+STATE is an optional keyword argument. If provided, keybindings are set in
 the main keymap for specified Hel state. Can be a symbol or list of symbols.
-It must appear before any KEY/DEFINITION pairs.
+It must appear before any KEY / DEFINITION pairs.
 
 KEY, DEFINITION arguments are like those of `keymap-global-set'.
 If DEFINITION is nil, then keybinding will be remove from keymap.
 Any number of KEY DEFINITION pairs are accepted.
 
-Without `:STATE', this function works like `keymap-global-set' except that
+Without STATE, this function works like `keymap-global-set' except that
 multiple keybindings can be set at once.
 
 Example:
@@ -606,7 +606,7 @@ Example:
       \"f\" \\='foo
       \"b\" nil) ; unbind
 
-\(fn [:STATE STATE] &rest [KEY DEFINITION]...)"
+\(fn [:state STATE] &rest [KEY DEFINITION]...)"
   (declare (indent defun))
   (let ((states (pcase (car-safe args)
                   (:state (pop args)
@@ -627,17 +627,18 @@ Example:
                       (keymap-unset map key :remove)))))))
 
 (defun hel-keymap-local-set (&rest args)
-  "Create keybinding from KEY to DEFINITION in current local keymap.
+  "Create keybinding from KEY to DEFINITION in current buffer local keymap.
+See `current-local-map' for details on what a local keymap is.
 
-`:STATE' is an optional keyword argument that specifies the Hel state
+STATE is an optional keyword argument that specifies the Hel state
 in which the keybindings will be active. It must appear before any
-KEY/DEFINITION pairs.
+KEY / DEFINITION pairs.
 
-KEY, DEFINITION arguments are like those of `keymap-global-set'.
+KEY, DEFINITION arguments are like those of `keymap-set'.
 If DEFINITION is nil, then keybinding will be remove from keymap.
 Any number of KEY DEFINITION pairs are accepted.
 
-\(fn [:STATE STATE] &rest [KEY DEFINITION]...)"
+\(fn [:state STATE] &rest [KEY DEFINITION]...)"
   (declare (indent defun))
   (let ((local-map (or (current-local-map)
                        (-doto (make-sparse-keymap)
@@ -645,15 +646,14 @@ Any number of KEY DEFINITION pairs are accepted.
     (apply #'hel-keymap-set local-map args)))
 
 (defun hel-keymap-overriding-set (&rest args)
-  "Create keybindings from KEY to DEFINITION for Hel STATE in
-the current buffer-local overriding keymap. These keybindings
-are buffer local and take precedence over all others.
+  "Create buffer-local keybindings from KEY to DEFINITION for Hel STATE which
+take precedence over all others.
 
-`:STATE' is an optional keyword argument that specifies the Hel state
+STATE is an optional keyword argument that specifies the Hel state
 in which the keybindings will be active. It must appear before any
-KEY/DEFINITION pairs.
+KEY / DEFINITION pairs.
 
-\(fn [:STATE STATE] &rest [KEY DEFINITION]...)"
+\(fn [:state STATE] &rest [KEY DEFINITION]...)"
   (declare (indent defun))
   (unless hel-overriding-local-map
     (setq hel-overriding-local-map (make-sparse-keymap)))
