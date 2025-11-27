@@ -20,7 +20,7 @@
 
 ;;; Keybindings
 
-(add-hook 'org-mode-hook #'hel-surround-settings-for-org-mode)
+(add-hook 'org-mode-hook 'hel-surround-settings-for-org-mode)
 
 (hel-keymap-set org-mode-map :state 'normal
   ;; `J' and `K' keys are already occupied in Hel.
@@ -146,8 +146,8 @@
   (hel-update-active-keymaps)
   (when org-edit-src-persistent-message
     (setq header-line-format
-          (let ((ZZ (propertize "ZZ" 'face 'help-key-binding))
-                (ZQ (propertize "ZQ" 'face 'help-key-binding)))
+          (let ((ZZ (propertize "Z Z" 'face 'help-key-binding))
+                (ZQ (propertize "Z Q" 'face 'help-key-binding)))
             (if org-src--allow-write-back
                 (format "Edit, then exit with %s or abort with %s" ZZ ZQ)
               (format "Exit with %s or abort with %s" ZZ ZQ))))))
@@ -202,12 +202,9 @@
   "Move point to beginning of current visible line skipping indentation.
 
 If this is a headline, and `org-special-ctrl-a/e' is not nil or symbol
-`reversed', on the first attempt move to where the headline text starts,
-and only move to beginning of line when the cursor is already before
-the start of the text of the headline.
-
-If `org-special-ctrl-a/e' is symbol `reversed' then go to the start of the
-text on the second attempt."
+`reversed', on the first attempt move to where the headline text starts, i.e.
+after the stars and after a possible TODO keyword. The same for list item. If
+cursor is already at that position, go to the start of the text."
   :multiple-cursors t
   :merge-selections t
   (interactive)
@@ -342,14 +339,14 @@ In tables, move column to the right."
 
 ;; [ RET
 (hel-define-command hel-org-insert-item-above ()
-  "Inserts a new heading, list item or table cell above the current one."
+  "Inserts a new heading, list item or table row above the current one."
   :multiple-cursors t
   (interactive)
   (hel-org--insert-item -1))
 
 ;; ] RET
 (hel-define-command hel-org-insert-item-below ()
-  "Inserts a new heading, lilst item or table cell below the current one."
+  "Inserts a new heading, list item or table row below the current one."
   :multiple-cursors t
   (interactive)
   (hel-org--insert-item 1))

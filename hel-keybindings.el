@@ -23,14 +23,15 @@
 ;;; Universal argument
 
 (defun hel--setup-universal-argument-keys-h ()
-  "Rebind `universal-argument' to `M-u' since `C-u' is used for scrolling.
-By default `M-u' is bound to `upcase-word', so we can use it."
+  "Rebind `universal-argument' to \"M-u\" since \"C-u\" is used for scrolling.
+By default \"M-u\" is bound to `upcase-word' for which we have \"gU\", so we can
+use it."
   (if hel-mode
       (progn
         (keymap-global-set "M-u" #'universal-argument)
         (keymap-set universal-argument-map "M-u" #'universal-argument-more)
-        ;; Unbind `C-u' so that \\[universal-argument] links in help buffers
-        ;; are displayed as `M-u'.
+        ;; Unbind "C-u" so that \\[universal-argument] links in help buffers
+        ;; are displayed as "M-u".
         (keymap-global-unset "C-u" t)
         (keymap-unset universal-argument-map "C-u" t))
     ;; else

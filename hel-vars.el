@@ -224,7 +224,9 @@ rate allows highlights to update while scrolling."
                      (list beg (1+ beg) (1- end) end)))))
   "Association list with (KEY . SPEC) elements for Hel surrounding functionality.
 
-KEY is a character. SPEC is a plist with next keys:
+This variable is buffer-local so that users can modify it from major-mode hooks.
+
+KEY is a character, SPEC is a plist with following keys:
 
 `:pair'    Cons cell (LEFT . RIGHT) with strings, or function that returns such
          cons cell. The strigs that will be inserted by `hel-surround' and

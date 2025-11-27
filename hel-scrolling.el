@@ -50,8 +50,8 @@ If PAGES is non-nil scroll over pages instead of lines."
          (y-at-point (cdr (posn-x-y point-data)))
          at-bottom?)
     ;; BUG: When jump lands at the top of the screen the point could be only
-    ;; partially visible. If you try to scroll smoothly from this position the
-    ;; point will jump unpredictably. Fix initial position in this case.
+    ;;   partially visible. If you try to scroll smoothly from this position
+    ;;   the point will jump unpredictably. Fix initial position in this case.
     (when (= row-at-point 0) (recenter 0))
     ;; `available-space' is the height of the part of the screen we can scroll
     ;; before cursor will move.
@@ -61,7 +61,7 @@ If PAGES is non-nil scroll over pages instead of lines."
         (if restricted
             (setq delta (- available-space (/ line-height 3))
                   at-bottom? t)
-          ;; else — not restricted
+          ;; else
           (hel-maybe-deactivate-mark))))
     (when (> delta line-height)
       (pixel-scroll-precision-interpolate delta nil 1))
@@ -84,8 +84,8 @@ If PAGES is non-nil scroll over pages instead of lines."
          (y-at-point (cdr (posn-x-y point-data)))
          at-top?)
     ;; BUG: When jump lands at the top of the screen the point could be only
-    ;; partially visible. If you try to scroll smoothly from this position the
-    ;; point will jump unpredictably. Fix initial position in this case.
+    ;;   partially visible. If you try to scroll smoothly from this position
+    ;;   the point will jump unpredictably. Fix initial position in this case.
     (when (= row-at-point 0) (recenter 0))
     (when (> delta (- y-at-point
                       line-height))
@@ -210,8 +210,8 @@ If COUNT > 1 scroll smoothly."
   "Non smoothly scroll the window COUNT lines upwards."
   (interactive "p")
   (let (;; BUG: `window-text-height' claims that it doesn't count modeline,
-        ;; headline, dividers, partially visible lines at bottom, but it is
-        ;; not true. That's why -2.
+        ;;   headline, dividers, partially visible lines at bottom, but it is
+        ;;   not true. That's why -2.
         (num-of-lines (- (window-text-height) 2))
         (point-row (1+ (cdr (posn-col-row (posn-at-point))))))
     (when (> count (- num-of-lines point-row))
@@ -280,8 +280,8 @@ If COUNT > 1 scroll smoothly."
   "Smoothly scroll current line to the top of the window."
   (interactive)
   ;; HACK: Interpolation is imperfect: the line may be not on top, or point can
-  ;; move to the next line. So we scroll a little bit before the top, and then
-  ;; finish with `recenter' getting a clear result.
+  ;;   move to the next line. So we scroll a little bit before the top, and then
+  ;;   finish with `recenter' getting a clear result.
   (let* ((line-height (default-line-height))
          (point-data (posn-at-point))
          (row-at-point (cdr (posn-col-row point-data)))
@@ -300,8 +300,8 @@ If COUNT > 1 scroll smoothly."
   "Smoothly scroll current line to the bottom of the window."
   (interactive)
   ;; HACK: Interpolation is imperfect: the line may be not on top, or point can
-  ;; move to the next line. So we scroll a little bit before the bottom, and
-  ;; then finish with `recenter' getting a clear result.
+  ;;   move to the next line. So we scroll a little bit before the bottom, and
+  ;;   then finish with `recenter' getting a clear result.
   (let* ((window-height (- (window-text-height nil t)
                            (window-mode-line-height)
                            (window-header-line-height)

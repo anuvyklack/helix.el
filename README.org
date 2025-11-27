@@ -1,29 +1,85 @@
-#+title: Hel — Helix Emulation Layer for Emacs
-
-The main difference between Kakoune and Helix, in terms of emulating, is how
-they handle expanding selections: Kakoune use =shift= + motions, while Helix has
-separate state on =v= key.  Since I originally started from Vim, I prefer the
-Helix =v= key more, so the choice was made in favor of Helix, but credit where
-credit's due to Kakoune.
-
-This package is not one-to-one emulation: some commands are implemented in
-slightly different way (improved from the author's point of view), and some,
-like keyboard macros, registers and jumplist are already has their alternatives
-in Emacs.
+* Hel — [[https://helix-editor.com/][Helix]] Emulation Layer for Emacs
 
 ** Key features
 
 - Multiple cursors based modal editing inside Emacs!
 
-- Smooth scrolling out of the box.
-
-- Built-in God-mode or Meow Keypad like functionality.
+- Undo/redo that plays well with multiple cursors.
 
 - PCRE regexps by default (thanks to [[https://github.com/joddie/pcre2el][pcre2el]]).
 
-- Undo/redo that plays well with multiple cursors.
+- Smooth scrolling commands out of the box.
+
+** Can I use Hel without knowing Emacs keys?
+
+#+begin_quote
+*Terminology note:* what Vim, Helix, and other modal editors call Normal and
+Insert *modes*, Hel refers to as *states*. This is because the word "mode" in Emacs
+is already used for its [[https://www.gnu.org/software/emacs/manual/html_node/emacs/Major-Modes.html][major]] and [[https://www.gnu.org/software/emacs/manual/html_node/emacs/Minor-Modes.html][minor]] modes.
+#+end_quote
+
+When several years ago I came to Emacs from Neovim, I was in love with Vim
+editing model, found Emacs native keybindings ugly and had zero interest in
+learning them. I want Emacs not as text editor (which it obviously lacks of)
+but as an operation system with Lisp and all its power. So the first question
+I asked myself was "Can I use Evil without learning Emacs keys?"
+
+The answer is yes. I have never used — and still don’t know — most Emacs keys.
+I know only a few that you need when something breaks early during Emacs startup
+and you don’t have your Hel keys available. They are:
+
+- =M-x= — Command palette. The main key you need; all other commands can be
+  invoked from it.
+- =C-x C-s= — Save current buffer.
+- =C-x C-c= — Exit Emacs.
+
+That’s it.
+
+Hel and Emacs do not interfere much, because Emacs is not a modal editor:
+letters and numbers are self-inserting, and most command key chords begin with
+=C-x= or =C-c= (e.g. =C-x n d=). Due to this, Hel works as a layer on top of Emacs.
+
+In Normal state you have selection-based editing, multiple cursors, and all the
+other Hel features. In Insert state, Hel steps aside and standard Emacs keys
+work as usual. Also Hel doesn't touch =C-x= and =C-c= so they are always available.
+This allows you to mix Hel and Emacs in any proportion.
+
+** Kakoune vs Helix
+
+The main difference between Kakoune and Helix, in terms of text editing, is how
+they handle expanding selections: Kakoune uses =Shift= + motions, while Helix uses
+a separate state on the =v= key. Since I originally came from Vim, I prefer
+Helix’s =v= key, so I chose Helix. However, Kakoune (as far as I know) was the
+original inventor of this keyboard-driven multiple-selections approach, and it
+deserves credit.
+
+** Installation
+
+Hel is not yet on MELPA. You can install it directly from Github using Emacs'
+built-in package manager:
+
+#+begin_src emacs-lisp
+;; Dependencies
+(use-package dash :ensure t)
+(use-package avy :ensure t)
+(use-package pcre2el :ensure t)
+
+(use-package hel
+  :vc (:url "https://github.com/anuvyklack/hel.git" :rev "main")
+  :config (hel-mode))
+#+end_src
+
+** Documentation
+- [[file:docs/keybindings.org][Keybindings]]
+- [[file:docs/extensions.org][Extensions]]
+- [[file:docs/customization.org][Customizations]]
 
 ** Differences from Helix text editor
+
+This package is not one-to-one emulation. Some commands are implemented in
+slightly different way (improved from the author's point of view), and some
+features like keyboard macros, registers, and jumplists already have their
+alternatives in Emacs.
 
 - In Emacs the cursor ("point" in Emacs terms) is located *between* two characters
   rather than *on* a character like in Helix or Vim. I decided to keep this
@@ -44,7 +100,7 @@ in Emacs.
   line. This is done for convenience, since all other motions make selections.
   In Helix =gh= / =gl= only move cursor without creating selection.
 
-- 6 easymotion commands are provided:
+- Six easymotion commands are provided:
   - =gw= / =gb= — chose and mark word forward/backward.
   - =gW= / =gB= — chose and mark WORD forward/backward.
   - =gj= / =gk= — go to line down/up.
@@ -64,40 +120,33 @@ in Emacs.
 ** Commands that are not implemented
 
 - =.= (repeat) — Need to decide what it should repeat.
-- =r= — replace
-- =C-i= / =C-o=, =C-s= — jumplist
+- =r= — replace (TODO)
 - =M-u=, =M-U= — traverse undo tree
 - =q=, =Q= — record keyboard macros
-
+  
 ** Acknowledgments
 
 Hel depends on [[https://github.com/magnars/dash.el][dash.el]], [[https://github.com/joddie/pcre2el][pcre2el]], and [[https://github.com/abo-abo/avy][avy]] wonderful packages.
 
-Hel is heavily inspired by: [[https://github.com/emacs-evil/evil][evil]], [[https://github.com/magnars/multiple-cursors.el][multiple-cursors.el]], [[https://github.com/meow-edit/meow][meow]], [[https://github.com/mkleehammer/surround][surround]],
-[[https://github.com/aome510/kak.el][kak.el]], [[https://github.com/doomemacs/doomemacs][doomemacs]], [[https://github.com/bbatsov/crux][crux]].
+Hel is heavily inspired by:
+- [[https://github.com/emacs-evil/evil][evil]]
+- [[https://github.com/magnars/multiple-cursors.el][multiple-cursors.el]]
+- [[https://github.com/aome510/kak.el][kak.el]]
+- [[https://github.com/mkleehammer/surround][surround]]
+- [[https://github.com/meow-edit/meow][meow]]
+- [[https://github.com/doomemacs/doomemacs][doomemacs]]
+- [[https://github.com/bbatsov/crux][crux]]
 
-You are welcome to go and give them all a star!
+You are welcome to go and give them all at least a star!
 
 ** Contributing
-
-- *Code review*
-
-  It would be great if some experienced Elisp hacker would review the source
-  code. I am absolutely sure there are gazillion of nuances I'm not aware
-  about.
-
-- *Tests*
-
-  Currently, this package is tested by personal day-to-day use, but it is not
-  the way. There's a branch with some very initial developments.
 
 - *Share it*
 
   A quick post about this package on your blog or social network could bring
   new users to Emacs, which would be great!
 
-- *Cool logo*
+- *Support development*
 
-  If you'd like, you can create a cool logo — that would be awesome!
-
-- *You can support the development with donation*
+  You can support the development with a donation.
+  

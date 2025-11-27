@@ -853,7 +853,7 @@ If NOMSG is nil show `Mark set' message in echo area."
   (or position (setq position (point)))
   (hel-push-point position)
   (set-marker (mark-marker) position (current-buffer))
-  (or nomsg executing-kbd-macro (> (minibuffer-depth) 0)
+  (or nomsg executing-kbd-macro (< 0 (minibuffer-depth))
       (message "Mark set"))
   (when activate
     (set-mark (mark t)))
@@ -867,6 +867,8 @@ YANK-FUNCTION should be a `yank' like function."
     (hel-ensure-region-direction direction)
     (when (hel-string-ends-with-newline (current-kill 0 :do-not-move))
       (forward-thing 'hel-line (if (natnump direction) 1 0)))
+    ;; Intercept `push-mark' so that any time `yank' calls it, `hel-push-mark'
+    ;; is executed instead.
     (cl-letf (((symbol-function 'push-mark) #'hel-push-mark))
       (funcall yank-function))
     (hel-set-region (mark t) (point) region-dir :adjust)

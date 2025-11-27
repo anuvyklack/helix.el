@@ -1,0 +1,116 @@
+#+title: Hel extensions
+
+- [[*hel-leader][hel-leader]]
+- [[*hel-paredit][hel-paredit]]
+- [[*hel-org][hel-org]]
+
+* hel-leader
+
+#+begin_src emacs-lisp
+(use-package hel-leader)
+#+end_src
+
+=Space= key will act according to following rules:
+
+- =x= is translated to =C-x C-=
+- =c= is translated to =C-c C-=
+  - After this, =SPC= toggles the =C-= modifier.
+  - If the translation results in an undefined binding, the last key falls
+    back to an unmodified version (e.g. if =C-c C-a= is undefined, it falls
+    back to =C-c a=).
+- =m= is translated to =M-=
+- =g= is translated to =C-M-=
+- Any other key is translated to =C-c <key>=. =C-c= is the native Emacs leader
+  key chord.
+
+Examples:
+
+| Input       | Translation |
+|-------------+-------------|
+| =SPC a=       | =C-c a=       |
+| =SPC c t t=   | =C-c C-t C-t= |
+| =SPC x m t=   | =C-x M-t=     |
+| =SPC g x=     | =C-M-x=       |
+| =SPC x SPC p= | =C-x p=       |
+
+* hel-paredit
+
+Adjust Hel for Lisp languages.
+
+#+begin_src emacs-lisp
+;; Dependencie
+(use-package paredit :ensure t)
+
+(use-package hel-paredit
+  ;; This is example. Add major-modes you need.
+  :hook (emacs-lisp-mode-hook . hel-paredit-mode))
+#+end_src
+
+*** Structural editing of S-expressions
+
+The most noticeable feature is "AST" climbing (in quotes because Lisp code *is*
+its AST — which is yet another reason why Lisp is superior):
+
++ =M-i= / =M-o= or =C-j= / =C-k= — select a *nested* / *enclosing* AST node.
+
++ =M-p= / =M-n= or =C-h= / =C-l= — select the *previous* / *next* AST node.
+
++ =H= / =L= — select the enclosing node in the AST tree and place the cursor
+  *before* / *after* it.
+
+#+begin_quote
+To enable the =C-h=, =C-j=, =C-k=, =C-l= keys, set ~hel-want-C-hjkl-keys~ to ~t~ before Hel
+is loaded (this is the default).
+#+end_quote
+
+Try it yourself. Since I started using it, I have no idea how I ever edited
+without it — it’s one of the best and most natural ways to work with
+S-expressions.
+
+*** Slurping & Barfing
+
+- =<= / =>= ::
+  Place cursor before an opening delimiter to *slurp* / *barf* the S-expression at
+  that end, or place the cursor after a closing delimiter to operate on it. It’s
+  quite intuitive — give it a try. Inspired by [[https://github.com/emacs-evil/evil-cleverparens][evil-cleverparens]].
+
+*** Other
+
+- =W=, =B=, =E=, =miW=, =maW= — WORD text objects ignores parentheses.
+- =M-r= — Raise S-expression.
+- =M-?= — Convolute S-expression.
+
+  #+begin_src
+  (let ((x 5)             (frob
+        (y 3))       ->    |(let ((x 5)
+    (frob |(zwonk))               (y 3))
+    (wibblethwop))            (zwonk)
+                              (wibblethwop)))
+  #+end_src
+
+* hel-org
+
+Adjust Hel to work better with Org mode.
+
+#+begin_src emacs-lisp
+(use-package hel-org
+  :after org)
+#+end_src
+
+- =gh= — When in headline, and ~org-special-ctrl-a/e~ is ~t~, on the first attempt
+  move to where the headline text starts, i.e. after the stars and after a
+  possible TODO keyword. The same for list item. If cursor is already at that
+  position, go to the start of the text.
+
+- All Hel keys under =m= prefix work with Org markup:
+  - select: =mi=, =ma=,
+  - surround =ms=, =md=, =mr=
+
+- =<= / =>= — *promote* / *demote* subtree or list item.
+
+- Org AST navigation:
+  - =M-i=, =M-n=, =M-p=, =M-o=
+  - =C-h=, =C-j=, =C-k=, =C-l=
+
+- =[ RET= / =] RET= — Inserts *above* / *below* depending on context a new heading, list
+  item or table row.
