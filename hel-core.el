@@ -61,13 +61,15 @@
       ;; Wrap in `condition-case' to protect `hel--post-command-hook' from
       ;; being removed from `post-command-hook', because the function throwing
       ;; the error is unconditionally removed from `post-command-hook'.
-      (condition-case error
-          (hel--execute-command-for-all-fake-cursors hel-this-command)
+      (condition-case err
+          (progn
+            (hel--execute-command-for-all-fake-cursors hel-this-command)
+            (when (hel-merge-regions-p hel-this-command)
+              (hel-merge-overlapping-regions)))
         (error
          (message "[Hel] error while executing command for fake cursor: %s"
-                  (error-message-string error))))
-      (when (hel-merge-regions-p hel-this-command)
-        (hel-merge-overlapping-regions)))
+                  (error-message-string err)))
+        (quit))) ;; "C-g" during multistage command.
     (hel--single-undo-step-end)
     (setq hel-this-command nil
           hel--input-cache nil)))
