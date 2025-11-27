@@ -429,7 +429,6 @@ in the command loop, and the fake cursors can pick up on those instead."
   "j"   #'next-line
   "k"   #'previous-line
   "l"   #'right-char
-  ":"   #'execute-extended-command
 
   ;; Switch to Normal state. This allows you to select and copy arbitrary text
   ;; in special modes, which is very handy.

@@ -412,9 +412,9 @@ By default `M-u' is bound to `upcase-word', so we can use it."
 
 (hel-keymap-global-set :state 'motion
   "C-w" 'hel-window-map
+  ":"   #'execute-extended-command
   "] b" #'next-buffer
   "[ b" #'previous-buffer
-
   ;; Scrolling
   "C-b" #'hel-smooth-scroll-page-up
   "C-f" #'hel-smooth-scroll-page-down
