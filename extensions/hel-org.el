@@ -425,7 +425,9 @@ GRANULARITY specifies the parsing level (see `org-element-parse-buffer')."
 
 (cl-defun hel-org-parse-element (element
                                  &optional
-                                 (root (org-element-lineage element 'section t))
+                                 (root (if-let* ((section (org-element-lineage element 'section t)))
+                                           (or (org-element-lineage section 'headline)
+                                               section)))
                                  (granularity 'element))
   "Return the fully parsed structure of the ELEMENT.
 
