@@ -516,8 +516,10 @@ be set manually."
                 (or (invisible-p (org-element-begin element))
                     (org-element-type-p element 'section) ; skip section
                     (let ((element-beg (org-element-begin element))
-                          (element-end (- (org-element-end element)
-                                          (org-element-post-blank element))))
+                          (element-end (org-element-end element))
+                          ;; (element-end (- (org-element-end element)
+                          ;;                 (org-element-post-blank element)))
+                          )
                       (< beg element-beg)
                       (< element-end end)
                       (and (= beg element-beg)
@@ -529,8 +531,9 @@ be set manually."
       ;; else
       (hel-org--current-element nil)
       (hel-set-region (org-element-begin element)
-                      (- (org-element-end element)
-                         (org-element-post-blank element))
+                      (org-element-end element)
+                      ;; (- (org-element-end element)
+                      ;;    (org-element-post-blank element))
                       -1 :adjust)
       (if arg (hel-reveal-point-when-on-top)))))
 
@@ -563,8 +566,10 @@ be set manually."
                 (org-show-hidden-entry)))
             (hel-org--current-element child)
             (hel-set-region (org-element-begin child)
-                            (- (org-element-end child)
-                               (org-element-post-blank child))
+                            (org-element-end child)
+                            ;; ;; Skip empty lines
+                            ;; (- (org-element-end child)
+                            ;;    (org-element-post-blank child))
                             -1 :adjust)
             (hel-reveal-point-when-on-top))
         ;; (user-error "No content for this element")
@@ -584,8 +589,10 @@ be set manually."
   (when-let ((next (hel-org--next-element)))
     (hel-org--current-element next)
     (hel-set-region (org-element-begin next)
-                    (- (org-element-end next)
-                       (org-element-post-blank next))
+                    (org-element-end next)
+                    ;; ;; Skip empty lines
+                    ;; (- (org-element-end next)
+                    ;;    (org-element-post-blank next))
                     (hel-region-direction) :adjust)
     (hel-reveal-point-when-on-top)))
 
@@ -643,8 +650,9 @@ a parent with different boundaries or reaches a `section' element."
   (when-let ((previous (hel-org--previous-element)))
     (hel-org--current-element previous)
     (hel-set-region (org-element-begin previous)
-                    (- (org-element-end previous)
-                       (org-element-post-blank previous))
+                    (org-element-end previous)
+                    ;; (- (org-element-end previous)
+                    ;;    (org-element-post-blank previous))
                     (hel-region-direction) :adjust)
     (hel-reveal-point-when-on-top)))
 
