@@ -561,9 +561,8 @@ be set manually."
           (progn
             (save-excursion
               (goto-char (region-beginning))
-              (when (org-invisible-p (line-end-position))
-                (org-cycle)
-                (org-show-hidden-entry)))
+              (while (org-invisible-p (line-end-position))
+                (org-cycle)))
             (hel-org--current-element child)
             (hel-set-region (org-element-begin child)
                             (org-element-end child)
