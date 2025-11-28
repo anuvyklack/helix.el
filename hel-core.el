@@ -87,17 +87,23 @@
         (add-hook 'post-command-hook #'hel--post-command-hook 90 t)
         (add-hook 'deactivate-mark-hook #'hel-disable-newline-at-eol nil t)
         (add-hook 'after-revert-hook #'hel-delete-all-fake-cursors nil t)
+        (setq hel-input-method current-input-method)
+        (add-hook 'input-method-activate-hook #'hel-activate-input-method 90 t)
+        (add-hook 'input-method-deactivate-hook #'hel-deactivate-input-method 90 t)
         (hel-switch-state (hel-initial-state)))
     ;; else
     (remove-hook 'post-command-hook #'hel--post-command-hook t)
     (remove-hook 'pre-command-hook #'hel--pre-commad-hook t)
     (remove-hook 'deactivate-mark-hook #'hel-disable-newline-at-eol t)
     (remove-hook 'after-revert-hook #'hel-delete-all-fake-cursors t)
+    (remove-hook 'input-method-activate-hook #'hel-activate-input-method t)
+    (remove-hook 'input-method-deactivate-hook #'hel-deactivate-input-method t)
     (hel--single-undo-step-end)
     (setq hel-this-command nil
           hel--input-cache nil)
     (when hel-multiple-cursors-mode (hel-multiple-cursors-mode -1))
-    (hel-disable-current-state)))
+    (hel-disable-current-state)
+    (activate-input-method hel-input-method)))
 
 (put 'hel-local-mode 'permanent-local t)
 
@@ -141,20 +147,22 @@ BODY is executed each time the state is enabled or disabled.
 
 Optional keyword arguments:
 
-`:keymap'      Keymap that will be active while Hel is in STATE.
-             Can be accessed via `hel-STATE-state-map' variable.
+`:keymap'        Keymap that will be active while Hel is in STATE.
+               Can be accessed via `hel-STATE-state-map' variable.
 
-`:cursor'      Cursor apperance when Hel is in STATE.
-             Can be a cursor type as per `cursor-type', a color string
-             as passed to `set-cursor-color', a zero-argument function
-             for changing the cursor, or a list of the above.
-             Can be accessed via `hel-STATE-state-cursor' variable.
+`:cursor'        Cursor apperance when Hel is in STATE.
+               Can be a cursor type as per `cursor-type', a color string
+               as passed to `set-cursor-color', a zero-argument function
+               for changing the cursor, or a list of the above.
+               Can be accessed via `hel-STATE-state-cursor' variable.
 
-`:enter-hook'  List of functions to run on each entry to STATE.
-             Can be accessed via `hel-STATE-state-enter-hook' variable.
+`:input-method'  Activate enabled input method when Hel is in STATE.
 
-`:exit-hook'   List of functions to run on each exit from STATE.
-             Can be accessed via `hel-STATE-state-exit-hook' variable.
+`:enter-hook'    List of functions to run on each entry to STATE.
+               Can be accessed via `hel-STATE-state-enter-hook' variable.
+
+`:exit-hook'     List of functions to run on each exit from STATE.
+               Can be accessed via `hel-STATE-state-exit-hook' variable.
 
 \(fn STATE DOC [[KEY VAL]...] BODY...)"
   (declare (indent defun)
@@ -172,7 +180,8 @@ Optional keyword arguments:
          (exit-hook (intern (format "%s-exit-hook" symbol)))
          (keymap (intern (format "%s-map" symbol)))
          (modes  (intern (format "%s-modes" symbol)))
-         key arg keymap-value cursor-value enter-hook-value exit-hook-value)
+         key arg keymap-value cursor-value input-method
+         enter-hook-value exit-hook-value)
     ;; collect keywords
     (while (keywordp (car-safe body))
       (setq key (pop body)
@@ -180,6 +189,7 @@ Optional keyword arguments:
       (pcase key
         (:keymap (setq keymap-value arg))
         (:cursor (setq cursor-value arg))
+        (:input-method (setq input-method arg))
         (:enter-hook (setq enter-hook-value (ensure-list arg)))
         (:exit-hook (setq exit-hook-value (ensure-list arg)))))
     `(progn
@@ -203,6 +213,7 @@ cursor, or a list of the above." state-name))
                 :function ,statefun
                 :keymap ,keymap
                 :cursor ,cursor
+                :input-method ,input-method
                 :enter-hook ,enter-hook
                 :exit-hook ,exit-hook
                 :modes ,modes))
@@ -227,6 +238,11 @@ When ARG is non-positive integer and Hel is in %s — disable it.\n\n%s"
            (hel-disable-current-state)
            (setq hel-state ',state
                  ,variable t)
+           (let (input-method-activate-hook
+                 input-method-deactivate-hook)
+             ,(if input-method
+                  '(activate-input-method hel-input-method)
+                '(deactivate-input-method)))
            ,@body
            ;; Switch color and shape of all cursors.
            (setq hel--extend-selection nil)
@@ -335,6 +351,7 @@ MODE and STATE should be symbols."
 (hel-define-state insert
   "Insert state."
   :cursor hel-insert-state-cursor
+  :input-method t
   (if hel-insert-state
       (progn
         (when (and hel-reactivate-selection-after-insert-state
@@ -379,6 +396,56 @@ This is useful for read-only modes that starts in normal state."
     "<remap> <indent-region>"              #'ignore
     "<remap> <indent-rigidly-left>"        #'ignore
     "<remap> <indent-rigidly-right>"       #'ignore))
+
+;;; Input-method
+
+(defun hel-activate-input-method ()
+  "Enable input method in states with :input-method non-nil."
+  (let (input-method-activate-hook
+        input-method-deactivate-hook)
+    (when (and hel-local-mode hel-state)
+      (setq hel-input-method current-input-method)
+      (unless (hel-state-property hel-state :input-method)
+        (deactivate-input-method)))))
+
+(defun hel-deactivate-input-method ()
+  "Disable input method in all states."
+  (let (input-method-activate-hook
+        input-method-deactivate-hook)
+    (when (and hel-local-mode hel-state)
+      (setq hel-input-method nil))))
+
+(put 'hel-activate-input-method 'permanent-local-hook t)
+(put 'hel-deactivate-input-method 'permanent-local-hook t)
+
+(defmacro hel-with-input-method (&rest body)
+  "Execute body with current input method active."
+  (declare (indent defun))
+  `(if hel-input-method
+       (unwind-protect
+           (progn
+             (remove-hook 'input-method-activate-hook #'hel-activate-input-method t)
+             (remove-hook 'input-method-deactivate-hook #'hel-deactivate-input-method t)
+             (prog2
+                 (activate-input-method hel-input-method)
+                 (progn ,@body)
+               (deactivate-input-method)))
+         (add-hook 'input-method-activate-hook #'hel-activate-input-method 90 t)
+         (add-hook 'input-method-deactivate-hook #'hel-deactivate-input-method 90 t))
+     ;; else
+     ,@body))
+
+(hel-advice-add 'toggle-input-method :around #'hel--refresh-input-method-a)
+
+(defun hel--refresh-input-method-a (orig-fun &rest args)
+  "Refresh `hel-input-method'."
+  (cond ((not hel-local-mode)
+         (apply orig-fun args))
+        ((hel-state-property hel-state :input-method)
+         (apply orig-fun args))
+        (t
+         (let ((current-input-method hel-input-method))
+           (apply orig-fun args)))))
 
 ;;; Keymaps
 

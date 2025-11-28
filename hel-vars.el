@@ -359,6 +359,9 @@ Entries have the form (STATE . PLIST), where PLIST is a property
 list specifying various aspects of the state. To access a property,
 use `hel-state-property'.")
 
+(hel-defvar-local hel-input-method nil
+  "Input method used in Hel Insert state.")
+
 (hel-defvar-local hel-overriding-local-map nil)
 
 (hel-defvar-local hel--extend-selection nil

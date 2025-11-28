@@ -1520,10 +1520,11 @@ keys to repeat motion forward/backward."
   :multiple-cursors t
   :merge-selections 'extend-selection
   (interactive "p")
-  (let ((char (read-char "f")))
-    (hel-maybe-set-mark)
-    (hel-motion-loop (dir count)
-      (hel-find-char char dir nil))))
+  (hel-with-input-method
+    (let ((char (read-char "f" t)))
+      (hel-maybe-set-mark)
+      (hel-motion-loop (dir count)
+        (hel-find-char char dir nil)))))
 
 ;; F
 (hel-define-command hel-find-char-backward (count)
@@ -1534,10 +1535,11 @@ keys to repeat motion forward/backward."
   :merge-selections 'extend-selection
   (interactive "p")
   (cl-callf - count)
-  (let ((char (read-char "F")))
-    (hel-maybe-set-mark)
-    (hel-motion-loop (dir count)
-      (hel-find-char char dir nil))))
+  (hel-with-input-method
+    (let ((char (read-char "F")))
+      (hel-maybe-set-mark)
+      (hel-motion-loop (dir count)
+        (hel-find-char char dir nil)))))
 
 ;; t
 (hel-define-command hel-till-char-forward (count)
@@ -1547,10 +1549,11 @@ keys to repeat motion forward/backward."
   :multiple-cursors t
   :merge-selections 'extend-selection
   (interactive "p")
-  (let ((char (read-char "t")))
-    (hel-maybe-set-mark)
-    (hel-motion-loop (dir count)
-      (hel-find-char char dir t))))
+  (hel-with-input-method
+    (let ((char (read-char "t")))
+      (hel-maybe-set-mark)
+      (hel-motion-loop (dir count)
+        (hel-find-char char dir t)))))
 
 ;; T
 (hel-define-command hel-till-char-backward (count)
@@ -1561,28 +1564,31 @@ keys to repeat motion forward/backward."
   :merge-selections 'extend-selection
   (interactive "p")
   (cl-callf - count)
-  (let ((char (read-char "T")))
-    (hel-maybe-set-mark)
-    (hel-motion-loop (dir count)
-      (hel-find-char char dir t))))
+  (hel-with-input-method
+    (let ((char (read-char "T")))
+      (hel-maybe-set-mark)
+      (hel-motion-loop (dir count)
+        (hel-find-char char dir t)))))
 
 ;; /
 (hel-define-command hel-search-forward (count)
   :multiple-cursors nil
   :merge-selections t
   (interactive "p")
-  (when (hel-search-interactively)
-    (setq hel-search--direction 1)
-    (hel-search-next count)))
+  (hel-with-input-method
+    (when (hel-search-interactively)
+      (setq hel-search--direction 1)
+      (hel-search-next count))))
 
 ;; ?
 (hel-define-command hel-search-backward (count)
   :multiple-cursors nil
   :merge-selections t
   (interactive "p")
-  (when (hel-search-interactively -1)
-    (setq hel-search--direction -1)
-    (hel-search-next count)))
+  (hel-with-input-method
+    (when (hel-search-interactively -1)
+      (setq hel-search--direction -1)
+      (hel-search-next count))))
 
 ;; n
 (hel-define-command hel-search-next (count)
