@@ -192,6 +192,7 @@ Optional keyword arguments:
         (:input-method (setq input-method arg))
         (:enter-hook (setq enter-hook-value (ensure-list arg)))
         (:exit-hook (setq exit-hook-value (ensure-list arg)))))
+    ;; macro expansion
     `(progn
        (defvar ,cursor ,cursor-value
          ,(format "Cursor for %s.
@@ -201,7 +202,8 @@ cursor, or a list of the above." state-name))
        (defvar ,keymap ,(or keymap-value '(make-sparse-keymap))
          ,(format "Global keymap for Hel %s." state-name))
        (defvar ,modes nil
-         ,(format "List of major and minor modes for which Hel initial state is %s." state-name))
+         ,(format "List of major and minor modes for which Hel initial state is %s."
+                  state-name))
        (defvar ,enter-hook nil ,(format "Hooks to run on entry %s." state-name))
        (defvar ,exit-hook  nil ,(format "Hooks to run on exit %s." state-name))
        (dolist (func ,enter-hook-value) (add-hook ',enter-hook func))
@@ -227,13 +229,14 @@ When ARG is non-positive integer and Hel is in %s — disable it.\n\n%s"
                   state-name state-name doc)
          (interactive)
          (if (and (numberp arg) (< arg 1))
+             ;; disable STATE
              (when (eq hel-state ',state)
                (setq hel-state nil
                      hel-previous-state ',state
                      ,variable nil)
                ,@body
                (run-hooks ',exit-hook))
-           ;; else
+           ;; enable STATE
            (unless hel-local-mode (hel-local-mode))
            (hel-disable-current-state)
            (setq hel-state ',state
