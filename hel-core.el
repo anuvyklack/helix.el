@@ -116,12 +116,14 @@
           (apply #'advice-add fun-how-advice))
         (when hel-want-minibuffer
           (add-hook 'minibuffer-setup-hook #'hel-local-mode))
+        (cl-pushnew #'hel--fundamental-mode-hack window-buffer-change-functions)
         (add-hook 'window-configuration-change-hook #'hel-update-cursor)
         (add-to-list 'mode-line-misc-info '(:eval (hel-multiple-cursors--indicator))))
     ;; else
     (cl-loop for (fun _how advice) in hel--advices
              do (advice-remove fun advice))
     (remove-hook 'minibuffer-setup-hook #'hel-local-mode)
+    (cl-callf2 cl-remove #'hel--fundamental-mode-hack window-buffer-change-functions)
     (remove-hook 'window-configuration-change-hook #'hel-update-cursor)))
 
 (defun hel--initialize ()
@@ -131,6 +133,16 @@
          (hel-switch-state (hel-initial-state)))
         ((not (minibufferp))
          (hel-local-mode 1))))
+
+(defun hel--fundamental-mode-hack (_)
+  "Activate `hel-local-mode' in current buffer if it is in `fundamental-mode'.
+Emacs sometimes creates random empty buffers in `fundamental-mode'. For
+these buffers, `after-change-major-mode-hook' is not called, so they
+remain invisible to `define-globalized-minor-mode'. This function ensures
+`hel-local-mode' is activated in such cases."
+  (if (and (eq major-mode 'fundamental-mode)
+           (null hel-local-mode))
+      (hel-local-mode 1)))
 
 (hel-define-advice select-window (:after (&rest _))
   (hel-update-cursor))
