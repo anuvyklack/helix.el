@@ -74,6 +74,9 @@
     (setq hel-this-command nil
           hel--input-cache nil)))
 
+(put 'hel--pre-commad-hook 'permanent-local-hook t)
+(put 'hel--post-command-hook 'permanent-local-hook t)
+
 (define-minor-mode hel-local-mode
   "Minor mode for setting up Hel in a current buffer."
   :global nil
