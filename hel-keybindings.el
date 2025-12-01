@@ -211,41 +211,7 @@ By default `M-u' is bound to `upcase-word', so we can use it."
 
 ;;;; Mark commands
 
-(hel-define-command hel-mark-digit-argument (arg)
-  "Like `digit-argument' but keep `m' prefix key active."
-  :multiple-cursors nil
-  (interactive "P")
-  (digit-argument arg)
-  (set-transient-map (keymap-lookup nil "m")))
-
-(hel-define-command hel-mark-negative-argument (arg)
-  "Like `negative-argument' but keep `m' prefix key active."
-  :multiple-cursors nil
-  (interactive "P")
-  (negative-argument arg)
-  (set-transient-map (keymap-lookup nil "m")))
-
-;; Do not show keys bound to `hel-mark-digit-argument' and
-;; `hel-mark-negative-argument' commands in which-key popup.
-(with-eval-after-load 'which-key
-  (dolist (cmd '(hel-mark-digit-argument
-                 hel-mark-negative-argument))
-    (cl-pushnew `((nil . ,(symbol-name cmd)) . ignore)
-                which-key-replacement-alist :test #'equal)))
-
 (hel-keymap-global-set :state 'normal
-  "m -" #'hel-mark-negative-argument
-  "m 0" #'hel-mark-digit-argument
-  "m 1" #'hel-mark-digit-argument
-  "m 2" #'hel-mark-digit-argument
-  "m 3" #'hel-mark-digit-argument
-  "m 4" #'hel-mark-digit-argument
-  "m 5" #'hel-mark-digit-argument
-  "m 6" #'hel-mark-digit-argument
-  "m 7" #'hel-mark-digit-argument
-  "m 8" #'hel-mark-digit-argument
-  "m 9" #'hel-mark-digit-argument
-
   "m w"   #'hel-mark-inner-word
   "m i w" #'hel-mark-inner-word
   "m a w" #'hel-mark-a-word
@@ -339,7 +305,43 @@ By default `M-u' is bound to `upcase-word', so we can use it."
   "m a *" #'hel-mark-a-surround
   "m a ~" #'hel-mark-a-surround
   "m a =" #'hel-mark-a-surround
-  "m a _" #'hel-mark-a-surround)
+  "m a _" #'hel-mark-a-surround
+
+  "m -"   #'hel-m-negative-argument
+  "m 0"   #'hel-m-digit-argument
+  "m 1"   #'hel-m-digit-argument
+  "m 2"   #'hel-m-digit-argument
+  "m 3"   #'hel-m-digit-argument
+  "m 4"   #'hel-m-digit-argument
+  "m 5"   #'hel-m-digit-argument
+  "m 6"   #'hel-m-digit-argument
+  "m 7"   #'hel-m-digit-argument
+  "m 8"   #'hel-m-digit-argument
+  "m 9"   #'hel-m-digit-argument
+
+  "m i -" #'hel-mi-negative-argument
+  "m i 0" #'hel-mi-digit-argument
+  "m i 1" #'hel-mi-digit-argument
+  "m i 2" #'hel-mi-digit-argument
+  "m i 3" #'hel-mi-digit-argument
+  "m i 4" #'hel-mi-digit-argument
+  "m i 5" #'hel-mi-digit-argument
+  "m i 6" #'hel-mi-digit-argument
+  "m i 7" #'hel-mi-digit-argument
+  "m i 8" #'hel-mi-digit-argument
+  "m i 9" #'hel-mi-digit-argument
+
+  "m a -" #'hel-ma-negative-argument
+  "m a 0" #'hel-ma-digit-argument
+  "m a 1" #'hel-ma-digit-argument
+  "m a 2" #'hel-ma-digit-argument
+  "m a 3" #'hel-ma-digit-argument
+  "m a 4" #'hel-ma-digit-argument
+  "m a 5" #'hel-ma-digit-argument
+  "m a 6" #'hel-ma-digit-argument
+  "m a 7" #'hel-ma-digit-argument
+  "m a 8" #'hel-ma-digit-argument
+  "m a 9" #'hel-ma-digit-argument)
 
 ;;;; Windows
 

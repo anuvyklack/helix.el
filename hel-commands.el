@@ -1255,6 +1255,59 @@ already there."
 
 ;;;; Mark
 
+(hel-define-command hel-m-digit-argument (arg)
+  "Like `digit-argument' but keep `m' prefix key active."
+  :multiple-cursors nil
+  (interactive "P")
+  (digit-argument arg)
+  (set-transient-map (keymap-lookup nil "m")))
+
+(hel-define-command hel-m-negative-argument (arg)
+  "Like `negative-argument' but keep `m' prefix key active."
+  :multiple-cursors nil
+  (interactive "P")
+  (negative-argument arg)
+  (set-transient-map (keymap-lookup nil "m")))
+
+(hel-define-command hel-mi-digit-argument (arg)
+  "Like `digit-argument' but keep `mi' prefix key active."
+  :multiple-cursors nil
+  (interactive "P")
+  (digit-argument arg)
+  (set-transient-map (keymap-lookup nil "m i")))
+
+(hel-define-command hel-mi-negative-argument (arg)
+  "Like `negative-argument' but keep `mi' prefix key active."
+  :multiple-cursors nil
+  (interactive "P")
+  (negative-argument arg)
+  (set-transient-map (keymap-lookup nil "m i")))
+
+(hel-define-command hel-ma-digit-argument (arg)
+  "Like `digit-argument' but keep `ma' prefix key active."
+  :multiple-cursors nil
+  (interactive "P")
+  (digit-argument arg)
+  (set-transient-map (keymap-lookup nil "m a")))
+
+(hel-define-command hel-ma-negative-argument (arg)
+  "Like `negative-argument' but keep `ma' prefix key active."
+  :multiple-cursors nil
+  (interactive "P")
+  (negative-argument arg)
+  (set-transient-map (keymap-lookup nil "m a")))
+
+;; Do not show keys bound to following commands in which-key popup.
+(with-eval-after-load 'which-key
+  (dolist (cmd '(hel-m-digit-argument
+                 hel-m-negative-argument
+                 hel-mi-digit-argument
+                 hel-mi-negative-argument
+                 hel-ma-digit-argument
+                 hel-ma-negative-argument))
+    (cl-pushnew `((nil . ,(symbol-name cmd)) . ignore)
+                which-key-replacement-alist :test #'equal)))
+
 ;; miw
 (hel-define-command hel-mark-inner-word (count)
   :multiple-cursors t
