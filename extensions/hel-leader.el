@@ -71,15 +71,6 @@
   :group 'hel-leader
   :type 'string)
 
-(defcustom hel-leader-send-C-x-with-control-modifier t
-  "When non-nil, pressing \"x\" in hel-leader initial state will send \"C-x C-\",
-i.e. \"C-x\" followed by another `Control' modifier.
-
-When nil, pressing \"x\" will send \"C-x\" without an additional `Control'
-modifier."
-  :group 'hel-leader
-  :type 'string)
-
 (defcustom hel-leader-leader-keymap nil ; mode-specific-map
   "The keymap in which hel-leader will search keybindings with no modifiers.
 If nil hel-leader will look under \"C-c\" prefix."
@@ -226,8 +217,7 @@ Return the found command."
          (setq hel-leader--pending-modifier 'control))
         ((equal "x" key)
          (push "C-x" hel-leader--keys)
-         (when hel-leader-send-C-x-with-control-modifier
-           (setq hel-leader--pending-modifier 'control)))
+         (setq hel-leader--pending-modifier 'control))
         (t
          (setq hel-leader--use-leader-map? t)
          (push key hel-leader--keys)))
