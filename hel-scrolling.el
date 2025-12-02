@@ -39,6 +39,7 @@ If RESTRICTED is non-nil the scroll is restricted within current screen.
 If PAGES is non-nil scroll over pages instead of lines."
   (let* ((window-height (- (window-text-height nil t)
                            (window-mode-line-height)
+                           (window-header-line-height)
                            (window-tab-line-height)))
          (line-height (default-line-height))
          (delta (cond ((= count 0) (/ window-height 2))
@@ -72,6 +73,7 @@ If RESTRICTED in non-nil the scroll is restricted within current screen.
 If PAGES is non-nil scroll over pages instead of lines."
   (let* ((window-height (- (window-text-height nil t)
                            (window-mode-line-height)
+                           (window-header-line-height)
                            (window-tab-line-height)))
          (line-height (default-line-height))
          (delta (cond ((= count 0) (/ window-height 2))
@@ -239,6 +241,7 @@ If COUNT > 1 scroll smoothly."
   (interactive)
   (let* ((window-height (- (window-text-height nil t)
                            (window-mode-line-height)
+                           (window-header-line-height)
                            (window-tab-line-height)))
          (posn-y-target (ceiling (/ window-height 2)))
          (point-data (posn-at-point))
@@ -258,6 +261,7 @@ If COUNT > 1 scroll smoothly."
   (interactive)
   (let* ((window-height (- (window-text-height nil t)
                            (window-mode-line-height)
+                           (window-header-line-height)
                            (window-tab-line-height)))
          (posn-y-target (ceiling (/ window-height 5)))
          (point-data (posn-at-point))
@@ -300,6 +304,7 @@ If COUNT > 1 scroll smoothly."
   ;; then finish with `recenter' getting a clear result.
   (let* ((window-height (- (window-text-height nil t)
                            (window-mode-line-height)
+                           (window-header-line-height)
                            (window-tab-line-height)))
          (line-height (default-line-height))
          (point-data (posn-at-point))
