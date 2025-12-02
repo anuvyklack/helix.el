@@ -53,13 +53,13 @@ If PAGES is non-nil scroll over pages instead of lines."
     ;; partially visible. If you try to scroll smoothly from this position the
     ;; point will jump unpredictably. Fix initial position in this case.
     (when (= row-at-point 0) (recenter 0))
-    ;; `screen-space' is the height of the part of the screen toward the
-    ;; scrolling direction.
-    (let ((screen-space (- window-height y-at-point)))
+    ;; `available-space' is the height of the part of the screen we can scroll
+    ;; before cursor will move.
+    (let ((available-space (- window-height y-at-point)))
       ;; If point goes off the screen as the result of the scroll
-      (when (> delta (- screen-space line-height))
+      (when (> delta (- available-space line-height))
         (if restricted
-            (setq delta (- screen-space (/ line-height 3))
+            (setq delta (- available-space (/ line-height 3))
                   at-bottom? t)
           ;; else — not restricted
           (hel-maybe-deactivate-mark))))
