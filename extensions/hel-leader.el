@@ -71,16 +71,6 @@
   :group 'hel-leader
   :type 'string)
 
-;; (defcustom hel-leader-start-keys '(("c" . "C-c")
-;;                                      ("x" . "C-x"))
-;;   "Alist of keys to begin hel-leader translation.
-;; When a key char is pressed,it's corresponding value is appended
-;; to C- and the user is prompted to finish the command."
-;;   :group 'hel-leader
-;;   :type '(alist
-;;           :key-type (string :tag "From")
-;;           :value-type (string :tag "To")))
-
 (defcustom hel-leader-send-C-x-with-control-modifier t
   "When non-nil, pressing \"x\" in hel-leader initial state will send \"C-x C-\",
 i.e. \"C-x\" followed by another `Control' modifier.
