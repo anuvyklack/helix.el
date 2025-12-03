@@ -221,11 +221,14 @@ text on the second attempt."
 ;; org-end-of-line
 
 ;; p
-(hel-define-command hel-org-paste-after ()
-  "Paste after selection."
+(hel-define-command hel-org-paste-after (arg)
+  "Paste after selection.
+With \\[universal-argument] invokes `yank-rectangle' instead. See `hel-copy'."
   :multiple-cursors t
-  (interactive)
-  (hel-paste #'org-yank 1))
+  (interactive "P")
+  (pcase arg
+    ('(4) (insert-rectangle killed-rectangle))
+    (_ (hel-paste #'org-yank 1))))
 
 ;; P
 (hel-define-command hel-org-paste-before ()

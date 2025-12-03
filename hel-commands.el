@@ -665,7 +665,10 @@ If no selection — delete COUNT chars after point."
 
 ;; y
 (hel-define-command hel-copy ()
-  "Copy selection into `kill-ring'."
+  "Copy selection into `kill-ring'.
+If there are multiple selections, add each one to the `killed-rectangle'
+unless all selections are identical. You can later paste them with
+`hel-paste-after' (with \\[universal-argument]) or with `yank-rectangle'."
   :multiple-cursors nil
   (interactive)
   ;; (unless (use-region-p)
@@ -685,7 +688,7 @@ If no selection — delete COUNT chars after point."
     (hel-pulse-main-region)))
 
 (defun hel-maybe-set-killed-rectangle ()
-  "Add the latest `kill-ring' entry for each cursor to `killed-rectangle',
+  "Add the latest `kill-ring' entry of each cursor to `killed-rectangle',
 unless they all are equal. You can paste them later with `yank-rectangle'."
   (when hel-multiple-cursors-mode
     (let ((entries (hel-with-real-cursor-as-fake
@@ -696,11 +699,14 @@ unless they all are equal. You can paste them later with `yank-rectangle'."
         (setq killed-rectangle entries)))))
 
 ;; p
-(hel-define-command hel-paste-after ()
-  "Paste after selection."
+(hel-define-command hel-paste-after (arg)
+  "Paste after selection.
+With \\[universal-argument] invokes `yank-rectangle' instead. See `hel-copy'."
   :multiple-cursors t
-  (interactive)
-  (hel-paste #'yank 1))
+  (interactive "P")
+  (pcase arg
+    ('(4) (insert-rectangle killed-rectangle))
+    (_ (hel-paste #'yank 1))))
 
 ;; P
 (hel-define-command hel-paste-before ()
