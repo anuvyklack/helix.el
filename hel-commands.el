@@ -612,7 +612,7 @@ depending on DIRECTION."
   "Kill (cut) text in region. I.e. delete text and put it in the `kill-ring'.
 If no selection — delete COUNT chars before point."
   :multiple-cursors t
-  (interactive "p")
+  (interactive "*p")
   (when (hel-logical-lines-p)
     (hel-restore-newline-at-eol))
   (cond ((use-region-p)
@@ -626,7 +626,7 @@ If no selection — delete COUNT chars before point."
   "Delete text in region, without modifying the `kill-ring'.
 If no selection — delete COUNT chars after point."
   :multiple-cursors t
-  (interactive "p")
+  (interactive "*p")
   (when (hel-logical-lines-p)
     (hel-restore-newline-at-eol))
   (cond ((use-region-p)
@@ -703,7 +703,7 @@ unless they all are equal. You can paste them later with `yank-rectangle'."
   "Paste after selection.
 With \\[universal-argument] invokes `yank-rectangle' instead. See `hel-copy'."
   :multiple-cursors t
-  (interactive "P")
+  (interactive "*P")
   (pcase arg
     ('(4) (insert-rectangle killed-rectangle))
     (_ (hel-paste #'yank 1))))
@@ -712,14 +712,14 @@ With \\[universal-argument] invokes `yank-rectangle' instead. See `hel-copy'."
 (hel-define-command hel-paste-before ()
   "Paste before selection."
   :multiple-cursors t
-  (interactive)
+  (interactive "*")
   (hel-paste #'yank -1))
 
 ;; C-p
 (hel-define-command hel-paste-pop (count)
   "Replace just-pasted text with next COUNT element from `kill-ring'."
   :multiple-cursors t
-  (interactive "p")
+  (interactive "*p")
   (hel-disable-newline-at-eol)
   (let ((deactivate-mark nil))
     (let ((yank-pop (or (command-remapping 'yank-pop)
@@ -734,7 +734,7 @@ With \\[universal-argument] invokes `yank-rectangle' instead. See `hel-copy'."
 (hel-define-command hel-paste-undo-pop (count)
   "Replace just-pasted text with previous COUNT element from `kill-ring'."
   :multiple-cursors t
-  (interactive "p")
+  (interactive "*p")
   (hel-paste-pop (- count)))
 
 ;; R

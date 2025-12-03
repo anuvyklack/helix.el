@@ -225,7 +225,7 @@ text on the second attempt."
   "Paste after selection.
 With \\[universal-argument] invokes `yank-rectangle' instead. See `hel-copy'."
   :multiple-cursors t
-  (interactive "P")
+  (interactive "*P")
   (pcase arg
     ('(4) (insert-rectangle killed-rectangle))
     (_ (hel-paste #'org-yank 1))))
@@ -234,7 +234,7 @@ With \\[universal-argument] invokes `yank-rectangle' instead. See `hel-copy'."
 (hel-define-command hel-org-paste-before ()
   "Paste before selection."
   :multiple-cursors t
-  (interactive)
+  (interactive "*")
   (hel-paste #'org-yank -1))
 
 ;; d
@@ -242,7 +242,7 @@ With \\[universal-argument] invokes `yank-rectangle' instead. See `hel-copy'."
   "Kill (cut) text in region. I.e. delete text and put it in the `kill-ring'.
 If no selection — delete COUNT chars before point."
   :multiple-cursors t
-  (interactive "p")
+  (interactive "*p")
   (when (hel-logical-lines-p) (hel-restore-newline-at-eol))
   (if (use-region-p)
       (kill-region nil nil t)
