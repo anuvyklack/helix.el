@@ -733,15 +733,8 @@ a parent with different boundaries or reaches a `section' element."
   (dolist (char '(?/ ?* ?_ ?+ ?= ?~))
     (push `(,char :pair ,(cons (char-to-string char)
                                (char-to-string char))
-                  :lookup hel-surround--4-bounds-of-org-verbatim)
+                  :lookup hel-surround--4-bounds-of-org-emphasis)
           hel-surround-alist)))
-
-(defun hel-surround--4-bounds-of-org-verbatim ()
-  (when (org-in-regexp org-verbatim-re 2)
-    (list (match-beginning 2)
-          (match-beginning 4)
-          (match-end 2)
-          (match-end 4))))
 
 (defun hel-surround--4-bounds-of-org-emphasis ()
   (when (org-in-regexp org-emph-re 2)
