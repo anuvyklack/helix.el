@@ -201,43 +201,47 @@ rate allows highlights to update while scrolling."
   "List of commands which should preserve search highlighting overlays.")
 
 (hel-defvar-local hel-surround-alist
-  '((?\) :insert ("(" . ")") :search ("(" . ")") :regexp nil :balanced t)
-    (?\} :insert ("{" . "}") :search ("{" . "}") :regexp nil :balanced t)
-    (?\] :insert ("[" . "]") :search ("[" . "]") :regexp nil :balanced t)
-    (?\> :insert ("<" . ">") :search ("<" . ">") :regexp nil :balanced t)
-    (?\( :insert ("( " . " )")
-         :search (lambda () (hel-4-bounds-of-brackets-at-point ?\( ?\))))
-    (?\[ :insert ("[ " . " ]")
-         :search (lambda () (hel-4-bounds-of-brackets-at-point ?\[ ?\])))
-    (?\{ :insert ("{ " . " }")
-         :search (lambda () (hel-4-bounds-of-brackets-at-point ?{ ?})))
-    (?\< :insert ("< " . " >")
-         :search (lambda () (hel-4-bounds-of-brackets-at-point ?< ?>))
-         ;; :search ("<[[:blank:]\n]*" . "[[:blank:]\n]*>")
+  '((?\) :pair ("(" . ")") :balanced t)
+    (?\} :pair ("{" . "}") :balanced t)
+    (?\] :pair ("[" . "]") :balanced t)
+    (?\> :pair ("<" . ">") :balanced t)
+    (?\( :pair ("( " . " )")
+         :lookup (lambda () (hel-4-bounds-of-brackets-at-point ?\( ?\))))
+    (?\[ :pair ("[ " . " ]")
+         :lookup (lambda () (hel-4-bounds-of-brackets-at-point ?\[ ?\])))
+    (?\{ :pair ("{ " . " }")
+         :lookup (lambda () (hel-4-bounds-of-brackets-at-point ?{ ?})))
+    (?\< :pair ("< " . " >")
+         :lookup (lambda () (hel-4-bounds-of-brackets-at-point ?< ?>))
+         ;; or
+         ;; :lookup ("<[[:blank:]\n]*" . "[[:blank:]\n]*>")
          ;; :regexp t
          ;; :balanced t
          )
-    (?\" :insert ("\"" . "\"")
-         :search (lambda ()
+    (?\" :pair ("\"" . "\"")
+         :lookup (lambda ()
                    (-when-let ((beg . end) (hel-bounds-of-quoted-at-point ?\"))
                      (list beg (1+ beg) (1- end) end)))))
   "Association list with (KEY . SPEC) elements for Hel surrounding functionality.
 
 KEY is a character. SPEC is a plist with next keys:
 
-`:insert'  Cons cell (LEFT . RIGHT) with strings, or function that returns such
+`:pair'    Cons cell (LEFT . RIGHT) with strings, or function that returns such
          cons cell. The strigs that will be inserted by `hel-surround' and
          `hel-surround-change' functions.
 
-`:search'  Any of:
-         1. Cons cell with strings (LEFT . RIGHT). Should be patterns that
-            will be used to search of two substrings to delete in
-            `hel-surround-delete' and `hel-surround-change' functions.
-            If not specified `:insert' pair will be used.
-         2. Function that return cons cell with strings (LEFT . RIGHT) like
-            in 1.
-         3. Function that returns list with 4 positions:
+`:lookup'  Any of:
+
+         1. Cons cell with strings (LEFT . RIGHT), or function that return
+            such cons cell. LEFT and RIGHT should be patterns that will be
+            used to search of two substrings to delete in `hel-surround-delete'
+            and `hel-surround-change' functions. If not specified `:pair' value
+            will be used.
+
+         2. Function that returns list with 4 positions:
+
                      (LEFT-START LEFT-END RIGHT-START RIGHT-END)
+
             of START and END of LEFT and RIGHT delimeters.
             Example:
                        LEFT                              RIGHT
@@ -245,17 +249,18 @@ KEY is a character. SPEC is a plist with next keys:
                      ^      ^                          ^       ^
             LEFT-START      LEFT-END         RIGHT-START       RIGHT-END
 
-Following keys are taken into account only when `:search' argument is a cons cell
-with strings (LEFT . RIGHT) or a function, that returns such cons cell. If
-`:search' is a function that returns list with 4 positions, they will be ignored.
+Following keys are taken into account only when `:lookup' argument is a cons
+cell with strings (LEFT . RIGHT) or a function, that returns such cons cell.
+If `:lookup' is a function that returns list with 4 positions, they will be
+ignored.
 
-`:regexp'    If non-nil then LEFT and RIGHT strings specified in `:search' will be
+`:regexp'    If non-nil then LEFT and RIGHT strings specified in `:lookup' will be
            treated as regexp patterns. Otherwise they will be searched literally.
 
 `:balanced'  When non-nil all nested balanced LEFT RIGHT pairs will be skipped.
            Otherwise the first found pattern will be accepted.
 
-See the defaul value and `hel-integration.el' file for examples.")
+See the default value for examples.")
 
 (defgroup hel-cjk nil
   "CJK support."

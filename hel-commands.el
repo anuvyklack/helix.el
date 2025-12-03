@@ -1734,63 +1734,12 @@ Do not auto-detect word boundaries in the search pattern."
 
 ;;; Surround
 
-(cl-defun hel-surround-add-pair (key pair &key search regexp balanced)
-  "Add a new insert-delete pattern for Hel surround functionality.
-
-Positional arguments:
-
-KEY        A character that will activates this pattern.
-
-PAIR       Cons cell (LEFT . RIGHT) with strings, or function that returns such
-           cons cell. The strigs that will be inserted by `hel-surround' and
-           `hel-surround-change' functions.
-
-Keyword arguments:
-
-:SEARCH    Any of:
-           1. Cons cell with strings (LEFT . RIGHT) of patterns that will be used
-              to search of two substrings to delete by `hel-surround-delete'
-              and `hel-surround-change' functions.
-           2. nil — the value from PAIR argument will be used instead.
-           3. Function that return cons cell with strings (LEFT . RIGHT) like
-              in 1.
-           4. Function that returns list
-                       (LEFT-START LEFT-END RIGHT-START RIGHT-END)
-              with 4 positions of START/END of LEFT and RIGHT delimeters.
-              Example:
-                         LEFT                              RIGHT
-                       |<tag> |Lorem ipsum dolor sit amet| </tag>|
-                       ^      ^                          ^       ^
-              LEFT-START      LEFT-END         RIGHT-START       RIGHT-END
-
-Following parameters are taken into account only when :SEARCH argument is a cons
-cell with stirngs (LEFT . RIGHT) or a function, that returns such cons cell. If
-:SEARCH is a function that returns list with 4 positions, they will be ignored.
-
-:REGEXP    If non-nil then strings specified in :SEARCH argument will be treated
-           as regexp patterns. Otherwise they will be searched literally.
-
-:BALANCED  When non-nil all nested balanced LEFT RIGHT pairs will be skipped,
-           else the first found pattern will be accepted.
-
-This function populates the buffer local `hel-surround-alist' variable,
-and thus should be called from major-modes hooks.
-
-See the defaul value of `hel-surround-alist' variable and `hel-integration.el'
-file for examples."
-  (declare (indent 2))
-  (push (cons key `(:insert ,pair
-                            :search ,(or search pair)
-                            :regexp ,regexp
-                            :balanced ,balanced))
-        hel-surround-alist))
-
 (defun hel-surround--read-char ()
   "Read char from minibuffer and return (LEFT . RIGHT) pair with strings
 to surround with."
   (let* ((char (read-char "surround: "))
          (pair-or-fun-or-nil (-some-> (alist-get char hel-surround-alist)
-                               (plist-get :insert))))
+                               (plist-get :pair))))
     (pcase pair-or-fun-or-nil
       ((and (pred functionp) fn)
        (funcall fn))
@@ -1849,7 +1798,7 @@ lines and reindent the region."
     (-let* (((left-beg left-end right-beg right-end) bounds)
             (char (read-char "Insert pair: "))
             (pair-or-fun (-some-> (alist-get char hel-surround-alist)
-                           (plist-get :insert)))
+                           (plist-get :pair)))
             ((left . right) (pcase pair-or-fun
                               ((and (pred functionp) fun)
                                (funcall fun))

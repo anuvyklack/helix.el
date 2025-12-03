@@ -503,7 +503,8 @@ enclosed in QUOTE-MARKs."
 the list (LEFT-BEG LEFT-END RIGHT-LEFT RIGHT-END) with 4 positions:
 before/after left delimiter and before/after right delimiter,"
   (if-let* ((spec (alist-get char hel-surround-alist))
-            (pair-or-list (pcase (plist-get spec :search)
+            (pair-or-list (pcase (or (plist-get spec :lookup)
+                                     (plist-get spec :pair))
                             ((and fn (pred functionp))
                              (funcall fn))
                             (val val))))

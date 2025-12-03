@@ -728,9 +728,10 @@ a parent with different boundaries or reaches a `section' element."
 (defun hel-surround-settings-for-org-mode ()
   "Configure Hel surround functionality for Org-mode."
   (dolist (char '(?/ ?* ?_ ?+ ?= ?~))
-    (hel-surround-add-pair char (cons (char-to-string char)
-                                      (char-to-string char))
-      :search #'hel-surround--4-bounds-of-org-verbatim)))
+    (push `(,char :pair ,(cons (char-to-string char)
+                               (char-to-string char))
+                  :lookup hel-surround--4-bounds-of-org-verbatim)
+          hel-surround-alist)))
 
 (defun hel-surround--4-bounds-of-org-verbatim ()
   (when (org-in-regexp org-verbatim-re 2)
