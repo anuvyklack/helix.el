@@ -19,6 +19,81 @@
 (require 'hel)
 (require 'paredit)
 
+;;; Minor mode
+
+;;;###autoload (autoload 'hel-paredit-mode "hel-paredit" nil t)
+(define-minor-mode hel-paredit-mode
+  "Hel integration with Paredit."
+  :keymap (make-sparse-keymap)
+  (hel-update-active-keymaps))
+
+;;;; Keybindings
+
+(hel-keymap-set hel-paredit-mode-map :state 'normal
+  "W" 'hel-paredit-forward-WORD-start
+  "B" 'hel-paredit-backward-WORD-start
+  "E" 'hel-paredit-forward-WORD-end
+
+  "m W"   'hel-paredit-mark-inner-WORD
+  "m i W" 'hel-paredit-mark-inner-WORD
+  "m a W" 'hel-paredit-mark-a-WORD
+
+  "d" 'hel-paredit-cut
+  "D" 'hel-paredit-delete
+
+  ;; "M-y" 'paredit-copy-as-kill
+  "M-d" 'paredit-kill
+
+  "M-i" 'hel-paredit-down-sexp
+  "M-o" 'hel-paredit-up-sexp-backward
+  "M-n" 'hel-paredit-forward-sexp
+  "M-p" 'hel-paredit-backward-sexp
+
+  "H"   'hel-paredit-up-sexp-backward
+  "L"   'hel-paredit-up-sexp-forward
+
+  "M-r" 'paredit-raise-sexp
+  "M-?" 'paredit-convolute-sexp
+  "<"   'hel-paredit-<
+  ">"   'hel-paredit->
+  "g c" 'paredit-comment-dwim
+  ;; "g q" 'paredit-reindent-defun
+  )
+
+(when hel-want-C-hjkl-keys
+  (hel-keymap-set hel-paredit-mode-map :state 'normal
+    "C-h" 'hel-paredit-backward-sexp
+    "C-j" 'hel-paredit-down-sexp
+    "C-k" 'hel-paredit-up-sexp-backward
+    "C-l" 'hel-paredit-forward-sexp))
+
+(hel-keymap-set hel-paredit-mode-map
+  "RET"         'paredit-newline
+  "C-M-f"       'paredit-forward       ; `forward-sexp'
+  "C-M-b"       'paredit-backward      ; `backward-sexp'
+  "C-M-u"       'paredit-backward-up   ; `backward-up-list'
+  "C-M-d"       'paredit-forward-down  ; `down-list'
+  "C-M-p"       'paredit-backward-down ; `backward-list'
+  "C-M-n"       'paredit-forward-up    ; `forward-list'
+  "C-<right>"   'paredit-forward-slurp-sexp
+  "C-<left>"    'paredit-forward-barf-sexp
+  "C-M-<left>"  'paredit-backward-slurp-sexp
+  "C-M-<right>" 'paredit-backward-slurp-sexp)
+
+(hel-keymap-set hel-paredit-mode-map :state 'insert
+  ;; "RET"  'paredit-newline
+  ";"    'paredit-semicolon
+  "\""   'paredit-doublequote
+  "M-\"" 'paredit-meta-doublequote
+  "\\"   'paredit-backslash
+  "M-;"  'paredit-comment-dwim
+  "("    'paredit-open-round
+  ")"    'paredit-close-round
+  "["    'paredit-open-square
+  "]"    'paredit-close-square)
+
+;;; Common
+
 (defun hel-paredit-string-start-pos (&optional state)
   ;; 8. character address of start of comment or string; nil if not in one
   (nth 8 (or state (paredit-current-parse-state))))
@@ -344,82 +419,6 @@ The point must located right after the closing bracket."
           (ignore-errors (backward-up-list))
           (lisp-indent-line)
           (indent-sexp))))))
-
-;;; Keybindings
-
-(defvar hel-paredit-mode-map (make-sparse-keymap))
-
-(hel-keymap-set hel-paredit-mode-map
-  "C-M-f"       'paredit-forward       ; forward-sexp
-  "C-M-b"       'paredit-backward      ; backward-sexp
-  "C-M-u"       'paredit-backward-up   ; backward-up-list
-  "C-M-d"       'paredit-forward-down  ; down-list
-  "C-M-p"       'paredit-backward-down ; backward-list
-  "C-M-n"       'paredit-forward-up    ; forward-list
-  "C-<right>"   'paredit-forward-slurp-sexp
-  "C-<left>"    'paredit-forward-barf-sexp
-  "C-M-<left>"  'paredit-backward-slurp-sexp
-  "C-M-<right>" 'paredit-backward-slurp-sexp)
-
-(hel-keymap-set hel-paredit-mode-map :state 'normal
-  "W" 'hel-paredit-forward-WORD-start
-  "B" 'hel-paredit-backward-WORD-start
-  "E" 'hel-paredit-forward-WORD-end
-
-  "m W"   'hel-paredit-mark-inner-WORD
-  "m i W" 'hel-paredit-mark-inner-WORD
-  "m a W" 'hel-paredit-mark-a-WORD
-
-  "d" 'hel-paredit-cut
-  "D" 'hel-paredit-delete
-
-  ;; "M-y" 'paredit-copy-as-kill
-  "M-d" 'paredit-kill
-
-  "M-i" 'hel-paredit-down-sexp
-  "M-o" 'hel-paredit-up-sexp-backward
-  "M-n" 'hel-paredit-forward-sexp
-  "M-p" 'hel-paredit-backward-sexp
-
-  "H"   'hel-paredit-up-sexp-backward
-  "L"   'hel-paredit-up-sexp-forward
-
-  "M-r" 'paredit-raise-sexp
-  "M-?" 'paredit-convolute-sexp
-  "<"   'hel-paredit-<
-  ">"   'hel-paredit->
-  "g c" 'paredit-comment-dwim
-  ;; "g q" 'paredit-reindent-defun
-  )
-
-(when hel-want-C-hjkl-keys
-  (hel-keymap-set hel-paredit-mode-map :state 'normal
-    "C-h" 'hel-paredit-backward-sexp
-    "C-j" 'hel-paredit-down-sexp
-    "C-k" 'hel-paredit-up-sexp-backward
-    "C-l" 'hel-paredit-forward-sexp))
-
-(keymap-set hel-paredit-mode-map "RET" #'paredit-newline)
-
-(hel-keymap-set hel-paredit-mode-map :state 'insert
-  ;; "RET"  'paredit-newline
-  ";"    'paredit-semicolon
-  "\""   'paredit-doublequote
-  "M-\"" 'paredit-meta-doublequote
-  "\\"   'paredit-backslash
-  "M-;"  'paredit-comment-dwim
-  "("    'paredit-open-round
-  ")"    'paredit-close-round
-  "["    'paredit-open-square
-  "]"    'paredit-close-square)
-
-;;; Minor mode
-
-;;;###autoload (autoload 'hel-paredit-mode "hel-paredit" nil t)
-(define-minor-mode hel-paredit-mode
-  "Hel integration with Paredit."
-  :keymap hel-paredit-mode-map
-  (hel-update-active-keymaps))
 
 ;;; Eldoc integration
 
