@@ -41,9 +41,6 @@
   "d" 'hel-paredit-cut
   "D" 'hel-paredit-delete
 
-  ;; "M-y" 'paredit-copy-as-kill
-  "M-d" 'paredit-kill
-
   "M-i" 'hel-paredit-down-sexp
   "M-o" 'hel-paredit-up-sexp-backward
   "M-n" 'hel-paredit-forward-sexp
