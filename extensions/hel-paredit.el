@@ -53,7 +53,7 @@
   "L"   'hel-paredit-up-sexp-forward
 
   "M-r" 'paredit-raise-sexp
-  "M-?" 'paredit-convolute-sexp
+  "M-?" 'hel-paredit-convolute-sexp
   "<"   'hel-paredit-<
   ">"   'hel-paredit->
   "g c" 'paredit-comment-dwim
@@ -329,6 +329,22 @@ If no selection — delete COUNT chars after point."
   "Don't deactivate region."
   (hel-save-region
     (apply orig-fun args)))
+
+;; M-?
+(defalias 'hel-paredit-convolute-sexp #'paredit-convolute-sexp
+  "Convolute S-expression.
+
+Save the S-expressions preceding point and delete them. Splice the S-expressions
+following point. Wrap the enclosing list in a new list prefixed by the saved
+text. With a prefix argument COUNT, move up COUNT lists before wrapping.
+
+  (let ((x 5)             (frob
+        (y 3))       ->    |(let ((x 5)
+    (frob |(zwonk))               (y 3))
+    (wibblethwop))            (zwonk)
+                              (wibblethwop)))
+
+\(fn &optional COUNT)")
 
 ;; gc
 (hel-advice-add 'paredit-comment-dwim :around #'hel-keep-selection-a)
