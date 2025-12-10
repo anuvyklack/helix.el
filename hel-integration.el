@@ -498,7 +498,9 @@ in the command loop, and the fake cursors can pick up on those instead."
                  xref-find-references
                  xref-go-back
                  xref-go-forward
-                 xref-goto-xref))
+                 xref-goto-xref
+                 xref--show-xrefs
+                 xref--show-defs))
     (hel-advice-add cmd :around #'hel-jump-command-a))
 
   (hel-keymap-set xref--xref-buffer-mode-map
