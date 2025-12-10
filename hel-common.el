@@ -1156,7 +1156,7 @@ the returned list to the original symbol like this:
 (defun hel-echo (str &optional face)
   "Show message in echo area."
   (when face
-    (put-text-property 0 (length str) 'face face str))
+    (->> str (put-text-property 0 (length str) 'face face)))
   (message "%s" str))
 
 (defun hel-pcre-to-elisp (regexp)
