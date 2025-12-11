@@ -472,27 +472,30 @@ GRANULARITY specifies the parsing level (see `org-element-parse-buffer')."
         (org-at-heading-p))
     (org-at-heading-p)))
 
-(hel-defvar-local hel-org--current-element nil
-  "The cache for current element value.")
+(hel-defvar-local hel-org--current-element-cache nil
+  "The cache for current org element value.")
 
 (cl-defun hel-org--current-element (&optional (new-element nil new-element?))
-  "Return cached value when appropriate, or calculate new one."
+  "Return org element (AST node) at point fully parsed.
+Cached value is returned when appropriate.
+If NEW-ELEMENT is passed update cache with it."
   (cond (new-element?
-         (setq hel-org--current-element
+         (setq hel-org--current-element-cache
                (unless (org-element-type-p new-element 'headline)
                  new-element)))
+        ;; Return cached value when appropriate.
         ((and (memq last-command '(hel-org-down-element
                                    hel-org-next-element
                                    hel-org-previous-element
-                                   org-cycle                             ; TAB
+                                   org-cycle                           ; TAB
                                    hel-smooth-scroll-line-to-eye-level ; zz
                                    hel-smooth-scroll-line-to-center    ; zz
                                    hel-smooth-scroll-line-to-top       ; zt
                                    hel-smooth-scroll-line-to-bottom))  ; zb
-              hel-org--current-element)
-         hel-org--current-element)
+              hel-org--current-element-cache)
+         hel-org--current-element-cache)
         (t
-         (setq hel-org--current-element (hel-org-element-in-section)))))
+         (setq hel-org--current-element-cache (hel-org-element-in-section)))))
 
 ;; M-o
 (hel-define-command hel-org-up-element (&optional arg)
