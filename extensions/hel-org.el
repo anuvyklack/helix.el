@@ -462,8 +462,8 @@ GRANULARITY specifies the parsing level (see `org-element-parse-buffer')."
   (save-excursion
     (with-restriction (org-element-begin element) (org-element-end element)
       (-> (org-element-parse-buffer granularity) ; -> org-data
-          org-element-contents                   ; -> AST
-          car))))                                ; -> ELEMENT node
+          (org-element-contents)                 ; -> AST
+          (car)))))                              ; -> ELEMENT node
 
 (defun hel-org-at-heading-p ()
   (if (use-region-p)
