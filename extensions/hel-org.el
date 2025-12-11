@@ -472,30 +472,27 @@ GRANULARITY specifies the parsing level (see `org-element-parse-buffer')."
         (org-at-heading-p))
     (org-at-heading-p)))
 
-(hel-defvar-local hel-org--current-element-cache nil
-  "The cache for current org element value.")
-
-(cl-defun hel-org--current-element (&optional (new-element nil new-element?))
-  "Return org element (AST node) at point fully parsed.
-Cached value is returned when appropriate.
-If NEW-ELEMENT is passed update cache with it."
-  (cond (new-element?
-         (setq hel-org--current-element-cache
-               (unless (org-element-type-p new-element 'headline)
-                 new-element)))
-        ;; Return cached value when appropriate.
-        ((and (memq last-command '(hel-org-down-element
-                                   hel-org-next-element
-                                   hel-org-previous-element
-                                   org-cycle                           ; TAB
-                                   hel-smooth-scroll-line-to-eye-level ; zz
-                                   hel-smooth-scroll-line-to-center    ; zz
-                                   hel-smooth-scroll-line-to-top       ; zt
-                                   hel-smooth-scroll-line-to-bottom))  ; zb
-              hel-org--current-element-cache)
-         hel-org--current-element-cache)
-        (t
-         (setq hel-org--current-element-cache (hel-org-element-in-section)))))
+(let (cache)
+  (defun hel-org--current-element ()
+    "Return org element (AST node) at point fully parsed."
+    ;; Return cached value when appropriate.
+    (if (and cache
+             (memq last-command '(hel-org-down-element
+                                  hel-org-next-element
+                                  hel-org-previous-element
+                                  org-cycle                           ; TAB
+                                  hel-smooth-scroll-line-to-eye-level ; zz
+                                  hel-smooth-scroll-line-to-center    ; zz
+                                  hel-smooth-scroll-line-to-top       ; zt
+                                  hel-smooth-scroll-line-to-bottom))) ; zb
+        cache
+      (setq cache (hel-org-element-in-section))))
+  ;;
+  (defun hel-org--set-current-element (element)
+    "Update org element at point cache."
+    (setq cache (if (org-element-type-p element 'headline)
+                    nil
+                  element))))
 
 ;; M-o
 (hel-define-command hel-org-up-element (&optional arg)
@@ -535,7 +532,7 @@ be set manually."
             (org-element-type-p element 'org-data))
         (user-error "No enclosing element")
       ;; else
-      (hel-org--current-element nil)
+      (hel-org--set-current-element nil)
       (hel-set-region (org-element-begin element)
                       (org-element-end element)
                       ;; (- (org-element-end element)
@@ -569,7 +566,7 @@ be set manually."
               (goto-char (region-beginning))
               (while (org-invisible-p (line-end-position))
                 (org-cycle)))
-            (hel-org--current-element child)
+            (hel-org--set-current-element child)
             (hel-set-region (org-element-begin child)
                             (org-element-end child)
                             ;; ;; Skip empty lines
@@ -592,7 +589,7 @@ be set manually."
   (unless (use-region-p)
     (hel-org-up-element))
   (when-let ((next (hel-org--next-element)))
-    (hel-org--current-element next)
+    (hel-org--set-current-element next)
     (hel-set-region (org-element-begin next)
                     (org-element-end next)
                     ;; ;; Skip empty lines
@@ -653,7 +650,7 @@ a parent with different boundaries or reaches a `section' element."
   (unless (use-region-p)
     (hel-org-up-element))
   (when-let ((previous (hel-org--previous-element)))
-    (hel-org--current-element previous)
+    (hel-org--set-current-element previous)
     (hel-set-region (org-element-begin previous)
                     (org-element-end previous)
                     ;; (- (org-element-end previous)
