@@ -5,7 +5,7 @@
 ;; Authors: Yuriy Artemyev <anuvyklack@gmail.com>
 ;; Maintainer: Yuriy Artemyev <anuvyklack@gmail.com>
 ;; Version: 0.0.1
-;; Homepage: https://github.com/anuvyklack/hel.el
+;; Homepage: https://github.com/anuvyklack/hel
 ;; Package-Requires: ((emacs "29.1"))
 ;;
 ;; This file is not part of GNU Emacs.
@@ -15,20 +15,21 @@
 ;; The core functionality for multiple cursors. The code is inspired by
 ;; `multiple-cursors.el' package from Magnar Sveen.
 ;;
-;; How multiple cursors works internally. Command is firstly executed for real
-;; cursor by Emacs command loop. Then in `post-command-hook' it executed for all
-;; fake cursors. Fake cursor is an overlay that emulates cursor and stores
-;; inside point, mark, kill-ring and some other variables (full list is in
-;; `hel-fake-cursor-specific-vars'). Executing command for fake cursor looks
-;; as follows: set point and mark to positions saved in fake cursor overlay,
-;; restore all variables from it, execute command in this environment, store
-;; point, mark and new state into fake cursor overlay.
+;; How multiple cursors works internally. Command is firstly executed for
+;; real cursor by Emacs command loop. Then in `post-command-hook' it executed
+;; for all fake cursors. Fake cursor is an overlay that emulates cursor and
+;; stores inside point, mark, kill-ring and some other variables (full list
+;; is in `hel-fake-cursor-specific-vars'). Executing command for fake cursor
+;; looks as follows: set point and mark to positions saved in fake cursor
+;; overlay,restore all variables from it, execute command in this environment,
+;; store point, mark and new state into fake cursor overlay.
 ;;
-;; Each command should has `multiple-cursors' symbol property. If it is `t' —
-;; command will be execute for all cursors. Any other value except `nil' — it
-;; will be executed only once for real (main) cursor. If `multiple-cursors'
-;; property is `nil' i.e. absent user will be prompted how execute this command
-;; and choosen value is permanently stored in `hel-whitelist-file' file.
+;; Each command should has `multiple-cursors' symbol property. If it is
+;; `t' — command will be execute for all cursors. Any other value except
+;; `nil' — it will be executed only once for real (main) cursor. If
+;; `multiple-cursors' property is `nil' i.e. absent user will be prompted
+;; how execute this command and choosen value is permanently stored in
+;; `hel-whitelist-file' file.
 ;;
 ;; ID 0 is always corresponding to real cursor.
 

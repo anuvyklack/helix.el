@@ -7,6 +7,9 @@
 * hel-leader
 
 #+begin_src emacs-lisp
+;; Dependencie
+(use-package s :ensure t)
+
 (use-package hel-leader)
 #+end_src
 
