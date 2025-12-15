@@ -1579,11 +1579,10 @@ keys to repeat motion forward/backward."
   :multiple-cursors t
   :merge-selections 'extend-selection
   (interactive "p")
-  (hel-with-input-method
-    (let ((char (read-char "f" t)))
-      (hel-maybe-set-mark)
-      (hel-motion-loop (dir count)
-        (hel-find-char char dir nil)))))
+  (let ((char (read-char "f" t)))
+    (hel-maybe-set-mark)
+    (hel-motion-loop (dir count)
+      (hel-find-char char dir nil))))
 
 ;; F
 (hel-define-command hel-find-char-backward (count)
@@ -1594,11 +1593,10 @@ keys to repeat motion forward/backward."
   :merge-selections 'extend-selection
   (interactive "p")
   (cl-callf - count)
-  (hel-with-input-method
-    (let ((char (read-char "F")))
-      (hel-maybe-set-mark)
-      (hel-motion-loop (dir count)
-        (hel-find-char char dir nil)))))
+  (let ((char (read-char "F" t)))
+    (hel-maybe-set-mark)
+    (hel-motion-loop (dir count)
+      (hel-find-char char dir nil))))
 
 ;; t
 (hel-define-command hel-till-char-forward (count)
@@ -1608,11 +1606,10 @@ keys to repeat motion forward/backward."
   :multiple-cursors t
   :merge-selections 'extend-selection
   (interactive "p")
-  (hel-with-input-method
-    (let ((char (read-char "t")))
-      (hel-maybe-set-mark)
-      (hel-motion-loop (dir count)
-        (hel-find-char char dir t)))))
+  (let ((char (read-char "t" t)))
+    (hel-maybe-set-mark)
+    (hel-motion-loop (dir count)
+      (hel-find-char char dir t))))
 
 ;; T
 (hel-define-command hel-till-char-backward (count)
@@ -1623,31 +1620,28 @@ keys to repeat motion forward/backward."
   :merge-selections 'extend-selection
   (interactive "p")
   (cl-callf - count)
-  (hel-with-input-method
-    (let ((char (read-char "T")))
-      (hel-maybe-set-mark)
-      (hel-motion-loop (dir count)
-        (hel-find-char char dir t)))))
+  (let ((char (read-char "T" t)))
+    (hel-maybe-set-mark)
+    (hel-motion-loop (dir count)
+      (hel-find-char char dir t))))
 
 ;; /
 (hel-define-command hel-search-forward (count)
   :multiple-cursors nil
   :merge-selections t
   (interactive "p")
-  (hel-with-input-method
-    (when (hel-search-interactively)
-      (setq hel-search--direction 1)
-      (hel-search-next count))))
+  (when (hel-search-interactively)
+    (setq hel-search--direction 1)
+    (hel-search-next count)))
 
 ;; ?
 (hel-define-command hel-search-backward (count)
   :multiple-cursors nil
   :merge-selections t
   (interactive "p")
-  (hel-with-input-method
-    (when (hel-search-interactively -1)
-      (setq hel-search--direction -1)
-      (hel-search-next count))))
+  (when (hel-search-interactively -1)
+    (setq hel-search--direction -1)
+    (hel-search-next count)))
 
 ;; n
 (hel-define-command hel-search-next (count)
@@ -1743,7 +1737,7 @@ Do not auto-detect word boundaries in the search pattern."
 (defun hel-surround--read-char ()
   "Read char from minibuffer and return (LEFT . RIGHT) pair with strings
 to surround with."
-  (let* ((char (read-char "surround: "))
+  (let* ((char (read-char "surround: " t))
          (pair-or-fun-or-nil (-some-> (alist-get char hel-surround-alist)
                                (plist-get :pair))))
     (pcase pair-or-fun-or-nil
@@ -1787,7 +1781,7 @@ lines and reindent the region."
 (hel-define-command hel-surround-delete ()
   :multiple-cursors t
   (interactive)
-  (when-let* ((key (read-char "Delete pair: "))
+  (when-let* ((key (read-char "Delete pair: " t))
               (bounds (hel-surround--4-bounds key)))
     (-let (((left-beg left-end right-beg right-end) bounds)
            (deactivate-mark nil))
@@ -1799,10 +1793,10 @@ lines and reindent the region."
 (hel-define-command hel-surround-change ()
   :multiple-cursors t
   (interactive)
-  (when-let* ((char (read-char "Delete pair: "))
+  (when-let* ((char (read-char "Delete pair: " t))
               (bounds (hel-surround--4-bounds char)))
     (-let* (((left-beg left-end right-beg right-end) bounds)
-            (char (read-char "Insert pair: "))
+            (char (read-char "Insert pair: " t))
             (pair-or-fun (-some-> (alist-get char hel-surround-alist)
                            (plist-get :pair)))
             ((left . right) (pcase pair-or-fun

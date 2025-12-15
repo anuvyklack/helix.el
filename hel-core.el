@@ -418,7 +418,7 @@ This is useful for read-only modes that starts in normal state."
 ;;; Input-method
 
 (defun hel-activate-input-method ()
-  "Enable input method in states with :input-method non-nil."
+  "Enable input method in states with `:input-method' non-nil."
   (let (input-method-activate-hook
         input-method-deactivate-hook)
     (when (and hel-local-mode hel-state)
@@ -453,7 +453,12 @@ This is useful for read-only modes that starts in normal state."
      ;; else
      ,@body))
 
-(hel-advice-add 'toggle-input-method :around #'hel--refresh-input-method-a)
+(defun hel--with-input-method-a (orig-fun &rest args)
+  (hel-with-input-method
+    (apply orig-fun args)))
+
+(hel-advice-add 'read-char :around #'hel--with-input-method-a)
+;; (hel-advice-add 'read-char-from-minibuffer :around #'hel--with-input-method-a)
 
 (defun hel--refresh-input-method-a (orig-fun &rest args)
   "Refresh `hel-input-method'."
@@ -464,6 +469,8 @@ This is useful for read-only modes that starts in normal state."
         (t
          (let ((current-input-method hel-input-method))
            (apply orig-fun args)))))
+
+(hel-advice-add 'toggle-input-method :around #'hel--refresh-input-method-a)
 
 ;;; Keymaps
 
