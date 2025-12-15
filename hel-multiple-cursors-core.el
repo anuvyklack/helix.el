@@ -658,10 +658,10 @@ Return t if COMMMAND should be executed for all cursors."
     (insert "(setq " (symbol-name list-symbol) "\n"
             "      '(")
     (newline-and-indent)
-    (set list-symbol
-         (sort value (lambda (x y)
-                       (string-lessp (symbol-name x)
-                                     (symbol-name y)))))
+    (set list-symbol (-> value
+                         (sort (lambda (x y)
+                                 (string-lessp (symbol-name x)
+                                               (symbol-name y))))))
     (mapc (lambda (cmd)
             (insert (format "%S" cmd))
             (newline-and-indent))
