@@ -56,7 +56,7 @@ If PAGES is non-nil scroll over pages instead of lines."
     ;; `available-space' is the height of the part of the screen we can scroll
     ;; before cursor will move.
     (let ((available-space (- window-height y-at-point)))
-      ;; If point goes off the screen as the result of the scroll
+      ;; When point goes off the screen as the result of the scroll
       (when (> delta (- available-space line-height))
         (if restricted
             (setq delta (- available-space (/ line-height 3))

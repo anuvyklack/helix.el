@@ -13,18 +13,23 @@
 (use-package hel-leader)
 #+end_src
 
-=Space= key will act according to following rules:
+- =Space= ::
+  Space= key will act according to following rules:
 
-- =x= is translated to =C-x C-=
-- =c= is translated to =C-c C-=
-  - After this, =SPC= toggles the =C-= modifier.
-  - If the translation results in an undefined binding, the last key falls
-    back to an unmodified version (e.g. if =C-c C-a= is undefined, it falls
-    back to =C-c a=).
-- =m= is translated to =M-=
-- =g= is translated to =C-M-=
-- Any other key is translated to =C-c <key>=. =C-c= is the native Emacs leader
-  key chord.
+  - =x= is translated to =C-x C-=
+  - =c= is translated to =C-c C-=
+    - After this, =SPC= toggles the =C-= modifier.
+    - If the translation results in an undefined binding, the last key falls
+      back to an unmodified version (e.g. if =C-c C-a= is undefined, it falls
+      back to =C-c a=).
+  - =m= is translated to =M-=
+  - =g= is translated to =C-M-=
+  - Any other key is translated to =C-c <key>=. =C-c= is the native Emacs leader
+    key chord.
+
+- =C-w space= ::
+  The same as =Space= but the result buffer of the invoked command (if any) will
+  be opened in new window. This works the same as =C-w n space=.
 
 Examples:
 
@@ -79,9 +84,11 @@ S-expressions.
 
 *** Other
 
-- =W=, =B=, =E=, =miW=, =maW= — WORD text objects ignores parentheses.
-- =M-r= — Raise S-expression.
-- =M-?= — Convolute S-expression.
+- =W=, =B=, =E=, =miW=, =maW= :: WORD text objects ignores parentheses.
+
+- =M-r= :: Raise S-expression.
+
+- =M-?= :: Convolute S-expression.
 
   #+begin_src
   (let ((x 5)             (frob

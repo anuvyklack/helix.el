@@ -21,7 +21,7 @@
 ;; stores inside point, mark, kill-ring and some other variables (full list
 ;; is in `hel-fake-cursor-specific-vars'). Executing command for fake cursor
 ;; looks as follows: set point and mark to positions saved in fake cursor
-;; overlay,restore all variables from it, execute command in this environment,
+;; overlay, restore all variables from it, execute command in this environment,
 ;; store point, mark and new state into fake cursor overlay.
 ;;
 ;; Each command should has `multiple-cursors' symbol property. If it is
