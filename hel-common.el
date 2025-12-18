@@ -823,13 +823,13 @@ forward (or BACKWARD) and jump to new top location."
       (cl-callf hel-rotate-ring global-mark-ring backward?))
     (hel-recenter-point-on-jump
       (let* ((marker (car global-mark-ring))
-	     (buffer (marker-buffer marker))
-	     (position (marker-position marker)))
+             (buffer (marker-buffer marker))
+             (position (marker-position marker)))
         (set-buffer buffer)
         (or (<= (point-min) position (point-max))
-	    (if widen-automatically
-	        (widen)
-	      (error "Global mark position is outside accessible part of buffer %s"
+            (if widen-automatically
+                (widen)
+              (error "Global mark position is outside accessible part of buffer %s"
                      (buffer-name buffer))))
         (goto-char position)
         (switch-to-buffer buffer)
