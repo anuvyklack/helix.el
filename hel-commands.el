@@ -766,11 +766,10 @@ With \\[universal-argument] invokes `yank-rectangle' instead. See `hel-copy'."
                              1)))
                     (if (> n 1) (1- n) n))))
       (when region? (goto-char (region-beginning)))
-      ;; All these `let' bindings are actually move point.
-      (let ((in-comment? (hel-comment-at-pos-p
-                          (progn (move-beginning-of-line nil)
-                                 (skip-chars-forward " \t")
-                                 (point))))
+      ;; All these `let' bindings moves point.
+      (let ((in-comment? (progn (move-beginning-of-line nil)
+                                (skip-chars-forward " \t")
+                                (hel-comment-at-pos-p (point))))
             (ubeg (progn (forward-line 1)
                          (line-beginning-position)))
             (uend (progn (forward-line (1- count))
