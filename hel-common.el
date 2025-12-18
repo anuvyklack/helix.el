@@ -1256,6 +1256,15 @@ right after the point."
              (and (/= 0 (logand (ash 1 19) s))
                   (nth 4 (syntax-ppss (- pos 2))))))))))
 
+(defun hel-string-at-pos-p (position)
+  "Return non-nil if POSITION is inside string.
+This function actually returns the 3rd element of `syntax-ppss' which
+can be a number if the string is delimited by that character or t if
+the string is delimited by general string fences."
+  (ignore-errors
+    (save-excursion
+      (nth 3 (syntax-ppss position)))))
+
 (defun hel-overlay-live-p (overlay)
   "Return non-nil if OVERLAY is not deleted from buffer."
   (-some-> overlay
