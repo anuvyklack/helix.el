@@ -1039,8 +1039,8 @@ that `match-beginning', `match-end' and `match-data' access."
 (defun hel-all-elements-are-equal-p (list)
   "Return t if all elemetns in the LIST are `equal' each other."
   (let ((first (-first-item list)))
-    (--all? (equal first it)
-            (cdr list))))
+    (-all? (lambda (x) (equal first x))
+           (cdr list))))
 
 (defun hel-cursor-is-bar-p ()
   "Return non-nil if `cursor-type' is bar."
