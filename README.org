@@ -148,5 +148,10 @@ You are welcome to go and give them all at least a star!
 
 - *Support development*
 
-  You can support the development with a donation.
-  
+  Hel was developed on an old laptop with a cracked screen. I worked on it instead
+  of grinding LeetCode, and I have run out of money. If you like it and want to
+  support its development, you can donate via:
+
+  - [[https://www.paypal.me/anuvyklack][PayPal]]
+
+  Every contribution is greatly appreciated. Thank you!
