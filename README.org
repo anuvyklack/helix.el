@@ -55,17 +55,26 @@ deserves credit.
 
 ** Installation
 
-Hel is not yet on MELPA. You can install it directly from Github using Emacs'
-built-in package manager:
+Hel is not yet on MELPA. You can install it directly from Github.
 
+*** Dependencies
 #+begin_src emacs-lisp
-;; Dependencies
 (use-package dash :ensure t)
 (use-package avy :ensure t)
 (use-package pcre2el :ensure t)
+#+end_src
 
+*** Emacs' built-in package manager
+#+begin_src emacs-lisp
 (use-package hel
   :vc (:url "https://github.com/anuvyklack/hel.git" :rev "main")
+  :config (hel-mode))
+#+end_src
+
+*** [[https://github.com/progfolio/elpaca][Elpaca]]
+#+begin_src emacs-lisp
+(use-package hel
+  :ensure (hel :host github :repo "anuvyklack/hel" :files (:defaults "**"))
   :config (hel-mode))
 #+end_src
 
