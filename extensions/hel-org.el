@@ -426,12 +426,13 @@ GRANULARITY specifies the parsing level (see `org-element-parse-buffer')."
     (-> (org-element-at-point)
         (hel-org-parse-element))))
 
-(cl-defun hel-org-parse-element (element
-                                 &optional
-                                 (root (if-let* ((section (org-element-lineage element 'section t)))
-                                           (or (org-element-lineage section 'headline)
-                                               section)))
-                                 (granularity 'element))
+(cl-defun hel-org-parse-element
+    (element
+     &optional
+     (root (if-let* ((section (org-element-lineage element 'section t)))
+               (or (org-element-lineage section 'headline)
+                   section)))
+     (granularity 'element))
   "Return the fully parsed structure of the ELEMENT.
 
 ROOT will be the virtual-root of the result AST and should be one of
@@ -588,20 +589,34 @@ be set manually."
   (interactive)
   (unless (use-region-p)
     (hel-org-up-element))
-  (when-let ((next (hel-org--next-element)))
-    (hel-org--set-current-element next)
-    (hel-set-region (org-element-begin next)
-                    (org-element-end next)
-                    ;; ;; Skip empty lines
-                    ;; (- (org-element-end next)
-                    ;;    (org-element-post-blank next))
-                    (hel-region-direction) :adjust)
-    (hel-reveal-point-when-on-top)))
+  (if hel--extend-selection
+      (-let (((region-beg region-end dir new-line?) (hel-region)))
+        (hel-restore-newline-at-eol)
+        (deactivate-mark)
+        (if-let* ((next-element (hel-org--next-element)))
+            (let ((element-beg (org-element-begin next-element))
+                  (element-end (org-element-end next-element)))
+              (if (< element-end region-end)
+                  (hel-set-region element-beg region-end dir new-line?)
+                (hel-set-region region-beg element-end 1 :adjust))
+              (hel-org--set-current-element next-element))
+          ;; else -- restore original region
+          (hel-set-region region-beg region-end dir new-line?)))
+    ;; else
+    (when-let* ((next-element (hel-org--next-element)))
+      (hel-set-region (org-element-begin next-element)
+                      (org-element-end next-element)
+                      ;; ;; Skip empty lines
+                      ;; (- (org-element-end next-element)
+                      ;;    (org-element-post-blank next-element))
+                      (hel-region-direction) :adjust)
+      (hel-org--set-current-element next-element)))
+  (hel-reveal-point-when-on-top))
 
 (defun hel-org--next-element ()
   (if (hel-org-at-heading-p)
       (save-excursion
-        (goto-char (region-beginning))
+        (when (use-region-p) (goto-char (region-beginning)))
         (org-forward-heading-same-level 1)
         (org-element-at-point))
     ;; else
@@ -635,8 +650,7 @@ a parent with different boundaries or reaches a `section' element."
         (end (org-element-end element))
         (parent (org-element-parent element)))
     (while (and parent
-                ;; (not (org-element-type-p parent 'org-data))
-                (not (org-element-type-p parent 'section))
+                (not (org-element-type-p parent '(org-data section)))
                 (= beg (org-element-begin parent))
                 (= end (org-element-end parent)))
       (setq parent (org-element-parent parent)))
@@ -649,14 +663,28 @@ a parent with different boundaries or reaches a `section' element."
   (interactive)
   (unless (use-region-p)
     (hel-org-up-element))
-  (when-let ((previous (hel-org--previous-element)))
-    (hel-org--set-current-element previous)
-    (hel-set-region (org-element-begin previous)
-                    (org-element-end previous)
-                    ;; (- (org-element-end previous)
-                    ;;    (org-element-post-blank previous))
-                    (hel-region-direction) :adjust)
-    (hel-reveal-point-when-on-top)))
+  (if hel--extend-selection
+      (-let (((region-beg region-end dir new-line?) (hel-region)))
+        (hel-restore-newline-at-eol)
+        (deactivate-mark)
+        (if-let* ((previous-element (hel-org--previous-element)))
+            (let ((element-beg (org-element-begin previous-element))
+                  (element-end (org-element-end previous-element)))
+              (if (< region-beg element-beg)
+                  (hel-set-region region-beg element-end dir :adjust)
+                (hel-set-region element-beg region-end -1 new-line?))
+              (hel-org--set-current-element previous-element))
+          ;; else -- restore original region
+          (hel-set-region region-beg region-end dir new-line?)))
+    ;; else
+    (when-let* ((previous-element (hel-org--previous-element)))
+      (hel-set-region (org-element-begin previous-element)
+                      (org-element-end previous-element)
+                      ;; (- (org-element-end previous-element)
+                      ;;    (org-element-post-blank previous-element))
+                      (hel-region-direction) :adjust)
+      (hel-org--set-current-element previous-element)
+      (hel-reveal-point-when-on-top))))
 
 (defun hel-org--previous-element ()
   (if (hel-org-at-heading-p)
