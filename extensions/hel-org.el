@@ -401,27 +401,30 @@ Result element has fully parsed structure with AST virtual root at the
 parent `section' element.
 
 GRANULARITY specifies the parsing level (see `org-element-parse-buffer')."
-  (-let [(beg . end) (if (use-region-p)
-                         (car (region-bounds))
-                       (cons (point) (point)))]
-    (let* ((element (save-excursion
-                      (goto-char beg)
-                      (org-element-at-point)))
-           ;; Climb up the AST until `section' node.
-           (section (org-element-lineage element 'section)))
-      ;; If region exceed section — truncate it to `section' boundaries.
-      (cl-callf max beg (org-element-begin section))
-      (cl-callf min end (org-element-end section))
-      ;; Find smallest enclosing element within `section' element AST.
-      (cl-loop with element = (hel-org--parse-element section granularity)
-               for nested-element = (-find (lambda (el)
-                                             (<= (org-element-begin el)
-                                                 beg end
-                                                 (org-element-end el)))
-                                           (org-element-contents element))
-               while nested-element
-               do (setq element nested-element)
-               finally return element))))
+  (if (use-region-p)
+      (let* ((beg (region-beginning))
+             (end (region-end))
+             (element (save-excursion
+                        (goto-char beg)
+                        (org-element-at-point)))
+             ;; Climb up the AST until `section' node.
+             (section (org-element-lineage element 'section)))
+        ;; If region exceed section — truncate it to `section' boundaries.
+        (cl-callf max beg (org-element-begin section))
+        (cl-callf min end (org-element-end section))
+        ;; Find smallest enclosing element within `section' element AST.
+        (cl-loop with element = (hel-org--parse-element section granularity)
+                 for nested-element = (-find (lambda (el)
+                                               (<= (org-element-begin el)
+                                                   beg end
+                                                   (org-element-end el)))
+                                             (org-element-contents element))
+                 while nested-element
+                 do (setq element nested-element)
+                 finally return element))
+    ;; else
+    (-> (org-element-at-point)
+        (hel-org-parse-element))))
 
 (cl-defun hel-org-parse-element (element
                                  &optional
