@@ -14,7 +14,7 @@
 #+end_src
 
 - =Space= ::
-  Space= key will act according to following rules:
+  Space key will act according to following rules:
 
   - =x= is translated to =C-x C-=
   - =c= is translated to =C-c C-=

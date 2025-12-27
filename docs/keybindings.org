@@ -94,7 +94,7 @@ Scrolling commands are taken from Vim.
   Burry current buffer: put it the end of the list of all buffers.
   Mnemonics: "z" is the last letter.
 
-- =]b= / =[b= :: next/previous buffer
+- =]b= / =[b= :: *next* / *previous* buffer
 
 - =C-w x= :: ~scratch-buffer~
 
@@ -114,25 +114,25 @@ Scrolling commands are taken from Vim.
 
 - =gs=, =gh=, =gl= :: Move to beginning/end of line
 
-- =gg=, =G= :: Go to the first/last line of the buffer.
+- =gg= / =G= :: Go to the *first* / *last* line of the buffer.
 
 - =}=, ={= or =]p=, =[p= :: Move over paragraphs.
 
 *** Easymotion
 
-- =gw=, =gb= ::
-  Place hints at all words forward/backward and select the chosen one.
+- =gw= / =gb= ::
+  Place hints at all words *forward* / *backward* and select the chosen one.
 
-- =gW=, =gB= ::
-  Place hints at all WORDS forward/backward and select the chosen one.
+- =gW= / =gB= ::
+  Place hints at all WORDS *forward* / *backward* and select the chosen one.
 
-- =gj=, =gk= :: Go to line down/up.
+- =gj= / =gk= :: Go to line *down* / *up*.
 
 ** Changes
 
-- =i=, =a= :: insert/append: Switch to Insert state before/after selection.
+- =i=, =a= :: insert, append: Switch to Insert state before/after selection.
 
-- =I=, =A= :: Insert/Append: Switch to Insert state at the start/end of the line.
+- =I=, =A= :: Insert, Append: Switch to Insert state at the start/end of the line.
 
 - =o=, =O= ::
   Open: add new line bellow/above the current line and switch to Insert state.
@@ -145,14 +145,14 @@ Scrolling commands are taken from Vim.
   Change. Delete selection and switch to Insert state. When executed in empty
   line — insert indentation and switch to Insert state.
 
-- =u=, =U= :: Undo/redo.
+- =u= / =U= :: *undo* / *redo*.
 
 - =y= :: Copy selection into ~kill-ring~.
 
-- =p=, =P= :: Paste last entry from ~kill-ring~ after/before selection.
+- =p= / =P= :: Paste last entry from ~kill-ring~ *after* / *before* selection.
 
-- =C-p=, =C-n= ::
-  Replace just-pasted text with next/previous element from ~kill-ring~.
+- =C-p= / =C-n= ::
+  Replace just-pasted text with *next* / *previous* element from ~kill-ring~.
   This is wrappers around Emacs built-in ~yank-pop~ command.
 
 - =R= ::
@@ -161,15 +161,15 @@ Scrolling commands are taken from Vim.
 
 - =~= :: Invert case of characters.
 
-- =`=, =M-`= or =gu=, =gU= :: Convert selection to lower/upper case.
+- =`= / =M-`= or =gu= / =gU= :: Convert selection to *lower* / *upper* case.
 
-- =] SPC=, =[ SPC= :: Add empty line bellow/above the current line.
+- =] SPC= / =[ SPC= :: Add empty line *bellow* / *above* the current line.
 
 ** Multiple cursors
 
 - =M-right mouse= :: Create secondary cursor on click.
 
-- =C=, =M-c= :: Copy selection (cursor) down/up.
+- =C= / =M-c= :: Copy selection (cursor) *down* / *up*.
 
 - =s= ::
   Interactively enter regexp and create cursors for all matches withing active
@@ -181,7 +181,7 @@ Scrolling commands are taken from Vim.
 
 - =M-s= :: Split selections on newlines.
 
-- =K=, =M-K= :: Keep/remove selections matching to regexp.
+- =K= / =M-K= :: Keep/remove selections matching to regexp.
 
 - =,= :: Remove all secondary cursors.
 
@@ -191,9 +191,9 @@ Scrolling commands are taken from Vim.
 
 - =M-minus= :: Merge all selections into single one.
 
-- =(=, =)= :: Rotate main selection backward/forward.
+- =(= / =)= :: Rotate main selection *backward* / *forward*.
 
-- =M-(=, =M-)= :: Rotate selections content backward/forward.
+- =M-(= / =M-)= :: Rotate selections content *backward* / *forward*.
 
 ** Selections
 
@@ -269,17 +269,17 @@ for =m= prefix. Also, this is in line with Emacs tradition which has commands li
 
 ** Search
 
-- =/=, =?= :: Search for regex pattern forward/backward.
+- =/=, =?= :: Search for regex pattern *forward* / *backward*.
 
 - =*= ::
-  Construct regexp from all current selections and store it in ~/~ register.
+  Construct regexp from all current selections and store it in the ~/~ register.
   Auto-detect word boundaries at the beginning and end of the search
   patterns.
 
 - =M-*= ::
-  Construct regexp from all current selections and store it in ~/~ register.
+  Construct regexp from all current selections and store it in the ~/~ register.
 
-- =n=, =N= :: Select next/previous match to the regexp from ~/~ register.
+- =n= / =N= :: Select *next* / *previous* match to the regexp from the ~/~ register.
 
 ** Jumplist
 
@@ -324,7 +324,7 @@ for =m= prefix. Also, this is in line with Emacs tradition which has commands li
 - =gD= :: Find all references.
 
 - =[x= / =]x= ::
-  Go to the previous/next position in xref history. It appeares to be very handy
+  Go to the *previous* / *next* position in xref history. It appeares to be very handy
   to have these positions in a stack separate from the jumplist (unlike how Vim
   does).
 
